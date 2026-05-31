@@ -2,21 +2,25 @@ import { config } from 'dotenv';
 config();
 import { createClient } from '@supabase/supabase-js';
 
-// Per-platform refresh.
-//
-// Previously this called a single Postgres function that looped through all 6
-// platforms in one transaction. The combined query routinely hit the PostgREST
-// statement timeout (~8s) and silently failed the ENTIRE refresh, leaving
-// rankings_cache stale for hours. Refactored 2026-05-30 to call the per-platform
-// function `refresh_rankings_cache_platform(text)` once per platform so any
+// Per-platform refresh, called once per platform via the PostgREST RPC so any
 // individual failure doesn't take down the others.
+//
+// IMPORTANT — YouTube and Twitch are intentionally NOT refreshed here.
+// They're the two heavy platforms (5.5K and 13K creators). The Supabase REST
+// API path PostgREST uses has a hard ~60s statement_timeout that we cannot
+// raise (ALTER ROLE / SET LOCAL only affect direct + pg_cron connections, not
+// REST). Twitch's refresh has grown past 60s and times out here, failing the
+// whole GitHub Actions job. Those two are refreshed reliably INSIDE Postgres
+// by the `refresh-rankings-heavy-platforms` pg_cron job (every 3h, ~75s, where
+// the function's `SET LOCAL statement_timeout='180s'` actually applies). The
+// fast platforms below all finish in well under 60s. See CLAUDE.md.
 
 const supabase = createClient(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+const PLATFORMS = ['tiktok', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
 
 console.log('🏆 Refreshing rankings cache (per-platform)...');
 const totalStart = Date.now();

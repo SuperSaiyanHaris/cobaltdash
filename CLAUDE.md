@@ -48,15 +48,15 @@ Our creator stats are the entire reason this site exists. Every chart and table 
 - This prevents future-date issues when UTC is ahead of local time
 
 **RANKINGS CACHE REFRESH — per-platform, NOT bulk:**
-- `scripts/refreshRankingsCache.js` calls `refresh_rankings_cache_platform(p_platform text)` once per platform sequentially. Runs at the end of `daily-stats-collection.yml` so the cache reflects the freshly collected numbers.
-- The OLD bulk function `refresh_rankings_cache()` looped all 6 platforms in one transaction and routinely hit PostgREST's 8s request timeout, silently failing every refresh. Don't go back to that pattern.
-- `service_role` has `statement_timeout` raised to 60s (set via `ALTER ROLE service_role SET statement_timeout = '60s'` on 2026-05-30). Required because YouTube (5.5K creators) and Twitch (13K) take 30-50s to refresh.
-- The script exits with code 1 if any platform fails — so failures are visible in the Actions tab instead of silent like before.
-- **Between daily collections, `pg_cron` keeps the cache warm** (Pro plan, scheduled 2026-05-30):
-  - `refresh-rankings-fast-platforms` — `17 * * * *` (hourly) — runs Mastodon, Rumble, Bluesky, Kick, Music, TikTok via the wrapper `refresh_rankings_cache_fast_platforms()`. Fast platforms refresh in 1-5s each so doing all six hourly is cheap.
-  - `refresh-rankings-heavy-platforms` — `37 */3 * * *` (every 3 hrs) — runs YouTube + Twitch separately because they take 30-50s. Less frequent because their data only moves every 8 hours during the daily collection cycle anyway.
-- **What this fixes:** previously a newly approved Featured Listing or a freshly discovered creator stat could take up to 8 hours to appear in the visible rankings (waiting for the next `daily-stats-collection.yml` run). Now it surfaces within an hour for small platforms, 3 hours for YouTube/Twitch.
-- `pg_cron` runs inside Postgres, no PostgREST involvement, no statement-timeout pressure beyond the function's own `SET LOCAL statement_timeout = '180s'`. To inspect: `SELECT * FROM cron.job;`. To pause: `SELECT cron.unschedule('refresh-rankings-fast-platforms');`.
+- `scripts/refreshRankingsCache.js` calls `refresh_rankings_cache_platform(p_platform text)` once per platform. Runs at the end of `daily-stats-collection.yml` (and `tiktok-refresh.yml`) so the cache reflects freshly collected numbers.
+- The OLD bulk function `refresh_rankings_cache()` looped all platforms in one transaction and routinely hit PostgREST's 8s request timeout, silently failing every refresh. Don't go back to that pattern.
+- **The REST path has a hard ~60s statement_timeout we CANNOT raise.** PostgREST connects as `authenticator` and `SET ROLE service_role` per request; role `rolconfig` GUCs (`ALTER ROLE service_role SET statement_timeout=...`) and the function's own `SET LOCAL statement_timeout='180s'` do NOT apply to a REST RPC — the outer statement's deadline is fixed at ~60s by Supabase. So `ALTER ROLE`-ing the timeout up does nothing for REST calls (it only helps direct/pg_cron connections). Learned 2026-05-31 when Twitch grew past 60s and failed the workflow.
+- **Therefore `refreshRankingsCache.js` only refreshes the 7 fast platforms** (tiktok, kick, bluesky, music, mastodon, rumble, substack) — each well under 60s. **YouTube and Twitch are deliberately excluded** from this script; they are refreshed ONLY by the `refresh-rankings-heavy-platforms` pg_cron job (inside Postgres, where `SET LOCAL 180s` works — those runs take ~75s and succeed). Do NOT add youtube/twitch back to this script's PLATFORMS array.
+- The script exits with code 1 if any (fast) platform fails — failures stay visible in the Actions tab.
+- **`pg_cron` keeps the cache warm** (Pro plan):
+  - `refresh-rankings-fast-platforms` — `17 * * * *` (hourly) — Mastodon, Rumble, Bluesky, Kick, Music, TikTok, Substack via the wrapper `refresh_rankings_cache_fast_platforms()`.
+  - `refresh-rankings-heavy-platforms` — `37 */3 * * *` (every 3 hrs) — YouTube + Twitch, inside Postgres (the only path that can run them, given the REST 60s cap). Their data only moves on the 8h daily-collection cycle anyway, so a ≤3h ranking lag is fine.
+- `pg_cron` runs inside Postgres, no PostgREST involvement; the function's `SET LOCAL statement_timeout = '180s'` applies there. To inspect runs: `SELECT * FROM cron.job_run_details ORDER BY start_time DESC;`. To pause: `SELECT cron.unschedule('refresh-rankings-fast-platforms');`.
 
 **SECTION DIVIDERS — NO GRADIENT FADES:**
 - The user removed all gradient section dividers (`bg-gradient-to-b from-X to-Y` between sections) months ago and does NOT want them re-added. If a transition between light and dark sections feels harsh, the fix is to add a proper section header (eyebrow + title) above the next section, NOT a gradient fade.
