@@ -4,9 +4,9 @@
 
 ## Project Overview
 
-ShinyPull is a social media analytics platform (similar to SocialBlade) that tracks creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, and Spotify.
+ShinyPull is a social media analytics platform that tracks creator statistics across 9 platforms: YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (Last.fm). Platform count is centralized in `src/lib/constants.js` (`PLATFORM_IDS` / `PLATFORM_COUNT`).
 
-**Status:** YouTube, TikTok, Twitch, Kick, Bluesky, and Spotify integrations fully working. Live subscriber/follower counts, historical charts, and automated data collection operational.
+**Status:** All 9 platform integrations fully working. Live subscriber/follower counts, historical charts, and automated daily data collection operational.
 
 ## Critical Rules
 
@@ -267,7 +267,7 @@ Before declaring a new platform "done," run this from the repo root:
 ```bash
 grep -rl "bluesky" src/ scripts/ api/ | xargs grep -L "$NEW_PLATFORM"
 ```
-Substitute `bluesky` with whatever platform was most recently added (it's the canonical "you have to touch all these files" template). The output lists every file that mentions the template platform but not the new one. Walk the list. Common categories of misses:
+Substitute `bluesky` with whatever platform was most recently added — currently **`substack`** (it's the canonical "you have to touch all these files" template). The output lists every file that mentions the template platform but not the new one. Walk the list. Common categories of misses:
 - `src/components/Footer.jsx` — `PLATFORM_LINKS` array + tagline string
 - `src/components/CommandPalette.jsx` — `PLATFORM_ICONS` map + `PLATFORM_LINKS` array
 - `src/components/BlogContent.jsx` — `PLATFORM_META` for `{{creators:...}}` blog embed
@@ -327,6 +327,20 @@ Substitute `bluesky` with whatever platform was most recently added (it's the ca
 - Collected in `collectDailyStats.js` with batch size of 25
 - Color scheme: sky-500 Tailwind palette (`text-sky-400`, `bg-sky-950/30`, `border-sky-800`)
 
+**Substack:** (platform #9, added 2026-05-31)
+- Newsletter / long-form platform. No exact public subscriber counts — Substack only exposes an **order-of-magnitude band** (1K / 10K / 100K / 1M) via the public category leaderboard API. This shapes the entire integration.
+- `platform_id` = numeric publication id (stable). `username` = the subdomain slug (e.g. `lenny`). Profile URL = `https://{slug}.substack.com` (always resolves, even for custom-domain pubs).
+- `subscribers` = the total-subscriber band floor (`rankingDetailFreeIncludedOrderOfMagnitude`). `total_views`/`total_posts` = null. Substack natively uses the word **"subscribers"** so it joins YouTube's label group (NOT followers).
+- **RANKING IS BY LEADERBOARD POSITION, not by the subscriber band.** Because every pub in a band ties (hundreds show "100K"), `creators.leaderboard_rank` stores each pub's global position across Substack's category leaderboards. `refresh_rankings_cache_platform` special-cases substack to `ORDER BY leaderboard_rank ASC` instead of `subscribers DESC`. Global rank is computed by (total band DESC, paid band DESC, best category position ASC) — see `seedTopSubstackCreators.js` / the `buildSubstackRanking()` helper in `collectDailyStats.js`.
+- Data source: `https://substack.com/api/v1/category/public/{categoryId}/paid?page=N` (25/pub per page, paginated). Category ids live in `SUBSTACK_CATEGORIES` (duplicated in the service + both scripts + collectDailyStats).
+- Daily collection does ONE leaderboard sweep (~100 requests) and matches tracked pubs by `platform_id`; pubs that drop off keep last-good (no 0 write).
+- **Latest post:** `https://{slug}.substack.com/api/v1/archive?sort=new&limit=1` gives title/date/canonical_url/reactions/comments. This is **CORS-blocked from the browser**, so it's fetched **server-side in collectDailyStats** for the **top 300 ranked pubs only** (Substack throttles sustained archive requests from one IP — ~50% success under bulk load, with one retry; a failed fetch never clobbers a prior good value, so coverage accumulates across daily runs). Reactions stored in `latest_post_views` (no view metric). Profile reads latest post from DB columns (like Rumble/Mastodon), shows title + relative date + reactions + comments.
+- Profile hero stat shows the band as **"100K+"** via `oomLabel()` (signals it's a floor, not exact). Single stat card (subscribers only). No growth cards (band deltas are misleading). No live counter.
+- **Deliberately excluded from Trending** — Trending is a growth-velocity view and bands produce no meaningful growth signal.
+- Service: `src/services/substackService.js`. Custom `SubstackIcon` (stacked-bars mark). Color scheme: `orange-600` (`text-orange-700`, `bg-orange-50`, `border-orange-200`).
+- Search is DB-only (live leaderboard API can't free-text search), same as Mastodon/Rumble.
+- Seed: `seedTopSubstackCreators.js` (~1.4K pubs across 14 categories). Discovery: `discoverSubstackCreators.js` (rotating categories, recomputes global ranks after adds). CSP allows `https://*.substack.com` for the (best-effort) lazy profile fallback.
+
 ## Commands
 
 ```bash
@@ -336,6 +350,7 @@ npm run seed:top-creators      # Seed top creators
 npm run seed:kick              # Seed top Kick creators
 npm run seed:bluesky           # Seed top Bluesky accounts
 npm run seed:spotify           # Seed top 1000 Spotify artists
+node scripts/seedTopSubstackCreators.js   # Seed top Substack newsletters (no npm alias)
 npm run seed:blog              # Seed blog posts
 npm run seed:products          # Seed affiliate products
 npm run collect:daily          # Collect daily stats (YouTube, Twitch, Kick, Bluesky)
@@ -728,4 +743,4 @@ All tables have RLS enabled. Here are the current policies:
 
 ---
 
-*Last updated: 2026-05-29*
+*Last updated: 2026-05-31*
