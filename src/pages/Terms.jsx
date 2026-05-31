@@ -90,26 +90,20 @@ export default function Terms() {
 
               <Section title="Data Sources">
                 <p>
-                  In order to keep statistical data updated, ShinyPull utilizes API services of third parties
-                  including YouTube, TikTok, Twitch, and Kick. Unless specific access is asked for at time of
-                  use (i.e. to validate your identity), we are only gathering publicly available data from each of
-                  the API services, not anything private about your account. When private data is granted, collected
-                  data via the private token isn't being stored, it is just being used to verify various things. If
-                  you wish to revoke access you can do so via each platform's connected services page, or contact us
-                  at{' '}
+                  ShinyPull displays statistics that are publicly available on the platforms we track. We only
+                  gather information that anyone can already see on a creator's public profile or page. We do not
+                  access or store private account data. If you have a question about the data we show, contact us at{' '}
                   <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-300">
                     shinypull@proton.me
-                  </a>{' '}
-                  and we will delete the token from our system. If you wish to delete your account entirely including
-                  all connected accounts, you can do so via the account settings page.
+                  </a>.
                 </p>
               </Section>
 
               <Section title="Description of Service">
                 <p>
                   ShinyPull provides social media analytics and statistics for content creators across multiple
-                  platforms including YouTube, TikTok, Twitch, and Kick. We collect publicly available
-                  data from official platform APIs.
+                  platforms. We display publicly available data and present it as charts, rankings, and historical
+                  trends.
                 </p>
               </Section>
 
@@ -126,7 +120,7 @@ export default function Terms() {
               <Section title="Data Accuracy">
                 <p>
                   While we strive to provide accurate statistics, we cannot guarantee 100% accuracy. Data is
-                  collected from third-party APIs and may be subject to delays, errors, or inconsistencies.
+                  collected from publicly available sources and may be subject to delays, errors, or inconsistencies.
                   Earnings estimates are approximations based on industry averages and should not be considered
                   exact figures.
                 </p>
@@ -138,7 +132,7 @@ export default function Terms() {
                   counts. These numbers are simulations based on:
                 </p>
                 <ul className="list-disc list-inside text-neutral-700 space-y-1 mb-4">
-                  <li>The most recent publicly available count from the platform's official API</li>
+                  <li>The most recent publicly available count from the platform</li>
                   <li>Typical growth patterns for channels of similar size</li>
                   <li>Statistical modeling to simulate realistic fluctuations</li>
                 </ul>
@@ -176,8 +170,8 @@ export default function Terms() {
 
               <Section title="Third-Party Platforms">
                 <p>
-                  Our service relies on third-party platform APIs (YouTube, TikTok, Twitch, Kick, etc.). We are
-                  not affiliated with these platforms. Changes to their APIs or terms may affect our service.
+                  Our service relies on publicly available data from the platforms we track. We are not affiliated
+                  with these platforms. Changes to their services or terms may affect ours.
                 </p>
               </Section>
 

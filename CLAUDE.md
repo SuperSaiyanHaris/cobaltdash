@@ -27,7 +27,14 @@ Our creator stats are the entire reason this site exists. Every chart and table 
 - NEVER add warning banners, info boxes, or explanatory notes to user-facing pages
 - Handle API limitations gracefully in the UI without explaining why to users
 - The only exception is the Terms of Service page for legal disclaimers
-- Keep the UI clean and professional like SocialBlade
+- Keep the UI clean and professional.
+
+**HOW WE GET DATA — NEVER DESCRIBE THE MECHANISM IN USER-FACING COPY. (hard rule)**
+- Anywhere on the site (FAQ, Methodology, About, Support, Terms, Privacy, rankings/profile blurbs, SEO descriptions, blog, tooltips), the ONLY acceptable phrasing for how we source data is some variant of **"we obtain / show publicly available information."** Keep it short and legal.
+- NEVER name the mechanism or the source: no "API" / "official platform APIs" / "YouTube Data API" / "Twitch Helix" / "AT Protocol" / "ActivityPub" / "Last.fm API" / "category leaderboard API"; no "scrape" / "scraping" / "public channel pages" / "request per second" / "polite rate"; no "/c/ vs /user/", "federate through mastodon.social", "order-of-magnitude band", "viewer samples every few minutes", "leaderboard position", etc. These are our secrets. No competitor exposes this and neither do we.
+- You MAY still state user-relevant CAVEATS about the numbers themselves (what helps a reader trust/understand the figure), worded without mechanism: e.g. "YouTube rounds subscriber counts (their policy)", "on Kick the public number is paid subscribers", "Substack publishes counts as approximate ranges, so the figure is an approximate minimum", "this platform has no public view count". That's about the DATA, not the HOW.
+- The Methodology page describes WHAT we track + caveats only. Every platform's source label is just "Publicly available". Do not reintroduce a per-platform "Data Source"/"how" breakdown.
+- This rule overrides any instinct to be transparent/helpful about implementation. When in doubt, write less.
 
 **WRITING STYLE - ALL USER-FACING COPY (tooltips, labels, descriptions, notifications, blog posts):**
 - NEVER use em dashes (—). Use commas or periods instead.

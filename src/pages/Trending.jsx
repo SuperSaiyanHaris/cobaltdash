@@ -16,9 +16,9 @@ const PLATFORMS = [
   { id: 'youtube', name: 'YouTube', icon: Youtube, textColor: 'text-red-400', activeBg: 'bg-red-50', activeBorder: 'border-red-300', followerLabel: 'subscribers', growthLabel: 'views gained', growthNote: 'YouTube rounds subscriber counts by policy, so views are used as the growth metric.' },
   { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, textColor: 'text-pink-400', activeBg: 'bg-pink-50', activeBorder: 'border-pink-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
   { id: 'twitch', name: 'Twitch', icon: Twitch, textColor: 'text-purple-400', activeBg: 'bg-purple-50', activeBorder: 'border-purple-300', followerLabel: 'followers', growthLabel: 'watch hours gained', growthNote: 'Twitch growth is measured by hours watched per month, the standard streaming metric.' },
-  { id: 'kick', name: 'Kick', icon: KickIcon, textColor: 'text-green-400', activeBg: 'bg-green-50', activeBorder: 'border-green-300', followerLabel: 'paid subs', growthLabel: 'paid subs gained', growthNote: 'Kick\'s API only exposes paid subscriber counts, not free follower counts.' },
+  { id: 'kick', name: 'Kick', icon: KickIcon, textColor: 'text-green-400', activeBg: 'bg-green-50', activeBorder: 'border-green-300', followerLabel: 'paid subs', growthLabel: 'paid subs gained', growthNote: 'On Kick, the publicly available number is paid subscribers rather than free followers.' },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, textColor: 'text-sky-400', activeBg: 'bg-sky-50', activeBorder: 'border-sky-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
-  { id: 'music', name: 'Music', icon: Music, textColor: 'text-amber-400', activeBg: 'bg-amber-50', activeBorder: 'border-amber-300', followerLabel: 'listeners', growthLabel: 'listeners gained', growthNote: 'Monthly listener growth via Last.fm. Reflects how many more unique listeners an artist reached this month vs. last.' },
+  { id: 'music', name: 'Music', icon: Music, textColor: 'text-amber-400', activeBg: 'bg-amber-50', activeBorder: 'border-amber-300', followerLabel: 'listeners', growthLabel: 'listeners gained', growthNote: 'Monthly listener growth. Reflects how many more unique listeners an artist reached this month vs. last.' },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, textColor: 'text-violet-400', activeBg: 'bg-violet-50', activeBorder: 'border-violet-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
   { id: 'rumble', name: 'Rumble', icon: RumbleIcon, textColor: 'text-lime-600', activeBg: 'bg-lime-50', activeBorder: 'border-lime-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
 ];
@@ -149,7 +149,7 @@ export default function Trending() {
             <div className="mt-10 bg-white/60 border border-neutral-200 rounded-2xl p-6 sm:p-8">
               <h2 className="text-base font-bold text-neutral-900 mb-3">How growth is calculated</h2>
               <div className="space-y-2 text-sm text-neutral-500 leading-relaxed">
-                <p>Growth is the difference between a creator's latest stat and their stat from 30 days ago. All data comes directly from platform APIs or public profile pages, collected multiple times per day.</p>
+                <p>Growth is the difference between a creator's latest stat and their stat from 30 days ago. All data is publicly available, collected multiple times per day.</p>
                 <p>YouTube uses total view growth instead of subscribers because YouTube rounds subscriber counts to three significant figures by policy. Twitch and Kick use hours watched, the metric the streaming industry uses to measure audience engagement. TikTok, Bluesky, and Music use follower and listener growth, which are the primary public metrics on those platforms.</p>
                 <p>Only creators with positive growth appear here. Creators are tracked daily, so rankings update as new data comes in.</p>
               </div>

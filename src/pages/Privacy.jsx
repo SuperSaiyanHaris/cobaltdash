@@ -154,9 +154,9 @@ export default function Privacy() {
 
               <Section title="Data Sources">
                 <p>
-                  In order to keep statistical data updated, ShinyPull utilizes API services of third parties
-                  including YouTube, TikTok, Twitch, and Kick. We only gather publicly available data from each
-                  of the API services, not anything private about your account.
+                  ShinyPull only gathers publicly available information from the platforms we track, the same
+                  statistics anyone can already see on a creator's public profile or page. We never collect
+                  anything private about your account.
                 </p>
               </Section>
 

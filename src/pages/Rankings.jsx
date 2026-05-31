@@ -966,7 +966,7 @@ function PlatformRankings({ urlPlatform }) {
                   <>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Who has the most YouTube subscribers?</h3>
-                      <p>{rankings[0]?.display_name} currently holds the top spot with {formatNumber(rankings[0]?.subscribers)} subscribers. Our rankings are updated daily using the YouTube Data API.</p>
+                      <p>{rankings[0]?.display_name} currently holds the top spot with {formatNumber(rankings[0]?.subscribers)} subscribers. Our rankings are updated daily from publicly available data.</p>
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">How are the top YouTuber rankings calculated?</h3>
@@ -1018,11 +1018,11 @@ function PlatformRankings({ urlPlatform }) {
                   <>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Who has the most Bluesky followers?</h3>
-                      <p>{rankings[0]?.display_name} holds the top spot with {formatNumber(rankings[0]?.subscribers)} followers. We track major Bluesky accounts with daily updates via the AT Protocol API.</p>
+                      <p>{rankings[0]?.display_name} holds the top spot with {formatNumber(rankings[0]?.subscribers)} followers. We track major Bluesky accounts with daily updates from publicly available data.</p>
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">How are Bluesky rankings calculated?</h3>
-                      <p>We track follower counts and post activity for Bluesky accounts. Rankings are updated daily using the public AT Protocol API, which requires no authentication.</p>
+                      <p>We track follower counts and post activity for Bluesky accounts, ranked by followers and updated daily.</p>
                     </div>
                   </>
                 )}
@@ -1030,7 +1030,7 @@ function PlatformRankings({ urlPlatform }) {
                   <>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Who has the most monthly listeners?</h3>
-                      <p>{rankings[0]?.display_name} holds the top spot with {formatNumber(rankings[0]?.subscribers)} monthly listeners. Rankings update daily using the Last.fm API.</p>
+                      <p>{rankings[0]?.display_name} holds the top spot with {formatNumber(rankings[0]?.subscribers)} monthly listeners. Rankings update daily from publicly available data.</p>
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">What do the listener counts mean?</h3>
@@ -1042,11 +1042,11 @@ function PlatformRankings({ urlPlatform }) {
                   <>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Who has the most Mastodon followers?</h3>
-                      <p>{rankings[0]?.display_name} leads with {formatNumber(rankings[0]?.subscribers)} followers. We track major accounts across the fediverse with daily updates via the public ActivityPub API.</p>
+                      <p>{rankings[0]?.display_name} leads with {formatNumber(rankings[0]?.subscribers)} followers. We track major fediverse accounts using publicly available information, updated daily.</p>
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">How do Mastodon handles work?</h3>
-                      <p>Mastodon is decentralized, so every account belongs to an instance and the handle includes it (for example, user@mastodon.social). We support the major instances and federate through mastodon.social for everything else.</p>
+                      <p>Mastodon is decentralized, so every account belongs to an instance and the handle includes it (for example, user@mastodon.social).</p>
                     </div>
                   </>
                 )}
@@ -1057,8 +1057,8 @@ function PlatformRankings({ urlPlatform }) {
                       <p>{rankings[0]?.display_name} leads the Rumble rankings with {formatNumber(rankings[0]?.subscribers)} followers. We track follower counts and video output for major channels, updated daily.</p>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-neutral-900 mb-1">How are Rumble rankings collected?</h3>
-                      <p>Rumble has no public API, so we read the public channel pages at a polite rate. We support both /c/ channels and /user/ accounts and track follower count plus video count.</p>
+                      <h3 className="font-semibold text-neutral-900 mb-1">What do Rumble rankings track?</h3>
+                      <p>We track follower count and video output for major Rumble channels using publicly available information, updated daily.</p>
                     </div>
                   </>
                 )}
@@ -1069,8 +1069,8 @@ function PlatformRankings({ urlPlatform }) {
                       <p>{rankings[0]?.display_name} sits at the top of our Substack rankings. We track the biggest newsletters across every Substack category and update daily.</p>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-neutral-900 mb-1">How is the Substack ranking order decided?</h3>
-                      <p>Substack does not publish exact subscriber counts, only an order-of-magnitude band (1K, 10K, 100K, 1M). Because those bands tie heavily, we order newsletters by their position across Substack's own category leaderboards, which are precisely ranked. The number shown is the band floor, not an exact count.</p>
+                      <h3 className="font-semibold text-neutral-900 mb-1">Why are Substack numbers approximate?</h3>
+                      <p>Substack makes subscriber counts public as approximate ranges rather than exact numbers, so the figure shown is an approximate minimum.</p>
                     </div>
                   </>
                 )}

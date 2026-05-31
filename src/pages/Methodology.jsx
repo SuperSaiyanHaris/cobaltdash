@@ -8,6 +8,9 @@ import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 
+// Per-platform cards intentionally describe WHAT we show (metrics + any caveat
+// that helps a reader understand the numbers), never HOW we obtain it. Source
+// is always "Publicly available" — see the hard rule in CLAUDE.md.
 const platforms = [
   {
     icon: Youtube,
@@ -18,11 +21,8 @@ const platforms = [
     iconBg: 'from-red-500 to-red-600',
     shadow: 'shadow-red-500/20',
     metrics: ['Subscriber count', 'Total video views', 'Video count'],
-    source: 'YouTube Data API',
-    frequency: '3x daily',
     notes: [
-      'YouTube rounds subscriber counts to 3 significant figures for all channels — a policy in place since 2019. A channel at 4,237,591 and one at 4,230,000 both display as 4,230,000.',
-      'Because rounding makes subscriber changes invisible on large channels, ShinyPull defaults to showing view growth on YouTube profiles. Views are always precise.',
+      'YouTube rounds subscriber counts to 3 significant figures for all channels, a policy in place since 2019. A channel at 4,237,591 and one at 4,230,000 both display as 4,230,000. Because of this we default to showing view growth, which is always precise.',
     ],
   },
   {
@@ -34,11 +34,7 @@ const platforms = [
     iconBg: 'from-pink-500 to-pink-600',
     shadow: 'shadow-pink-500/20',
     metrics: ['Follower count', 'Total likes', 'Video count'],
-    source: 'Public profile pages',
-    frequency: '4x daily',
-    notes: [
-      'All TikTok data shown is publicly visible on creator profiles. We refresh TikTok more frequently than other platforms to keep up with faster-moving accounts.',
-    ],
+    notes: [],
   },
   {
     icon: Twitch,
@@ -48,12 +44,9 @@ const platforms = [
     bgColor: 'bg-purple-950/20',
     iconBg: 'from-purple-500 to-purple-600',
     shadow: 'shadow-purple-500/20',
-    metrics: ['Follower count', 'Hours watched (daily, weekly, monthly)', 'Stream count', 'Peak and average viewers per stream'],
-    source: 'Twitch API',
-    frequency: 'Followers 3x daily. Streams monitored every 3 hours.',
+    metrics: ['Follower count', 'Hours watched (daily, weekly, monthly)', 'Peak and average viewers'],
     notes: [
-      'Twitch removed total view counts in 2022. Hours watched is the replacement — the metric used by streamers, sponsors, and analytics tools across the industry.',
-      'Hours watched is built from live viewer samples collected every few minutes during each stream, then rolled up into daily, weekly, and monthly totals.',
+      'Twitch retired total view counts in 2022, so we track hours watched, the engagement metric streamers and sponsors rely on.',
     ],
   },
   {
@@ -64,12 +57,9 @@ const platforms = [
     bgColor: 'bg-green-950/20',
     iconBg: 'from-green-500 to-green-600',
     shadow: 'shadow-green-500/20',
-    metrics: ['Paid subscriber count', 'Hours watched (daily, weekly, monthly)', 'Stream count', 'Peak and average viewers per stream'],
-    source: 'Kick API',
-    frequency: 'Subscribers 3x daily. Streams monitored every 3 hours.',
+    metrics: ['Paid subscriber count', 'Hours watched (daily, weekly, monthly)', 'Peak and average viewers'],
     notes: [
-      "Kick only exposes paid subscriber counts, not free follower totals. The number on Kick profiles represents paying subscribers only, which is always smaller than the total audience.",
-      'Hours watched is tracked the same way as Twitch — viewer samples taken during live streams, aggregated into daily, weekly, and monthly figures.',
+      'On Kick, the publicly available number is the paid subscriber count rather than total free followers, so that is the figure we show.',
     ],
   },
   {
@@ -81,10 +71,7 @@ const platforms = [
     iconBg: 'from-sky-400 to-sky-600',
     shadow: 'shadow-sky-500/20',
     metrics: ['Follower count', 'Post count'],
-    source: 'Bluesky public API',
-    frequency: '3x daily',
     notes: [
-      'Bluesky is a decentralized social network where all profile data is public by design. No private information is collected.',
       'Bluesky has no profile-level view counts, so we track followers and posts only.',
     ],
   },
@@ -97,12 +84,8 @@ const platforms = [
     iconBg: 'from-violet-500 to-purple-600',
     shadow: 'shadow-violet-500/20',
     metrics: ['Follower count', 'Post count'],
-    source: 'Mastodon ActivityPub (public)',
-    frequency: '3x daily',
     notes: [
-      'Mastodon is federated. Each account belongs to a specific instance (e.g. mastodon.social, hachyderm.io), and handles include the instance: user@instance.tld.',
-      'We hit each instance\'s public API directly and fall back to mastodon.social federated search for less common instances. No authentication is needed.',
-      'No profile-level view counts exist on Mastodon, so we track followers and posts only.',
+      'Mastodon is decentralized, so handles include the instance (for example, user@instance.tld). It has no profile-level view counts.',
     ],
   },
   {
@@ -114,12 +97,8 @@ const platforms = [
     iconBg: 'from-lime-500 to-green-600',
     shadow: 'shadow-lime-500/20',
     metrics: ['Follower count', 'Video count'],
-    source: 'Rumble public channel pages',
-    frequency: '3x daily',
     notes: [
-      'Rumble has no public API, so we scrape the public channel pages at a polite ~1 request per second.',
-      'Both /c/ channels and /user/ accounts are supported. We store the kind in our internal identifier so we always hit the right URL.',
-      'Channel-level total view counts are not exposed by Rumble, so we track followers and video count only.',
+      'Rumble does not make a channel-level total view count public, so we track followers and video count only.',
     ],
   },
   {
@@ -130,13 +109,9 @@ const platforms = [
     bgColor: 'bg-orange-950/20',
     iconBg: 'from-orange-500 to-amber-600',
     shadow: 'shadow-orange-500/20',
-    metrics: ['Subscriber reach', 'Category leaderboard rank'],
-    source: 'Substack category leaderboards (public)',
-    frequency: '3x daily',
+    metrics: ['Subscriber reach'],
     notes: [
-      'Substack does not publish exact subscriber counts. The public category leaderboards expose an order-of-magnitude band instead (1K, 10K, 100K, 1M).',
-      'Because those bands tie heavily, we rank Substack newsletters by their position across the category leaderboards rather than by the band alone.',
-      'The number shown on a publication is the band floor, not an exact count.',
+      'Substack makes subscriber counts public as approximate ranges rather than exact numbers, so the figure shown is an approximate minimum.',
     ],
   },
   {
@@ -148,11 +123,8 @@ const platforms = [
     iconBg: 'from-amber-500 to-orange-500',
     shadow: 'shadow-amber-500/20',
     metrics: ['Monthly listeners', 'Total play count', 'Genre tags'],
-    source: 'Last.fm',
-    frequency: '3x daily',
     notes: [
-      'Monthly listeners counts unique listeners over the past 30 days and resets each month. Total plays is a running lifetime total across all Last.fm users.',
-      'Genre tags are pulled from community-curated tags on Last.fm and reflect the most commonly applied labels for each artist.',
+      'Monthly listeners counts unique listeners over the past 30 days and resets each month. Total plays is a running lifetime total.',
     ],
   },
 ];
@@ -163,7 +135,7 @@ const principles = [
     color: 'from-indigo-500 to-indigo-600',
     shadow: 'shadow-indigo-500/30',
     title: 'No synthetic data',
-    body: 'Every number in our database comes from a real API call or data collection at a specific point in time. We never estimate, interpolate, or generate historical data. If we missed a day, that day just has no data.',
+    body: 'Every number in our database comes from real data captured at a specific point in time. We never estimate, interpolate, or generate historical data. If we missed a day, that day just has no data.',
   },
   {
     icon: Database,
@@ -193,7 +165,7 @@ export default function Methodology() {
     <>
       <SEO
         title="Data Methodology"
-        description="Learn how ShinyPull collects and maintains creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (Last.fm)."
+        description="How ShinyPull presents publicly available creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music, with daily snapshots and real historical data."
       />
 
       <div className="min-h-screen bg-[#fafafa]">
@@ -202,7 +174,7 @@ export default function Methodology() {
           <div className="max-w-4xl mx-auto px-4 text-center">
             <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">Data Methodology</h1>
             <p className="text-xl text-neutral-500">
-              How we collect, store, and maintain creator statistics.
+              How we present and maintain publicly available creator statistics.
             </p>
           </div>
         </div>
@@ -244,20 +216,18 @@ export default function Methodology() {
                     <h3 className="text-lg font-bold text-neutral-900">{p.name}</h3>
                   </div>
 
-                  <div className="grid sm:grid-cols-3 gap-4 mb-5 text-sm">
-                    <div>
-                      <p className="text-neutral-400 uppercase text-xs font-semibold tracking-wider mb-1">Data Source</p>
-                      <p className="text-neutral-700">{p.source}</p>
-                    </div>
-                    <div>
-                      <p className="text-neutral-400 uppercase text-xs font-semibold tracking-wider mb-1">Update Frequency</p>
-                      <p className="text-neutral-700">{p.frequency}</p>
-                    </div>
-                    <div>
-                      <p className="text-neutral-400 uppercase text-xs font-semibold tracking-wider mb-1">Metrics Tracked</p>
-                      <ul className="text-neutral-700 space-y-0.5">
-                        {p.metrics.map((m) => <li key={m}>{m}</li>)}
-                      </ul>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4 text-xs">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-medium">Publicly available</span>
+                    <span className="text-neutral-300">·</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-medium">Updated daily</span>
+                  </div>
+
+                  <div className="mb-5 text-sm">
+                    <p className="text-neutral-400 uppercase text-xs font-semibold tracking-wider mb-1.5">Metrics Tracked</p>
+                    <div className="flex flex-wrap gap-2">
+                      {p.metrics.map((m) => (
+                        <span key={m} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-700">{m}</span>
+                      ))}
                     </div>
                   </div>
 

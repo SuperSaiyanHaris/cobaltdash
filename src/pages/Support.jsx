@@ -36,8 +36,8 @@ const supportReasons = [
   },
   {
     icon: Zap,
-    title: 'API Costs',
-    description: 'Real data costs real money. YouTube, Twitch, Kick, TikTok, Bluesky, Mastodon, Rumble, Substack, and Music all have API costs.',
+    title: 'Data Costs',
+    description: 'Collecting and storing daily statistics across nine platforms takes real infrastructure, and that costs money to keep running.',
     color: 'from-amber-500 to-orange-500',
     shadow: 'shadow-amber-500/30',
   },
@@ -141,7 +141,7 @@ export default function Support() {
             <div className="relative">
               <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">Still thinking about it?</p>
               <p className="text-neutral-500 mb-8 max-w-md mx-auto">
-                One coffee funds a week of API calls. The data never stops. Your support makes sure neither do we.
+                One coffee funds a week of data collection. The data never stops. Your support makes sure neither do we.
               </p>
               <BMCButton label="ok fine, here's a coffee" size="lg" />
             </div>

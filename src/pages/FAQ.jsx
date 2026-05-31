@@ -10,7 +10,7 @@ const faqs = [
     questions: [
       {
         q: 'What is ShinyPull?',
-        a: 'ShinyPull tracks public statistics for content creators and artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (via Last.fm). We collect subscriber counts, follower counts, listener counts, view totals, and more every day, then present the data as charts and historical trends. Think of it as a stats tracker for the creator economy.',
+        a: 'ShinyPull tracks publicly available statistics for content creators and artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music. We present public metrics like subscriber, follower, and listener counts as daily charts and historical trends. Think of it as a stats tracker for the creator economy.',
       },
       {
         q: 'Is ShinyPull free?',
@@ -22,7 +22,7 @@ const faqs = [
       },
       {
         q: 'What makes ShinyPull different from other stats trackers?',
-        a: 'ShinyPull pulls data directly from official platform APIs where available. Charts are interactive, the layout is built for modern screens, and we track streaming-specific metrics like hours watched that most tools ignore.',
+        a: 'Interactive charts, a layout built for modern screens, and coverage of streaming-specific metrics like hours watched that most tools ignore, all across nine platforms in one place.',
       },
       {
         q: 'Do I need an account to use ShinyPull?',
@@ -35,15 +35,15 @@ const faqs = [
     questions: [
       {
         q: 'How often is data updated?',
-        a: 'Creator stats are collected multiple times per day. YouTube, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (Last.fm) run on an automated schedule three times daily. TikTok profiles refresh four times daily. Stream monitoring for Twitch and Kick runs every three hours to track live viewership.',
+        a: 'Creator stats are refreshed multiple times every day, so rankings and charts reflect the latest publicly available numbers.',
       },
       {
         q: 'Is the data accurate?',
-        a: 'We pull directly from official platform APIs and public data. One known limitation: YouTube has rounded subscriber counts to three significant figures since 2019 (so 1,234,567 would show as 1,230,000). This is a YouTube policy, not a ShinyPull issue. All other platform data is as precise as the platform provides.',
+        a: 'Everything we show is publicly available data. One known limitation: YouTube has rounded subscriber counts to three significant figures since 2019 (so 1,234,567 would show as 1,230,000). This is a YouTube policy, not a ShinyPull issue. All other data is as precise as each platform makes public.',
       },
       {
         q: 'Where does the data come from?',
-        a: 'All data is publicly available. We use the YouTube Data API, Twitch Helix API, Kick API, Bluesky AT Protocol API, Mastodon ActivityPub API, Substack category leaderboard API, and Last.fm API for those platforms. For TikTok and Rumble, we collect publicly available profile statistics from their public pages. We never access private account information.',
+        a: 'All of our data is publicly available information. We only show statistics that anyone can already see on each platform, and we never access private account information.',
       },
       {
         q: 'Why does my favorite creator not show up?',
@@ -64,11 +64,11 @@ const faqs = [
       },
       {
         q: 'What does Kick show for follower counts?',
-        a: "Kick's public API does not expose free follower counts. The number shown on Kick profiles is the paid subscriber count, not total followers. This is a Kick API limitation.",
+        a: 'On Kick, the publicly available number is the paid subscriber count rather than total free followers, so that is the figure we show.',
       },
       {
         q: 'What are Hours Watched on Twitch and Kick?',
-        a: "Hours Watched is the standard metric for streaming platforms. It's calculated from live viewership data collected every few minutes during streams, multiplied by stream duration. It shows total audience engagement better than follower counts alone.",
+        a: 'Hours Watched is the standard metric for streaming platforms. It reflects total audience engagement over time and shows reach better than follower counts alone.',
       },
       {
         q: 'What does Bluesky track?',
@@ -76,19 +76,19 @@ const faqs = [
       },
       {
         q: 'What does Mastodon track?',
-        a: 'We track follower count and post count for Mastodon accounts across the federation. Mastodon is decentralized, so handles include the instance (e.g. user@mastodon.social). We support the major instances and federate through mastodon.social for everything else. Mastodon has no profile-level view counts.',
+        a: 'We track follower count and post count for Mastodon accounts. Mastodon is decentralized, so handles include the instance (for example, user@mastodon.social). It has no profile-level view counts.',
       },
       {
         q: 'What does Rumble track?',
-        a: 'We track follower count and video count for Rumble channels. Rumble has no public API, so we scrape the public channel pages at a polite rate (~1 request per second). We support both /c/ channel pages and /user/ accounts. Per-video view totals are not aggregated at the channel level so we do not track total views (yet).',
+        a: 'We track follower count and video count for Rumble channels from publicly available information. Rumble does not make a channel-level total view count public, so we do not show total views.',
       },
       {
         q: 'What does Substack track?',
-        a: 'We track subscriber reach for Substack newsletters. Substack does not publish exact subscriber numbers, so we use the order-of-magnitude band it shows on its category leaderboards (1K, 10K, 100K, 1M). Because those bands tie heavily, our Substack rankings are ordered by each publication\'s position across the category leaderboards, not by the band alone. The displayed number is the band floor.',
+        a: 'We track subscriber reach for Substack newsletters. Substack makes subscriber counts public as approximate ranges rather than exact numbers, so the figure shown is an approximate minimum.',
       },
       {
         q: 'What does Music track?',
-        a: 'The Music platform is powered by Last.fm data. We track monthly listeners (how many unique listeners an artist had in the last 30 days) and total play count (cumulative scrobbles across all Last.fm users). Artist genre tags are also shown. Last.fm deprecated artist profile images in 2019, so we show a fallback icon instead.',
+        a: 'The Music section tracks publicly available artist statistics: monthly listeners (unique listeners in the last 30 days), total play count, and genre tags.',
       },
     ],
   },

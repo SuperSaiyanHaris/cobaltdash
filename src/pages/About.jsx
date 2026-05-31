@@ -25,7 +25,7 @@ export default function About() {
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">What We Do</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
-              ShinyPull tracks public statistics for content creators and music artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (via Last.fm).
+              ShinyPull tracks publicly available statistics for content creators and music artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music.
               We collect stats every day and store them as historical snapshots, so you can see exactly how channels and artists have grown over time.
             </p>
             <p className="text-neutral-700 mb-4 leading-relaxed">
@@ -83,9 +83,8 @@ export default function About() {
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Our Data</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
-              All data shown on ShinyPull is publicly available. We collect stats using official platform APIs where
-              they exist, and publicly available profile data for platforms that don't offer one. We never access
-              private account information.
+              All data shown on ShinyPull is publicly available information. We only show statistics that anyone can
+              already see on each platform, and we never access private account information.
             </p>
             <p className="text-neutral-700 leading-relaxed">
               Want to know exactly how collection works for each platform?{' '}
