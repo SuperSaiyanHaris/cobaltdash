@@ -417,6 +417,31 @@ async function buildSubstackRanking() {
   return out;
 }
 
+// Latest published post for a Substack publication via its public archive API
+// (server-side only — the browser is CORS-blocked). Reactions are stored in
+// the shared latest_post_views column since Substack has no view metric.
+async function fetchSubstackLatestPost(slug) {
+  try {
+    const res = await fetch(`https://${slug}.substack.com/api/v1/archive?sort=new&limit=1&offset=0`, {
+      headers: SUBSTACK_HEADERS, signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return null;
+    const arr = await res.json();
+    const post = Array.isArray(arr) ? arr[0] : null;
+    if (!post) return null;
+    const reactions = post.reaction_count
+      || (post.reactions ? Object.values(post.reactions).reduce((a, b) => a + (b || 0), 0) : 0);
+    return {
+      title: (post.title || post.social_title || '').replace(/\s+/g, ' ').trim().substring(0, 500) || null,
+      url: post.canonical_url || null,
+      publishedAt: post.post_date || null,
+      reactions,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ========== KICK API HELPERS ==========
 let kickAccessToken = null;
 
@@ -857,6 +882,7 @@ async function collectDailyStats() {
     try {
       const ranking = await buildSubstackRanking();
       console.log(`   Leaderboard returned ${ranking.size} ranked publications`);
+      let sbLatest = 0;
       for (const creator of substackCreators) {
         const entry = ranking.get(String(creator.platform_id));
         if (entry && entry.subscribers > 0) {
@@ -868,24 +894,41 @@ async function collectDailyStats() {
             total_views: null,
             total_posts: null,
           });
-          creatorUpdates.push({
+          // Fetch the latest post (server-side; browser is CORS-blocked).
+          // Only for the top-ranked pubs — Substack throttles sustained archive
+          // requests, and these are the publications users actually visit.
+          // Reactions live in latest_post_views (Substack has no view metric).
+          let latest = null;
+          if (entry.globalRank <= 300) {
+            latest = await fetchSubstackLatestPost(creator.username);
+            if (!latest) { // one retry after a short pause for transient throttles
+              await new Promise((r) => setTimeout(r, 600));
+              latest = await fetchSubstackLatestPost(creator.username);
+            }
+            if (latest) sbLatest++;
+            await new Promise((r) => setTimeout(r, 250)); // pace the per-pub archive fetch
+          }
+          const upd = {
             id: creator.id,
             leaderboard_rank: entry.globalRank,
-            banner_image: null,
-            verified: false,
-            latest_post_at: null,
-            latest_post_title: null,
-            latest_post_url: null,
-            latest_post_thumbnail: null,
-            latest_post_views: null,
-          });
+          };
+          // Only write latest_post_* on a SUCCESSFUL fetch. A failed/throttled
+          // fetch leaves the last-good values intact (no null clobber), so
+          // coverage of top pubs accumulates toward 100% across daily runs.
+          if (latest) {
+            upd.latest_post_at = latest.publishedAt;
+            upd.latest_post_title = latest.title;
+            upd.latest_post_url = latest.url;
+            upd.latest_post_views = latest.reactions ?? null;
+          }
+          creatorUpdates.push(upd);
           successCount++;
         } else {
           // Dropped off the leaderboard — keep last-good, don't write 0.
           errorCount++;
         }
       }
-      console.log(`   ✅ Matched ${successCount > 0 ? 'and refreshed tracked publications' : '0'}`);
+      console.log(`   ✅ Refreshed tracked publications (${sbLatest} with latest post)`);
     } catch (error) {
       console.error(`   ❌ Substack leaderboard sweep failed: ${error.message}`);
       errorCount += substackCreators.length;

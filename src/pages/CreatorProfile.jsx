@@ -14,7 +14,7 @@ import { getChannelByUsername as getKickChannel, getLiveStreams as getKickLiveSt
 import { getBlueskyProfile } from '../services/blueskyService';
 import { getMastodonProfile, getMastodonLatestStatus } from '../services/mastodonService';
 import { getRumbleChannel } from '../services/rumbleService';
-import { getSubstackPublication, getSubstackLatestPost, oomLabel } from '../services/substackService';
+import { getSubstackPublication, oomLabel } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
@@ -324,13 +324,16 @@ export default function CreatorProfile() {
             followers: null,
             totalPosts: null,
             totalViews: null,
+            // Latest post is collected server-side (Substack's API is
+            // CORS-blocked from the browser). Reactions live in
+            // latest_post_views since Substack has no view metric.
+            latestPost: dbCreator.latest_post_at ? {
+              publishedAt: dbCreator.latest_post_at,
+              title: dbCreator.latest_post_title,
+              url: dbCreator.latest_post_url,
+              reactions: dbCreator.latest_post_views,
+            } : null,
           };
-          // Enrich with the latest published post (title, date, engagement).
-          // Non-blocking — the page renders fine without it.
-          try {
-            const latest = await getSubstackLatestPost(dbCreator.username);
-            if (latest) channelData.latestPost = latest;
-          } catch { /* swallow */ }
         } else {
           channelData = await getSubstackPublication(username);
         }
