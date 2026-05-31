@@ -568,6 +568,15 @@ function PlatformRankings({ urlPlatform }) {
   };
 
   const followerLabel = selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Followers' : selectedPlatform === 'music' ? 'Listeners' : selectedPlatform === 'kick' ? 'Paid Subs' : 'Subscribers';
+  // Platforms whose APIs expose a profile-level view/play count. Everything
+  // else hides the Views column entirely (no empty "0" column). YouTube +
+  // TikTok track views/likes; Music tracks total plays.
+  const platformHasViews = selectedPlatform === 'youtube' || selectedPlatform === 'tiktok' || selectedPlatform === 'music';
+  // No-views platforms give the Creator column an extra span so the row fills
+  // the grid evenly instead of leaving a gap where Views would be. Full literal
+  // class strings (not interpolated) so Tailwind's JIT scanner emits them.
+  const creatorColSpanHeader = platformHasViews ? 'col-span-4' : 'col-span-5';
+  const creatorColSpanRow = platformHasViews ? 'md:col-span-4' : 'md:col-span-5';
   const currentPlatform = platforms.find(p => p.id === selectedPlatform);
   const seoData = getSeoData(currentPlatform, selectedRankType, topCount);
   const listSchema = createRankingListSchema(rankings, currentPlatform, topCount);
@@ -685,7 +694,7 @@ function PlatformRankings({ urlPlatform }) {
             {/* Sticky Table Header */}
             <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-neutral-200 text-sm font-semibold text-neutral-700 uppercase tracking-wider">
               <div className="col-span-1">Rank</div>
-              <div className={selectedPlatform === 'kick' || selectedPlatform === 'bluesky' ? 'col-span-5' : 'col-span-4'}>Creator</div>
+              <div className={creatorColSpanHeader}>Creator</div>
               <button
                 onClick={() => handleSort('subscribers')}
                 className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
@@ -703,7 +712,7 @@ function PlatformRankings({ urlPlatform }) {
                   <SortIcon column="views" />
                 </button>
               )}
-              {selectedPlatform !== 'kick' && selectedPlatform !== 'tiktok' && selectedPlatform !== 'bluesky' && selectedPlatform !== 'mastodon' && (
+              {platformHasViews && (
                 <button
                   onClick={() => handleSort('views')}
                   className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
@@ -805,7 +814,7 @@ function PlatformRankings({ urlPlatform }) {
                     </div>
 
                     {/* Creator info OR ghost call-to-action */}
-                    <div className={`col-span-10 flex items-center gap-3 min-w-0 ${selectedPlatform === 'kick' || selectedPlatform === 'bluesky' ? 'md:col-span-5' : 'md:col-span-4'}`}>
+                    <div className={`col-span-10 flex items-center gap-3 min-w-0 ${creatorColSpanRow}`}>
                       {isGhost ? (
                         <>
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-base font-extrabold flex-shrink-0 shadow-md shadow-amber-500/20">
@@ -816,7 +825,7 @@ function PlatformRankings({ urlPlatform }) {
                               Your Creator Here
                             </p>
                             <p className="text-[11px] text-amber-700 font-semibold uppercase tracking-wider">
-                              {isPremium ? 'Premium slot available' : 'Basic slot available'}
+                              {isPremium ? 'Premium slot' : 'Basic slot'} available · {creator.slotPrice}
                             </p>
                           </div>
                         </>
@@ -832,19 +841,12 @@ function PlatformRankings({ urlPlatform }) {
                       )}
                     </div>
 
-                    {/* Empty stat columns to match layout — for ghosts, the last
-                        column shows the price + CTA chevron */}
+                    {/* Empty stat columns to match the organic-row layout, then a
+                        Claim CTA in the trailing column. Views column only when
+                        the platform actually has a Views column. */}
                     <div className="hidden md:block col-span-2" />
                     <div className="hidden md:block col-span-2" />
-                    {selectedPlatform !== 'kick' && selectedPlatform !== 'bluesky' && (
-                      <div className="hidden md:flex col-span-2 items-center justify-end">
-                        {isGhost && (
-                          <span className="text-xs font-bold text-amber-700 tabular-nums">
-                            {creator.slotPrice}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    {platformHasViews && <div className="hidden md:block col-span-2" />}
                     <div className="hidden md:flex col-span-1 items-center justify-end">
                       {isGhost && (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
@@ -876,7 +878,7 @@ function PlatformRankings({ urlPlatform }) {
                   </div>
 
                   {/* Creator Info */}
-                  <div className={`col-span-10 flex items-center gap-3 min-w-0 ${selectedPlatform === 'kick' || selectedPlatform === 'bluesky' ? 'md:col-span-5' : 'md:col-span-4'}`}>
+                  <div className={`col-span-10 flex items-center gap-3 min-w-0 ${creatorColSpanRow}`}>
                     <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" />
                     <div className="min-w-0">
                       <p className="font-semibold text-neutral-900 truncate group-hover:text-indigo-400 transition-colors">
@@ -895,13 +897,8 @@ function PlatformRankings({ urlPlatform }) {
                     <Sparkline data={sparklines[creator.id] || []} width={88} height={28} />
                   </div>
 
-                  {/* Views / Likes (platform-dependent) */}
-                  {selectedPlatform === 'tiktok' && (
-                    <div className="hidden md:block col-span-2 text-right">
-                      <span className="text-neutral-700 tabular-nums">{formatNumber(creator.totalViews)}</span>
-                    </div>
-                  )}
-                  {selectedPlatform !== 'kick' && selectedPlatform !== 'tiktok' && selectedPlatform !== 'bluesky' && selectedPlatform !== 'mastodon' && (
+                  {/* Views / Likes / Plays — only platforms that expose them */}
+                  {platformHasViews && (
                     <div className="hidden md:block col-span-2 text-right">
                       <span className="text-neutral-700 tabular-nums">{formatNumber(creator.totalViews)}</span>
                     </div>
@@ -1038,6 +1035,42 @@ function PlatformRankings({ urlPlatform }) {
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">What do the listener counts mean?</h3>
                       <p>Monthly listeners count the number of unique people who played an artist's music in the last 30 days. Total plays count every stream ever recorded. Both metrics come from Last.fm's global tracking data.</p>
+                    </div>
+                  </>
+                )}
+                {selectedPlatform === 'mastodon' && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">Who has the most Mastodon followers?</h3>
+                      <p>{rankings[0]?.display_name} leads with {formatNumber(rankings[0]?.subscribers)} followers. We track major accounts across the fediverse with daily updates via the public ActivityPub API.</p>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">How do Mastodon handles work?</h3>
+                      <p>Mastodon is decentralized, so every account belongs to an instance and the handle includes it (for example, user@mastodon.social). We support the major instances and federate through mastodon.social for everything else.</p>
+                    </div>
+                  </>
+                )}
+                {selectedPlatform === 'rumble' && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">Who has the most Rumble followers?</h3>
+                      <p>{rankings[0]?.display_name} leads the Rumble rankings with {formatNumber(rankings[0]?.subscribers)} followers. We track follower counts and video output for major channels, updated daily.</p>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">How are Rumble rankings collected?</h3>
+                      <p>Rumble has no public API, so we read the public channel pages at a polite rate. We support both /c/ channels and /user/ accounts and track follower count plus video count.</p>
+                    </div>
+                  </>
+                )}
+                {selectedPlatform === 'substack' && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">What are the top Substack newsletters?</h3>
+                      <p>{rankings[0]?.display_name} sits at the top of our Substack rankings. We track the biggest newsletters across every Substack category and update daily.</p>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">How is the Substack ranking order decided?</h3>
+                      <p>Substack does not publish exact subscriber counts, only an order-of-magnitude band (1K, 10K, 100K, 1M). Because those bands tie heavily, we order newsletters by their position across Substack's own category leaderboards, which are precisely ranked. The number shown is the band floor, not an exact count.</p>
                     </div>
                   </>
                 )}

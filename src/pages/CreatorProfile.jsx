@@ -14,7 +14,7 @@ import { getChannelByUsername as getKickChannel, getLiveStreams as getKickLiveSt
 import { getBlueskyProfile } from '../services/blueskyService';
 import { getMastodonProfile, getMastodonLatestStatus } from '../services/mastodonService';
 import { getRumbleChannel } from '../services/rumbleService';
-import { getSubstackPublication } from '../services/substackService';
+import { getSubstackPublication, getSubstackLatestPost, oomLabel } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
@@ -325,6 +325,12 @@ export default function CreatorProfile() {
             totalPosts: null,
             totalViews: null,
           };
+          // Enrich with the latest published post (title, date, engagement).
+          // Non-blocking — the page renders fine without it.
+          try {
+            const latest = await getSubstackLatestPost(dbCreator.username);
+            if (latest) channelData.latestPost = latest;
+          } catch { /* swallow */ }
         } else {
           channelData = await getSubstackPublication(username);
         }
@@ -1369,7 +1375,7 @@ export default function CreatorProfile() {
               <StatCard
                 icon={Users}
                 label={platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subscribers' : platform === 'music' ? 'Monthly Listeners' : 'Subscribers'}
-                value={formatNumber(creator.subscribers || creator.followers)}
+                value={platform === 'substack' ? (oomLabel(creator.subscribers || creator.followers) || formatNumber(creator.subscribers || creator.followers)) : formatNumber(creator.subscribers || creator.followers)}
                 sublabel={creator.hiddenSubscribers ? '(hidden)' : (platform === 'youtube' && (creator.subscribers || 0) >= 1000) ? '(rounded by YouTube)' : creator.broadcasterType ? `(${creator.broadcasterType})` : null}
               />
 
@@ -1490,8 +1496,8 @@ export default function CreatorProfile() {
               )}
             </div>
 
-            {/* Latest Post Card — Rumble + Mastodon */}
-            {(platform === 'rumble' || platform === 'mastodon') && creator.latestPost?.publishedAt && (
+            {/* Latest Post Card — Rumble, Mastodon, Substack */}
+            {(platform === 'rumble' || platform === 'mastodon' || platform === 'substack') && creator.latestPost?.publishedAt && (
               <a
                 href={creator.latestPost.url || creator.profileUrl}
                 target="_blank"
@@ -1499,7 +1505,9 @@ export default function CreatorProfile() {
                 className={`group block mb-6 bg-white border rounded-2xl p-4 sm:p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
                   platform === 'rumble'
                     ? 'border-lime-200 hover:border-lime-400 hover:shadow-lime-100'
-                    : 'border-violet-200 hover:border-violet-400 hover:shadow-violet-100'
+                    : platform === 'substack'
+                      ? 'border-orange-200 hover:border-orange-400 hover:shadow-orange-100'
+                      : 'border-violet-200 hover:border-violet-400 hover:shadow-violet-100'
                 }`}
               >
                 <div className="flex gap-4">
@@ -1515,7 +1523,7 @@ export default function CreatorProfile() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                      platform === 'rumble' ? 'text-lime-700' : 'text-violet-700'
+                      platform === 'rumble' ? 'text-lime-700' : platform === 'substack' ? 'text-orange-700' : 'text-violet-700'
                     }`}>
                       Latest {platform === 'rumble' ? 'Video' : 'Post'}
                     </div>
@@ -1533,6 +1541,18 @@ export default function CreatorProfile() {
                         <span className="inline-flex items-center gap-1">
                           <Eye className="w-3.5 h-3.5" />
                           {formatNumber(creator.latestPost.views)} views
+                        </span>
+                      )}
+                      {creator.latestPost.reactions != null && creator.latestPost.reactions > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                          {formatNumber(creator.latestPost.reactions)}
+                        </span>
+                      )}
+                      {creator.latestPost.comments != null && creator.latestPost.comments > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          {formatNumber(creator.latestPost.comments)}
                         </span>
                       )}
                     </div>

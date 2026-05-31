@@ -123,6 +123,39 @@ export async function searchSubstack() {
 }
 
 /**
+ * Fetch the latest published post for a Substack publication via its public
+ * archive API (`{slug}.substack.com/api/v1/archive`). Returns the post's
+ * title, canonical URL, publish date, and engagement counts. Used to render
+ * the "Latest post" card on the profile (same shape as Rumble/Mastodon).
+ */
+export async function getSubstackLatestPost(slug) {
+  if (!slug) return null;
+  try {
+    const res = await fetch(`https://${slug}.substack.com/api/v1/archive?sort=new&limit=1&offset=0`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return null;
+    const arr = await res.json();
+    const post = Array.isArray(arr) ? arr[0] : null;
+    if (!post) return null;
+    // reactions is a map like {"❤":277}; sum the values for a single count.
+    const reactionCount = post.reaction_count
+      || (post.reactions ? Object.values(post.reactions).reduce((a, b) => a + (b || 0), 0) : 0);
+    return {
+      title: post.title || post.social_title || null,
+      url: post.canonical_url || null,
+      publishedAt: post.post_date || null,
+      reactions: reactionCount,
+      comments: post.comment_count || 0,
+      thumbnail: post.cover_image || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Lazy-hydration fallback for a publication not yet in our DB. Best-effort
  * identity only (name + logo via the subdomain homepage API). The subscriber
  * bucket isn't available here — it only comes from the category leaderboard —
