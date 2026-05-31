@@ -13,6 +13,7 @@ import TikTokIcon from './TikTokIcon';
 import BlueskyIcon from './BlueskyIcon';
 import MastodonIcon from './MastodonIcon';
 import RumbleIcon from './RumbleIcon';
+import SubstackIcon from './SubstackIcon';
 import { getCategoryTheme } from '../lib/blogTheme';
 
 // Map category iconName -> lucide component
@@ -29,6 +30,7 @@ const PLATFORM_META = {
   bluesky: { Icon: BlueskyIcon,color: 'text-sky-600',    bg: 'bg-sky-50',    border: 'border-sky-200'    },
   mastodon:{ Icon: MastodonIcon, color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
   rumble:  { Icon: RumbleIcon,   color: 'text-lime-700',   bg: 'bg-lime-50',   border: 'border-lime-200'   },
+  substack:{ Icon: SubstackIcon, color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
 };
 
 function CreatorMentions({ creators }) {

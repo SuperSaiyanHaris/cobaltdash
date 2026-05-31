@@ -5,6 +5,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 
 const platforms = [
@@ -122,6 +123,23 @@ const platforms = [
     ],
   },
   {
+    icon: SubstackIcon,
+    name: 'Substack',
+    color: 'text-orange-600',
+    borderColor: 'border-orange-700',
+    bgColor: 'bg-orange-950/20',
+    iconBg: 'from-orange-500 to-amber-600',
+    shadow: 'shadow-orange-500/20',
+    metrics: ['Subscriber reach', 'Category leaderboard rank'],
+    source: 'Substack category leaderboards (public)',
+    frequency: '3x daily',
+    notes: [
+      'Substack does not publish exact subscriber counts. The public category leaderboards expose an order-of-magnitude band instead (1K, 10K, 100K, 1M).',
+      'Because those bands tie heavily, we rank Substack newsletters by their position across the category leaderboards rather than by the band alone.',
+      'The number shown on a publication is the band floor, not an exact count.',
+    ],
+  },
+  {
     icon: Music,
     name: 'Music',
     color: 'text-amber-400',
@@ -175,7 +193,7 @@ export default function Methodology() {
     <>
       <SEO
         title="Data Methodology"
-        description="Learn how ShinyPull collects and maintains creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music (Last.fm)."
+        description="Learn how ShinyPull collects and maintains creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (Last.fm)."
       />
 
       <div className="min-h-screen bg-[#fafafa]">

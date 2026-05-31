@@ -14,6 +14,8 @@ import { getChannelByUsername as getKickChannel, getLiveStreams as getKickLiveSt
 import { getBlueskyProfile } from '../services/blueskyService';
 import { getMastodonProfile, getMastodonLatestStatus } from '../services/mastodonService';
 import { getRumbleChannel } from '../services/rumbleService';
+import { getSubstackPublication } from '../services/substackService';
+import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
 import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched } from '../services/creatorService';
@@ -39,6 +41,7 @@ const platformIcons = {
   music: Music,
   mastodon: MastodonIcon,
   rumble: RumbleIcon,
+  substack: SubstackIcon,
 };
 
 const platformColors = {
@@ -50,6 +53,7 @@ const platformColors = {
   music:    { bg: 'bg-amber-600',  light: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200' },
   mastodon: { bg: 'bg-violet-600', light: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
   rumble:   { bg: 'bg-lime-600',   light: 'bg-lime-50',   text: 'text-lime-700',   border: 'border-lime-200'   },
+  substack: { bg: 'bg-orange-600', light: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
 };
 
 const platformUrls = {
@@ -74,6 +78,9 @@ const platformUrls = {
     }
     return `https://rumble.com/c/${username}`;
   },
+  // Substack username is the subdomain slug; the subdomain URL always resolves
+  // (redirects to a custom domain if the publication uses one).
+  substack: (username) => `https://${username}.substack.com`,
 };
 
 const platformDisplayNames = {
@@ -85,6 +92,7 @@ const platformDisplayNames = {
   music: 'Music',
   mastodon: 'Mastodon',
   rumble: 'Rumble',
+  substack: 'Substack',
 };
 
 export default function CreatorProfile() {
@@ -295,6 +303,30 @@ export default function CreatorProfile() {
           };
         } else {
           channelData = await getRumbleChannel(username);
+        }
+      } else if (platform === 'substack') {
+        // Substack: DB-first. The subscriber value is an order-of-magnitude
+        // bucket from the category leaderboard, kept fresh by daily collection.
+        // Lazy fallback hits the publication's homepage API for identity only.
+        const dbCreator = await getCreatorByUsername('substack', username);
+        if (dbCreator) {
+          channelData = {
+            platform: 'substack',
+            platformId: dbCreator.platform_id,
+            username: dbCreator.username,
+            displayName: dbCreator.display_name,
+            profileImage: dbCreator.profile_image,
+            description: dbCreator.description,
+            country: dbCreator.country,
+            category: dbCreator.category,
+            // subscribers/followers filled from latest creator_stats row below.
+            subscribers: null,
+            followers: null,
+            totalPosts: null,
+            totalViews: null,
+          };
+        } else {
+          channelData = await getSubstackPublication(username);
         }
       } else if (platform === 'music') {
         // Music: username is a slug, platform_id is mbid or slug
@@ -698,6 +730,13 @@ export default function CreatorProfile() {
         s.total_posts ?? '',
         fmtDelta(s.postsChange),
       ]);
+    } else if (platform === 'substack') {
+      headers = ['Date', 'Subscribers', 'Subscriber Change'];
+      rows = withChanges.map(s => [
+        fmtDate(s.recorded_at),
+        s.subscribers ?? s.followers ?? '',
+        fmtDelta(s.subsChange),
+      ]);
     } else {
       headers = ['Date', 'Followers', 'Follower Change'];
       rows = withChanges.map(s => [
@@ -883,6 +922,9 @@ export default function CreatorProfile() {
       const videos = creator.totalPosts ? ` and ${formatNumber(creator.totalPosts)} videos` : '';
       return `${name} has ${count} Rumble followers${videos}. Track follower growth and video output on ShinyPull.`;
     }
+    if (platform === 'substack') {
+      return `${name} has ${count} subscribers on Substack. See where this newsletter ranks across every Substack category on ShinyPull.`;
+    }
     return `Track ${name}'s ${platform} statistics including followers, growth, and analytics on ShinyPull.`;
   })();
 
@@ -950,6 +992,7 @@ export default function CreatorProfile() {
               platform === 'bluesky' ? 'from-sky-900/40 via-cyan-900/20 to-transparent' :
               platform === 'mastodon' ? 'from-violet-900/40 via-purple-900/20 to-transparent' :
               platform === 'rumble' ? 'from-lime-900/40 via-green-900/20 to-transparent' :
+              platform === 'substack' ? 'from-orange-900/40 via-amber-900/20 to-transparent' :
               'from-amber-900/40 via-orange-900/20 to-transparent'
             }`} />
           )}
@@ -1318,6 +1361,7 @@ export default function CreatorProfile() {
               : platform === 'bluesky' ? 'grid-cols-2'
               : platform === 'mastodon' ? 'grid-cols-2'
               : platform === 'rumble' ? 'grid-cols-2'
+              : platform === 'substack' ? 'grid-cols-1 max-w-md'
               : platform === 'music' ? (creator.description ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2')
               : 'grid-cols-2 lg:grid-cols-4'
             }`}>
@@ -1531,8 +1575,10 @@ export default function CreatorProfile() {
               </div>
             )}
 
-            {/* Growth Rate Cards - Other platforms (Mastodon uses the Twitch/Kick/Bluesky branch above) */}
-            {platform !== 'twitch' && platform !== 'kick' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && metrics && metrics.growthRates && statsHistory.length >= 7 && (
+            {/* Growth Rate Cards - Other platforms (Mastodon uses the Twitch/Kick/Bluesky branch above).
+                Substack is excluded entirely: its subscriber value is an order-of-
+                magnitude bucket, so a growth percentage would be misleading. */}
+            {platform !== 'twitch' && platform !== 'kick' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && platform !== 'substack' && metrics && metrics.growthRates && statsHistory.length >= 7 && (
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <GrowthRateCard
                   label="7-Day Growth"
@@ -1548,7 +1594,7 @@ export default function CreatorProfile() {
             )}
 
             {/* Growth Summary - Non Twitch/Kick/Bluesky/Mastodon platforms (those use the SummaryCard rendered above) */}
-            {platform !== 'twitch' && platform !== 'kick' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && (creator.subscribers || creator.followers) && (
+            {platform !== 'twitch' && platform !== 'kick' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && platform !== 'substack' && (creator.subscribers || creator.followers) && (
               <div className={`grid gap-4 mb-6 ${
                 platform === 'youtube' ? 'grid-cols-2 lg:grid-cols-4'
                 : platform === 'tiktok' || platform === 'music' ? 'grid-cols-2'
@@ -1698,7 +1744,7 @@ export default function CreatorProfile() {
             {/* Live Counter Link - Hidden for TikTok, Bluesky, and Mastodon.
                 These platforms don't have a meaningful "ticking up in real time" experience —
                 follower counts change slowly. The counter exists for YT/Twitch/Kick where numbers move every second. */}
-            {platform !== 'tiktok' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && (
+            {platform !== 'tiktok' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && platform !== 'substack' && (
               <Link
                 to={`/live/${platform}/${creator.username}`}
                 className="flex items-center justify-between bg-indigo-600 rounded-2xl p-4 sm:p-5 mb-6 text-white hover:bg-indigo-500 transition-all group"
@@ -1877,7 +1923,7 @@ export default function CreatorProfile() {
                           <td className="px-6 py-4 text-right">
                             <div className="flex flex-col items-end">
                               <span className="font-medium text-neutral-900">{formatNumber(stat.subscribers || stat.followers)}</span>
-                              {(platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0 && (
+                              {(platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'substack' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0 && (
                                 <span className={`text-xs ${stat.subsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                   {stat.subsChange > 0 ? '+' : ''}{formatNumber(stat.subsChange)}
                                 </span>
@@ -2520,6 +2566,14 @@ function GrowthChart({ data, range, onRangeChange, metric, onMetricChange, platf
       label: 'Play Growth',
       dataKey: 'views',
       color: '#fb923c'
+    });
+  } else if (platform === 'substack') {
+    // Substack: only the subscriber-reach bucket over time (no views/posts).
+    metrics.push({
+      value: 'subscribers',
+      label: 'Subscriber Reach',
+      dataKey: 'subscribers',
+      color: '#ea580c'
     });
   } else {
     // Other platforms

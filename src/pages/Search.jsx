@@ -6,6 +6,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import { CreatorRowSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
 import { searchChannels as searchYouTube } from '../services/youtubeService';
@@ -32,6 +33,7 @@ const platformIcons = {
   music: Music,
   mastodon: MastodonIcon,
   rumble: RumbleIcon,
+  substack: SubstackIcon,
 };
 
 const platformColors = {
@@ -43,6 +45,7 @@ const platformColors = {
   music: { bg: 'bg-amber-600', light: 'bg-amber-50', text: 'text-amber-400' },
   mastodon: { bg: 'bg-violet-600', light: 'bg-violet-50', text: 'text-violet-400' },
   rumble: { bg: 'bg-lime-600', light: 'bg-lime-50', text: 'text-lime-400' },
+  substack: { bg: 'bg-orange-600', light: 'bg-orange-50', text: 'text-orange-400' },
   instagram: { bg: 'bg-pink-600', light: 'bg-pink-50', text: 'text-pink-400' },
 };
 
@@ -55,6 +58,7 @@ const platforms = [
   { id: 'music', name: 'Music', icon: Music, available: true },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, available: true },
   { id: 'rumble', name: 'Rumble', icon: RumbleIcon, available: true },
+  { id: 'substack', name: 'Substack', icon: SubstackIcon, available: true },
 ];
 
 // Relevance + popularity score for sorting search results.
@@ -249,8 +253,8 @@ export default function Search() {
         if (channels.length > 0) {
           void persistSearchResults(channels);
         }
-      } else if (platform === 'mastodon' || platform === 'rumble') {
-        // Both are DB-first (live Mastodon federated search requires auth,
+      } else if (platform === 'mastodon' || platform === 'rumble' || platform === 'substack') {
+        // All DB-first (live Mastodon federated search requires auth,
         // Rumble is Cloudflare-blocked from our IPs). The fuzzy search RPC
         // returns rows from the `creators` table only — it doesn't include
         // follower counts (those live in `creator_stats`). Hydrate each

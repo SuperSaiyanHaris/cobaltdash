@@ -10,7 +10,7 @@ const faqs = [
     questions: [
       {
         q: 'What is ShinyPull?',
-        a: 'ShinyPull tracks public statistics for content creators and artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music (via Last.fm). We collect subscriber counts, follower counts, listener counts, view totals, and more every day, then present the data as charts and historical trends. Think of it as a stats tracker for the creator economy.',
+        a: 'ShinyPull tracks public statistics for content creators and artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (via Last.fm). We collect subscriber counts, follower counts, listener counts, view totals, and more every day, then present the data as charts and historical trends. Think of it as a stats tracker for the creator economy.',
       },
       {
         q: 'Is ShinyPull free?',
@@ -35,7 +35,7 @@ const faqs = [
     questions: [
       {
         q: 'How often is data updated?',
-        a: 'Creator stats are collected multiple times per day. YouTube, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music (Last.fm) run on an automated schedule three times daily. TikTok profiles refresh four times daily. Stream monitoring for Twitch and Kick runs every three hours to track live viewership.',
+        a: 'Creator stats are collected multiple times per day. YouTube, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (Last.fm) run on an automated schedule three times daily. TikTok profiles refresh four times daily. Stream monitoring for Twitch and Kick runs every three hours to track live viewership.',
       },
       {
         q: 'Is the data accurate?',
@@ -43,7 +43,7 @@ const faqs = [
       },
       {
         q: 'Where does the data come from?',
-        a: 'All data is publicly available. We use the YouTube Data API, Twitch Helix API, Kick API, Bluesky AT Protocol API, Mastodon ActivityPub API, and Last.fm API for those platforms. For TikTok and Rumble, we collect publicly available profile statistics from their public pages. We never access private account information.',
+        a: 'All data is publicly available. We use the YouTube Data API, Twitch Helix API, Kick API, Bluesky AT Protocol API, Mastodon ActivityPub API, Substack category leaderboard API, and Last.fm API for those platforms. For TikTok and Rumble, we collect publicly available profile statistics from their public pages. We never access private account information.',
       },
       {
         q: 'Why does my favorite creator not show up?',
@@ -81,6 +81,10 @@ const faqs = [
       {
         q: 'What does Rumble track?',
         a: 'We track follower count and video count for Rumble channels. Rumble has no public API, so we scrape the public channel pages at a polite rate (~1 request per second). We support both /c/ channel pages and /user/ accounts. Per-video view totals are not aggregated at the channel level so we do not track total views (yet).',
+      },
+      {
+        q: 'What does Substack track?',
+        a: 'We track subscriber reach for Substack newsletters. Substack does not publish exact subscriber numbers, so we use the order-of-magnitude band it shows on its category leaderboards (1K, 10K, 100K, 1M). Because those bands tie heavily, our Substack rankings are ordered by each publication\'s position across the category leaderboards, not by the band alone. The displayed number is the band floor.',
       },
       {
         q: 'What does Music track?',

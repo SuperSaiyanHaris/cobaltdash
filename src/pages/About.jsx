@@ -7,7 +7,7 @@ export default function About() {
     <>
       <SEO
         title="About Us"
-        description="Learn about ShinyPull - the leading social media analytics platform for tracking YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music artist statistics."
+        description="Learn about ShinyPull - the leading social media analytics platform for tracking YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music artist statistics."
       />
 
       <div className="min-h-screen bg-[#fafafa]">
@@ -25,7 +25,7 @@ export default function About() {
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">What We Do</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
-              ShinyPull tracks public statistics for content creators and music artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music (via Last.fm).
+              ShinyPull tracks public statistics for content creators and music artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music (via Last.fm).
               We collect stats every day and store them as historical snapshots, so you can see exactly how channels and artists have grown over time.
             </p>
             <p className="text-neutral-700 mb-4 leading-relaxed">
@@ -54,7 +54,7 @@ export default function About() {
               { Icon: Users,      title: 'Live counts',      text: 'Subscriber and follower counts updated multiple times per day.', accent: 'red' },
               { Icon: TrendingUp, title: 'Growth charts',    text: 'Historical trends going back to when we first started tracking a creator.', accent: 'emerald' },
               { Icon: BarChart3,  title: 'Rankings',         text: 'Top creators by platform, updated daily with real numbers.', accent: 'amber' },
-              { Icon: Globe,      title: 'Cross-platform',   text: 'YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music all in one place.', accent: 'sky' },
+              { Icon: Globe,      title: 'Cross-platform',   text: 'YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music all in one place.', accent: 'sky' },
               { Icon: Database,   title: 'Stream tracking',  text: 'Hours watched, peak viewers, and stream history for Twitch and Kick.', accent: 'violet' },
               { Icon: RefreshCw,  title: 'Always current',   text: 'Automated collection runs around the clock. No stale data.', accent: 'indigo' },
             ].map((item) => {

@@ -10,6 +10,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -32,6 +33,7 @@ const platformIcons = {
   bluesky: BlueskyIcon,
   mastodon: MastodonIcon,
   rumble: RumbleIcon,
+  substack: SubstackIcon,
 };
 
 const platformColors = {
@@ -42,10 +44,11 @@ const platformColors = {
   bluesky:  { bg: 'bg-sky-500', light: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' },
   mastodon: { bg: 'bg-violet-600', light: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
   rumble:   { bg: 'bg-lime-600', light: 'bg-lime-50', text: 'text-lime-700', border: 'border-lime-200' },
+  substack: { bg: 'bg-orange-600', light: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
 };
 
 const PLATFORM_LABELS = {
-  youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', rumble: 'Rumble',
+  youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack',
 };
 
 const METRIC_LABEL = {
@@ -56,6 +59,7 @@ const METRIC_LABEL = {
   bluesky: 'followers',
   mastodon: 'followers',
   rumble: 'followers',
+  substack: 'subscribers',
 };
 
 export default function Dashboard() {
@@ -302,8 +306,8 @@ export default function Dashboard() {
       [],
     ];
 
-    const PLATFORM_ORDER = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble'];
-    const PLATFORM_LABELS_LOCAL = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', rumble: 'Rumble' };
+    const PLATFORM_ORDER = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble', 'substack'];
+    const PLATFORM_LABELS_LOCAL = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
 
     for (const platform of PLATFORM_ORDER) {
       const creators = followedCreators.filter(c => c.platform === platform);
@@ -421,6 +425,19 @@ export default function Dashboard() {
             `https://shinypull.com/rumble/${c.username}`,
           ]);
         }
+      } else if (platform === 'substack') {
+        lines.push(['Name', 'Publication', 'Subscribers', '1-Day Change', '7-Day Change', 'Profile URL']);
+        for (const c of creators) {
+          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
+          const fol = (s) => s?.subscribers ?? s?.followers ?? 0;
+          lines.push([
+            c.display_name || c.username, c.username,
+            fol(curr) || '',
+            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
+            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
+            `https://shinypull.com/substack/${c.username}`,
+          ]);
+        }
       }
 
       lines.push([]);
@@ -451,6 +468,7 @@ export default function Dashboard() {
     bluesky:  followedCreators.filter(c => c.platform === 'bluesky').length,
     mastodon: followedCreators.filter(c => c.platform === 'mastodon').length,
     rumble:   followedCreators.filter(c => c.platform === 'rumble').length,
+    substack: followedCreators.filter(c => c.platform === 'substack').length,
   };
 
   const filteredCreators = selectedPlatform === 'all'
@@ -669,7 +687,7 @@ export default function Dashboard() {
                         label="All"
                         count={followedCreators.length}
                       />
-                      {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble']).map(p => {
+                      {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble', 'substack']).map(p => {
                         if (!platformCounts[p]) return null;
                         const Icon = platformIcons[p];
                         return (
@@ -1028,6 +1046,7 @@ const CHIP_ACTIVE_STYLES = {
   bluesky: 'bg-sky-500 border-sky-500 text-white shadow-lg',
   mastodon: 'bg-violet-600 border-violet-600 text-white shadow-lg',
   rumble: 'bg-lime-600 border-lime-600 text-white shadow-lg',
+  substack: 'bg-orange-600 border-orange-600 text-white shadow-lg',
 };
 
 function FilterChip({ active, onClick, label, count, icon, live, platform }) {

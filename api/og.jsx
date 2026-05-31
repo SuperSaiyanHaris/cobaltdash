@@ -19,6 +19,7 @@ const PLATFORM_LABELS = {
   music:    'Music',
   mastodon: 'Mastodon',
   rumble:   'Rumble',
+  substack: 'Substack',
 };
 
 const PLATFORM_COLORS = {
@@ -30,6 +31,7 @@ const PLATFORM_COLORS = {
   music:    '#f59e0b',
   mastodon: '#7c3aed',
   rumble:   '#65a30d',
+  substack: '#ea580c',
 };
 
 function formatNumber(n) {

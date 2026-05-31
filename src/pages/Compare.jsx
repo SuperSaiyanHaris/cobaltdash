@@ -9,6 +9,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import { Music } from 'lucide-react';
 import { CompareCardSkeleton } from '../components/Skeleton';
 import { searchChannels as searchYouTube, getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
@@ -49,6 +50,7 @@ const platformConfig = {
   music: { icon: Music, color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
   mastodon: { icon: MastodonIcon, color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
   rumble: { icon: RumbleIcon, color: 'text-lime-700', bg: 'bg-lime-50', border: 'border-lime-200' },
+  substack: { icon: SubstackIcon, color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
 };
 
 export default function Compare() {
@@ -142,7 +144,7 @@ export default function Compare() {
                   ? await getArtistByMbid(dbCreator.platform_id)
                   : await getArtistByName(dbCreator.display_name || username);
               }
-            } else if (platform === 'mastodon' || platform === 'rumble') {
+            } else if (platform === 'mastodon' || platform === 'rumble' || platform === 'substack') {
               // DB-first hydration (same approach as TikTok). Live API for
               // Mastodon needs an authed Edge call and Rumble is Cloudflare-
               // blocked from Vercel IPs — the seeded DB is the source of truth.
@@ -858,12 +860,12 @@ export default function Compare() {
                       <ComparisonRow
                         label="Avg Views per Video"
                         icon={TrendingUp}
-                        tooltip="Not available for Twitch, Kick, Bluesky, Mastodon, Rumble, or Music. For TikTok, calculated as total likes divided by videos."
+                        tooltip="Not available for Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, or Music. For TikTok, calculated as total likes divided by videos."
                         values={filledCreators.map(c =>
-                          (c.platform === 'twitch' || c.platform === 'kick' || c.platform === 'bluesky' || c.platform === 'mastodon' || c.platform === 'rumble' || c.platform === 'music') ? '—' :
+                          (c.platform === 'twitch' || c.platform === 'kick' || c.platform === 'bluesky' || c.platform === 'mastodon' || c.platform === 'rumble' || c.platform === 'substack' || c.platform === 'music') ? '—' :
                           c.totalPosts > 0 ? formatNumber(Math.round(c.totalViews / c.totalPosts)) : '—'
                         )}
-                        highlight={filledCreators.every(c => c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'music') ?
+                        highlight={filledCreators.every(c => c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'substack' && c.platform !== 'music') ?
                           getWinner(filledCreators.map(c => c.totalPosts > 0 ? c.totalViews / c.totalPosts : 0)) : null}
                       />
                       {/* Growth Rates */}
@@ -1092,7 +1094,7 @@ function SearchableSlot({ onSelect, onRemove }) {
         results = await searchBluesky(searchQuery, 5);
       } else if (searchPlatform === 'music') {
         results = await searchMusic(searchQuery, 5);
-      } else if (searchPlatform === 'mastodon' || searchPlatform === 'rumble') {
+      } else if (searchPlatform === 'mastodon' || searchPlatform === 'rumble' || searchPlatform === 'substack') {
         // Same DB-hydration pattern as TikTok above
         const dbResults = await searchCreators(searchQuery, searchPlatform);
         const withStats = await Promise.all(
@@ -1157,6 +1159,7 @@ function SearchableSlot({ onSelect, onRemove }) {
           { id: 'music',    Icon: Music,        color: 'text-amber-700',  bg: 'bg-amber-50',  ring: 'ring-amber-700',  label: 'Music' },
           { id: 'mastodon', Icon: MastodonIcon, color: 'text-violet-700', bg: 'bg-violet-50', ring: 'ring-violet-700', label: 'Mastodon' },
           { id: 'rumble',   Icon: RumbleIcon,   color: 'text-lime-700',   bg: 'bg-lime-50',   ring: 'ring-lime-700',   label: 'Rumble' },
+          { id: 'substack', Icon: SubstackIcon, color: 'text-orange-700', bg: 'bg-orange-50', ring: 'ring-orange-700', label: 'Substack' },
         ].map(({ id, Icon, color, bg, ring, label }) => (
           <button
             key={id}
@@ -1366,8 +1369,8 @@ function MobileComparisonTable({ creators, growthData, getGrowthColor, formatEar
     {
       label: 'Avg/Video',
       tooltip: 'Not available for Twitch, Kick, Bluesky, Mastodon, or Rumble. For TikTok, calculated as total likes divided by videos.',
-      nums: creators.map(c => (c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.totalPosts > 0) ? Math.round(c.totalViews / c.totalPosts) : null),
-      display: creators.map(c => [(c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.totalPosts > 0) ? formatNumber(Math.round(c.totalViews / c.totalPosts)) : '—', null]),
+      nums: creators.map(c => (c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'substack' && c.totalPosts > 0) ? Math.round(c.totalViews / c.totalPosts) : null),
+      display: creators.map(c => [(c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'substack' && c.totalPosts > 0) ? formatNumber(Math.round(c.totalViews / c.totalPosts)) : '—', null]),
     },
     {
       label: '7-Day',
@@ -1491,7 +1494,7 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
   const metrics = [
     { label: 'Followers',    getValue: (c) => c.subscribers || c.followers || 0 },
     { label: 'Views',        getValue: (c) => (c.platform === 'bluesky') ? 0 : (c.totalViews || 0) },
-    { label: 'Avg/Video',    getValue: (c) => (c.platform !== 'twitch' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'music' && c.totalPosts > 0) ? c.totalViews / c.totalPosts : 0 },
+    { label: 'Avg/Video',    getValue: (c) => (c.platform !== 'twitch' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'substack' && c.platform !== 'music' && c.totalPosts > 0) ? c.totalViews / c.totalPosts : 0 },
     { label: '7-Day Growth', getValue: (c) => Math.max(0, growthData[c.platformId]?.growth7Day || 0) },
     { label: '30-Day Growth',getValue: (c) => Math.max(0, growthData[c.platformId]?.growth30Day || 0) },
   ];

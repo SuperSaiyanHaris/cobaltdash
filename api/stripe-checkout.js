@@ -26,7 +26,7 @@ const PRICE_IDS = {
   'featured-premium': process.env.STRIPE_FEATURED_PREMIUM_PRICE_ID,
 };
 
-const VALID_PLATFORMS = new Set(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble']);
+const VALID_PLATFORMS = new Set(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack']);
 const SAFE_ORIGINS = new Set(['https://shinypull.com', 'http://localhost:3000']);
 
 function isSafeReturnUrl(url) {

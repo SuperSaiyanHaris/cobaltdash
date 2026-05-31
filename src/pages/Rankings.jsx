@@ -6,6 +6,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import { Music } from 'lucide-react';
 import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
@@ -27,6 +28,7 @@ const platforms = [
   { id: 'music',   name: 'Music',   icon: Music,        color: 'bg-amber-600',  hoverColor: 'hover:bg-amber-500',  lightBg: 'bg-amber-50',   textColor: 'text-amber-700',  available: true },
   { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, color: 'bg-violet-600', hoverColor: 'hover:bg-violet-500', lightBg: 'bg-violet-50',  textColor: 'text-violet-700', available: true },
   { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   color: 'bg-lime-600',   hoverColor: 'hover:bg-lime-500',   lightBg: 'bg-lime-50',    textColor: 'text-lime-700',   available: true },
+  { id: 'substack',name: 'Substack',icon: SubstackIcon, color: 'bg-orange-600', hoverColor: 'hover:bg-orange-500', lightBg: 'bg-orange-50',  textColor: 'text-orange-700', available: true },
 ];
 
 const topCounts = [50, 100, 500];
@@ -54,6 +56,7 @@ function getSeoData(platform, rankType, topCount) {
     music: 'Music Artists',
     mastodon: 'Mastodon Accounts',
     rumble: 'Rumble Channels',
+    substack: 'Substack Newsletters',
   }[pid] || `${p} Creators`;
   const title = `${countLabel} ${rankType === 'growth' ? 'Fastest Growing ' : rankType === 'views' ? 'Most Viewed ' : ''}${platformNoun} (2026) - Live Rankings`;
 
@@ -66,6 +69,7 @@ function getSeoData(platform, rankType, topCount) {
     music: `${countLabel} most listened music artists ranked by monthly listeners and total plays. Updated daily. See who has the most listeners in 2026.`,
     mastodon: `${countLabel} most followed Mastodon accounts ranked by followers and posts. Updated daily across the fediverse. See who has the most Mastodon followers in 2026.`,
     rumble: `${countLabel} most followed Rumble channels ranked by followers and video count. Updated daily. See the biggest creators on Rumble in 2026.`,
+    substack: `${countLabel} top Substack newsletters ranked by subscriber reach across every category. Updated daily. See the biggest Substack writers in 2026.`,
   };
 
   const keywords = {
@@ -77,6 +81,7 @@ function getSeoData(platform, rankType, topCount) {
     music: `top music artists, top ${topCount} artists, most listened artists, monthly listeners ranking, biggest music artists 2026, music artist rankings`,
     mastodon: `top mastodon accounts, top ${topCount} mastodon, most followed mastodon, fediverse rankings, biggest mastodon accounts 2026, mastodon statistics`,
     rumble: `top rumble channels, top ${topCount} rumble, most followed rumble, biggest rumble channels 2026, rumble rankings, rumble statistics`,
+    substack: `top substack newsletters, top ${topCount} substack, best substack writers, most popular substack 2026, substack leaderboard, substack rankings`,
   };
 
   return {
@@ -97,6 +102,7 @@ function getH1Text(platform, topCount) {
     music: `Top ${topCount} Music Artists`,
     mastodon: `Top ${topCount} Mastodon Accounts`,
     rumble: `Top ${topCount} Rumble Channels`,
+    substack: `Top ${topCount} Substack Newsletters`,
   };
   return labels[pid] || `Top ${topCount} ${platform?.name} Creators`;
 }
@@ -112,6 +118,7 @@ function getSubheading(platform) {
     music: 'Ranked by monthly listeners and total plays. Updated daily.',
     mastodon: 'Ranked by followers and posts across the fediverse. Updated daily.',
     rumble: 'Ranked by followers and video output. Updated daily.',
+    substack: 'Ranked by subscriber reach across every Substack category. Updated daily.',
   };
   return subs[pid] || 'Ranked by stats and growth. Updated daily.';
 }
@@ -375,8 +382,8 @@ function PlatformRankings({ urlPlatform }) {
 
   const rankTypes = [
     { id: 'subscribers', name: selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Top Followers' : selectedPlatform === 'music' ? 'Top Listeners' : selectedPlatform === 'kick' ? 'Top Paid Subs' : 'Top Subscribers', icon: Users },
-    // Hide views for Kick, TikTok, Bluesky, and Music since APIs don't provide view data
-    ...(selectedPlatform !== 'kick' && selectedPlatform !== 'tiktok' && selectedPlatform !== 'bluesky' && selectedPlatform !== 'music' && selectedPlatform !== 'mastodon' ? [{ id: 'views', name: 'Most Views', icon: Eye }] : []),
+    // Hide views for platforms whose APIs don't expose view data
+    ...(selectedPlatform !== 'kick' && selectedPlatform !== 'tiktok' && selectedPlatform !== 'bluesky' && selectedPlatform !== 'music' && selectedPlatform !== 'mastodon' && selectedPlatform !== 'rumble' && selectedPlatform !== 'substack' ? [{ id: 'views', name: 'Most Views', icon: Eye }] : []),
     { id: 'growth', name: 'Fastest Growing', icon: TrendingUp },
   ];
 
@@ -554,7 +561,7 @@ function PlatformRankings({ urlPlatform }) {
     if (!platformId) return;
     setSelectedPlatform(platformId);
     // Reset rank type if switching to a platform that doesn't support it
-    const noViews = platformId === 'kick' || platformId === 'tiktok' || platformId === 'bluesky' || platformId === 'music' || platformId === 'mastodon' || platformId === 'rumble';
+    const noViews = platformId === 'kick' || platformId === 'tiktok' || platformId === 'bluesky' || platformId === 'music' || platformId === 'mastodon' || platformId === 'rumble' || platformId === 'substack';
     if (selectedRankType === 'views' && noViews) setSelectedRankType('subscribers');
     navigate(`/rankings/${platformId}`);
     analytics.switchPlatform('rankings', platformId);

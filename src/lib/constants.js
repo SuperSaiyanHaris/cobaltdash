@@ -131,6 +131,7 @@ export const PLATFORM_IDS = [
   'music',
   'mastodon',
   'rumble',
+  'substack',
 ];
 
 export const PLATFORM_COUNT = PLATFORM_IDS.length;
@@ -145,4 +146,5 @@ export const PLATFORMS = {
   MUSIC: 'music',
   MASTODON: 'mastodon',
   RUMBLE: 'rumble',
+  SUBSTACK: 'substack',
 };

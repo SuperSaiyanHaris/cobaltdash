@@ -18,9 +18,9 @@ const TABS = [
   { id: 'security', label: 'Security', icon: Shield },
 ];
 
-const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble'];
-const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble' };
-const PLATFORM_PILL_ACTIVE = { youtube: 'bg-red-600', tiktok: 'bg-pink-600', twitch: 'bg-purple-600', kick: 'bg-green-600', bluesky: 'bg-sky-500', music: 'bg-amber-600', mastodon: 'bg-violet-600', rumble: 'bg-lime-600' };
+const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
+const PLATFORM_PILL_ACTIVE = { youtube: 'bg-red-600', tiktok: 'bg-pink-600', twitch: 'bg-purple-600', kick: 'bg-green-600', bluesky: 'bg-sky-500', music: 'bg-amber-600', mastodon: 'bg-violet-600', rumble: 'bg-lime-600', substack: 'bg-orange-600' };
 
 export default function Account() {
   const { user, signOut } = useAuth();

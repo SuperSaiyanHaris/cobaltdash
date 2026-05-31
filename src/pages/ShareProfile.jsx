@@ -6,6 +6,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -20,6 +21,7 @@ const platformIcons = {
   bluesky: BlueskyIcon,
   mastodon: MastodonIcon,
   rumble: RumbleIcon,
+  substack: SubstackIcon,
 };
 
 const platformColors = {
@@ -30,6 +32,7 @@ const platformColors = {
   bluesky:  { bg: 'bg-sky-500',    chart: '#0ea5e9' },
   mastodon: { bg: 'bg-violet-600', chart: '#7c3aed' },
   rumble:   { bg: 'bg-lime-600',   chart: '#65a30d' },
+  substack: { bg: 'bg-orange-600', chart: '#ea580c' },
 };
 
 const platformConfig = {
@@ -40,6 +43,7 @@ const platformConfig = {
   bluesky:  { primary: 'Followers',    secondary: (s) => s.total_posts  ? { label: 'Posts',        value: s.total_posts  } : null },
   mastodon: { primary: 'Followers',    secondary: (s) => s.total_posts  ? { label: 'Posts',        value: s.total_posts  } : null },
   rumble:   { primary: 'Followers',    secondary: (s) => s.total_posts  ? { label: 'Videos',       value: s.total_posts  } : null },
+  substack: { primary: 'Subscribers',  secondary: null },
 };
 
 export default function ShareProfile() {

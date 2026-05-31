@@ -9,6 +9,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 import { Music } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +33,7 @@ const PLATFORMS = [
   { id: 'music',   name: 'Music',   Icon: Music,         accent: '#f59e0b', tone: 'amber',   gradient: 'from-amber-500 to-orange-600',      shadow: 'shadow-amber-500/25',   hoverShadow: 'group-hover:shadow-amber-500/40',   blurb: 'Listeners · plays' },
   { id: 'mastodon',name: 'Mastodon',Icon: MastodonIcon,  accent: '#7c3aed', tone: 'violet',  gradient: 'from-violet-500 to-purple-700',     shadow: 'shadow-violet-500/25',  hoverShadow: 'group-hover:shadow-violet-500/40',  blurb: 'Followers · posts' },
   { id: 'rumble',  name: 'Rumble',  Icon: RumbleIcon,    accent: '#65a30d', tone: 'lime',    gradient: 'from-lime-500 to-green-700',        shadow: 'shadow-lime-500/25',    hoverShadow: 'group-hover:shadow-lime-500/40',    blurb: 'Followers · videos' },
+  { id: 'substack',name: 'Substack',Icon: SubstackIcon,  accent: '#ea580c', tone: 'orange',  gradient: 'from-orange-500 to-amber-600',      shadow: 'shadow-orange-500/25',  hoverShadow: 'group-hover:shadow-orange-500/40',  blurb: 'Subscriber reach · rank' },
 ];
 
 const HEADLINE_ROTATIONS = ['YouTuber', 'TikToker', 'Streamer', 'Artist', 'Creator'];
@@ -77,7 +79,8 @@ export default function Home() {
       getRankedCreators('music', 'subscribers', 1),
       getRankedCreators('mastodon', 'subscribers', 1),
       getRankedCreators('rumble', 'subscribers', 1),
-    ]).then(([yt, tw, tt, kk, bs, mu, ma, rb]) => {
+      getRankedCreators('substack', 'subscribers', 1),
+    ]).then(([yt, tw, tt, kk, bs, mu, ma, rb, sb]) => {
       // Marquee: YouTube + Twitch, shuffled
       const pool = [...yt, ...tw].filter(c => c?.profile_image && c?.display_name);
       for (let i = pool.length - 1; i > 0; i--) {
@@ -96,6 +99,7 @@ export default function Home() {
         mu[0] && { ...mu[0], _platformLabel: '#1 Artist',           _metricLabel: 'monthly listeners' },
         ma[0] && { ...ma[0], _platformLabel: '#1 on Mastodon',      _metricLabel: 'followers' },
         rb[0] && { ...rb[0], _platformLabel: '#1 on Rumble',        _metricLabel: 'followers' },
+        sb[0] && { ...sb[0], _platformLabel: '#1 on Substack',      _metricLabel: 'subscribers' },
       ].filter(Boolean);
       setTopByPlatform(top1);
 

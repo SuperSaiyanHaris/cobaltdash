@@ -351,6 +351,72 @@ async function fetchMastodonProfile(handle) {
   };
 }
 
+// ========== SUBSTACK LEADERBOARD HELPERS ==========
+// Substack exposes no exact subscriber counts — only order-of-magnitude
+// buckets via the category leaderboard. We sweep every top category's `/paid`
+// leaderboard once, merge + dedupe by publication id, and compute a global
+// rank ordered by (total-subscriber bucket DESC, paid bucket DESC, best
+// category position ASC). Tracked creators are matched by platform_id.
+const SUBSTACK_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json',
+};
+const SUBSTACK_CATEGORIES = [
+  { id: 96, slug: 'culture' }, { id: 4, slug: 'technology' }, { id: 62, slug: 'business' },
+  { id: 76739, slug: 'us-politics' }, { id: 153, slug: 'finance' }, { id: 13645, slug: 'food' },
+  { id: 94, slug: 'sports' }, { id: 15417, slug: 'art' }, { id: 76740, slug: 'world-politics' },
+  { id: 103, slug: 'news' }, { id: 49715, slug: 'fashionandbeauty' }, { id: 11, slug: 'music' },
+  { id: 223, slug: 'faith' }, { id: 76741, slug: 'health-politics' },
+];
+const SUBSTACK_PAGES_PER_CATEGORY = 8;
+
+async function buildSubstackRanking() {
+  const byId = new Map();
+  for (const cat of SUBSTACK_CATEGORIES) {
+    for (let page = 0; page < SUBSTACK_PAGES_PER_CATEGORY; page++) {
+      try {
+        const url = `https://substack.com/api/v1/category/public/${cat.id}/paid?page=${page}`;
+        const res = await fetch(url, { headers: SUBSTACK_HEADERS, signal: AbortSignal.timeout(15000) });
+        if (!res.ok) break;
+        const data = await res.json();
+        const pubs = data.publications || [];
+        pubs.forEach((pub, i) => {
+          if (!pub.id || !pub.subdomain) return;
+          const position = page * 25 + i;
+          const existing = byId.get(pub.id);
+          if (!existing || position < existing.bestPosition) {
+            byId.set(pub.id, {
+              pub,
+              bestPosition: existing ? Math.min(existing.bestPosition, position) : position,
+            });
+          }
+        });
+        await new Promise((r) => setTimeout(r, 400));
+        if (!data.more || pubs.length === 0) break;
+      } catch { break; }
+    }
+  }
+  // Order into a global ranking and return a map: platformId -> { subscribers, globalRank }
+  const ranked = [...byId.values()].sort((a, b) => {
+    const aT = a.pub.rankingDetailFreeIncludedOrderOfMagnitude || 0;
+    const bT = b.pub.rankingDetailFreeIncludedOrderOfMagnitude || 0;
+    if (bT !== aT) return bT - aT;
+    const aP = a.pub.rankingDetailOrderOfMagnitude || 0;
+    const bP = b.pub.rankingDetailOrderOfMagnitude || 0;
+    if (bP !== aP) return bP - aP;
+    return a.bestPosition - b.bestPosition;
+  });
+  const out = new Map();
+  ranked.forEach((r, i) => {
+    out.set(String(r.pub.id), {
+      subscribers: r.pub.rankingDetailFreeIncludedOrderOfMagnitude
+        || r.pub.rankingDetailOrderOfMagnitude || 0,
+      globalRank: i + 1,
+    });
+  });
+  return out;
+}
+
 // ========== KICK API HELPERS ==========
 let kickAccessToken = null;
 
@@ -458,6 +524,7 @@ async function collectDailyStats() {
   const musicCreators = creators.filter((c) => c.platform === 'music');
   const mastodonCreators = creators.filter((c) => c.platform === 'mastodon');
   const rumbleCreators = creators.filter((c) => c.platform === 'rumble');
+  const substackCreators = creators.filter((c) => c.platform === 'substack');
   // TikTok is handled by refreshTikTokProfiles.js via separate GitHub Actions workflow
 
   console.log(`Found ${creators.length} creators to update`);
@@ -467,7 +534,8 @@ async function collectDailyStats() {
   console.log(`   Bluesky: ${blueskyCreators.length}`);
   console.log(`   Music: ${musicCreators.length}`);
   console.log(`   Mastodon: ${mastodonCreators.length}`);
-  console.log(`   Rumble: ${rumbleCreators.length}\n`);
+  console.log(`   Rumble: ${rumbleCreators.length}`);
+  console.log(`   Substack: ${substackCreators.length}\n`);
 
   let successCount = 0;
   let errorCount = 0;
@@ -775,6 +843,52 @@ async function collectDailyStats() {
       }
       // 800ms pacing = ~1.25 req/s. For 1K creators that's ~13 min.
       await new Promise((r) => setTimeout(r, 800));
+    }
+  }
+
+  // ========== SUBSTACK (one leaderboard sweep, match by publication id) ==========
+  // Substack data is a single bulk fetch of the category leaderboards, not a
+  // per-creator request. We refresh the subscriber bucket + leaderboard_rank
+  // for every tracked publication that still appears on a leaderboard. Pubs
+  // that dropped off keep their last-good values (data integrity — no 0 write).
+  if (substackCreators.length > 0) {
+    console.log('\n📰 Processing Substack publications...');
+    console.log(`   ${substackCreators.length} tracked — sweeping leaderboards\n`);
+    try {
+      const ranking = await buildSubstackRanking();
+      console.log(`   Leaderboard returned ${ranking.size} ranked publications`);
+      for (const creator of substackCreators) {
+        const entry = ranking.get(String(creator.platform_id));
+        if (entry && entry.subscribers > 0) {
+          statsToUpsert.push({
+            creator_id: creator.id,
+            recorded_at: today,
+            subscribers: entry.subscribers,
+            followers: entry.subscribers,
+            total_views: null,
+            total_posts: null,
+          });
+          creatorUpdates.push({
+            id: creator.id,
+            leaderboard_rank: entry.globalRank,
+            banner_image: null,
+            verified: false,
+            latest_post_at: null,
+            latest_post_title: null,
+            latest_post_url: null,
+            latest_post_thumbnail: null,
+            latest_post_views: null,
+          });
+          successCount++;
+        } else {
+          // Dropped off the leaderboard — keep last-good, don't write 0.
+          errorCount++;
+        }
+      }
+      console.log(`   ✅ Matched ${successCount > 0 ? 'and refreshed tracked publications' : '0'}`);
+    } catch (error) {
+      console.error(`   ❌ Substack leaderboard sweep failed: ${error.message}`);
+      errorCount += substackCreators.length;
     }
   }
 
