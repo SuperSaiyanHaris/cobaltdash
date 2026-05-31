@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, Plus, Youtube, Twitch, Users, Eye, Video, TrendingUp, ArrowRight, Scale, Loader2, DollarSign, TrendingDown, Minus, Info, Bookmark, Check } from 'lucide-react';
+import { Search, X, Plus, Youtube, Twitch, Users, Eye, Video, TrendingUp, ArrowRight, Scale, Loader2, DollarSign, TrendingDown, Minus, Info, Bookmark, Check, Sparkles, Swords } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
@@ -141,6 +142,32 @@ export default function Compare() {
                   ? await getArtistByMbid(dbCreator.platform_id)
                   : await getArtistByName(dbCreator.display_name || username);
               }
+            } else if (platform === 'mastodon' || platform === 'rumble') {
+              // DB-first hydration (same approach as TikTok). Live API for
+              // Mastodon needs an authed Edge call and Rumble is Cloudflare-
+              // blocked from Vercel IPs — the seeded DB is the source of truth.
+              const dbCreator = await getCreatorByUsername(platform, username);
+              if (!dbCreator) return null;
+              const { data: stats } = await supabase
+                .from('creator_stats')
+                .select('followers, total_posts, subscribers')
+                .eq('creator_id', dbCreator.id)
+                .order('recorded_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              const followers = stats?.followers || stats?.subscribers || 0;
+              return {
+                platform,
+                platformId: dbCreator.platform_id,
+                username: dbCreator.username,
+                displayName: dbCreator.display_name || dbCreator.username,
+                profileImage: dbCreator.profile_image,
+                description: dbCreator.description,
+                subscribers: followers,
+                followers,
+                totalViews: null, // neither platform exposes per-profile total views
+                totalPosts: stats?.total_posts || 0,
+              };
             }
           } catch (err) {
             // Skip creators that fail to load
@@ -399,24 +426,74 @@ export default function Compare() {
       />
 
       <div className="min-h-screen bg-[#fafafa]">
-        {/* Header */}
-        <div className="relative overflow-hidden border-b border-neutral-200">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-950/30 to-transparent" />
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[480px] h-72 bg-violet-500/5 rounded-full blur-3xl" />
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative">
-            <div className="max-w-6xl mx-auto text-center">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <div className="w-11 h-11 bg-gradient-to-br from-violet-600 to-purple-700 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30 flex-shrink-0">
-                  <Scale className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-900">Compare Creators</h1>
-              </div>
-              <p className="text-base sm:text-lg text-neutral-500">
-                Side-by-side comparison across all platforms
-              </p>
+        {/* ============== HERO ==============
+            Cinematic head-to-head treatment: animated VS sigil with rotating
+            ring, soft violet glow, eyebrow label. When creators are loaded the
+            hero condenses (smaller padding) so the actual matchup takes focus. */}
+        <section className="relative overflow-hidden border-b border-neutral-200 bg-gradient-to-b from-white via-violet-50/40 to-[#fafafa]">
+          {/* Decorative glow blobs */}
+          <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[680px] h-80 bg-violet-400/15 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 left-[15%] w-72 h-72 bg-fuchsia-300/20 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 right-[15%] w-72 h-72 bg-indigo-300/20 rounded-full blur-3xl" />
+
+          <div className={`w-full px-4 sm:px-6 lg:px-8 relative ${filledCreators.length >= 2 ? 'py-7 sm:py-9' : 'py-12 sm:py-16'}`}>
+            <div className="max-w-4xl mx-auto text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 mb-5 bg-white/80 backdrop-blur-md border border-violet-200/70 rounded-full shadow-sm shadow-violet-500/5"
+              >
+                <Sparkles className="w-3 h-3 text-violet-600" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-700">Head to head</span>
+              </motion.div>
+
+              {/* Animated VS sigil — only on the empty hero state so it doesn't
+                  compete with the actual matchup widget below. */}
+              {filledCreators.length < 2 && (
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                  className="relative inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 mb-5"
+                >
+                  <span
+                    className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-600 opacity-30 blur-2xl animate-pulse"
+                  />
+                  <motion.span
+                    aria-hidden="true"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 rounded-full border border-dashed border-violet-400/60"
+                  />
+                  <span className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-600 shadow-2xl shadow-violet-500/40 flex items-center justify-center">
+                    <Swords className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                  </span>
+                </motion.div>
+              )}
+
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+                className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900"
+              >
+                Compare any{' '}
+                <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-600 bg-clip-text text-transparent">
+                  two creators
+                </span>
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="mt-3 text-base sm:text-lg text-neutral-600 max-w-xl mx-auto"
+              >
+                Side-by-side stats across every platform we track. Stack up to 10 creators.
+              </motion.p>
             </div>
           </div>
-        </div>
+        </section>
 
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Loading State */}
@@ -502,41 +579,83 @@ export default function Compare() {
             </div>
           )}
 
-          {/* Empty state — popular matchups */}
+          {/* Empty state — popular matchups, with platform-tinted gradient
+              backgrounds so each card reads as its own matchup. */}
           {!loadingFromUrl && filledCreators.length < 2 && (
-            <div className="mb-8">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest text-center mb-4">Popular matchups</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {POPULAR_MATCHUPS.map(({ url, aName, bName, aPlatform, bPlatform }) => {
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mb-10"
+            >
+              <div className="text-center mb-5">
+                <p className="text-[10px] sm:text-xs font-bold text-neutral-500 uppercase tracking-[0.18em]">Popular matchups</p>
+                <p className="mt-1.5 text-sm text-neutral-500">Or pick from these classics. One click loads them both.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {POPULAR_MATCHUPS.map(({ url, aName, bName, aPlatform, bPlatform }, idx) => {
                   const AIcon = platformConfig[aPlatform]?.icon;
                   const BIcon = platformConfig[bPlatform]?.icon;
+                  const aBg = platformConfig[aPlatform]?.bg || 'bg-neutral-50';
+                  const bBg = platformConfig[bPlatform]?.bg || 'bg-neutral-50';
                   return (
-                    <Link
+                    <motion.div
                       key={url}
-                      to={`/compare?creators=${url}`}
-                      className="group flex items-center gap-2 p-3 bg-white border border-neutral-200 hover:border-violet-500/40 rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-500/5"
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.5 + idx * 0.04 }}
                     >
-                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                        {AIcon && <span className={`flex-shrink-0 ${platformConfig[aPlatform]?.color}`}><AIcon className="w-3.5 h-3.5" /></span>}
-                        <span className="text-sm font-semibold text-neutral-700 truncate group-hover:text-neutral-900 transition-colors">{aName}</span>
-                      </div>
-                      <span className="text-[9px] font-black text-violet-700 bg-violet-950/50 border border-violet-800/60 px-2 py-0.5 rounded-full flex-shrink-0 tracking-widest">VS</span>
-                      <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                        <span className="text-sm font-semibold text-neutral-700 truncate text-right group-hover:text-neutral-900 transition-colors">{bName}</span>
-                        {BIcon && <span className={`flex-shrink-0 ${platformConfig[bPlatform]?.color}`}><BIcon className="w-3.5 h-3.5" /></span>}
-                      </div>
-                    </Link>
+                      <Link
+                        to={`/compare?creators=${url}`}
+                        className="group relative block overflow-hidden bg-white border border-neutral-200 hover:border-violet-300 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-violet-500/10"
+                      >
+                        {/* Split background — left tinted by platform A, right by platform B */}
+                        <div className="absolute inset-0 flex pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity">
+                          <div className={`flex-1 ${aBg}`} />
+                          <div className={`flex-1 ${bBg}`} />
+                        </div>
+                        <div className="relative flex items-center px-4 py-3.5">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {AIcon && (
+                              <span className={`flex-shrink-0 w-6 h-6 rounded-md bg-white/90 flex items-center justify-center ${platformConfig[aPlatform]?.color} shadow-sm`}>
+                                <AIcon className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                            <span className="text-sm font-bold text-neutral-900 truncate">{aName}</span>
+                          </div>
+                          <span className="mx-2 text-[10px] font-black text-white bg-gradient-to-br from-violet-600 to-fuchsia-500 px-2 py-0.5 rounded-full flex-shrink-0 tracking-widest shadow shadow-violet-500/30">
+                            VS
+                          </span>
+                          <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                            <span className="text-sm font-bold text-neutral-900 truncate text-right">{bName}</span>
+                            {BIcon && (
+                              <span className={`flex-shrink-0 w-6 h-6 rounded-md bg-white/90 flex items-center justify-center ${platformConfig[bPlatform]?.color} shadow-sm`}>
+                                <BIcon className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
                   );
                 })}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Creator Slots */}
           {!loadingFromUrl && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <AnimatePresence mode="popLayout">
             {creators.map((creator, index) => (
-              <div key={index}>
+              <motion.div
+                key={creator ? `${creator.platform}:${creator.username}` : `slot-${index}`}
+                layout
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              >
                 {creator ? (
                   <CreatorCard
                     creator={creator}
@@ -549,43 +668,106 @@ export default function Compare() {
                     onRemove={creators.length > 2 ? () => removeSlot(index) : null}
                   />
                 )}
-              </div>
+              </motion.div>
             ))}
             {/* Add slot button */}
             {creators.length < maxCompare && (
-              <button
+              <motion.button
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 onClick={addSlot}
-                className="min-h-[280px] border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center gap-2 text-neutral-400 hover:text-neutral-700 hover:border-gray-500 transition-all duration-200"
+                className="group min-h-[280px] border-2 border-dashed border-neutral-300 hover:border-violet-400 rounded-2xl flex flex-col items-center justify-center gap-3 text-neutral-400 hover:text-violet-600 hover:bg-violet-50/40 transition-all duration-200"
               >
-                <Plus className="w-7 h-7" />
-                <span className="text-sm font-medium">Add creator</span>
-              </button>
+                <span className="w-12 h-12 rounded-full bg-neutral-100 group-hover:bg-violet-100 flex items-center justify-center transition-colors">
+                  <Plus className="w-6 h-6" />
+                </span>
+                <span className="text-sm font-semibold">Add creator</span>
+                <span className="text-[11px] text-neutral-400 group-hover:text-violet-500/70 transition-colors">Slot {creators.length + 1} of {maxCompare}</span>
+              </motion.button>
             )}
+            </AnimatePresence>
           </div>
           )}
 
-          {/* VS divider — shown when 2+ creators are loaded */}
+          {/* VS centerpiece — bigger, cinematic when 2+ loaded. Avatars flank
+              an animated VS badge that pulses, with platform pills below each. */}
           {!loadingFromUrl && filledCreators.length >= 2 && (
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-violet-800/40 to-violet-800/40" />
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <img src={filledCreators[0].profileImage} alt="" className="w-6 h-6 rounded-md object-cover" />
-                  <span className="text-sm font-bold text-neutral-800 max-w-[100px] truncate">{filledCreators[0].displayName}</span>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="relative mb-8 overflow-hidden rounded-2xl border border-violet-200/70 bg-gradient-to-br from-white via-violet-50/60 to-fuchsia-50/40 p-5 sm:p-7"
+            >
+              {/* Soft glow behind the VS badge */}
+              <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-32 bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-indigo-400/20 blur-3xl rounded-full" />
+              <div className="relative flex items-center justify-center gap-3 sm:gap-6">
+                {/* Left creator */}
+                <div className="flex-1 flex items-center justify-end gap-3 min-w-0">
+                  <div className="text-right min-w-0">
+                    <p className="text-sm sm:text-base font-extrabold text-neutral-900 truncate">{filledCreators[0].displayName}</p>
+                    {(() => {
+                      const P = platformConfig[filledCreators[0].platform]?.icon;
+                      return P ? (
+                        <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${platformConfig[filledCreators[0].platform]?.bg} ${platformConfig[filledCreators[0].platform]?.color}`}>
+                          <P className="w-2.5 h-2.5" />
+                          {filledCreators[0].platform}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
+                  <img
+                    src={filledCreators[0].profileImage}
+                    alt=""
+                    loading="lazy"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover ring-2 ring-violet-200/80 shadow-md flex-shrink-0"
+                  />
                 </div>
-                <div className="px-3 py-1 bg-violet-950/60 border border-violet-700/60 rounded-full shadow-sm shadow-violet-500/10">
-                  <span className="text-violet-300 font-black text-[11px] tracking-widest">VS</span>
+
+                {/* Animated VS badge */}
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+                  className="relative flex-shrink-0"
+                >
+                  <span className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 blur-md opacity-50" />
+                  <span className="relative inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-600 shadow-xl shadow-violet-500/40">
+                    <span className="text-white font-black text-xs sm:text-sm tracking-widest">VS</span>
+                  </span>
+                </motion.div>
+
+                {/* Right creator */}
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                  <img
+                    src={filledCreators[1].profileImage}
+                    alt=""
+                    loading="lazy"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover ring-2 ring-violet-200/80 shadow-md flex-shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm sm:text-base font-extrabold text-neutral-900 truncate">{filledCreators[1].displayName}</p>
+                    {(() => {
+                      const P = platformConfig[filledCreators[1].platform]?.icon;
+                      return P ? (
+                        <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${platformConfig[filledCreators[1].platform]?.bg} ${platformConfig[filledCreators[1].platform]?.color}`}>
+                          <P className="w-2.5 h-2.5" />
+                          {filledCreators[1].platform}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-neutral-800 max-w-[100px] truncate">{filledCreators[1].displayName}</span>
-                  <img src={filledCreators[1].profileImage} alt="" className="w-6 h-6 rounded-md object-cover" />
-                </div>
-                {filledCreators.length > 2 && (
-                  <span className="text-xs text-neutral-400">+{filledCreators.length - 2} more</span>
-                )}
               </div>
-              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-violet-800/40 to-violet-800/40" />
-            </div>
+
+              {filledCreators.length > 2 && (
+                <div className="relative mt-4 flex items-center justify-center gap-2 text-xs text-neutral-500">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/80 border border-neutral-200 rounded-full font-semibold">
+                    +{filledCreators.length - 2} more in the comparison
+                  </span>
+                </div>
+              )}
+            </motion.div>
           )}
 
           {/* Comparison Section */}
@@ -910,6 +1092,34 @@ function SearchableSlot({ onSelect, onRemove }) {
         results = await searchBluesky(searchQuery, 5);
       } else if (searchPlatform === 'music') {
         results = await searchMusic(searchQuery, 5);
+      } else if (searchPlatform === 'mastodon' || searchPlatform === 'rumble') {
+        // Same DB-hydration pattern as TikTok above
+        const dbResults = await searchCreators(searchQuery, searchPlatform);
+        const withStats = await Promise.all(
+          dbResults.map(async (c) => {
+            const { data: stats } = await supabase
+              .from('creator_stats')
+              .select('followers, total_posts, subscribers')
+              .eq('creator_id', c.id)
+              .order('recorded_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            const followers = stats?.followers || stats?.subscribers || 0;
+            return {
+              platform: searchPlatform,
+              platformId: c.platform_id,
+              username: c.username,
+              displayName: c.display_name || c.username,
+              profileImage: c.profile_image,
+              description: c.description,
+              subscribers: followers,
+              followers,
+              totalViews: null,
+              totalPosts: stats?.total_posts || 0,
+            };
+          })
+        );
+        results = withStats.slice(0, 5);
       }
       setSearchResults(results);
     } catch (err) {
