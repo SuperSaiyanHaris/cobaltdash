@@ -117,13 +117,17 @@ export default function Home() {
     return () => clearInterval(id);
   }, [topByPlatform.length]);
 
-  // Product preview carousel: rotates through 4 page mockups (rankings, profile, compare, earnings)
+  // Product preview carousel: rotates through 4 page mockups (rankings, profile, compare, earnings).
+  // Rankings (index 0) is the one we most want people to see, so it holds longer
+  // before advancing; the rest rotate at the normal pace. Recursive timeout so the
+  // dwell time can depend on which mockup is currently showing.
   const [previewIdx, setPreviewIdx] = useState(0);
   const PREVIEW_COUNT = 4;
   useEffect(() => {
-    const id = setInterval(() => setPreviewIdx((i) => (i + 1) % PREVIEW_COUNT), 9000);
-    return () => clearInterval(id);
-  }, []);
+    const dwell = previewIdx === 0 ? 20000 : 9000;
+    const id = setTimeout(() => setPreviewIdx((i) => (i + 1) % PREVIEW_COUNT), dwell);
+    return () => clearTimeout(id);
+  }, [previewIdx]);
 
   // Latest blog posts
   useEffect(() => {
@@ -188,9 +192,11 @@ export default function Home() {
           {/* Light dark overlay for text legibility without washing out the artwork. */}
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#0a0a0f]/40 via-[#0a0a0f]/35 to-[#0a0a0f]" />
 
-          {/* TOP MARQUEE — randomized top creators across platforms */}
-          {marqueeCreators.length > 0 && (
-            <div className="relative pt-5 pb-1 overflow-hidden mask-gradient">
+          {/* TOP MARQUEE — randomized top creators across platforms.
+              Height is reserved (min-h) even before data loads so the strip
+              appearing never shifts the page / jumps the scroll on mobile. */}
+          <div className="relative pt-5 pb-1 overflow-hidden mask-gradient min-h-[4.25rem]">
+            {marqueeCreators.length > 0 && (
               <div
                 className="flex gap-4 sm:gap-6 animate-marquee whitespace-nowrap"
                 style={{ width: 'max-content' }}
@@ -207,8 +213,8 @@ export default function Home() {
                   </Link>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Center stage */}
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-10 sm:pb-28">
