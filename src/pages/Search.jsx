@@ -292,9 +292,9 @@ export default function Search() {
       // Pre-fill normalized username for TikTok request flow
       if (platform === 'tiktok') {
         setNormalizedUsername(normalizeToUsername(searchQuery));
-      } else if (platform === 'rumble') {
-        // Rumble slugs are case-sensitive — keep the raw query so the user can
-        // paste their exact handle or full channel URL.
+      } else if (platform === 'rumble' || platform === 'mastodon' || platform === 'substack') {
+        // DB-only platforms: keep the raw query (case-sensitive handles / URLs)
+        // so the creator can paste their exact handle or link to self-add.
         setNormalizedUsername(searchQuery.trim());
       }
     } catch (err) {
@@ -549,68 +549,76 @@ export default function Search() {
                 </>
               )}
 
-              {/* Rumble: self-serve "track my channel" (queued, processed off-platform) */}
-              {selectedPlatform === 'rumble' && (
-                <>
-                  {requestStatus === null && (
-                    <div className="mt-6 max-w-md mx-auto px-4">
-                      <p className="text-sm text-neutral-700 mb-3">
-                        Run a Rumble channel? Add it and we'll start tracking it. Paste your channel link or handle.
-                      </p>
-                      <input
-                        type="text"
-                        value={normalizedUsername}
-                        onChange={(e) => setNormalizedUsername(e.target.value)}
-                        placeholder="rumble.com/user/YourName  or  YourName"
-                        className="w-full px-4 py-2.5 mb-4 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-1 focus:border-transparent"
-                      />
-                      <button
-                        onClick={() => handleRequestCreator()}
-                        disabled={!normalizedUsername || normalizedUsername.trim().length < 2}
-                        className="inline-flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed bg-lime-600 hover:bg-lime-500"
-                      >
-                        <Clock className="w-5 h-5" />
-                        Track this channel
-                      </button>
-                      <p className="text-xs text-neutral-700 mt-3">
-                        We'll add it within 24 hours, then build daily stats automatically.
-                      </p>
-                    </div>
-                  )}
+              {/* DB-only platforms (no live search): let the creator add themselves.
+                  Queued and processed off-platform by GitHub Actions. */}
+              {['rumble', 'mastodon', 'substack'].includes(selectedPlatform) && (() => {
+                const cfg = {
+                  rumble:   { noun: 'Rumble channel',  placeholder: 'rumble.com/user/YourName  or  YourName', btn: 'bg-lime-600 hover:bg-lime-500',     ring: 'focus:ring-lime-500' },
+                  mastodon: { noun: 'Mastodon account', placeholder: 'yourname@mastodon.social',               btn: 'bg-violet-600 hover:bg-violet-500', ring: 'focus:ring-violet-500' },
+                  substack: { noun: 'Substack',         placeholder: 'yourname.substack.com',                  btn: 'bg-orange-600 hover:bg-orange-500', ring: 'focus:ring-orange-500' },
+                }[selectedPlatform];
+                return (
+                  <>
+                    {requestStatus === null && (
+                      <div className="mt-6 max-w-md mx-auto px-4">
+                        <p className="text-sm text-neutral-700 mb-3">
+                          Run this {cfg.noun}? Add it and we'll start tracking it. Paste your link or handle.
+                        </p>
+                        <input
+                          type="text"
+                          value={normalizedUsername}
+                          onChange={(e) => setNormalizedUsername(e.target.value)}
+                          placeholder={cfg.placeholder}
+                          className={`w-full px-4 py-2.5 mb-4 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 ${cfg.ring} focus:ring-offset-1 focus:border-transparent`}
+                        />
+                        <button
+                          onClick={() => handleRequestCreator()}
+                          disabled={!normalizedUsername || normalizedUsername.trim().length < 2}
+                          className={`inline-flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${cfg.btn}`}
+                        >
+                          <Clock className="w-5 h-5" />
+                          Track this {selectedPlatform === 'rumble' ? 'channel' : selectedPlatform === 'substack' ? 'newsletter' : 'account'}
+                        </button>
+                        <p className="text-xs text-neutral-700 mt-3">
+                          We'll add it within 24 hours, then build daily stats automatically.
+                        </p>
+                      </div>
+                    )}
 
-                  {requestStatus === 'requesting' && (
-                    <div className="mt-6 max-w-md mx-auto p-4 bg-lime-50 border border-lime-200 rounded-xl">
-                      <div className="w-8 h-8 border-3 border-lime-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <p className="text-sm text-lime-700 font-medium">Submitting...</p>
-                    </div>
-                  )}
+                    {requestStatus === 'requesting' && (
+                      <div className="mt-6 max-w-md mx-auto p-4 bg-neutral-50 border border-neutral-200 rounded-xl">
+                        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        <p className="text-sm text-neutral-700 font-medium">Submitting...</p>
+                      </div>
+                    )}
 
-                  {requestStatus === 'success' && (
-                    <div className="mt-6 max-w-md mx-auto p-4 bg-green-50 border border-green-200 rounded-xl">
-                      <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                      <p className="text-sm text-green-700 font-medium mb-1">Got it!</p>
-                      <p className="text-sm text-green-600">{requestMessage}</p>
-                    </div>
-                  )}
+                    {requestStatus === 'success' && (
+                      <div className="mt-6 max-w-md mx-auto p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <p className="text-sm text-green-700 font-medium mb-1">Got it!</p>
+                        <p className="text-sm text-green-600">{requestMessage}</p>
+                      </div>
+                    )}
 
-                  {requestStatus === 'error' && (
-                    <div className="mt-6 max-w-md mx-auto p-4 bg-red-50 border border-red-200 rounded-xl">
-                      <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                      <p className="text-sm text-red-600 font-medium mb-1">Request Failed</p>
-                      <p className="text-sm text-red-500">{requestMessage}</p>
-                      <button
-                        onClick={() => handleRequestCreator()}
-                        className="mt-3 text-sm text-red-600 hover:text-red-500 font-medium underline"
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+                    {requestStatus === 'error' && (
+                      <div className="mt-6 max-w-md mx-auto p-4 bg-red-50 border border-red-200 rounded-xl">
+                        <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                        <p className="text-sm text-red-600 font-medium mb-1">Couldn't add it</p>
+                        <p className="text-sm text-red-500">{requestMessage}</p>
+                        <button
+                          onClick={() => handleRequestCreator()}
+                          className="mt-3 text-sm text-red-600 hover:text-red-500 font-medium underline"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Standard platforms: Standard message */}
-              {selectedPlatform !== 'tiktok' && selectedPlatform !== 'rumble' && (
+              {!['tiktok', 'rumble', 'mastodon', 'substack'].includes(selectedPlatform) && (
                 <p className="text-sm text-neutral-700">
                   Try searching for a different name or check the spelling
                 </p>

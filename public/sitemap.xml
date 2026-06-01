@@ -457,6 +457,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://shinypull.com/substack/bytebytego</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://shinypull.com/mastodon/Gargron@mastodon.social</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://shinypull.com/rumble/Bongino</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
@@ -16460,12 +16472,6 @@
   </url>
   <url>
     <loc>https://shinypull.com/mastodon/Free_Press@mstdn.social</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://shinypull.com/mastodon/Gargron@mastodon.social</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

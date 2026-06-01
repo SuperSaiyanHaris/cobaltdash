@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { scrapeTikTokProfile, closeBrowser as closeTikTokBrowser } from '../src/services/tiktokScraper.js';
 import { parseChannelHtml } from '../src/services/rumbleService.js';
+import { SUBSTACK_CATEGORIES, normalizePublication } from '../src/services/substackService.js';
 
 dotenv.config();
 
@@ -20,6 +21,11 @@ const RUMBLE_HEADERS = {
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
   'Accept-Language': 'en-US,en;q=0.9',
 };
+const JSON_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json',
+};
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
@@ -194,15 +200,150 @@ async function processRumbleRequest(request) {
 }
 
 /**
+ * Shared: insert/find a creator + write a stats row, then delete the request.
+ * `prof` is a normalized profile with platformId/username/displayName/etc.
+ * Only called once we have a real follower/subscriber number (> 0).
+ */
+async function commitCreator(request, prof, { stampVerified = false } = {}) {
+  const { data: existing } = await supabase
+    .from('creators').select('id').eq('platform', prof.platform).eq('platform_id', prof.platformId).maybeSingle();
+  let creatorId;
+  if (existing) {
+    creatorId = existing.id;
+  } else {
+    const { data: created, error } = await supabase.from('creators').insert({
+      platform: prof.platform, platform_id: prof.platformId, username: prof.username,
+      display_name: prof.displayName, profile_image: prof.profileImage, description: prof.description || null,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).select('id').single();
+    if (error) {
+      await supabase.from('creator_requests').update({ status: 'failed', error_message: error.message }).eq('id', request.id);
+      return { success: false, username: prof.username, error: error.message };
+    }
+    creatorId = created.id;
+  }
+  const update = { updated_at: new Date().toISOString() };
+  if (stampVerified) update.last_verified_at = new Date().toISOString();
+  await supabase.from('creators').update(update).eq('id', creatorId);
+  // Only write a stats row when we have a real number. Some Substack leaderboard
+  // entries don't expose a count — in that case we still add the creator (it's a
+  // valid, trackable pub) and let the daily collection sweep fill the number.
+  // Never write 0/null subscribers (data-integrity rule).
+  const subsVal = prof.subscribers ?? prof.followers;
+  let statsWritten = false;
+  if (typeof subsVal === 'number' && subsVal > 0) {
+    await supabase.from('creator_stats').upsert({
+      creator_id: creatorId, recorded_at: getTodayLocal(),
+      followers: prof.followers ?? subsVal, subscribers: subsVal,
+      total_posts: prof.totalPosts ?? null, total_views: prof.totalViews ?? null,
+    }, { onConflict: 'creator_id,recorded_at' });
+    statsWritten = true;
+  }
+  await supabase.from('creator_requests').delete().eq('id', request.id);
+  return { success: true, username: prof.username, statsWritten };
+}
+
+/**
+ * Mastodon: federated, public API (no auth). Look the account up directly on
+ * its home instance; fall back to a mastodon.social federated resolve. We never
+ * store a 0-follower row.
+ */
+async function processMastodonRequest(request) {
+  const handle = request.username; // user@instance
+  const [user, instance] = handle.split('@');
+  console.log(`[mastodon/${handle}] Looking up account...`);
+  await supabase.from('creator_requests').update({ status: 'processing' }).eq('id', request.id);
+
+  let account = null, resolvedInstance = instance;
+  try {
+    const r = await fetch(`https://${instance}/api/v1/accounts/lookup?acct=${encodeURIComponent(user)}`, { headers: JSON_HEADERS, signal: AbortSignal.timeout(15000) });
+    if (r.ok) account = await r.json();
+  } catch { /* fall through */ }
+  if (!account || !account.id) {
+    try {
+      const r = await fetch(`https://mastodon.social/api/v2/search?q=${encodeURIComponent(handle)}&type=accounts&limit=1&resolve=true`, { headers: JSON_HEADERS, signal: AbortSignal.timeout(15000) });
+      if (r.ok) {
+        const d = await r.json();
+        const acc = (d.accounts || [])[0];
+        if (acc) { account = acc; resolvedInstance = acc.acct.includes('@') ? acc.acct.split('@')[1] : 'mastodon.social'; }
+      }
+    } catch { /* fall through */ }
+  }
+  if (!account || !account.id || !(account.followers_count > 0)) {
+    await supabase.from('creator_requests').update({ status: 'failed', error_message: 'Mastodon account not found (or it has no followers yet)' }).eq('id', request.id);
+    console.log(`[mastodon/${handle}] ❌ Not found / 0 followers`);
+    return { success: false, username: handle, error: 'not found' };
+  }
+  const prof = {
+    platform: 'mastodon',
+    platformId: `${resolvedInstance}:${account.id}`,
+    username: `${account.username}@${resolvedInstance}`,
+    displayName: account.display_name || account.username,
+    profileImage: account.avatar || account.avatar_static || null,
+    description: (account.note || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500) || null,
+    followers: account.followers_count,
+    subscribers: account.followers_count,
+    totalPosts: account.statuses_count || 0,
+    totalViews: null,
+  };
+  const out = await commitCreator(request, prof, { stampVerified: true });
+  if (out.success) console.log(`[mastodon/${handle}] ✅ Tracked ${prof.displayName} (${prof.followers} followers)`);
+  return out;
+}
+
+/**
+ * Substack: the only public source of a subscriber count is the category
+ * leaderboards, so we can only track a publication that appears on one. Sweep
+ * the categories for a matching subdomain; if found, add it with its real
+ * count. If it isn't ranked anywhere, we can't get a number, so we decline.
+ */
+async function processSubstackRequest(request) {
+  const slug = request.username.toLowerCase();
+  console.log(`[substack/${slug}] Searching category leaderboards...`);
+  await supabase.from('creator_requests').update({ status: 'processing' }).eq('id', request.id);
+
+  let match = null;
+  outer:
+  for (const cat of SUBSTACK_CATEGORIES) {
+    for (let page = 0; page < 6; page++) {
+      try {
+        const r = await fetch(`https://substack.com/api/v1/category/public/${cat.id}/paid?page=${page}`, { headers: JSON_HEADERS, signal: AbortSignal.timeout(15000) });
+        if (!r.ok) break;
+        const d = await r.json();
+        const pubs = d.publications || [];
+        const hit = pubs.find((p) => (p.subdomain || '').toLowerCase() === slug);
+        if (hit) { match = normalizePublication(hit); break outer; }
+        await sleep(350);
+        if (!d.more || pubs.length === 0) break;
+      } catch { break; }
+    }
+  }
+
+  if (!match) {
+    await supabase.from('creator_requests')
+      .update({ status: 'failed', error_message: 'Substack not found on any public category leaderboard' })
+      .eq('id', request.id);
+    console.log(`[substack/${slug}] ❌ Not on any leaderboard — can't read a subscriber count`);
+    return { success: false, username: slug, error: 'not rankable' };
+  }
+  const out = await commitCreator(request, match);
+  if (out.success) {
+    console.log(`[substack/${slug}] ✅ Tracked ${match.displayName}` +
+      (out.statsWritten ? ` (${match.subscribers} subscribers)` : ` (count fills on next daily sweep)`));
+  }
+  return out;
+}
+
+/**
  * Process a single creator request
  */
 async function processRequest(request) {
   console.log(`\n[${request.platform}/${request.username}] Processing request...`);
 
-  // Rumble has its own (non-TikTok) fetch + parse path.
-  if (request.platform === 'rumble') {
-    return await processRumbleRequest(request);
-  }
+  // Non-TikTok platforms each have their own fetch + parse path.
+  if (request.platform === 'rumble') return await processRumbleRequest(request);
+  if (request.platform === 'mastodon') return await processMastodonRequest(request);
+  if (request.platform === 'substack') return await processSubstackRequest(request);
 
   try {
     // Mark as processing

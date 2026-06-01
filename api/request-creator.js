@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     // Validate platform
-    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'youtube', 'twitch', 'kick', 'rumble'];
+    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'youtube', 'twitch', 'kick', 'rumble', 'mastodon', 'substack'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: instant ? 'Instant lookup is only supported for TikTok' : 'Invalid platform' });
     }
@@ -47,6 +47,36 @@ export default async function handler(req, res) {
       normalized = raw.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 50);
       if (!normalized || normalized.length < 2) {
         return res.status(400).json({ error: 'Enter your Rumble channel URL or handle (e.g. rumble.com/user/YourName).' });
+      }
+    } else if (platform === 'mastodon') {
+      // Mastodon handles are `user@instance.tld`. Accept that, an `@user@instance`
+      // form, or a profile URL `https://instance/@user`. Store as `user@instance`
+      // (instance lowercased; username kept as-is).
+      let raw = String(username).trim().replace(/^@/, '');
+      const urlMatch = raw.match(/^https?:\/\/([^/]+)\/@([^/?#@]+)/i);
+      let user, instance;
+      if (urlMatch) { instance = urlMatch[1]; user = urlMatch[2]; }
+      else {
+        const parts = raw.split('@').filter(Boolean);
+        if (parts.length === 2) { user = parts[0]; instance = parts[1]; }
+      }
+      user = (user || '').replace(/[^A-Za-z0-9_.]/g, '').slice(0, 60);
+      instance = (instance || '').toLowerCase().replace(/[^a-z0-9.\-]/g, '').slice(0, 100);
+      if (!user || !instance || !instance.includes('.')) {
+        return res.status(400).json({ error: 'Enter your full Mastodon handle, e.g. yourname@mastodon.social.' });
+      }
+      normalized = `${user}@${instance}`;
+    } else if (platform === 'substack') {
+      // Substack is identified by its subdomain slug. Accept a subdomain URL
+      // `https://slug.substack.com` or a bare slug. Custom-domain URLs can't be
+      // resolved to a slug, so they're rejected with a hint.
+      let raw = String(username).trim();
+      const subMatch = raw.match(/^https?:\/\/([^.]+)\.substack\.com/i);
+      if (subMatch) raw = subMatch[1];
+      else raw = raw.replace(/^https?:\/\//i, '').split(/[./?#]/)[0];
+      normalized = raw.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 50);
+      if (!normalized || normalized.length < 2) {
+        return res.status(400).json({ error: 'Enter your Substack URL or subdomain, e.g. yourname.substack.com.' });
       }
     } else {
       // Normalize username: strip @, remove spaces/special chars, lowercase
