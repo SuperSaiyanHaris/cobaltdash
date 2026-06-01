@@ -72,9 +72,11 @@ export function parseChannelHtml(html, { slug, kind, profileUrl }) {
     html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
   const displayName = titleMatch ? cleanText(titleMatch[1]) : slug;
 
-  // Avatar from og:image or the channel header img tag
+  // Avatar from og:image or the channel header img tag. `channel-header--img`
+  // is the newer template's class; `channel-header--thumbnail` is the old one.
   const avatarMatch =
     html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i) ||
+    html.match(/class="channel-header--img"[^>]*src="([^"]+)"/i) ||
     html.match(/class="channel-header--thumbnail"[^>]*src="([^"]+)"/i);
   const profileImage = avatarMatch ? avatarMatch[1] : null;
 
@@ -88,11 +90,14 @@ export function parseChannelHtml(html, { slug, kind, profileUrl }) {
   // Look for variants like `data-test="follower-count"` or the labeled pair.
   let followers = 0;
   const followerPatterns = [
+    // Newer channel-header template: `<span>1 Follower</span>` / `<span>12.5K Followers</span>`
+    // (note singular "Follower" when the count is 1).
+    /<span>\s*([\d.,]+\s*[KMB]?)\s*Followers?\s*<\/span>/i,
     /<span[^>]*data-test="follower-count"[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    /([\d.,]+\s*[KMB]?)<\/span>\s*<span[^>]*>\s*Followers/i,
+    /([\d.,]+\s*[KMB]?)<\/span>\s*<span[^>]*>\s*Followers?/i,
     /<div[^>]*class="[^"]*listing-header--followers[^"]*"[^>]*>\s*<span[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    />\s*([\d.,]+\s*[KMB])\s*Followers\b/i,
-    />\s*([\d,]+)\s*Followers\b/i,
+    />\s*([\d.,]+\s*[KMB])\s*Followers?\b/i,
+    />\s*([\d,]+)\s*Followers?\b/i,
   ];
   for (const re of followerPatterns) {
     const m = html.match(re);
