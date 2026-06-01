@@ -62,7 +62,12 @@ export default async function handler(req, res) {
       }
       user = (user || '').replace(/[^A-Za-z0-9_.]/g, '').slice(0, 60);
       instance = (instance || '').toLowerCase().replace(/[^a-z0-9.\-]/g, '').slice(0, 100);
-      if (!user || !instance || !instance.includes('.')) {
+      // Instance must be a real domain (has a dot) and a non-numeric TLD — reject
+      // IP literals like 127.0.0.1 / 169.254.169.254 so the off-platform fetch in
+      // the processor can't be pointed at internal/metadata addresses (SSRF).
+      const looksLikeIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(instance);
+      const hasValidTld = /\.[a-z]{2,}$/.test(instance);
+      if (!user || !instance || looksLikeIp || !hasValidTld) {
         return res.status(400).json({ error: 'Enter your full Mastodon handle, e.g. yourname@mastodon.social.' });
       }
       normalized = `${user}@${instance}`;

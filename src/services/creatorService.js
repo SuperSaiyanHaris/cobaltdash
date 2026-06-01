@@ -55,36 +55,14 @@ function getTodayLocal() {
  * Save creator stats snapshot via server-side API
  * This should ONLY save stats, not touch the creator record
  */
-export const saveCreatorStats = withErrorHandling(
-  async (creatorId, stats) => {
-    // Call server-side API with ONLY stats data
-    // Send creatorId so API knows which creator these stats belong to
-    const response = await fetch('/api/update-creator', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        creatorId: creatorId, // Just send the ID
-        statsData: {
-          subscribers: stats.subscribers,
-          totalViews: stats.totalViews,
-          totalPosts: stats.totalPosts,
-        },
-        // NO creatorData - we don't want to update the creator record
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Failed to save stats' }));
-      throw new Error(error.error || 'Failed to save stats');
-    }
-
-    const result = await response.json();
-    return result;
-  },
-  'creatorService.saveCreatorStats'
-);
+// Stats are no longer written from the client. The /api/update-creator endpoint
+// is gated only by an Origin header (forgeable outside a browser), so letting it
+// write creator_stats would allow anyone to inject fake subscriber numbers and
+// corrupt the historical charts. The server-side daily collection is the single
+// writer of creator_stats, pulling real numbers from the platforms. A creator
+// added via search gets its first data point on the next collection run.
+// Kept as a no-op so existing callers don't need to change.
+export const saveCreatorStats = async () => ({ success: true, skipped: true });
 
 // Creator profile metadata changes rarely (avatar, description updates).
 // Cache per (platform, username) with stale-while-revalidate.

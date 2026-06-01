@@ -1,7 +1,34 @@
-// Server-side API endpoint to handle creator and stats updates
-// Uses service role key (bypasses RLS) with proper validation
+// Server-side API endpoint to handle creator upserts during live-search hydration.
+// Uses the service role key (bypasses RLS), so input is treated as untrusted:
+//   - profile_image is accepted only when it points at a known platform avatar CDN
+//   - stats are NOT writable here (only server collection writes creator_stats),
+//     which removes the chart-corruption vector from this public endpoint.
 
 import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
+
+// Known platform avatar CDNs. An image URL from anywhere else is dropped (stored
+// as null) rather than trusted, so this endpoint can't be used to point creator
+// avatars at attacker-controlled or tracking URLs.
+const ALLOWED_IMAGE_HOSTS = new Set([
+  'yt3.googleusercontent.com', 'yt3.ggpht.com', 'i.ytimg.com', 'lh3.googleusercontent.com',
+  'static-cdn.jtvnw.net',            // Twitch
+  'files.kick.com',                  // Kick
+  'cdn.bsky.app',                    // Bluesky
+  'i.scdn.co',                       // Spotify
+  'lastfm.freetls.fastly.net',       // Last.fm
+]);
+const ALLOWED_IMAGE_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com'];
+
+function sanitizeImageUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  let u;
+  try { u = new URL(url); } catch { return null; }
+  if (u.protocol !== 'https:') return null;
+  const host = u.hostname.toLowerCase();
+  if (ALLOWED_IMAGE_HOSTS.has(host)) return url;
+  if (ALLOWED_IMAGE_SUFFIXES.some((s) => host.endsWith(s))) return url;
+  return null;
+}
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -42,7 +69,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { creatorData, creatorId, statsData } = req.body;
+    const { creatorData } = req.body;
 
     // Import Supabase client with service role key
     const { createClient } = await import('@supabase/supabase-js');
@@ -89,7 +116,7 @@ export default async function handler(req, res) {
         const { data: updatedCreator, error: updateError } = await supabase
           .from('creators')
           .update({
-            profile_image: creatorData.profileImage,
+            profile_image: sanitizeImageUrl(creatorData.profileImage),
             description: creatorData.description,
             country: creatorData.country,
             category: creatorData.category,
@@ -113,7 +140,7 @@ export default async function handler(req, res) {
             platform_id: creatorData.platformId,
             username: creatorData.username,
             display_name: creatorData.displayName,
-            profile_image: creatorData.profileImage,
+            profile_image: sanitizeImageUrl(creatorData.profileImage),
             description: creatorData.description,
             country: creatorData.country,
             category: creatorData.category,
@@ -130,39 +157,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // If stats data provided, save it
-    // Use creatorId from request if provided, otherwise use creator.id from upsert above
-    // GUARD: never write 0 or null subscribers — that means the API call failed and we
-    // must not overwrite a good historical row with bad data.
-    if (statsData && (creatorId || creator) && statsData.subscribers) {
-      const targetCreatorId = creatorId || creator.id;
-
-      // Get today's date in America/New_York timezone
-      const today = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(new Date());
-
-      const { error: statsError } = await supabase
-        .from('creator_stats')
-        .upsert({
-          creator_id: targetCreatorId,
-          recorded_at: today,
-          subscribers: statsData.subscribers,
-          total_views: statsData.totalViews,
-          total_posts: statsData.totalPosts,
-          followers: statsData.subscribers,
-        }, {
-          onConflict: 'creator_id,recorded_at',
-        });
-
-      if (statsError) {
-        console.error('Stats upsert error:', statsError);
-        return res.status(500).json({ error: 'Failed to save stats' });
-      }
-    }
+    // NOTE: creator_stats are intentionally NOT writable from this endpoint.
+    // This is a public route gated only by an Origin header (forgeable by non-
+    // browser clients), so allowing arbitrary stats writes would let anyone
+    // inject fake subscriber numbers and corrupt the historical charts. Stats
+    // are written exclusively by the server-side daily collection, which pulls
+    // real numbers from the platforms. A creator added here gets its first data
+    // point on the next collection run.
 
     return res.status(200).json({
       success: true,
