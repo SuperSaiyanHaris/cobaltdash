@@ -29,25 +29,41 @@ export default async function handler(req, res) {
     }
 
     // Validate platform
-    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'youtube', 'twitch', 'kick'];
+    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'youtube', 'twitch', 'kick', 'rumble'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: instant ? 'Instant lookup is only supported for TikTok' : 'Invalid platform' });
     }
 
-    // Normalize username: strip @, remove spaces/special chars, lowercase
-    const normalized = username
-      .replace(/^@/, '')
-      .replace(/[^a-zA-Z0-9._]/g, '')
-      .replace(/^\.+|\.+$/g, '')
-      .toLowerCase()
-      .slice(0, 30);
+    let normalized;
+    if (platform === 'rumble') {
+      // Rumble slugs are CASE-SENSITIVE and may contain hyphens, so we can't
+      // lowercase/strip like the handle platforms. Accept a full channel URL,
+      // a `c:`/`user:` prefix, or a bare slug, and keep the slug verbatim.
+      let raw = String(username).trim();
+      const urlMatch = raw.match(/rumble\.com\/(?:c|user)\/([^/?#\s]+)/i);
+      const prefixMatch = raw.match(/^(?:c|user):(.+)$/i);
+      if (urlMatch) raw = urlMatch[1];
+      else if (prefixMatch) raw = prefixMatch[1];
+      normalized = raw.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 50);
+      if (!normalized || normalized.length < 2) {
+        return res.status(400).json({ error: 'Enter your Rumble channel URL or handle (e.g. rumble.com/user/YourName).' });
+      }
+    } else {
+      // Normalize username: strip @, remove spaces/special chars, lowercase
+      normalized = username
+        .replace(/^@/, '')
+        .replace(/[^a-zA-Z0-9._]/g, '')
+        .replace(/^\.+|\.+$/g, '')
+        .toLowerCase()
+        .slice(0, 30);
 
-    // Validate normalized username format
-    const usernameRegex = /^[a-zA-Z0-9._]{1,30}$/;
-    if (!normalized || !usernameRegex.test(normalized)) {
-      return res.status(400).json({
-        error: 'Invalid username format. Only letters, numbers, dots, and underscores allowed.'
-      });
+      // Validate normalized username format
+      const usernameRegex = /^[a-zA-Z0-9._]{1,30}$/;
+      if (!normalized || !usernameRegex.test(normalized)) {
+        return res.status(400).json({
+          error: 'Invalid username format. Only letters, numbers, dots, and underscores allowed.'
+        });
+      }
     }
 
     // Initialize Supabase client with service role key

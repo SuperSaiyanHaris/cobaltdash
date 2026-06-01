@@ -121,6 +121,17 @@ export function parseChannelHtml(html, { slug, kind, profileUrl }) {
       if (totalPosts > 0) break;
     }
   }
+  // Newer template has no "X videos" label. Fall back to counting the distinct
+  // videos rendered in the listing (each has a `data-video-id`). Rumble pages
+  // the listing at ~25 per page, so a count at/above that almost certainly means
+  // there are more we can't see — in that case we DON'T guess (leave it unset)
+  // rather than publish a misleadingly low number. Below the page size, the
+  // whole catalog is on the page, so the count is exact. This is the small-
+  // creator case, which is exactly who needs an accurate count.
+  if (!totalPosts) {
+    const ids = new Set([...html.matchAll(/data-video-id=["'](\d+)["']/g)].map((m) => m[1]));
+    if (ids.size > 0 && ids.size < 24) totalPosts = ids.size;
+  }
 
   // Banner image at the top of the channel
   let bannerImage = null;
