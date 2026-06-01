@@ -442,11 +442,11 @@ export default function Home() {
                           const displayName = creator?.display_name || fallbackNames[i];
                           return (
                             <div key={creator?.id || i} className="grid grid-cols-[28px_1fr_auto_auto] sm:grid-cols-[28px_1fr_100px_70px] items-center gap-3 sm:gap-4 px-3 py-2.5 rounded-lg">
-                              <span className={`w-6 h-6 inline-flex items-center justify-center rounded text-xs font-bold ${
-                                i === 0 ? 'bg-amber-100 text-amber-700' :
-                                i === 1 ? 'bg-neutral-100 text-neutral-600' :
-                                i === 2 ? 'bg-orange-100 text-orange-700' :
-                                'bg-neutral-50 text-neutral-400'
+                              <span className={`w-6 h-6 inline-flex items-center justify-center rounded-lg text-xs font-bold tabular-nums ${
+                                i === 0 ? 'bg-gradient-to-br from-amber-100 to-yellow-200 text-amber-800 ring-1 ring-amber-300' :
+                                i === 1 ? 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 ring-1 ring-slate-300' :
+                                i === 2 ? 'bg-gradient-to-br from-orange-100 to-amber-200 text-orange-800 ring-1 ring-orange-300' :
+                                'bg-neutral-100 text-neutral-500'
                               }`}>{i + 1}</span>
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <CreatorAvatar src={creator?.profile_image} name={displayName} size="sm" />

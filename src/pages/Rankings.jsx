@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Youtube, Twitch, TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight } from 'lucide-react';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
@@ -32,6 +33,26 @@ const platforms = [
 ];
 
 const topCounts = [50, 100, 500];
+
+const MotionLink = motion(Link);
+
+// Readable rank badge for the light theme. Top 3 get tinted "medal" pills with
+// dark, high-contrast text; everyone else gets a clean neutral numeral. Replaces
+// the old dark-theme treatment (light text on light bg = unreadable).
+function RankBadge({ rank, size = 'md' }) {
+  const box = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm';
+  const base = `${box} inline-flex items-center justify-center rounded-lg font-bold tabular-nums flex-shrink-0`;
+  if (rank === 1) {
+    return <span className={`${base} bg-gradient-to-br from-amber-100 to-yellow-200 text-amber-800 ring-1 ring-amber-300 shadow-sm shadow-amber-500/20`}>{rank}</span>;
+  }
+  if (rank === 2) {
+    return <span className={`${base} bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 ring-1 ring-slate-300`}>{rank}</span>;
+  }
+  if (rank === 3) {
+    return <span className={`${base} bg-gradient-to-br from-orange-100 to-amber-200 text-orange-800 ring-1 ring-orange-300`}>{rank}</span>;
+  }
+  return <span className={`${base} bg-neutral-100 text-neutral-500`}>{rank}</span>;
+}
 
 // SEO helpers per platform
 function getSeoData(platform, rankType, topCount) {
@@ -216,8 +237,8 @@ function RankingsOverview() {
             <div className="flex items-center gap-2 sm:gap-3 mb-2">
               <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-neutral-900">Creator Rankings</h1>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 text-xs font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Live
               </span>
             </div>
@@ -242,7 +263,14 @@ function RankingsOverview() {
                 const follLabel = platform.id === 'tiktok' || platform.id === 'twitch' || platform.id === 'bluesky' || platform.id === 'mastodon' || platform.id === 'rumble' ? 'followers' : platform.id === 'music' ? 'listeners' : platform.id === 'kick' ? 'paid subs' : 'subscribers';
 
                 return (
-                  <div key={platform.id} className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+                  <motion.div
+                    key={platform.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md hover:border-neutral-300 transition-all"
+                  >
                     {/* Platform Header */}
                     <div className={`flex items-center px-5 py-4 ${platform.lightBg} border-b border-neutral-200`}>
                       <div className="flex items-center gap-2.5">
@@ -254,7 +282,7 @@ function RankingsOverview() {
                     </div>
 
                     {/* Mini Rankings List */}
-                    <div className="divide-y divide-gray-800/70">
+                    <div className="divide-y divide-neutral-100">
                       {creators.length === 0 ? (
                         <div className="px-5 py-8 text-center text-neutral-700 text-sm">No data available</div>
                       ) : (() => {
@@ -321,17 +349,10 @@ function RankingsOverview() {
                               to={`/${creator.platform}/${creator.username}`}
                               className="flex items-center gap-3 px-5 py-3 hover:bg-neutral-50 transition-colors group"
                             >
-                              <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                                index === 0 ? 'bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-500/40' :
-                                index === 1 ? 'bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/30' :
-                                index === 2 ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/40' :
-                                'bg-neutral-50 text-neutral-400'
-                              }`}>
-                                {index + 1}
-                              </span>
+                              <RankBadge rank={index + 1} size="sm" />
                               <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="sm" />
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-indigo-400 transition-colors">
+                                <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-indigo-600 transition-colors">
                                   {creator.display_name}
                                 </p>
                               </div>
@@ -354,7 +375,7 @@ function RankingsOverview() {
                         View Top 50 {platform.name} Creators
                       </Link>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -606,8 +627,8 @@ function PlatformRankings({ urlPlatform }) {
             <div className="flex items-center gap-2 sm:gap-3 mb-2">
               <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 text-xs font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Live
               </span>
             </div>
@@ -864,28 +885,28 @@ function PlatformRankings({ urlPlatform }) {
               }
 
               return (
-                <Link
+                <MotionLink
                   key={creator.id}
                   to={`/${creator.platform}/${creator.username}`}
-                  className="grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-200 hover:bg-neutral-50 transition-colors group"
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="relative grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 hover:bg-neutral-50 transition-colors group"
                 >
+                  {/* Accent edge on hover (platform color) */}
+                  <span className={`pointer-events-none absolute left-0 top-0 bottom-0 w-1 ${currentPlatform?.color || 'bg-indigo-500'} opacity-0 group-hover:opacity-100 transition-opacity rounded-r`} />
+
                   {/* Rank */}
                   <div className="col-span-2 md:col-span-1">
-                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
-                      creator.originalRank === 1 ? 'bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-500/50' :
-                      creator.originalRank === 2 ? 'bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/30' :
-                      creator.originalRank === 3 ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/40' :
-                      'bg-neutral-50 text-neutral-400'
-                    }`}>
-                      {creator.originalRank}
-                    </span>
+                    <RankBadge rank={creator.originalRank} />
                   </div>
 
                   {/* Creator Info */}
                   <div className={`col-span-10 flex items-center gap-3 min-w-0 ${creatorColSpanRow}`}>
                     <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" />
                     <div className="min-w-0">
-                      <p className="font-semibold text-neutral-900 truncate group-hover:text-indigo-400 transition-colors">
+                      <p className="font-semibold text-neutral-900 truncate transition-colors group-hover:text-indigo-600">
                         {creator.display_name}
                       </p>
                     </div>
@@ -925,7 +946,7 @@ function PlatformRankings({ urlPlatform }) {
                       const denom = typeof base === 'number' && base > Math.abs(g) ? base - g : null;
                       const pct = denom && denom > 0 ? (g / denom) * 100 : null;
                       const showPct = pct !== null && Math.abs(pct) < 1000;
-                      const color = g > 0 ? 'text-emerald-400' : g < 0 ? 'text-red-400' : 'text-neutral-400';
+                      const color = g > 0 ? 'text-emerald-600' : g < 0 ? 'text-red-500' : 'text-neutral-400';
                       const arrow = g > 0 ? '▲' : g < 0 ? '▼' : '·';
                       return (
                         <>
@@ -951,7 +972,7 @@ function PlatformRankings({ urlPlatform }) {
                       )}
                     </span>
                   </div>
-                </Link>
+                </MotionLink>
               );
             })}
           </div>
