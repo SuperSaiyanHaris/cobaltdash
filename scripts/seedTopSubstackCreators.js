@@ -96,24 +96,27 @@ async function collectPublications() {
   return byId;
 }
 
+// Best subscriber number Substack exposes: precise total when present
+// ("freeSubscriberCount": "2,900,000"), else the order-of-magnitude floor.
+function subsFor(pub) {
+  if (pub.freeSubscriberCount) {
+    const n = parseInt(String(pub.freeSubscriberCount).replace(/[^0-9]/g, ''), 10);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return pub.rankingDetailFreeIncludedOrderOfMagnitude || pub.rankingDetailOrderOfMagnitude || 0;
+}
+
 /**
- * Order all publications into a single global ranking.
- *   1. total-subscriber bucket (freeIncluded OoM) DESC
- *   2. paid bucket (OoM) DESC
- *   3. best category position ASC
+ * Order all publications by precise subscriber count DESC, with best category
+ * leaderboard position as the tiebreaker.
  */
 function computeGlobalRanking(byId) {
   const arr = [...byId.values()].map(({ pub, bestPosition }) => ({
     pub,
     bestPosition,
-    totalOoM: pub.rankingDetailFreeIncludedOrderOfMagnitude || 0,
-    paidOoM: pub.rankingDetailOrderOfMagnitude || 0,
+    subs: subsFor(pub),
   }));
-  arr.sort((a, b) => {
-    if (b.totalOoM !== a.totalOoM) return b.totalOoM - a.totalOoM;
-    if (b.paidOoM !== a.paidOoM) return b.paidOoM - a.paidOoM;
-    return a.bestPosition - b.bestPosition;
-  });
+  arr.sort((a, b) => (b.subs - a.subs) || (a.bestPosition - b.bestPosition));
   return arr;
 }
 
@@ -125,17 +128,17 @@ async function main() {
   console.log(`\n📊 ${byId.size} unique publications collected\n`);
 
   const ranked = computeGlobalRanking(byId);
-  console.log('🏆 Top 10 by global rank:');
+  console.log('🏆 Top 10 by subscriber count:');
   ranked.slice(0, 10).forEach((r, i) => {
-    console.log(`  ${i + 1}. ${r.pub.name} (@${r.pub.subdomain}) — total OoM ${r.totalOoM.toLocaleString()}, paid OoM ${r.paidOoM.toLocaleString()}`);
+    console.log(`  ${i + 1}. ${r.pub.name} (@${r.pub.subdomain}) — ${r.subs.toLocaleString()} subscribers`);
   });
   console.log('');
 
   let inserted = 0, updated = 0, skipped = 0;
   for (let i = 0; i < ranked.length; i++) {
-    const { pub, totalOoM } = ranked[i];
+    const { pub, subs } = ranked[i];
     const globalRank = i + 1;
-    const subscribers = totalOoM || 0;
+    const subscribers = subs || 0;
     if (subscribers === 0) { skipped++; continue; } // never write 0 — data integrity rule
 
     const platformId = String(pub.id);

@@ -91,10 +91,16 @@ export function oomLabel(value) {
  */
 export function normalizePublication(pub, globalRank = null) {
   if (!pub || !pub.id || !pub.subdomain) return null;
-  // freeIncluded = total subscribers (free + paid); fall back to paid OoM.
-  const subscribers = pub.rankingDetailFreeIncludedOrderOfMagnitude
-    || pub.rankingDetailOrderOfMagnitude
-    || 0;
+  // Precise total subscribers ("freeSubscriberCount": "2,900,000") when Substack
+  // exposes it, else the order-of-magnitude band floor.
+  let subscribers = 0;
+  if (pub.freeSubscriberCount) {
+    const n = parseInt(String(pub.freeSubscriberCount).replace(/[^0-9]/g, ''), 10);
+    if (Number.isFinite(n) && n > 0) subscribers = n;
+  }
+  if (!subscribers) {
+    subscribers = pub.rankingDetailFreeIncludedOrderOfMagnitude || pub.rankingDetailOrderOfMagnitude || 0;
+  }
   return {
     platform: 'substack',
     platformId: String(pub.id),

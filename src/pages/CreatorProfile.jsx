@@ -14,7 +14,7 @@ import { getChannelByUsername as getKickChannel, getLiveStreams as getKickLiveSt
 import { getBlueskyProfile } from '../services/blueskyService';
 import { getMastodonProfile, getMastodonLatestStatus } from '../services/mastodonService';
 import { getRumbleChannel } from '../services/rumbleService';
-import { getSubstackPublication, oomLabel } from '../services/substackService';
+import { getSubstackPublication } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
@@ -1378,7 +1378,7 @@ export default function CreatorProfile() {
               <StatCard
                 icon={Users}
                 label={platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subscribers' : platform === 'music' ? 'Monthly Listeners' : 'Subscribers'}
-                value={platform === 'substack' ? (oomLabel(creator.subscribers || creator.followers) || formatNumber(creator.subscribers || creator.followers)) : formatNumber(creator.subscribers || creator.followers)}
+                value={formatNumber(creator.subscribers || creator.followers)}
                 sublabel={creator.hiddenSubscribers ? '(hidden)' : (platform === 'youtube' && (creator.subscribers || 0) >= 1000) ? '(rounded by YouTube)' : creator.broadcasterType ? `(${creator.broadcasterType})` : null}
               />
 

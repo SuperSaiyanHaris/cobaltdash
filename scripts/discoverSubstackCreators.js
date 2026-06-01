@@ -40,6 +40,15 @@ const CATEGORIES = [
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cleanText = (s) => (s ? String(s).replace(/\s+/g, ' ').trim().substring(0, 500) || null : null);
 
+// Precise total subscriber count when Substack exposes it, else the band floor.
+function subsFor(pub) {
+  if (pub.freeSubscriberCount) {
+    const n = parseInt(String(pub.freeSubscriberCount).replace(/[^0-9]/g, ''), 10);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return pub.rankingDetailFreeIncludedOrderOfMagnitude || pub.rankingDetailOrderOfMagnitude || 0;
+}
+
 async function existingIds() {
   const ids = new Set();
   let from = 0;
@@ -77,13 +86,8 @@ async function recomputeAllRanks() {
       } catch { break; }
     }
   }
-  const ranked = [...byId.values()].sort((a, b) => {
-    const aT = a.pub.rankingDetailFreeIncludedOrderOfMagnitude || 0, bT = b.pub.rankingDetailFreeIncludedOrderOfMagnitude || 0;
-    if (bT !== aT) return bT - aT;
-    const aP = a.pub.rankingDetailOrderOfMagnitude || 0, bP = b.pub.rankingDetailOrderOfMagnitude || 0;
-    if (bP !== aP) return bP - aP;
-    return a.bestPosition - b.bestPosition;
-  });
+  const ranked = [...byId.values()].map((e) => ({ ...e, subs: subsFor(e.pub) }))
+    .sort((a, b) => (b.subs - a.subs) || (a.bestPosition - b.bestPosition));
   let updated = 0;
   for (let i = 0; i < ranked.length; i++) {
     const r = ranked[i];
@@ -115,8 +119,7 @@ async function main() {
           if (!pub.id || !pub.subdomain) continue;
           const pid = String(pub.id);
           if (existing.has(pid) || candidates.has(pid)) continue;
-          const subs = pub.rankingDetailFreeIncludedOrderOfMagnitude || pub.rankingDetailOrderOfMagnitude || 0;
-          if (subs > 0) candidates.set(pid, pub);
+          if (subsFor(pub) > 0) candidates.set(pid, pub);
         }
         await sleep(FETCH_DELAY_MS);
         if (!data.more || pubs.length === 0) break;
@@ -128,7 +131,7 @@ async function main() {
   let added = 0;
   for (const [pid, pub] of candidates) {
     if (added >= MAX_PER_RUN) break;
-    const subs = pub.rankingDetailFreeIncludedOrderOfMagnitude || pub.rankingDetailOrderOfMagnitude || 0;
+    const subs = subsFor(pub);
     const { data: created, error } = await supabase.from('creators').insert({
       platform: 'substack',
       platform_id: pid,

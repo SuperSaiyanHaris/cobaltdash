@@ -396,23 +396,23 @@ async function buildSubstackRanking() {
       } catch { break; }
     }
   }
-  // Order into a global ranking and return a map: platformId -> { subscribers, globalRank }
-  const ranked = [...byId.values()].sort((a, b) => {
-    const aT = a.pub.rankingDetailFreeIncludedOrderOfMagnitude || 0;
-    const bT = b.pub.rankingDetailFreeIncludedOrderOfMagnitude || 0;
-    if (bT !== aT) return bT - aT;
-    const aP = a.pub.rankingDetailOrderOfMagnitude || 0;
-    const bP = b.pub.rankingDetailOrderOfMagnitude || 0;
-    if (bP !== aP) return bP - aP;
-    return a.bestPosition - b.bestPosition;
-  });
+  // Resolve the best subscriber number Substack exposes for a publication:
+  // the precise total ("freeSubscriberCount": "2,900,000") when present, else
+  // the order-of-magnitude band floor. Total (free + paid), the headline number.
+  const subsFor = (pub) => {
+    if (pub.freeSubscriberCount) {
+      const n = parseInt(String(pub.freeSubscriberCount).replace(/[^0-9]/g, ''), 10);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    return pub.rankingDetailFreeIncludedOrderOfMagnitude || pub.rankingDetailOrderOfMagnitude || 0;
+  };
+  // Global ranking: by precise subscriber count DESC, then best leaderboard
+  // position as a tiebreaker for pubs that share a value.
+  const ranked = [...byId.values()].map((e) => ({ ...e, subs: subsFor(e.pub) }))
+    .sort((a, b) => (b.subs - a.subs) || (a.bestPosition - b.bestPosition));
   const out = new Map();
   ranked.forEach((r, i) => {
-    out.set(String(r.pub.id), {
-      subscribers: r.pub.rankingDetailFreeIncludedOrderOfMagnitude
-        || r.pub.rankingDetailOrderOfMagnitude || 0,
-      globalRank: i + 1,
-    });
+    out.set(String(r.pub.id), { subscribers: r.subs, globalRank: i + 1 });
   });
   return out;
 }

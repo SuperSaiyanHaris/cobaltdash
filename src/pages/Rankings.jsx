@@ -568,15 +568,24 @@ function PlatformRankings({ urlPlatform }) {
   };
 
   const followerLabel = selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Followers' : selectedPlatform === 'music' ? 'Listeners' : selectedPlatform === 'kick' ? 'Paid Subs' : 'Subscribers';
-  // Platforms whose APIs expose a profile-level view/play count. Everything
-  // else hides the Views column entirely (no empty "0" column). YouTube +
-  // TikTok track views/likes; Music tracks total plays.
-  const platformHasViews = selectedPlatform === 'youtube' || selectedPlatform === 'tiktok' || selectedPlatform === 'music';
-  // No-views platforms give the Creator column an extra span so the row fills
-  // the grid evenly instead of leaving a gap where Views would be. Full literal
-  // class strings (not interpolated) so Tailwind's JIT scanner emits them.
-  const creatorColSpanHeader = platformHasViews ? 'col-span-4' : 'col-span-5';
-  const creatorColSpanRow = platformHasViews ? 'md:col-span-4' : 'md:col-span-5';
+  // Optional secondary stat column shown between the sparkline and Growth.
+  // Each platform maps to the one extra public metric worth showing (or none).
+  // `key` is the field on the ranking row; `sortKey` is the sortable column id.
+  // Platforms with no meaningful second metric (twitch/kick use hours-watched
+  // via the growth tab; substack has only subscribers) show no column and give
+  // the Creator column the extra span so the row fills the grid evenly.
+  const SECONDARY_COLUMN = {
+    youtube:  { label: 'Views',  key: 'totalViews', sortKey: 'views' },
+    tiktok:   { label: 'Likes',  key: 'totalViews', sortKey: 'views' },
+    music:    { label: 'Plays',  key: 'totalViews', sortKey: 'views' },
+    rumble:   { label: 'Videos', key: 'totalPosts', sortKey: null },
+    mastodon: { label: 'Posts',  key: 'totalPosts', sortKey: null },
+    bluesky:  { label: 'Posts',  key: 'totalPosts', sortKey: null },
+  };
+  const secondaryCol = SECONDARY_COLUMN[selectedPlatform] || null;
+  // Full literal class strings (not interpolated) so Tailwind's JIT emits them.
+  const creatorColSpanHeader = secondaryCol ? 'col-span-4' : 'col-span-5';
+  const creatorColSpanRow = secondaryCol ? 'md:col-span-4' : 'md:col-span-5';
   const currentPlatform = platforms.find(p => p.id === selectedPlatform);
   const seoData = getSeoData(currentPlatform, selectedRankType, topCount);
   const listSchema = createRankingListSchema(rankings, currentPlatform, topCount);
@@ -703,23 +712,18 @@ function PlatformRankings({ urlPlatform }) {
                 <SortIcon column="subscribers" />
               </button>
               <div className="col-span-2 text-right">30-Day Trend</div>
-              {selectedPlatform === 'tiktok' && (
-                <button
-                  onClick={() => handleSort('views')}
-                  className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
-                >
-                  <span>Likes</span>
-                  <SortIcon column="views" />
-                </button>
-              )}
-              {platformHasViews && (
-                <button
-                  onClick={() => handleSort('views')}
-                  className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
-                >
-                  <span>Views</span>
-                  <SortIcon column="views" />
-                </button>
+              {secondaryCol && (
+                secondaryCol.sortKey ? (
+                  <button
+                    onClick={() => handleSort(secondaryCol.sortKey)}
+                    className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
+                  >
+                    <span>{secondaryCol.label}</span>
+                    <SortIcon column={secondaryCol.sortKey} />
+                  </button>
+                ) : (
+                  <div className="col-span-2 text-right">{secondaryCol.label}</div>
+                )
               )}
               <button
                 onClick={() => handleSort('growth')}
@@ -846,7 +850,7 @@ function PlatformRankings({ urlPlatform }) {
                         the platform actually has a Views column. */}
                     <div className="hidden md:block col-span-2" />
                     <div className="hidden md:block col-span-2" />
-                    {platformHasViews && <div className="hidden md:block col-span-2" />}
+                    {secondaryCol && <div className="hidden md:block col-span-2" />}
                     <div className="hidden md:flex col-span-1 items-center justify-end">
                       {isGhost && (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
@@ -897,10 +901,10 @@ function PlatformRankings({ urlPlatform }) {
                     <Sparkline data={sparklines[creator.id] || []} width={88} height={28} />
                   </div>
 
-                  {/* Views / Likes / Plays — only platforms that expose them */}
-                  {platformHasViews && (
+                  {/* Secondary metric (Views/Likes/Plays/Videos/Posts) per platform */}
+                  {secondaryCol && (
                     <div className="hidden md:block col-span-2 text-right">
-                      <span className="text-neutral-700 tabular-nums">{formatNumber(creator.totalViews)}</span>
+                      <span className="text-neutral-700 tabular-nums">{formatNumber(creator[secondaryCol.key])}</span>
                     </div>
                   )}
 
@@ -942,11 +946,8 @@ function PlatformRankings({ urlPlatform }) {
                   <div className="md:hidden col-span-12 pl-[52px] -mt-2 pb-1">
                     <span className="text-xs text-neutral-500">
                       <span className="font-semibold text-neutral-800">{formatNumber(creator.subscribers)}</span> {followerLabel.toLowerCase()}
-                      {selectedPlatform === 'tiktok' && (
-                        <span className="ml-2 text-neutral-400">· <span className="font-semibold text-neutral-700">{formatNumber(creator.totalLikes || creator.totalViews)}</span> likes</span>
-                      )}
-                      {selectedPlatform !== 'kick' && selectedPlatform !== 'tiktok' && selectedPlatform !== 'bluesky' && (
-                        <span className="ml-2 text-neutral-400">· <span className="font-semibold text-neutral-700">{formatNumber(creator.totalViews)}</span> views</span>
+                      {secondaryCol && (
+                        <span className="ml-2 text-neutral-400">· <span className="font-semibold text-neutral-700">{formatNumber(creator[secondaryCol.key])}</span> {secondaryCol.label.toLowerCase()}</span>
                       )}
                     </span>
                   </div>
