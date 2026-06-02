@@ -3,76 +3,36 @@
  * Validates required environment variables on app startup
  */
 
-// Required environment variables for the app to function
-const REQUIRED_ENV_VARS = [
-  'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY',
-];
-
-// Optional but recommended environment variables
-const OPTIONAL_ENV_VARS = [
-  'VITE_YOUTUBE_API_KEY',
-  'VITE_TWITCH_CLIENT_ID',
-];
-
 /**
- * Validates that all required environment variables are set
- * Logs warnings for missing optional variables
+ * Validates that the required PUBLIC environment variables are set.
+ *
+ * SECURITY: every access below is STATIC (`import.meta.env.VITE_FOO`), never
+ * dynamic (`import.meta.env[someVar]`). Dynamic/object access makes Vite inline
+ * the ENTIRE set of VITE_-prefixed vars into the public bundle — which is how a
+ * server key once leaked. With static access only the two public Supabase
+ * values are inlined, so a stray VITE_-prefixed secret can never reach the
+ * browser. Keep it that way: only the Supabase URL + anon key are public.
+ *
  * @returns {boolean} True if all required vars are set
  */
 export function validateEnv() {
   const missing = [];
-  const missingOptional = [];
+  if (!import.meta.env.VITE_SUPABASE_URL) missing.push('VITE_SUPABASE_URL');
+  if (!import.meta.env.VITE_SUPABASE_ANON_KEY) missing.push('VITE_SUPABASE_ANON_KEY');
 
-  // Check required variables
-  for (const varName of REQUIRED_ENV_VARS) {
-    if (!import.meta.env[varName]) {
-      missing.push(varName);
-    }
-  }
-
-  // Check optional variables (warnings only)
-  for (const varName of OPTIONAL_ENV_VARS) {
-    if (!import.meta.env[varName]) {
-      missingOptional.push(varName);
-    }
-  }
-
-  // Log warnings for missing optional vars in development
-  if (import.meta.env.DEV && missingOptional.length > 0) {
-    console.warn(
-      `[ENV] Missing optional environment variables: ${missingOptional.join(', ')}. ` +
-      'Some features may not work correctly.'
-    );
-  }
-
-  // Throw error for missing required vars
   if (missing.length > 0) {
-    const message = `Missing required environment variables: ${missing.join(', ')}. ` +
-      'Please check your .env file.';
-
     if (import.meta.env.DEV) {
-      console.error(`[ENV] ${message}`);
+      console.error(
+        `[ENV] Missing required environment variables: ${missing.join(', ')}. Please check your .env file.`
+      );
     }
-
     return false;
   }
 
   if (import.meta.env.DEV) {
     console.log('[ENV] All required environment variables are configured.');
   }
-
   return true;
-}
-
-/**
- * Get an environment variable with a fallback value
- * @param {string} key - The environment variable key
- * @param {string} fallback - Fallback value if not set
- * @returns {string} The environment variable value or fallback
- */
-export function getEnv(key, fallback = '') {
-  return import.meta.env[key] || fallback;
 }
 
 /**
@@ -91,10 +51,11 @@ export function isProd() {
   return import.meta.env.PROD === true;
 }
 
-// Export environment variable names for type safety
+// Export environment variable names for type safety. Only PUBLIC values belong
+// here — the Supabase URL and anon key are safe to ship to the browser (the
+// anon key is protected by RLS). Platform API keys are server-only and are NOT
+// listed here, so they never get inlined into the client bundle.
 export const ENV_KEYS = {
   SUPABASE_URL: 'VITE_SUPABASE_URL',
   SUPABASE_ANON_KEY: 'VITE_SUPABASE_ANON_KEY',
-  YOUTUBE_API_KEY: 'VITE_YOUTUBE_API_KEY',
-  TWITCH_CLIENT_ID: 'VITE_TWITCH_CLIENT_ID',
 };
