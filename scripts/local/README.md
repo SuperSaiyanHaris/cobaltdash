@@ -1,34 +1,38 @@
 # Local Automation
 
-Most collection runs in **GitHub Actions**. Two platforms (Rumble, Substack)
-**cannot** run in the cloud because their sites hard-block GitHub's datacenter
-IPs, so they MUST be collected from a residential IP via a local scheduled task.
+Almost everything runs in the cloud. **Rumble is the one platform that must run
+locally** — rumble.com hard-blocks every datacenter IP we've tried (GitHub
+Actions, Vercel, and Supabase Edge all get Cloudflare-challenged), so it can only
+be collected from a residential IP.
+
+(Substack used to be here too, but it's now fully cloud: the Supabase Edge
+Function `collect-substack` runs daily via pg_cron — Substack doesn't block
+Supabase's IPs. Nothing to do locally for Substack.)
 
 ## Scripts
 
-- **`collect-rumble-substack.bat`** — **REQUIRED daily task.** Collects Rumble +
-  Substack daily stats (the cloud workflow skips them — see below). Schedule
-  this once per day in Windows Task Scheduler.
+- **`collect-rumble.bat`** — **REQUIRED daily task.** Collects Rumble daily stats
+  (the cloud workflow skips Rumble). Schedule once per day in Task Scheduler.
 - **`refresh-tiktok.bat`** - Manually refresh ALL TikTok profiles (fallback only)
 - **`discover-tiktok.bat`** - Discovers new creators from curated list
 
-## Rumble + Substack (must run locally — not optional)
+## Rumble (must run locally — not optional)
 
-`rumble.com` and `substack.com` return 403 to GitHub Actions datacenter IPs, so
-the daily-stats-collection workflow skips them (it detects CI via the
-`GITHUB_ACTIONS` env var). The `collect-rumble-substack.bat` task runs the same
-`collectDailyStats.js` with `COLLECT_ONLY=rumble,substack` from your machine's
-residential IP, where the fetches succeed, then refreshes the rankings cache.
+`rumble.com` returns a Cloudflare challenge to datacenter IPs, so the
+daily-stats-collection workflow skips Rumble (it detects CI via `GITHUB_ACTIONS`).
+`collect-rumble.bat` runs `collectDailyStats.js` with `COLLECT_ONLY=rumble` from
+your machine's residential IP (where fetches succeed), then refreshes the
+rankings cache.
 
 **Set it up once (Windows Task Scheduler):**
-1. Open Task Scheduler → Create Basic Task → name it "ShinyPull Rumble+Substack".
+1. Open Task Scheduler → Create Basic Task → name it "ShinyPull Rumble".
 2. Trigger: Daily, pick a time your machine is on (e.g. 6 AM).
-3. Action: Start a program → `d:\Claude\ShinyPull\scripts\local\collect-rumble-substack.bat`.
+3. Action: Start a program → `d:\Claude\ShinyPull\scripts\local\collect-rumble.bat`.
 4. Finish. (Optional: tick "Run whether user is logged on or not".)
 
-If your machine is off at the scheduled time, that day's Rumble/Substack
-snapshot is simply skipped — the charts tolerate gaps, and the next run resumes
-normally. The cloud handles all other platforms regardless.
+If your machine is off at the scheduled time, that day's Rumble snapshot is just
+skipped — the charts tolerate gaps and the next run resumes. Everything else
+(including Substack) runs in the cloud regardless.
 
 ## Normal Operation
 
