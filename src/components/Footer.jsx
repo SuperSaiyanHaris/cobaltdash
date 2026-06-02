@@ -52,13 +52,10 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="col-span-2 md:col-span-2 md:pr-8">
-            <Link to="/" className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg font-bold text-neutral-900 tracking-tight">
-                Shiny<span className="text-indigo-600">Pull</span>
-              </span>
+            <Link to="/" aria-label="ShinyPull home" className="flex items-baseline gap-[3px] mb-3 group">
+              <span className="text-[22px] leading-none font-bold tracking-tight text-neutral-900">ShinyPu</span>
+              <span aria-hidden="true" className="inline-block w-[5px] h-[14px] rounded-[2px] bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
+              <span aria-hidden="true" className="inline-block w-[5px] h-[19px] rounded-[2px] -ml-px bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
             </Link>
             <p className="text-sm text-neutral-600 leading-relaxed max-w-sm">
               Creator analytics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music. Updated daily.

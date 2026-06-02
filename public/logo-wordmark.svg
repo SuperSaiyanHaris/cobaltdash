@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-label="ShinyPull">
+  <title>ShinyPull</title>
+  <defs>
+    <linearGradient id="sp-bars" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="55%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#d946ef"/>
+    </linearGradient>
+  </defs>
+  <!-- Wordmark: "ShinyPu" set in the site font; the final "ll" of Pull is drawn
+       as two gradient bars so the wordmark doubles as the bar-chart mark. -->
+  <text x="0" y="66" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="68" font-weight="700" letter-spacing="-3" fill="#171717">ShinyPu</text>
+  <!-- the two "l" bars (ascending, bar-chart feel), abutting the "u" -->
+  <rect x="250" y="26" width="13" height="40" rx="4" fill="url(#sp-bars)"/>
+  <rect x="269" y="14" width="13" height="52" rx="4" fill="url(#sp-bars)"/>
+</svg>

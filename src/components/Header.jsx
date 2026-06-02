@@ -136,14 +136,17 @@ export default function Header() {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
-          {/* Logo */}
-          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 group flex-shrink-0">
-            <div className="w-9 h-9 bg-neutral-900 rounded-[10px] flex items-center justify-center group-hover:bg-neutral-800 transition-colors">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-neutral-900 tracking-tight">
-              Shiny<span className="text-indigo-600">Pull</span>
-            </span>
+          {/* Logo — wordmark where the "ll" of Pull are gradient bars, so the
+              wordmark doubles as the bar-chart mark. */}
+          <Link
+            to="/"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="ShinyPull home"
+            className="flex items-baseline gap-[3px] group flex-shrink-0"
+          >
+            <span className="text-[26px] leading-none font-bold tracking-tight text-neutral-900">ShinyPu</span>
+            <span aria-hidden="true" className="inline-block w-[6px] h-[17px] rounded-[2px] bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500 transition-transform group-hover:-translate-y-0.5" />
+            <span aria-hidden="true" className="inline-block w-[6px] h-[23px] rounded-[2px] -ml-px bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500 transition-transform group-hover:-translate-y-1" />
           </Link>
 
           {/* Desktop Nav */}
