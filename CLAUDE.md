@@ -478,14 +478,21 @@ That migration frees 5 Vercel slots and removes the cap pressure for a long time
 
 **Note:** TikTok scraping works from GitHub Actions IPs (confirmed Feb 2026). Local scripts kept as fallback only.
 
-## Local Automation (Fallback Only)
+**RUMBLE + SUBSTACK ARE IP-BLOCKED IN CI — they CANNOT be collected from GitHub Actions (learned 2026-06-02).**
+- `rumble.com` and `substack.com` return 403 to GitHub Actions datacenter IPs. Every fetch fails: Rumble logs "Channel not found" for ALL channels (even PragerU/Timcast), Substack logs "Leaderboard returned 0 ranked publications". The cloud run *completes successfully* but silently writes ~zero rows for these two, which is how every Rumble/Substack profile got stuck on "1 day tracked." The API-based platforms (YouTube/Twitch/Kick/Bluesky/Mastodon/Music) are unaffected — they don't IP-block.
+- `collectDailyStats.js` therefore **skips rumble + substack when `process.env.GITHUB_ACTIONS==='true'`** and supports `COLLECT_ONLY="rumble,substack"` to run just those two. They are collected from a **residential IP via a local scheduled task** (`scripts/local/collect-rumble-substack.bat`). This is NOT optional — without that task, Rumble/Substack stop updating.
+- Do NOT "re-enable" rumble/substack in the CI run thinking it's a bug — it's a deliberate skip. If you add another scrape-based platform, test whether its site 403s GH Actions IPs before relying on the cloud workflow.
+- **One source of truth for the Rumble parser:** `collectDailyStats.js#fetchRumbleChannel` imports `parseChannelHtml` from `src/services/rumbleService.js` (handles both the legacy plural "Followers" and the newer `<span>N Follower(s)</span>` template). Do not reintroduce a second inline follower-regex in the collector — that divergence is exactly what made `/user/` channels parse as 0. Video count is still overridden with the paginator-based `fetchRumbleVideoCount` (accurate for large channels). The collector also refreshes `profile_image` for Rumble (only when a non-null avatar is parsed) so channel icons stay current.
 
-Local scripts in `scripts/local/` are kept as a fallback if GitHub Actions gets rate-limited by TikTok. Normal operation is fully automated via GitHub Actions — no Windows Task Scheduler setup needed.
+## Local Automation
 
-- `refresh-tiktok.bat` — manual TikTok profile refresh
-- `discover-tiktok.bat` — manual TikTok creator discovery
+`scripts/local/` holds Windows Task Scheduler scripts.
 
-See `scripts/local/README.md` for usage.
+- **`collect-rumble-substack.bat`** — **REQUIRED daily task** (Rumble + Substack can't run in CI; see above). Runs `COLLECT_ONLY=rumble,substack node scripts/collectDailyStats.js` + refreshes the rankings cache from a residential IP.
+- `refresh-tiktok.bat` — manual TikTok profile refresh (fallback only; TikTok works in CI)
+- `discover-tiktok.bat` — manual TikTok creator discovery (fallback)
+
+See `scripts/local/README.md` for Task Scheduler setup.
 
 ## Conventions
 

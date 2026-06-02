@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+import { parseChannelHtml as parseRumbleHtml } from '../src/services/rumbleService.js';
 config();
 import { createClient } from '@supabase/supabase-js';
 
@@ -280,51 +281,25 @@ async function fetchRumbleChannel(platformId) {
   if (!res.ok) return null;
   const html = await res.text();
 
-  let followers = 0;
-  for (const re of [
-    /<span[^>]*data-test="follower-count"[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    />\s*([\d.,]+\s*[KMB])\s*Followers\b/i,
-    />\s*([\d,]+)\s*Followers\b/i,
-  ]) {
-    const m = html.match(re);
-    if (m && m[1]) {
-      followers = rumbleParseAbbreviated(m[1]);
-      if (followers > 0) break;
-    }
-  }
+  // Use the shared rumbleService parser (single source of truth) for followers /
+  // avatar / banner / verified / latest post. It handles BOTH the legacy plural
+  // "Followers" template and the newer "<span>N Follower(s)</span>" template, so
+  // /user/ channels (and newer /c/ pages) parse correctly. The video count from
+  // the page is unreliable for large channels, so we override it with the
+  // paginator-derived total below.
+  const prof = parseRumbleHtml(html, { slug, kind, profileUrl: url });
+  if (!prof) return null;
 
-  // Channel page doesn't expose a video count we can trust — derive via paginator
   const totalPosts = await fetchRumbleVideoCount(kind, slug);
 
-  // Banner + verified
-  let bannerImage = null;
-  const bannerMatch = html.match(/class=["']?channel-header--backsplash-img["']?[^>]*src=["']([^"']+)["']/i);
-  if (bannerMatch) bannerImage = bannerMatch[1];
-  const verified = /channel-header--verified|verification-badge-icon/i.test(html);
-
-  // Latest video
-  let latestPost = null;
-  const videoBlockMatch = html.match(/<div\s+class=["']videostream[^"']*["'][\s\S]*?data-video-id=["'](\d+)["'][\s\S]*?<\/address>/i);
-  if (videoBlockMatch) {
-    const block = videoBlockMatch[0];
-    const linkMatch = block.match(/href=["'](\/v[^"'?]+\.html)/i);
-    const titleAttrMatch = block.match(/<h3[^>]*title=["']([^"']+)["']/i)
-      || block.match(/<h3[^>]*>\s*([^<]+?)\s*<\/h3>/i);
-    const dateMatch = block.match(/<time[^>]*datetime=["']([^"']+)["']/i);
-    const viewsMatch = block.match(/data-views=["'](\d+)["']/i);
-    const thumbMatch = block.match(/class=["']thumbnail__image[^"']*["']\s+[^>]*src=["']([^"']+)["']/i);
-    if (linkMatch && titleAttrMatch) {
-      latestPost = {
-        url: `https://rumble.com${linkMatch[1]}`,
-        title: (titleAttrMatch[1] || '').replace(/&amp;/g, '&').replace(/&#39;/g, "'").trim().substring(0, 500),
-        publishedAt: dateMatch ? dateMatch[1] : null,
-        views: viewsMatch ? parseInt(viewsMatch[1], 10) : null,
-        thumbnail: thumbMatch ? thumbMatch[1] : null,
-      };
-    }
-  }
-
-  return { followers, totalPosts, bannerImage, verified, latestPost };
+  return {
+    followers: prof.followers,
+    totalPosts: totalPosts || prof.totalPosts || null,
+    profileImage: prof.profileImage,
+    bannerImage: prof.bannerImage,
+    verified: prof.verified,
+    latestPost: prof.latestPost,
+  };
 }
 
 // ========== MASTODON API HELPERS ==========
@@ -542,15 +517,36 @@ async function collectDailyStats() {
     from += pageSize;
   }
 
-  const youtubeCreators = creators.filter((c) => c.platform === 'youtube');
-  const twitchCreators = creators.filter((c) => c.platform === 'twitch');
-  const kickCreators = creators.filter((c) => c.platform === 'kick');
-  const blueskyCreators = creators.filter((c) => c.platform === 'bluesky');
-  const musicCreators = creators.filter((c) => c.platform === 'music');
-  const mastodonCreators = creators.filter((c) => c.platform === 'mastodon');
-  const rumbleCreators = creators.filter((c) => c.platform === 'rumble');
-  const substackCreators = creators.filter((c) => c.platform === 'substack');
+  // Platform selection.
+  //  - rumble.com and substack.com HARD-BLOCK GitHub Actions datacenter IPs
+  //    (every fetch 403s), so collecting them from CI silently yields nothing.
+  //    They are skipped in CI and collected from a non-datacenter IP via a local
+  //    scheduled task (scripts/local/collect-rumble-substack.bat) instead.
+  //  - COLLECT_ONLY="rumble,substack" restricts this run to just those platforms
+  //    (used by that local task). Empty = run everything allowed in this env.
+  const IP_BLOCKED_IN_CI = ['rumble', 'substack'];
+  const onlyList = (process.env.COLLECT_ONLY || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const inCI = process.env.GITHUB_ACTIONS === 'true';
+  const wants = (platform) => {
+    if (onlyList.length) return onlyList.includes(platform);
+    if (inCI && IP_BLOCKED_IN_CI.includes(platform)) return false;
+    return true;
+  };
+  const pick = (platform) => (wants(platform) ? creators.filter((c) => c.platform === platform) : []);
+
+  const youtubeCreators = pick('youtube');
+  const twitchCreators = pick('twitch');
+  const kickCreators = pick('kick');
+  const blueskyCreators = pick('bluesky');
+  const musicCreators = pick('music');
+  const mastodonCreators = pick('mastodon');
+  const rumbleCreators = pick('rumble');
+  const substackCreators = pick('substack');
   // TikTok is handled by refreshTikTokProfiles.js via separate GitHub Actions workflow
+
+  if (inCI && !onlyList.length) {
+    console.log('ℹ️  Running in CI — Rumble + Substack are skipped here (their sites block datacenter IPs); collected via the local scheduled task.');
+  }
 
   console.log(`Found ${creators.length} creators to update`);
   console.log(`   YouTube: ${youtubeCreators.length}`);
@@ -843,7 +839,7 @@ async function collectDailyStats() {
             total_views: null,
             total_posts: stats.totalPosts || null,
           });
-          creatorUpdates.push({
+          const rumbleUpd = {
             id: creator.id,
             banner_image: stats.bannerImage,
             verified: !!stats.verified,
@@ -852,7 +848,11 @@ async function collectDailyStats() {
             latest_post_url: stats.latestPost?.url || null,
             latest_post_thumbnail: stats.latestPost?.thumbnail || null,
             latest_post_views: stats.latestPost?.views || null,
-          });
+          };
+          // Keep the avatar fresh (only when we actually parsed one — never null
+          // out an existing image on a parse miss).
+          if (stats.profileImage) rumbleUpd.profile_image = stats.profileImage;
+          creatorUpdates.push(rumbleUpd);
           console.log(`   ✅ ${creator.display_name}: ${stats.followers.toLocaleString()} followers`);
           successCount++;
         } else if (stats && stats.followers === 0) {
