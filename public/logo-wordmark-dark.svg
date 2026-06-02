@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-label="ShinyPull">
+  <title>ShinyPull</title>
+  <defs>
+    <linearGradient id="sp-bars-d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="55%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#e879f9"/>
+    </linearGradient>
+  </defs>
+  <!-- Inverse wordmark for dark backgrounds: white "ShinyPu" + the "ll" as
+       gradient bars (lightened a touch so they pop on dark). -->
+  <text x="0" y="66" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="68" font-weight="700" letter-spacing="-3" fill="#ffffff">ShinyPu</text>
+  <rect x="250" y="26" width="13" height="40" rx="4" fill="url(#sp-bars-d)"/>
+  <rect x="269" y="14" width="13" height="52" rx="4" fill="url(#sp-bars-d)"/>
+</svg>
