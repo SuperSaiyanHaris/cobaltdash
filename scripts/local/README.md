@@ -11,28 +11,32 @@ Supabase's IPs. Nothing to do locally for Substack.)
 
 ## Scripts
 
-- **`collect-rumble.bat`** — **REQUIRED daily task.** Collects Rumble daily stats
-  (the cloud workflow skips Rumble). Schedule once per day in Task Scheduler.
+- **`rumble-auto.bat`** — **Recommended.** Self-scheduling Rumble collector (no
+  Task Scheduler). Leave it running; it re-collects every 24h.
+- **`collect-rumble.bat`** — One-shot manual Rumble collection (double-click
+  whenever you want an immediate refresh).
 - **`refresh-tiktok.bat`** - Manually refresh ALL TikTok profiles (fallback only)
 - **`discover-tiktok.bat`** - Discovers new creators from curated list
 
-## Rumble (must run locally — not optional)
+## Rumble (the only platform that must run locally)
 
-`rumble.com` returns a Cloudflare challenge to datacenter IPs, so the
-daily-stats-collection workflow skips Rumble (it detects CI via `GITHUB_ACTIONS`).
-`collect-rumble.bat` runs `collectDailyStats.js` with `COLLECT_ONLY=rumble` from
-your machine's residential IP (where fetches succeed), then refreshes the
-rankings cache.
+`rumble.com` Cloudflare-challenges EVERY datacenter IP (GitHub Actions, Vercel,
+Supabase Edge, Cloudflare Workers all 403), and there's no open API for follower
+counts. So Rumble can only be collected from this residential connection. The
+cloud daily-stats workflow skips Rumble (it detects CI via `GITHUB_ACTIONS`).
+(Substack, by contrast, is fully cloud — Supabase Edge Function + pg_cron.)
 
-**Set it up once (Windows Task Scheduler):**
-1. Open Task Scheduler → Create Basic Task → name it "ShinyPull Rumble".
-2. Trigger: Daily, pick a time your machine is on (e.g. 6 AM).
-3. Action: Start a program → `d:\Claude\ShinyPull\scripts\local\collect-rumble.bat`.
-4. Finish. (Optional: tick "Run whether user is logged on or not".)
+**No Task Scheduler needed — start on login via the Startup folder:**
+1. Press **Win+R**, type `shell:startup`, Enter.
+2. Right-drag `rumble-auto.bat` into that folder → "Create shortcuts here".
+3. Done. It launches each login, collects immediately, then every 24h.
 
-If your machine is off at the scheduled time, that day's Rumble snapshot is just
-skipped — the charts tolerate gaps and the next run resumes. Everything else
-(including Substack) runs in the cloud regardless.
+Keep **Proton VPN off** (or split-tunnel `rumble.com`) so it uses your home IP —
+commercial VPN exit IPs get Cloudflare-challenged like datacenters do. A plain
+residential connection passes fine.
+
+If your machine is off, that day's Rumble snapshot is simply skipped — charts
+tolerate gaps and the next run resumes. Everything else runs in the cloud.
 
 ## Normal Operation
 
