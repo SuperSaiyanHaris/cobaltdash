@@ -199,7 +199,9 @@ async function existingIds() {
       .range(from, from + 999);
     if (error) throw error;
     if (!data || data.length === 0) break;
-    data.forEach(r => r.platform_id && ids.add(r.platform_id));
+    // Lowercased so case-variant slugs (c:bongino vs c:Bongino) dedupe and we
+    // never create a second row for a channel already tracked.
+    data.forEach(r => r.platform_id && ids.add(r.platform_id.toLowerCase()));
     if (data.length < 1000) break;
     from += 1000;
   }
@@ -251,9 +253,9 @@ async function main() {
   console.log(`🎯 Phase 1: ${CURATED.length} curated handles`);
   for (const handle of CURATED) {
     const [kind, slug] = handle.split(':');
-    const platformId = `${kind}:${slug}`;
-    if (existing.has(platformId) || candidates.has(platformId)) continue;
-    candidates.set(platformId, { kind, slug });
+    const key = `${kind}:${slug}`.toLowerCase();
+    if (existing.has(key) || candidates.has(key)) continue;
+    candidates.set(key, { kind, slug });
   }
   console.log(`   ${candidates.size} queued\n`);
 
@@ -261,9 +263,9 @@ async function main() {
   console.log(`📌 Phase 2a: editor-picks`);
   const picksHandles = await fetchPathHandles('/editor-picks');
   for (const h of picksHandles) {
-    const platformId = `${h.kind}:${h.slug}`;
-    if (existing.has(platformId) || candidates.has(platformId)) continue;
-    candidates.set(platformId, h);
+    const key = `${h.kind}:${h.slug}`.toLowerCase();
+    if (existing.has(key) || candidates.has(key)) continue;
+    candidates.set(key, h);
   }
   await sleep(FETCH_DELAY_MS);
   console.log(`   total collected: ${candidates.size}\n`);
@@ -275,9 +277,9 @@ async function main() {
       const handles = await fetchCategoryHandles(cat, page);
       let added = 0;
       for (const h of handles) {
-        const platformId = `${h.kind}:${h.slug}`;
-        if (existing.has(platformId) || candidates.has(platformId)) continue;
-        candidates.set(platformId, h);
+        const key = `${h.kind}:${h.slug}`.toLowerCase();
+        if (existing.has(key) || candidates.has(key)) continue;
+        candidates.set(key, h);
         added++;
       }
       await sleep(FETCH_DELAY_MS);

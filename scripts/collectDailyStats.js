@@ -295,6 +295,7 @@ async function fetchRumbleChannel(platformId) {
   return {
     followers: prof.followers,
     totalPosts: totalPosts || prof.totalPosts || null,
+    displayName: prof.displayName,
     profileImage: prof.profileImage,
     bannerImage: prof.bannerImage,
     verified: prof.verified,
@@ -852,6 +853,13 @@ async function collectDailyStats() {
           // Keep the avatar fresh (only when we actually parsed one — never null
           // out an existing image on a parse miss).
           if (stats.profileImage) rumbleUpd.profile_image = stats.profileImage;
+          // Self-heal display names: update only when we parsed a REAL name that
+          // differs from the slug (username) and from what's stored. This fixes
+          // any slug-style names and tracks channel renames, but never clobbers a
+          // good name with a slug fallback (parse miss returns the slug).
+          if (stats.displayName && stats.displayName !== creator.username && stats.displayName !== creator.display_name) {
+            rumbleUpd.display_name = stats.displayName;
+          }
           creatorUpdates.push(rumbleUpd);
           console.log(`   ✅ ${creator.display_name}: ${stats.followers.toLocaleString()} followers`);
           successCount++;

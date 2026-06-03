@@ -66,9 +66,14 @@ function cleanText(html) {
 export function parseChannelHtml(html, { slug, kind, profileUrl }) {
   if (!html) return null;
 
-  // Display name — `<h1 class="channel-header--title">` or `<h1>` near top
+  // Display name. Two templates:
+  //   legacy: <h1 class="channel-header--title">NAME</h1>
+  //   newer:  <div class="channel-header--title">...<h1>NAME</h1>  (h1 has no class)
+  // Without the newer pattern the name falls back to the slug (e.g. "freshandfit"
+  // instead of "FreshandFit"), which is how slug-style display names crept in.
   const titleMatch =
     html.match(/<h1[^>]*class="[^"]*channel-header--title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+    html.match(/class=["']channel-header--title["'][\s\S]{0,160}?<h1[^>]*>\s*([^<]+?)\s*<\/h1>/i) ||
     html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
   const displayName = titleMatch ? cleanText(titleMatch[1]) : slug;
 
