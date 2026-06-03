@@ -8,6 +8,7 @@
 
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import { parseChannelHtml as parseRumbleHtml } from '../src/services/rumbleService.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -69,51 +70,20 @@ function extractMeta(html, propertyName, propertyAttr = 'property') {
   return m[1] || m[2] || m[3] || null;
 }
 
+// Delegate to the shared rumbleService parser (single source of truth) — handles
+// both the legacy plural "Followers" and the newer "<span>N Follower(s)</span>"
+// templates, so new-template channels aren't skipped as 0 followers.
 function parseChannelHtml(html, { slug, kind }) {
-  if (!html) return null;
-  const h1Match = html.match(/<h1[^>]*class=["']?[^"'>]*channel-header--title[^"'>]*["']?[^>]*>([^<]+)<\/h1>/i);
-  const ogTitle = extractMeta(html, 'og:title');
-  const displayName = cleanText(h1Match ? h1Match[1] : ogTitle) || slug;
-
-  const profileImage = extractMeta(html, 'og:image') || null;
-
-  const description = cleanText(
-    extractMeta(html, 'description', 'name') || extractMeta(html, 'og:description')
-  );
-
-  let followers = 0;
-  for (const re of [
-    /<span[^>]*data-test="follower-count"[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    />\s*([\d.,]+\s*[KMB])\s*Followers\b/i,
-    />\s*([\d,]+)\s*Followers\b/i,
-  ]) {
-    const m = html.match(re);
-    if (m && m[1]) {
-      followers = parseAbbreviated(m[1]);
-      if (followers > 0) break;
-    }
-  }
-
-  let totalPosts = 0;
-  for (const re of [
-    /<span[^>]*data-test="video-count"[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    />\s*([\d.,]+\s*[KMB]?)\s*videos?\b/i,
-  ]) {
-    const m = html.match(re);
-    if (m && m[1]) {
-      totalPosts = parseAbbreviated(m[1]);
-      if (totalPosts > 0) break;
-    }
-  }
-
+  const p = parseRumbleHtml(html, { slug, kind, profileUrl: `${BASE}/${kind}/${slug}` });
+  if (!p) return null;
   return {
-    platformId: `${kind}:${slug}`,
-    username: slug,
-    displayName,
-    profileImage,
-    description,
-    followers,
-    totalPosts,
+    platformId: p.platformId,
+    username: p.username,
+    displayName: p.displayName,
+    profileImage: p.profileImage,
+    description: p.description,
+    followers: p.followers,
+    totalPosts: p.totalPosts,
   };
 }
 

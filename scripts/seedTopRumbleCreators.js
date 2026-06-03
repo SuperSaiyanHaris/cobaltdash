@@ -12,6 +12,7 @@
 
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import { parseChannelHtml as parseRumbleHtml } from '../src/services/rumbleService.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -106,58 +107,23 @@ function extractMeta(html, propertyName, propertyAttr = 'property') {
   return m[1] || m[2] || m[3] || null;
 }
 
+// Delegate to the shared rumbleService parser (single source of truth) so this
+// handles BOTH the legacy plural "Followers" template and the newer
+// "<span>N Follower(s)</span>" template. The old inline copy here only matched
+// the legacy template, which is why earlier seed runs skipped most channels
+// (parsed 0 followers) and the catalog got stuck at ~106.
 function parseChannelHtml(html, { slug, kind, profileUrl }) {
-  if (!html) return null;
-
-  const h1Match = html.match(/<h1[^>]*class=["']?[^"'>]*channel-header--title[^"'>]*["']?[^>]*>([^<]+)<\/h1>/i);
-  const ogTitle = extractMeta(html, 'og:title');
-  const displayName = cleanText(h1Match ? h1Match[1] : ogTitle) || slug;
-
-  const profileImage = extractMeta(html, 'og:image') || null;
-
-  const description = cleanText(
-    extractMeta(html, 'description', 'name') || extractMeta(html, 'og:description')
-  );
-
-  let followers = 0;
-  const followerPatterns = [
-    /<span[^>]*data-test="follower-count"[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    /([\d.,]+\s*[KMB]?)<\/span>\s*<span[^>]*>\s*Followers/i,
-    /<div[^>]*class="[^"]*listing-header--followers[^"]*"[^>]*>\s*<span[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    />\s*([\d.,]+\s*[KMB])\s*Followers\b/i,
-    />\s*([\d,]+)\s*Followers\b/i,
-  ];
-  for (const re of followerPatterns) {
-    const m = html.match(re);
-    if (m && m[1]) {
-      followers = parseAbbreviated(m[1]);
-      if (followers > 0) break;
-    }
-  }
-
-  let totalPosts = 0;
-  const videoPatterns = [
-    /<span[^>]*data-test="video-count"[^>]*>([\d.,KMB\s]+)<\/span>/i,
-    />\s*([\d.,]+\s*[KMB]?)\s*videos?\b/i,
-    /<span[^>]*>([\d,]+)<\/span>\s*<span[^>]*>\s*Videos/i,
-  ];
-  for (const re of videoPatterns) {
-    const m = html.match(re);
-    if (m && m[1]) {
-      totalPosts = parseAbbreviated(m[1]);
-      if (totalPosts > 0) break;
-    }
-  }
-
+  const p = parseRumbleHtml(html, { slug, kind, profileUrl });
+  if (!p) return null;
   return {
-    platformId: `${kind}:${slug}`,
-    username: slug,
-    displayName,
-    profileImage,
-    description,
-    followers,
-    totalPosts,
-    profileUrl,
+    platformId: p.platformId,
+    username: p.username,
+    displayName: p.displayName,
+    profileImage: p.profileImage,
+    description: p.description,
+    followers: p.followers,
+    totalPosts: p.totalPosts,
+    profileUrl: p.profileUrl,
   };
 }
 
