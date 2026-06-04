@@ -1024,7 +1024,7 @@ async function collectDailyStats() {
   console.log(`\n📡 API calls made:`);
   console.log(`   YouTube: ${Math.ceil(youtubeCreators.length / YOUTUBE_BATCH_SIZE)} (batched ${YOUTUBE_BATCH_SIZE}/request)`);
   console.log(`   Twitch Users: ${Math.ceil(twitchCreators.length / TWITCH_BATCH_SIZE)} (batched ${TWITCH_BATCH_SIZE}/request)`);
-  console.log(`   Twitch Followers: ${twitchCreators.length} (parallel ${TWITCH_PARALLEL_FOLLOWERS}x)`);
+  console.log(`   Twitch Followers: ${twitchCreators.length} (individual requests)`);
   console.log(`   Kick: ${Math.ceil(kickCreators.length / KICK_BATCH_SIZE)} (batched ${KICK_BATCH_SIZE}/request)`);
   console.log(`   Bluesky: ${Math.ceil(blueskyCreators.length / BLUESKY_BATCH_SIZE)} (batched ${BLUESKY_BATCH_SIZE}/request, no auth)`);
   console.log(`   Music: ${musicCreators.length} (individual, Last.fm)`);
