@@ -44,12 +44,18 @@ public/workbox-*.js
 # Claude Code
 .claude/
 
+# Agent context — contains internal architecture notes, scraping methods, and API details.
+# Keep locally only. Never commit to a public repo.
+CLAUDE.md
+
 # Supabase CLI temp files
 supabase/.temp/
 
 .vercel
 .env*.local
 tmpclaude-*
+temp_*.md
+temp_*.txt
 
 # PowerShell scripts (may contain or expose credentials — never commit)
 *.ps1
