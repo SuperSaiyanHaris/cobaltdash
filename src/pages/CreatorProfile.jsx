@@ -1065,65 +1065,41 @@ export default function CreatorProfile() {
                       {/* Clean share link — Mod only */}
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Clean share link</p>
-                        {!isMod && <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Mod</span>}
                       </div>
                       <div className="flex items-center gap-2 mb-4">
                         <input
                           readOnly
-                          value={isMod ? shareUrl : '∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙'}
-                          className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate ${
-                            isMod ? 'bg-neutral-100 border-neutral-300 text-neutral-800' : 'bg-neutral-100/40 border-neutral-200 text-neutral-400 select-none'
-                          }`}
+                          value={shareUrl}
+                          className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate bg-neutral-100 border-neutral-300 text-neutral-800"
                         />
-                        {isMod ? (
-                          <button
-                            onClick={handleCopyUrl}
-                            className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                              copiedUrl ? 'bg-emerald-700 text-emerald-100' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                            }`}
-                          >
-                            {copiedUrl ? 'Copied!' : 'Copy'}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => { setShowSharePanel(false); window.dispatchEvent(new CustomEvent('openUpgradePanel', { detail: { feature: 'share' } })); }}
-                            className="flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition-colors"
-                          >
-                            Upgrade
-                          </button>
-                        )}
+                        <button
+                          onClick={handleCopyUrl}
+                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                            copiedUrl ? 'bg-emerald-700 text-emerald-100' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                          }`}
+                        >
+                          {copiedUrl ? 'Copied!' : 'Copy'}
+                        </button>
                       </div>
 
-                      {/* Embed code — Mod only */}
+                      {/* Embed code */}
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Embed code</p>
-                        {!isMod && <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Mod</span>}
                       </div>
                       <div className="flex items-center gap-2 mb-3">
                         <input
                           readOnly
-                          value={isMod ? embedCode : '∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙'}
-                          className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate ${
-                            isMod ? 'bg-neutral-100 border-neutral-300 text-neutral-800' : 'bg-neutral-100/40 border-neutral-200 text-neutral-400 select-none'
-                          }`}
+                          value={embedCode}
+                          className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate bg-neutral-100 border-neutral-300 text-neutral-800"
                         />
-                        {isMod ? (
-                          <button
-                            onClick={handleCopyEmbed}
-                            className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                              copiedEmbed ? 'bg-emerald-700 text-emerald-100' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
-                            }`}
-                          >
-                            {copiedEmbed ? 'Copied!' : 'Copy'}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => { setShowSharePanel(false); window.dispatchEvent(new CustomEvent('openUpgradePanel', { detail: { feature: 'share' } })); }}
-                            className="flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition-colors"
-                          >
-                            Upgrade
-                          </button>
-                        )}
+                        <button
+                          onClick={handleCopyEmbed}
+                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                            copiedEmbed ? 'bg-emerald-700 text-emerald-100' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                          }`}
+                        >
+                          {copiedEmbed ? 'Copied!' : 'Copy'}
+                        </button>
                       </div>
                       {isMod && <p className="text-xs text-neutral-400">Embed works in Notion, websites, and anywhere iframes are supported.</p>}
                     </div>
@@ -1903,7 +1879,7 @@ export default function CreatorProfile() {
                   <h3 className="text-lg font-semibold text-neutral-900">Daily Channel Metrics</h3>
                   <button
                     onClick={handleExportCSV}
-                    title={hasExport ? 'Export as CSV' : 'CSV export requires Sub or Mod plan'}
+                    title="Export as CSV"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       hasExport
                         ? 'bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 border border-neutral-200'

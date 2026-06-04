@@ -14,7 +14,7 @@ export default function Refunds() {
     <>
       <SEO
         title="Refund Policy"
-        description="ShinyPull's refund policy for Sub and Mod subscriptions."
+        description="ShinyPull's refund policy for Featured Listings and paid products."
       />
 
       <div className="min-h-screen bg-[#fafafa]">
