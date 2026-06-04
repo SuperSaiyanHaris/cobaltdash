@@ -16,8 +16,10 @@ const ALLOWED_IMAGE_HOSTS = new Set([
   'cdn.bsky.app',                    // Bluesky
   'i.scdn.co',                       // Spotify
   'lastfm.freetls.fastly.net',       // Last.fm
+  'hugh.cdn.rumble.cloud',           // Rumble
+  'substackcdn.com',                 // Substack
 ]);
-const ALLOWED_IMAGE_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com'];
+const ALLOWED_IMAGE_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com', '.cdn.rumble.cloud'];
 
 function sanitizeImageUrl(url) {
   if (!url || typeof url !== 'string') return null;
@@ -110,18 +112,26 @@ export default async function handler(req, res) {
         .single();
 
       if (existingCreator) {
-        // SECURITY: For existing creators, only update safe fields
-        // display_name and username are NOT updatable from the frontend
-        // They should only be changed by server-side collection scripts
+        // SECURITY: For existing creators, only update safe fields.
+        // display_name and username are NOT updatable from the frontend —
+        // only server-side collection scripts may change those.
+        const sanitizedImage = sanitizeImageUrl(creatorData.profileImage);
+        const updateFields = {
+          description: creatorData.description,
+          country: creatorData.country,
+          category: creatorData.category,
+          updated_at: new Date().toISOString(),
+        };
+        // Only include profile_image when we have a valid sanitized URL.
+        // If the CDN isn't on the allowlist we skip the field entirely —
+        // never overwrite a good DB avatar with null.
+        if (sanitizedImage !== null) {
+          updateFields.profile_image = sanitizedImage;
+        }
+
         const { data: updatedCreator, error: updateError } = await supabase
           .from('creators')
-          .update({
-            profile_image: sanitizeImageUrl(creatorData.profileImage),
-            description: creatorData.description,
-            country: creatorData.country,
-            category: creatorData.category,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateFields)
           .eq('id', existingCreator.id)
           .select()
           .single();
