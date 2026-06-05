@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Music } from 'lucide-react';
+import { PLATFORM_COUNT } from '../lib/constants';
 import SEO from '../components/SEO';
 import StructuredData from '../components/StructuredData';
 
@@ -22,7 +23,7 @@ const faqs = [
       },
       {
         q: 'What makes ShinyPull different from other stats trackers?',
-        a: 'Interactive charts, a layout built for modern screens, and coverage of streaming-specific metrics like hours watched that most tools ignore, all across nine platforms in one place.',
+        a: `Interactive charts, a layout built for modern screens, and coverage of streaming-specific metrics like hours watched that most tools ignore, all across ${PLATFORM_COUNT} platforms in one place.`,
       },
       {
         q: 'Do I need an account to use ShinyPull?',

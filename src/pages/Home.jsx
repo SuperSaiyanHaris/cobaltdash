@@ -767,7 +767,7 @@ export default function Home() {
               {
                 Icon: Search,
                 title: 'Universal Search',
-                body: 'Look up any creator across six platforms with one search. Hit ⌘K from anywhere.',
+                body: `Look up any creator across ${PLATFORM_COUNT} platforms with one search. Hit ⌘K from anywhere.`,
                 to: '/search',
                 accent: 'indigo',
               },

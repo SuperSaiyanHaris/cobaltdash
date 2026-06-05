@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Server, Code, Zap, Coffee, Megaphone, MessageSquare, ArrowRight, Check, Link2 } from 'lucide-react';
+import { PLATFORM_COUNT } from '../lib/constants';
 import SEO from '../components/SEO';
 
 const BUYMEACOFFEE_URL = 'https://buymeacoffee.com/shinypull';
@@ -37,7 +38,7 @@ const supportReasons = [
   {
     icon: Zap,
     title: 'Data Costs',
-    description: 'Collecting and storing daily statistics across nine platforms takes real infrastructure, and that costs money to keep running.',
+    description: `Collecting and storing daily statistics across ${PLATFORM_COUNT} platforms takes real infrastructure, and that costs money to keep running.`,
     color: 'from-amber-500 to-orange-500',
     shadow: 'shadow-amber-500/30',
   },
