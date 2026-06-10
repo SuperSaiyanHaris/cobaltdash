@@ -95,6 +95,7 @@ export default function CreatorAvatar({
   if (!currentSrc) {
     return (
       <div
+        role="img"
         className={`${sizeClasses.box} ${rounded} bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 ${className}`}
         aria-label={alt || name}
       >

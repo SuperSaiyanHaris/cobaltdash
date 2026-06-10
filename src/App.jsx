@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { Toaster } from 'sonner';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -183,6 +184,9 @@ function LayoutWrapper() {
 
 function App() {
   return (
+    // reducedMotion="user" disables framer-motion transform/layout animations
+    // for users with prefers-reduced-motion set (opacity still animates)
+    <MotionConfig reducedMotion="user">
     <AuthProvider>
       <LayoutWrapper />
       <AuthPanelHost />
@@ -202,6 +206,7 @@ function App() {
         }}
       />
     </AuthProvider>
+    </MotionConfig>
   );
 }
 
