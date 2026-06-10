@@ -259,7 +259,7 @@ const RANKINGS_TTL = 10 * 60 * 1000; // 10 minutes
 async function _fetchRankings(platform, rankType, limit) {
   const { data, error } = await supabase
     .from('rankings_cache')
-    .select('creator_id, platform, username, display_name, profile_image, platform_id, subscribers, total_views, total_posts, growth_30d, hours_watched_day, hours_watched_week, hours_watched_month')
+    .select('creator_id, platform, username, display_name, profile_image, platform_id, subscribers, total_views, total_posts, growth_30d, hours_watched_day, hours_watched_week, hours_watched_month, computed_at')
     .eq('platform', platform)
     .eq('rank_type', rankType)
     .order('rank_position', { ascending: true })
@@ -268,6 +268,7 @@ async function _fetchRankings(platform, rankType, limit) {
   return (data || []).map((creator) => ({
     ...creator,
     id: creator.creator_id,
+    computedAt: creator.computed_at,
     latestStats: {
       subscribers: creator.subscribers,
       followers: creator.subscribers,
@@ -375,6 +376,39 @@ export const getRankedCreators = withErrorHandling(
     return data;
   },
   'creatorService.getRankedCreators'
+);
+
+// --- #1 creator on every platform, in one query ---
+// Used by the home hero's rotating focal card. Same SWR cache pattern as rankings.
+let _topByPlatformCache = null; // { data, ts }
+const TOP_BY_PLATFORM_TTL = 10 * 60 * 1000;
+
+async function _fetchTopByPlatform() {
+  const { data, error } = await supabase
+    .from('rankings_cache')
+    .select('creator_id, platform, username, display_name, profile_image, subscribers, growth_30d, computed_at')
+    .eq('rank_type', 'subscribers')
+    .eq('rank_position', 1);
+  if (error) throw error;
+  return (data || []).map((c) => ({ ...c, id: c.creator_id, computedAt: c.computed_at }));
+}
+
+export const getTopCreatorsByPlatform = withErrorHandling(
+  async () => {
+    const now = Date.now();
+    if (_topByPlatformCache) {
+      if (now - _topByPlatformCache.ts > TOP_BY_PLATFORM_TTL) {
+        _fetchTopByPlatform()
+          .then(data => { _topByPlatformCache = { data, ts: Date.now() }; })
+          .catch(() => {});
+      }
+      return _topByPlatformCache.data;
+    }
+    const data = await _fetchTopByPlatform();
+    _topByPlatformCache = { data, ts: now };
+    return data;
+  },
+  'creatorService.getTopCreatorsByPlatform'
 );
 
 // --- Sparkline data: batched 30-day stats for a set of creators ---

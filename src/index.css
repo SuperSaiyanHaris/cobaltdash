@@ -256,6 +256,17 @@ h1, h2, h3, h4 {
 .animate-marquee       { animation: marquee-x 120s linear infinite; }
 .animate-marquee:hover { animation-play-state: paused; }
 
+/* WCAG 2.3.3 — kill decorative looping animations for reduced-motion users.
+   Loading spinners (animate-spin) are deliberately left alone. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-pulse,
+  .animate-ping,
+  .animate-pulse-slow {
+    animation: none;
+  }
+}
+
 /* Edge-fade mask for marquee strips */
 .mask-gradient {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);

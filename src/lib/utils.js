@@ -31,3 +31,18 @@ export function formatRelativeTime(input) {
   const yr = Math.round(day / 365);
   return `${yr} year${yr === 1 ? '' : 's'} ago`;
 }
+
+/**
+ * Compact relative time for tight UI labels, e.g. "4m ago", "2h ago", "3d ago".
+ * Returns "" if input is falsy or unparseable.
+ */
+export function formatRelativeTimeShort(input) {
+  if (!input) return '';
+  const then = typeof input === 'string' ? new Date(input) : input;
+  if (Number.isNaN(then.getTime())) return '';
+  const min = Math.max(1, Math.round((Date.now() - then.getTime()) / 60000));
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.round(hr / 24)}d ago`;
+}
