@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Discover YouTube creators
+        id: youtube
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -39,6 +41,8 @@ jobs:
         run: node scripts/discoverYouTubeCreators.js
 
       - name: Discover Kick creators
+        id: kick
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -47,6 +51,8 @@ jobs:
         run: node scripts/discoverKickCreators.js
 
       - name: Discover Twitch creators
+        id: twitch
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -55,46 +61,81 @@ jobs:
         run: node scripts/discoverTwitchCreators.js
 
       - name: Queue TikTok candidates from existing creators
+        id: tiktok
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/discoverTikTokCreators.js 50
 
       - name: Discover Bluesky creators
+        id: bluesky
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/discoverBlueskyCreators.js
 
       - name: Discover Mastodon creators
+        id: mastodon
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/discoverMastodonCreators.js
 
       - name: Discover Rumble creators
+        id: rumble
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/discoverRumbleCreators.js
 
       - name: Discover Substack publications
+        id: substack
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/discoverSubstackCreators.js
 
       - name: Discover Music artists
+        id: music
+        continue-on-error: true
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           LASTFM_CLIENT_ID: ${{ secrets.LASTFM_CLIENT_ID }}
         run: node scripts/discoverMusicArtists.js
 
-      - name: Report completion
-        if: success()
-        run: echo "✅ Creator discovery completed successfully"
-
-      - name: Report failure
-        if: failure()
-        run: echo "❌ Creator discovery failed"
+      - name: Summarize results
+        if: always()
+        run: |
+          declare -A results=(
+            [YouTube]="${{ steps.youtube.outcome }}"
+            [Kick]="${{ steps.kick.outcome }}"
+            [Twitch]="${{ steps.twitch.outcome }}"
+            [TikTok]="${{ steps.tiktok.outcome }}"
+            [Bluesky]="${{ steps.bluesky.outcome }}"
+            [Mastodon]="${{ steps.mastodon.outcome }}"
+            [Rumble]="${{ steps.rumble.outcome }}"
+            [Substack]="${{ steps.substack.outcome }}"
+            [Music]="${{ steps.music.outcome }}"
+          )
+          failed=0
+          for platform in "${!results[@]}"; do
+            if [ "${results[$platform]}" = "success" ]; then
+              echo "✅ $platform"
+            else
+              echo "❌ $platform"
+              failed=1
+            fi
+          done
+          if [ "$failed" = "1" ]; then
+            echo ""
+            echo "One or more platforms failed this run. Others still ran normally."
+            exit 1
+          fi
+          echo ""
+          echo "✅ All platforms discovered successfully"
