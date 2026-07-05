@@ -21,9 +21,10 @@ const TABS = [
 const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
 const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
 
-// Shared micro-label + dark input
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-gray-600';
-const INPUT_DARK = 'bg-gray-900 border border-gray-800 rounded-lg text-gray-100 placeholder-gray-600 focus:outline-none focus:border-gray-600 text-sm transition-colors';
+// Typographic backbone shared with the dashboard
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+const INPUT = 'bg-white border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 text-sm transition-colors';
 
 export default function Account() {
   const { user, signOut } = useAuth();
@@ -232,13 +233,13 @@ export default function Account() {
     return (
       <>
         <SEO title="Sign in to manage your account" description="Sign in to ShinyPull to manage featured listings and your account." />
-        <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
-          <div className="max-w-md w-full border border-gray-800/60 bg-gray-900/40 rounded-xl p-8 text-center">
-            <div className="w-10 h-10 mx-auto mb-5 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center">
-              <Megaphone className="w-4 h-4 text-amber-400" />
+        <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4">
+          <div className={`max-w-md w-full ${CARD} p-8 text-center`}>
+            <div className="w-10 h-10 mx-auto mb-5 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center">
+              <Megaphone className="w-4 h-4 text-amber-500" />
             </div>
-            <h1 className="text-xl font-semibold tracking-tight text-gray-50 mb-2">Sign in to continue</h1>
-            <p className="text-sm text-gray-500 mb-6">
+            <h1 className="text-xl font-semibold tracking-tight text-neutral-900 mb-2">Sign in to continue</h1>
+            <p className="text-sm text-neutral-500 mb-6">
               You need an account to manage featured listings, follow creators, and access your dashboard. Takes 10 seconds.
             </p>
             <button
@@ -248,11 +249,11 @@ export default function Account() {
                   returnTo: '/account?tab=listings',
                 },
               }))}
-              className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-gray-100 hover:bg-white text-gray-950 font-medium rounded-lg transition-colors text-sm"
+              className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-lg transition-colors text-sm"
             >
               Sign in / Sign up
             </button>
-            <Link to="/promote" className="block mt-4 text-sm text-gray-600 hover:text-gray-300 transition-colors">
+            <Link to="/promote" className="block mt-4 text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
               Back to Featured Listings overview
             </Link>
           </div>
@@ -315,20 +316,20 @@ export default function Account() {
         description="Manage your ShinyPull account, display name, and password."
       />
 
-      <div className="min-h-screen bg-[#0a0a0f]">
-        {/* Page header — flat, typographic, hairline rule */}
-        <div className="border-b border-gray-800/60">
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Page header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-200 transition-colors mb-5"
+              className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-900 transition-colors mb-5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Dashboard
             </Link>
             <p className={`${MICRO} mb-3`}>Settings</p>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-gray-50">Account</h1>
-            <p className="mt-2 text-sm text-gray-500">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Account</h1>
+            <p className="mt-2 text-sm text-neutral-500">
               Manage your featured listings, profile, and security settings.
             </p>
           </div>
@@ -337,23 +338,23 @@ export default function Account() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
           {/* Identity strip — hairline-divided cells, same grammar as the dashboard stat strip */}
-          <div className="flex items-stretch border border-gray-800/60 bg-gray-900/40 rounded-xl mb-10 overflow-hidden">
+          <div className={`flex items-stretch ${CARD} mb-10 overflow-hidden`}>
             <div className="flex items-center gap-3.5 px-5 py-4 flex-1 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-gray-900 border border-gray-800 flex items-center justify-center text-sm font-semibold text-gray-200 flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-sm font-semibold text-neutral-700 flex-shrink-0">
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="font-medium text-gray-50 truncate text-sm">{nameForDisplay}</p>
-                <p className="text-xs text-gray-600 truncate mt-0.5">{user.email}</p>
+                <p className="font-medium text-neutral-900 truncate text-sm">{nameForDisplay}</p>
+                <p className="text-xs text-neutral-400 truncate mt-0.5">{user.email}</p>
               </div>
             </div>
-            <div className="hidden sm:flex flex-col justify-center px-6 border-l border-gray-800/60">
+            <div className="hidden sm:flex flex-col justify-center px-6 border-l border-neutral-200/80">
               <p className={MICRO}>Following</p>
-              <p className="text-lg font-semibold text-gray-50 tabular-nums mt-0.5">{followCount ?? '–'}</p>
+              <p className="text-lg font-semibold text-neutral-900 tabular-nums mt-0.5">{followCount ?? '–'}</p>
             </div>
-            <div className="hidden sm:flex flex-col justify-center px-6 border-l border-gray-800/60">
+            <div className="hidden sm:flex flex-col justify-center px-6 border-l border-neutral-200/80">
               <p className={MICRO}>Member since</p>
-              <p className="text-sm font-medium text-gray-200 mt-1">{memberSince}</p>
+              <p className="text-sm font-medium text-neutral-700 mt-1">{memberSince}</p>
             </div>
           </div>
 
@@ -371,8 +372,8 @@ export default function Account() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center px-3 py-2 rounded-lg text-sm text-left transition-colors ${
                         isActive
-                          ? 'bg-gray-900 text-gray-50'
-                          : 'text-gray-500 hover:text-gray-200'
+                          ? 'bg-neutral-900 text-white'
+                          : 'text-neutral-500 hover:text-neutral-900'
                       }`}
                     >
                       {tab.label}
@@ -380,10 +381,10 @@ export default function Account() {
                   );
                 })}
               </nav>
-              <div className="mt-6 pt-5 border-t border-gray-800/60">
+              <div className="mt-6 pt-5 border-t border-neutral-200/80">
                 <button
                   onClick={signOut}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-red-400 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:text-red-600 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Sign Out
@@ -395,7 +396,7 @@ export default function Account() {
             <div className="flex-1 min-w-0">
 
               {/* Mobile tabs — segmented control */}
-              <div className="flex md:hidden mb-6 border border-gray-800/60 bg-gray-900/40 rounded-lg p-0.5 gap-0.5">
+              <div className={`flex md:hidden mb-6 ${CARD} !rounded-lg p-0.5 gap-0.5`}>
                 {TABS.map(tab => {
                   const isActive = activeTab === tab.id;
                   return (
@@ -404,8 +405,8 @@ export default function Account() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex-1 py-1.5 px-1 rounded-md text-xs font-medium transition-colors ${
                         isActive
-                          ? 'bg-gray-100 text-gray-950'
-                          : 'text-gray-500'
+                          ? 'bg-neutral-900 text-white'
+                          : 'text-neutral-500'
                       }`}
                     >
                       {tab.label}
@@ -417,20 +418,20 @@ export default function Account() {
               {/* ── Listings tab ── */}
               {activeTab === 'listings' && (
                 <div className="space-y-4">
-                  <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-6">
+                  <div className={`${CARD} p-6`}>
                     <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
-                      <h2 className="text-base font-medium text-gray-50">Featured Listings</h2>
-                      <Link to="/promote" className="text-xs text-gray-500 hover:text-gray-200 transition-colors inline-flex items-center gap-1">
+                      <h2 className="text-base font-medium text-neutral-900">Featured Listings</h2>
+                      <Link to="/promote" className="text-xs text-neutral-400 hover:text-neutral-900 transition-colors inline-flex items-center gap-1">
                         Learn more <ExternalLink className="w-3 h-3" />
                       </Link>
                     </div>
-                    <p className="text-sm text-gray-500 mb-6">Promote any creator across our rankings. Cancel anytime.</p>
+                    <p className="text-sm text-neutral-500 mb-6">Promote any creator across our rankings. Cancel anytime.</p>
 
                     {/* Existing listings */}
                     {featuredListings.length > 0 && (
                       <div className="mb-7">
                         <p className={`${MICRO} mb-2.5`}>Active listings</p>
-                        <div className="border border-gray-800/60 rounded-lg divide-y divide-gray-800/60 overflow-hidden">
+                        <div className="border border-neutral-200/80 rounded-lg divide-y divide-neutral-100 overflow-hidden">
                           {featuredListings.map(listing => {
                             const c = listing.creators;
                             const isActive = listing.status === 'active';
@@ -442,8 +443,8 @@ export default function Account() {
                               <div key={listing.id} className="flex items-center gap-3 px-3.5 py-3">
                                 <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="md" rounded="rounded-lg" />
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-gray-100 truncate">{c?.display_name || 'Unknown creator'}</p>
-                                  <p className="text-xs text-gray-600 mt-0.5">
+                                  <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
+                                  <p className="text-xs text-neutral-400 mt-0.5">
                                     {listing.platform}
                                     {until && isActive ? ` · until ${until}` : ''}
                                     {listing.is_mod_free ? ' · promotional' : ''}
@@ -451,10 +452,10 @@ export default function Account() {
                                 </div>
                                 <span className="inline-flex items-center gap-1.5 flex-shrink-0">
                                   <span className={`w-1.5 h-1.5 rounded-full ${
-                                    isActive ? 'bg-emerald-400' : isPending ? 'bg-amber-400' : 'bg-gray-600'
+                                    isActive ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-neutral-300'
                                   }`} />
                                   <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${
-                                    isActive ? 'text-emerald-400' : isPending ? 'text-amber-400' : 'text-gray-500'
+                                    isActive ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-neutral-400'
                                   }`}>
                                     {listing.status}
                                   </span>
@@ -462,7 +463,7 @@ export default function Account() {
                                 {isActive && !isPending && (
                                   <button
                                     onClick={() => handleCancelListing(listing.id)}
-                                    className="p-1.5 text-gray-600 hover:text-red-400 transition-colors flex-shrink-0"
+                                    className="p-1.5 text-neutral-300 hover:text-red-600 transition-colors flex-shrink-0"
                                     title="Cancel listing"
                                   >
                                     <X className="w-3.5 h-3.5" />
@@ -494,8 +495,8 @@ export default function Account() {
                             }}
                             className={`px-2.5 h-7 rounded-md text-xs font-medium transition-colors border ${
                               listingPlatform === p
-                                ? 'bg-gray-100 border-gray-100 text-gray-950'
-                                : 'bg-transparent border-gray-800 text-gray-500 hover:text-gray-200 hover:border-gray-700'
+                                ? 'bg-neutral-900 border-neutral-900 text-white'
+                                : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
                             }`}
                           >
                             {PLATFORM_LABELS[p]}
@@ -505,10 +506,10 @@ export default function Account() {
 
                       {/* Search input with dropdown */}
                       <div className="relative">
-                        <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT_DARK} focus-within:border-gray-600`}>
+                        <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT} focus-within:border-neutral-400`}>
                           {listingSearching
-                            ? <Loader className="w-3.5 h-3.5 text-gray-600 animate-spin flex-shrink-0" />
-                            : <Search className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+                            ? <Loader className="w-3.5 h-3.5 text-neutral-400 animate-spin flex-shrink-0" />
+                            : <Search className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
                           }
                           <input
                             type="text"
@@ -519,12 +520,12 @@ export default function Account() {
                               setAlreadyListed(false);
                             }}
                             placeholder={`Search ${PLATFORM_LABELS[listingPlatform]} creators...`}
-                            className="flex-1 bg-transparent text-gray-100 placeholder-gray-600 text-[16px] sm:text-sm focus:outline-none"
+                            className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-[16px] sm:text-sm focus:outline-none"
                           />
                           {listingQuery && (
                             <button
                               onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); }}
-                              className="text-gray-600 hover:text-gray-200"
+                              className="text-neutral-400 hover:text-neutral-900"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -533,17 +534,17 @@ export default function Account() {
 
                         {/* Dropdown results */}
                         {listingResults.length > 0 && !selectedCreator && (
-                          <div className="absolute top-full mt-1.5 left-0 right-0 z-10 bg-[#0d0d14] border border-gray-800 rounded-lg shadow-2xl shadow-black/60 overflow-hidden">
+                          <div className="absolute top-full mt-1.5 left-0 right-0 z-10 bg-white border border-neutral-200 rounded-lg shadow-xl overflow-hidden">
                             {listingResults.map(c => (
                               <button
                                 key={c.id}
                                 onClick={() => handleSelectCreator(c)}
-                                className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-gray-900 transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-neutral-50 transition-colors text-left"
                               >
                                 <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-md" />
                                 <div className="min-w-0">
-                                  <p className="text-sm font-medium text-gray-100 truncate">{c.display_name}</p>
-                                  <p className="text-xs text-gray-600">@{c.username}</p>
+                                  <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
+                                  <p className="text-xs text-neutral-400">@{c.username}</p>
                                 </div>
                               </button>
                             ))}
@@ -554,30 +555,30 @@ export default function Account() {
                       {/* TikTok: not in DB — offer instant lookup */}
                       {listingPlatform === 'tiktok' && listingQuery.trim().length >= 2 && !listingSearching && listingResults.length === 0 && !selectedCreator && (
                         <div className="flex items-center gap-3 px-1">
-                          <p className="text-xs text-gray-600 flex-1 min-w-0">
-                            Not in our database. Add <span className="text-gray-300 font-medium">@{listingQuery.trim()}</span> directly.
+                          <p className="text-xs text-neutral-400 flex-1 min-w-0">
+                            Not in our database. Add <span className="text-neutral-700 font-medium">@{listingQuery.trim()}</span> directly.
                           </p>
                           <button
                             onClick={handleTikTokInstantAdd}
                             disabled={tikTokAdding}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 h-7 bg-gray-100 hover:bg-white disabled:opacity-50 text-gray-950 text-xs font-medium rounded-md transition-colors"
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 h-7 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors"
                           >
                             {tikTokAdding && <Loader className="w-3 h-3 animate-spin" />}
                             {tikTokAdding ? 'Looking up...' : 'Add'}
                           </button>
                         </div>
                       )}
-                      {tikTokAddError && <p className="text-xs text-red-400 px-1">{tikTokAddError}</p>}
+                      {tikTokAddError && <p className="text-xs text-red-600 px-1">{tikTokAddError}</p>}
 
                       {/* Selected creator + purchase options */}
                       {selectedCreator && (
                         <div className="space-y-3">
                           {/* Creator info */}
-                          <div className="flex items-center gap-3 px-3.5 py-3 border border-gray-800/60 rounded-lg">
+                          <div className="flex items-center gap-3 px-3.5 py-3 border border-neutral-200/80 rounded-lg">
                             <CreatorAvatar src={selectedCreator.profile_image} name={selectedCreator.display_name} size="md" rounded="rounded-lg" />
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-100 truncate">{selectedCreator.display_name}</p>
-                              <p className="text-xs text-gray-600 mt-0.5">@{selectedCreator.username} · {selectedCreator.platform}</p>
+                              <p className="text-sm font-medium text-neutral-900 truncate">{selectedCreator.display_name}</p>
+                              <p className="text-xs text-neutral-400 mt-0.5">@{selectedCreator.username} · {selectedCreator.platform}</p>
                             </div>
                             {alreadyListed && (
                               <span className={`${MICRO} flex-shrink-0`}>Already listed</span>
@@ -593,15 +594,15 @@ export default function Account() {
                                 <button
                                   onClick={handlePurchaseListing}
                                   disabled={purchasingListing}
-                                  className="group text-left border border-gray-800 hover:border-gray-600 disabled:opacity-50 rounded-xl p-4 bg-gray-900/40 transition-colors"
+                                  className="group text-left bg-white border border-neutral-200 hover:border-neutral-400 disabled:opacity-50 rounded-xl p-4 transition-colors"
                                 >
                                   <div className="flex items-center justify-between mb-3">
-                                    <span className={MICRO.replace('text-gray-600', 'text-gray-400')}>Basic</span>
-                                    <span className="text-[10px] text-gray-600">Cancel anytime</span>
+                                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Basic</span>
+                                    <span className="text-[10px] text-neutral-400">Cancel anytime</span>
                                   </div>
-                                  <p className="text-2xl font-semibold text-gray-50 tabular-nums">$49<span className="text-sm font-normal text-gray-600">/mo</span></p>
-                                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">Placed at rank 15, 20, 25... on the {PLATFORM_LABELS[listingPlatform]} rankings.</p>
-                                  <span className="inline-flex items-center gap-1 mt-3.5 text-xs font-medium text-gray-300 group-hover:text-gray-50 transition-colors">
+                                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">$49<span className="text-sm font-normal text-neutral-400">/mo</span></p>
+                                  <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Placed at rank 15, 20, 25... on the {PLATFORM_LABELS[listingPlatform]} rankings.</p>
+                                  <span className="inline-flex items-center gap-1 mt-3.5 text-xs font-medium text-neutral-600 group-hover:text-neutral-900 transition-colors">
                                     {purchasingListing ? 'Redirecting...' : <>Get this slot <ChevronRight className="w-3 h-3" /></>}
                                   </span>
                                 </button>
@@ -612,22 +613,22 @@ export default function Account() {
                                   disabled={premiumSlotsLeft === 0 || purchasingPremiumListing}
                                   className={`group text-left rounded-xl p-4 border transition-colors ${
                                     premiumSlotsLeft > 0
-                                      ? 'bg-gray-900/40 border-gray-800 border-t-2 border-t-amber-400/80 hover:border-gray-600 hover:border-t-amber-400'
-                                      : 'bg-gray-900/20 border-gray-800/60 opacity-50 cursor-not-allowed'
+                                      ? 'bg-white border-neutral-200 border-t-2 border-t-amber-400 hover:border-neutral-400 hover:border-t-amber-500'
+                                      : 'bg-neutral-50 border-neutral-200 opacity-50 cursor-not-allowed'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between mb-3">
-                                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-400">Premium</span>
-                                    <span className={`text-[10px] tabular-nums ${premiumSlotsLeft > 0 ? 'text-amber-400/90' : 'text-gray-600'}`}>
+                                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">Premium</span>
+                                    <span className={`text-[10px] tabular-nums ${premiumSlotsLeft > 0 ? 'text-amber-600' : 'text-neutral-400'}`}>
                                       {premiumSlotsLeft > 0 ? `${premiumSlotsLeft} of 2 left` : 'Sold out'}
                                     </span>
                                   </div>
-                                  <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-gray-50' : 'text-gray-500'}`}>
-                                    $149<span className="text-sm font-normal text-gray-600">/mo</span>
+                                  <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
+                                    $149<span className="text-sm font-normal text-neutral-400">/mo</span>
                                   </p>
-                                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">Top-10 placement between rank 4-5 and 9-10. Maximum visibility.</p>
+                                  <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Top-10 placement between rank 4-5 and 9-10. Maximum visibility.</p>
                                   <span className={`inline-flex items-center gap-1 mt-3.5 text-xs font-medium transition-colors ${
-                                    premiumSlotsLeft > 0 ? 'text-amber-400 group-hover:text-amber-300' : 'text-gray-600'
+                                    premiumSlotsLeft > 0 ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-400'
                                   }`}>
                                     {purchasingPremiumListing ? 'Redirecting...' : premiumSlotsLeft > 0
                                       ? <>Get this slot <ChevronRight className="w-3 h-3" /></>
@@ -648,30 +649,30 @@ export default function Account() {
               {activeTab === 'profile' && (
                 <div className="space-y-4">
                   {/* Account info — hairline-divided strip */}
-                  <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-6">
+                  <div className={`${CARD} p-6`}>
                     <p className={`${MICRO} mb-4`}>Account info</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-800/60 border border-gray-800/60 rounded-lg overflow-hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100 border border-neutral-200/80 rounded-lg overflow-hidden">
                       <div className="px-4 py-3.5">
-                        <p className="text-xs text-gray-600 mb-1">Member since</p>
-                        <p className="text-sm font-medium text-gray-100 truncate">{memberSince}</p>
+                        <p className="text-xs text-neutral-400 mb-1">Member since</p>
+                        <p className="text-sm font-medium text-neutral-900 truncate">{memberSince}</p>
                       </div>
                       <div className="px-4 py-3.5">
-                        <p className="text-xs text-gray-600 mb-1">Following</p>
-                        <p className="text-sm font-medium text-gray-100 tabular-nums">
+                        <p className="text-xs text-neutral-400 mb-1">Following</p>
+                        <p className="text-sm font-medium text-neutral-900 tabular-nums">
                           {followCount === null ? '...' : `${followCount} creator${followCount !== 1 ? 's' : ''}`}
                         </p>
                       </div>
                       <div className="px-4 py-3.5">
-                        <p className="text-xs text-gray-600 mb-1">Email</p>
-                        <p className="text-sm font-medium text-gray-100 truncate">{user.email}</p>
+                        <p className="text-xs text-neutral-400 mb-1">Email</p>
+                        <p className="text-sm font-medium text-neutral-900 truncate">{user.email}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Display name */}
-                  <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-6">
-                    <h2 className="text-base font-medium text-gray-50 mb-1">Display Name</h2>
-                    <p className="text-sm text-gray-500 mb-5">This is how your name appears on your dashboard.</p>
+                  <div className={`${CARD} p-6`}>
+                    <h2 className="text-base font-medium text-neutral-900 mb-1">Display Name</h2>
+                    <p className="text-sm text-neutral-500 mb-5">This is how your name appears on your dashboard.</p>
                     <form onSubmit={handleSaveName} className="flex gap-2.5">
                       <input
                         type="text"
@@ -679,12 +680,12 @@ export default function Account() {
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder="Your name"
                         maxLength={50}
-                        className={`flex-1 px-3.5 py-2.5 ${INPUT_DARK}`}
+                        className={`flex-1 px-3.5 py-2.5 ${INPUT}`}
                       />
                       <button
                         type="submit"
                         disabled={savingName || !displayName.trim()}
-                        className="px-4 py-2.5 bg-gray-100 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 font-medium rounded-lg transition-colors text-sm"
+                        className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
                       >
                         {savingName ? 'Saving...' : 'Save'}
                       </button>
@@ -697,9 +698,9 @@ export default function Account() {
               {activeTab === 'security' && (
                 <div className="space-y-4">
                   {/* Change password */}
-                  <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-6">
-                    <h2 className="text-base font-medium text-gray-50 mb-1">Change Password</h2>
-                    <p className="text-sm text-gray-500 mb-5">Pick a strong password, at least 8 characters.</p>
+                  <div className={`${CARD} p-6`}>
+                    <h2 className="text-base font-medium text-neutral-900 mb-1">Change Password</h2>
+                    <p className="text-sm text-neutral-500 mb-5">Pick a strong password, at least 8 characters.</p>
                     <form onSubmit={handleChangePassword} className="space-y-2.5">
                       <div className="relative">
                         <input
@@ -707,12 +708,12 @@ export default function Account() {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="New password"
-                          className={`w-full px-3.5 py-2.5 pr-10 ${INPUT_DARK}`}
+                          className={`w-full px-3.5 py-2.5 pr-10 ${INPUT}`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowNew(v => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-200"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900"
                         >
                           {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -723,12 +724,12 @@ export default function Account() {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Confirm new password"
-                          className={`w-full px-3.5 py-2.5 pr-10 ${INPUT_DARK}`}
+                          className={`w-full px-3.5 py-2.5 pr-10 ${INPUT}`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirm(v => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-200"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900"
                         >
                           {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -736,7 +737,7 @@ export default function Account() {
                       <button
                         type="submit"
                         disabled={savingPassword || !newPassword || !confirmPassword}
-                        className="w-full py-2.5 bg-gray-100 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 font-medium rounded-lg transition-colors text-sm"
+                        className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
                       >
                         {savingPassword ? 'Updating...' : 'Update Password'}
                       </button>
@@ -744,12 +745,12 @@ export default function Account() {
                   </div>
 
                   {/* Sign out */}
-                  <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-6">
-                    <h2 className="text-base font-medium text-gray-50 mb-1">Sign Out</h2>
-                    <p className="text-sm text-gray-500 mb-4">Sign out of your account on this device.</p>
+                  <div className={`${CARD} p-6`}>
+                    <h2 className="text-base font-medium text-neutral-900 mb-1">Sign Out</h2>
+                    <p className="text-sm text-neutral-500 mb-4">Sign out of your account on this device.</p>
                     <button
                       onClick={signOut}
-                      className="flex items-center gap-2 px-4 py-2 border border-gray-800 hover:border-red-500/40 text-gray-400 hover:text-red-400 font-medium rounded-lg transition-colors text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 hover:border-red-300 text-neutral-600 hover:text-red-600 font-medium rounded-lg transition-colors text-sm"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       Sign Out

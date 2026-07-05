@@ -36,17 +36,16 @@ const platformIcons = {
   substack: SubstackIcon,
 };
 
-// Muted platform tints. Icons only, at reduced opacity — platform identity is a
-// whisper, not a paint job.
+// Platform identity lives in the icon tint alone — no colored chips or paint.
 const platformTint = {
-  youtube: 'text-red-400/80',
-  tiktok: 'text-pink-400/80',
-  twitch: 'text-purple-400/80',
-  kick: 'text-green-400/80',
-  bluesky: 'text-sky-400/80',
-  mastodon: 'text-violet-400/80',
-  rumble: 'text-lime-400/80',
-  substack: 'text-orange-400/80',
+  youtube: 'text-red-500',
+  tiktok: 'text-pink-500',
+  twitch: 'text-purple-500',
+  kick: 'text-green-600',
+  bluesky: 'text-sky-500',
+  mastodon: 'text-violet-500',
+  rumble: 'text-lime-600',
+  substack: 'text-orange-500',
 };
 
 const PLATFORM_LABELS = {
@@ -64,8 +63,9 @@ const METRIC_LABEL = {
   substack: 'subscribers',
 };
 
-// Shared micro-label: the typographic backbone of the page
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-gray-600';
+// Typographic backbone: hairline cards on paper, micro-labels, tabular numerals
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -188,8 +188,8 @@ export default function Dashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]">
-        <DashboardSkeleton dark />
+      <div className="min-h-screen bg-[#fafaf9]">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -198,30 +198,30 @@ export default function Dashboard() {
     return (
       <>
         <SEO title="Dashboard" description="Track your followed creators and see their latest stats in one place." />
-        <div className="min-h-screen bg-[#0a0a0f]">
+        <div className="min-h-screen bg-[#fafaf9]">
           <div className="max-w-4xl mx-auto px-4 pt-20 pb-32">
 
             <div className="text-center mb-12">
               <p className={`${MICRO} mb-4`}>Free with an account</p>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-gray-50 mb-4">
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">
                 Your Dashboard
               </h1>
-              <p className="text-base text-gray-500 max-w-xl mx-auto">
+              <p className="text-base text-neutral-500 max-w-xl mx-auto">
                 Follow creators, track their stats, and see everything in one place. Free to sign up.
               </p>
             </div>
 
             {/* Blurred preview */}
             <div className="relative">
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0a0a0f]/70 backdrop-blur-sm rounded-xl">
-                <Lock className="w-6 h-6 text-gray-500 mb-4" />
-                <p className="text-base font-medium text-gray-100 mb-1">Sign in to continue</p>
-                <p className="text-sm text-gray-500 mb-6 max-w-sm text-center">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#fafaf9]/70 backdrop-blur-sm rounded-xl">
+                <Lock className="w-6 h-6 text-neutral-400 mb-4" />
+                <p className="text-base font-medium text-neutral-900 mb-1">Sign in to continue</p>
+                <p className="text-sm text-neutral-500 mb-6 max-w-sm text-center">
                   Create a free account to follow creators and track their stats.
                 </p>
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to access your dashboard' } }))}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-white text-gray-950 rounded-lg text-sm font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign Up / Sign In
                   <ChevronRight className="w-4 h-4" />
@@ -229,34 +229,34 @@ export default function Dashboard() {
               </div>
 
               {/* Fake preview */}
-              <div className="pointer-events-none select-none opacity-40">
-                <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-5 mb-4 flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-lg bg-gray-800 flex-shrink-0" />
+              <div className="pointer-events-none select-none opacity-50">
+                <div className={`${CARD} p-5 mb-4 flex items-center gap-4`}>
+                  <div className="w-11 h-11 rounded-lg bg-neutral-100 flex-shrink-0" />
                   <div className="flex-1">
-                    <div className="h-4 w-32 bg-gray-800 rounded mb-2" />
+                    <div className="h-4 w-32 bg-neutral-100 rounded mb-2" />
                     <div className="flex gap-3">
                       {[1, 2, 3].map(i => (
-                        <div key={i} className="h-3 w-20 bg-gray-800/60 rounded" />
+                        <div key={i} className="h-3 w-20 bg-neutral-100 rounded" />
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl overflow-hidden">
-                  <div className="flex border-b border-gray-800/60 px-4">
+                <div className={`${CARD} overflow-hidden`}>
+                  <div className="flex border-b border-neutral-100 px-4">
                     {['Following', 'Saved Compares', 'Recently Viewed'].map((t, i) => (
-                      <div key={t} className={`px-4 py-3 text-sm ${i === 0 ? 'text-gray-100' : 'text-gray-600'}`}>{t}</div>
+                      <div key={t} className={`px-4 py-3 text-sm ${i === 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>{t}</div>
                     ))}
                   </div>
-                  <div className="divide-y divide-gray-800/60">
+                  <div className="divide-y divide-neutral-100">
                     {[1, 2, 3, 4].map(i => (
                       <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-                        <div className="w-9 h-9 rounded-lg bg-gray-800 flex-shrink-0" />
+                        <div className="w-9 h-9 rounded-lg bg-neutral-100 flex-shrink-0" />
                         <div className="flex-1">
-                          <div className="h-3.5 w-28 bg-gray-800 rounded mb-1.5" />
-                          <div className="h-3 w-16 bg-gray-800/60 rounded" />
+                          <div className="h-3.5 w-28 bg-neutral-100 rounded mb-1.5" />
+                          <div className="h-3 w-16 bg-neutral-100 rounded" />
                         </div>
-                        <div className="h-4 w-16 bg-gray-800 rounded" />
+                        <div className="h-4 w-16 bg-neutral-100 rounded" />
                       </div>
                     ))}
                   </div>
@@ -274,8 +274,8 @@ export default function Dashboard() {
                 'Compare creators side by side',
                 'Free forever, no credit card needed',
               ].map(f => (
-                <div key={f} className="flex items-start gap-2.5 text-sm text-gray-500">
-                  <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-gray-600" />
+                <div key={f} className="flex items-start gap-2.5 text-sm text-neutral-500">
+                  <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-neutral-400" />
                   {f}
                 </div>
               ))}
@@ -512,24 +512,24 @@ export default function Dashboard() {
         description="Track your favorite creators and see their latest statistics."
       />
 
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-[#fafaf9]">
 
-        {/* Page header — flat, typographic, hairline rule */}
-        <div className="border-b border-gray-800/60">
+        {/* Page header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
             <div>
               <p className={`${MICRO} mb-3`}>Dashboard</p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-gray-50">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
                 Welcome back{displayName ? `, ${displayName}` : ''}.
               </h1>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-neutral-500">
                 Track creators you follow, see who's live, and revisit your saved comparisons.
               </p>
             </div>
             {liveCount > 0 && (
               <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-red-400 tabular-nums tracking-wide">{liveCount} LIVE</span>
+                <span className="text-xs font-medium text-red-600 tabular-nums tracking-wide">{liveCount} LIVE</span>
               </div>
             )}
           </div>
@@ -537,8 +537,8 @@ export default function Dashboard() {
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* Stat strip — one bordered container, hairline-divided cells */}
-          <div className="grid grid-cols-3 divide-x divide-gray-800/60 border border-gray-800/60 rounded-xl bg-gray-900/40 mb-10">
+          {/* Stat strip — one white container, hairline-divided cells */}
+          <div className={`grid grid-cols-3 divide-x divide-neutral-200/80 ${CARD} mb-10`}>
             {[
               { label: 'Following', value: followedCreators.length, live: false },
               { label: 'Live now', value: liveCount, live: true },
@@ -546,7 +546,7 @@ export default function Dashboard() {
             ].map(({ label, value, live }) => (
               <div key={label} className="px-5 py-4 sm:px-6 sm:py-5">
                 <p className={MICRO}>{label}</p>
-                <p className="mt-1.5 text-2xl sm:text-3xl font-semibold text-gray-50 tabular-nums leading-none flex items-center gap-2.5">
+                <p className="mt-1.5 text-2xl sm:text-3xl font-semibold text-neutral-900 tabular-nums leading-none flex items-center gap-2.5">
                   <CountUp value={value} format="comma" />
                   {live && value > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse mt-0.5" />}
                 </p>
@@ -568,13 +568,13 @@ export default function Dashboard() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
                         isActive
-                          ? 'bg-gray-900 text-gray-50'
-                          : 'text-gray-500 hover:text-gray-200'
+                          ? 'bg-neutral-900 text-white'
+                          : 'text-neutral-500 hover:text-neutral-900'
                       }`}
                     >
                       <span className="flex-1">{tab.label}</span>
                       {tab.count > 0 && (
-                        <span className={`text-xs tabular-nums ${isActive ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <span className={`text-xs tabular-nums ${isActive ? 'text-neutral-400' : 'text-neutral-400'}`}>
                           {tab.count}
                         </span>
                       )}
@@ -583,10 +583,10 @@ export default function Dashboard() {
                 })}
               </nav>
 
-              <div className="mt-6 pt-5 border-t border-gray-800/60">
+              <div className="mt-6 pt-5 border-t border-neutral-200/80">
                 <Link
                   to="/account"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-200 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
                 >
                   <Settings className="w-3.5 h-3.5 flex-shrink-0" />
                   Account Settings
@@ -598,7 +598,7 @@ export default function Dashboard() {
             <div className="flex-1 min-w-0">
 
               {/* Mobile tabs — segmented control */}
-              <div className="flex md:hidden mb-6 border border-gray-800/60 bg-gray-900/40 rounded-lg p-0.5 gap-0.5">
+              <div className={`flex md:hidden mb-6 ${CARD} !rounded-lg p-0.5 gap-0.5`}>
                 {tabs.map(tab => {
                   const isActive = activeTab === tab.id;
                   return (
@@ -607,13 +607,13 @@ export default function Dashboard() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-xs font-medium transition-colors ${
                         isActive
-                          ? 'bg-gray-100 text-gray-950'
-                          : 'text-gray-500'
+                          ? 'bg-neutral-900 text-white'
+                          : 'text-neutral-500'
                       }`}
                     >
                       <span>{tab.shortLabel}</span>
                       {tab.count > 0 && (
-                        <span className={`text-[10px] tabular-nums ${isActive ? 'text-gray-500' : 'text-gray-600'}`}>
+                        <span className={`text-[10px] tabular-nums ${isActive ? 'text-neutral-400' : 'text-neutral-400'}`}>
                           {tab.count}
                         </span>
                       )}
@@ -627,20 +627,20 @@ export default function Dashboard() {
                 <div>
                   {/* Compare mode banner */}
                   {compareMode && (
-                    <div className="mb-4 border border-gray-800/60 bg-gray-900/40 rounded-xl p-4">
+                    <div className={`mb-4 ${CARD} p-4`}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-medium text-gray-100">Compare mode</span>
-                          <span className="text-xs text-gray-500 tabular-nums">{selectedForCompare.length}/3 selected</span>
+                          <span className="text-sm font-medium text-neutral-900">Compare mode</span>
+                          <span className="text-xs text-neutral-400 tabular-nums">{selectedForCompare.length}/3 selected</span>
                         </div>
                         <button
                           onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
-                          className="p-1.5 rounded-md text-gray-600 hover:text-gray-200 transition-colors"
+                          className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-900 transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mb-3">Tap creators from the list to select them</p>
+                      <p className="text-xs text-neutral-500 mb-3">Tap creators from the list to select them</p>
                       <Link
                         to={`/compare?creators=${selectedForCompare.map(id => {
                           const c = followedCreators.find(fc => fc.id === id);
@@ -649,8 +649,8 @@ export default function Dashboard() {
                         onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
                         className={`flex items-center justify-center gap-2 w-full py-2 text-sm font-medium rounded-lg transition-colors ${
                           selectedForCompare.length >= 2
-                            ? 'bg-gray-100 text-gray-950 hover:bg-white'
-                            : 'bg-gray-900 text-gray-600 pointer-events-none'
+                            ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                            : 'bg-neutral-100 text-neutral-400 pointer-events-none'
                         }`}
                       >
                         {selectedForCompare.length >= 2
@@ -679,7 +679,7 @@ export default function Dashboard() {
                             onClick={() => setSelectedPlatform(p)}
                             label={PLATFORM_LABELS[p]}
                             count={platformCounts[p]}
-                            icon={<Icon className={`w-3.5 h-3.5 ${selectedPlatform === p ? 'text-gray-950' : platformTint[p]}`} />}
+                            icon={<Icon className={`w-3.5 h-3.5 ${selectedPlatform === p ? 'text-white' : platformTint[p]}`} />}
                           />
                         );
                       })}
@@ -689,7 +689,7 @@ export default function Dashboard() {
                           onClick={() => setSelectedPlatform('live')}
                           label="Live"
                           count={liveCount}
-                          icon={<span className={`w-1.5 h-1.5 rounded-full ${selectedPlatform === 'live' ? 'bg-red-600' : 'bg-red-500 animate-pulse'}`} />}
+                          icon={<span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                         />
                       )}
                     </div>
@@ -701,7 +701,7 @@ export default function Dashboard() {
                       <select
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
-                        className="text-xs bg-transparent border border-gray-800 text-gray-400 rounded-md px-2 py-1.5 focus:outline-none focus:border-gray-600 cursor-pointer"
+                        className="text-xs bg-white border border-neutral-200 text-neutral-600 rounded-md px-2 py-1.5 focus:outline-none focus:border-neutral-400 cursor-pointer"
                       >
                         <option value="live">Live first</option>
                         <option value="growth">Top growth</option>
@@ -713,7 +713,7 @@ export default function Dashboard() {
                         {followedCreators.length >= 2 && (
                           <button
                             onClick={() => setCompareMode(true)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-800 text-gray-400 hover:text-gray-100 hover:border-gray-700 text-xs rounded-md transition-colors"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-300 text-xs rounded-md transition-colors"
                           >
                             <Scale className="w-3 h-3" />
                             Compare
@@ -722,7 +722,7 @@ export default function Dashboard() {
 
                         <button
                           onClick={handleBulkExport}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-800 text-gray-400 hover:text-gray-100 hover:border-gray-700 text-xs rounded-md transition-colors"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-300 text-xs rounded-md transition-colors"
                         >
                           <Download className="w-3 h-3" />
                           <span className="hidden sm:inline">Export CSV</span>
@@ -733,36 +733,36 @@ export default function Dashboard() {
                   )}
 
                   {/* Creator list */}
-                  <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl overflow-hidden">
+                  <div className={`${CARD} overflow-hidden`}>
                     {loadingCreators ? (
                       <div className="flex items-center justify-center p-12">
-                        <Loader2 className="w-6 h-6 text-gray-600 animate-spin" />
+                        <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
                       </div>
                     ) : sortedCreators.length === 0 ? (
                       <div className="text-center p-14">
                         {selectedPlatform === 'all' ? (
                           <>
-                            <Star className="w-6 h-6 text-gray-700 mx-auto mb-4" />
-                            <p className="text-gray-100 font-medium mb-1">No creators followed yet</p>
-                            <p className="text-gray-500 text-sm mb-6">Find creators to follow and track their growth.</p>
+                            <Star className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                            <p className="text-neutral-900 font-medium mb-1">No creators followed yet</p>
+                            <p className="text-neutral-500 text-sm mb-6">Find creators to follow and track their growth.</p>
                             <Link
                               to="/search"
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-950 font-medium rounded-lg hover:bg-white transition-colors text-sm"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 transition-colors text-sm"
                             >
                               Find Creators
                             </Link>
                           </>
                         ) : (
-                          <p className="text-gray-500 text-sm">
+                          <p className="text-neutral-500 text-sm">
                             {selectedPlatform === 'live' ? 'No one is live right now.' : `No ${PLATFORM_LABELS[selectedPlatform]} creators followed.`}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <div className="divide-y divide-gray-800/60">
+                      <div className="divide-y divide-neutral-100">
                         {sortedCreators.map(creator => {
                           const PlatformIcon = platformIcons[creator.platform] || Users;
-                          const tint = platformTint[creator.platform] || 'text-gray-500';
+                          const tint = platformTint[creator.platform] || 'text-neutral-400';
                           const stats = creatorStats[creator.id];
                           const isLive = (creator.platform === 'twitch' || creator.platform === 'kick') && liveStreamers.has(creator.username.toLowerCase());
                           const growth = getGrowth(creator.id, creator.platform === 'youtube' ? 'subscribers' : 'followers');
@@ -773,9 +773,9 @@ export default function Dashboard() {
                             <div className="flex items-center gap-3.5 px-4 py-3.5">
                               {compareMode && (
                                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${
-                                  isSelected ? 'bg-gray-100 border-gray-100' : 'border-gray-600'
+                                  isSelected ? 'bg-neutral-900 border-neutral-900' : 'border-neutral-300'
                                 }`}>
-                                  {isSelected && <Check className="w-2.5 h-2.5 text-gray-950" />}
+                                  {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                                 </div>
                               )}
                               <CreatorAvatar
@@ -787,26 +787,26 @@ export default function Dashboard() {
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-gray-50 truncate text-sm">{creator.display_name}</p>
+                                  <p className="font-medium text-neutral-900 truncate text-sm">{creator.display_name}</p>
                                   {isLive && (
                                     <span className="inline-flex items-center gap-1 flex-shrink-0">
                                       <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                                      <span className="text-[10px] font-semibold tracking-[0.1em] text-red-400">LIVE</span>
+                                      <span className="text-[10px] font-semibold tracking-[0.1em] text-red-600">LIVE</span>
                                     </span>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                                   <PlatformIcon className={`w-3 h-3 flex-shrink-0 ${tint}`} />
-                                  <p className="text-xs text-gray-600 truncate">@{creator.username}</p>
+                                  <p className="text-xs text-neutral-400 truncate">@{creator.username}</p>
                                 </div>
                                 {/* Mobile-only stats inline */}
                                 <div className="sm:hidden mt-1.5 flex items-baseline gap-2">
-                                  <span className="text-sm font-semibold text-gray-50 tabular-nums">
+                                  <span className="text-sm font-semibold text-neutral-900 tabular-nums">
                                     {stats?.current ? formatNumber(stats.current.subscribers || stats.current.followers) : '–'}
                                   </span>
                                   <span className={MICRO}>{metricLabel}</span>
                                   {growth !== null && growth !== 0 && (
-                                    <span className={`text-[11px] font-medium tabular-nums ${growth > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    <span className={`text-[11px] font-medium tabular-nums ${growth > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                       {growth > 0 ? '+' : ''}{formatNumber(growth)}
                                     </span>
                                   )}
@@ -815,15 +815,15 @@ export default function Dashboard() {
                               {/* Desktop stats column */}
                               <div className="text-right hidden sm:block min-w-[120px]">
                                 <div className="flex items-baseline justify-end gap-2">
-                                  <p className="text-[15px] font-semibold text-gray-50 tabular-nums leading-none">
+                                  <p className="text-[15px] font-semibold text-neutral-900 tabular-nums leading-none">
                                     {stats?.current ? formatNumber(stats.current.subscribers || stats.current.followers) : '–'}
                                   </p>
                                   <p className={MICRO}>{metricLabel}</p>
                                 </div>
                                 <p className={`mt-1 text-xs tabular-nums ${
                                   growth !== null && growth !== 0
-                                    ? growth > 0 ? 'text-emerald-400' : 'text-red-400'
-                                    : 'text-gray-700'
+                                    ? growth > 0 ? 'text-emerald-600' : 'text-red-600'
+                                    : 'text-neutral-300'
                                 }`}>
                                   {growth !== null && growth !== 0
                                     ? `${growth > 0 ? '+' : ''}${formatNumber(growth)} today`
@@ -843,7 +843,7 @@ export default function Dashboard() {
                                   setSelectedForCompare(prev => [...prev, creator.id]);
                                 }
                               }}
-                              className={`w-full text-left transition-colors ${isSelected ? 'bg-gray-900' : 'hover:bg-gray-900/60'} ${selectedForCompare.length >= 3 && !isSelected ? 'opacity-40' : ''}`}
+                              className={`w-full text-left transition-colors ${isSelected ? 'bg-neutral-50' : 'hover:bg-neutral-50'} ${selectedForCompare.length >= 3 && !isSelected ? 'opacity-40' : ''}`}
                             >
                               {rowContent}
                             </button>
@@ -851,7 +851,7 @@ export default function Dashboard() {
                             <Link
                               key={creator.id}
                               to={`/${creator.platform}/${creator.username}`}
-                              className="block hover:bg-gray-900/60 transition-colors"
+                              className="block hover:bg-neutral-50 transition-colors"
                             >
                               {rowContent}
                             </Link>
@@ -868,37 +868,37 @@ export default function Dashboard() {
                 <div>
                   {loadingCompares ? (
                     <div className="flex items-center justify-center py-16">
-                      <Loader2 className="w-6 h-6 text-gray-600 animate-spin" />
+                      <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
                     </div>
                   ) : savedCompares.length === 0 ? (
-                    <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-14 text-center">
-                      <Scale className="w-6 h-6 text-gray-700 mx-auto mb-4" />
-                      <p className="text-gray-100 font-medium mb-1">No saved comparisons</p>
-                      <p className="text-gray-500 text-sm mb-6">Head to the Compare page, set up a comparison, and hit "Save comparison".</p>
+                    <div className={`${CARD} p-14 text-center`}>
+                      <Scale className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                      <p className="text-neutral-900 font-medium mb-1">No saved comparisons</p>
+                      <p className="text-neutral-500 text-sm mb-6">Head to the Compare page, set up a comparison, and hit "Save comparison".</p>
                       <Link
                         to="/compare"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-950 font-medium rounded-lg hover:bg-white transition-colors text-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 transition-colors text-sm"
                       >
                         Go to Compare
                       </Link>
                     </div>
                   ) : (
-                    <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl divide-y divide-gray-800/60 overflow-hidden">
+                    <div className={`${CARD} divide-y divide-neutral-100 overflow-hidden`}>
                       {savedCompares.map(compare => {
                         const entries = compare.creators_param.split(',').map(e => {
                           const [platform, username] = e.split(':');
                           return { platform, username };
                         });
                         return (
-                          <div key={compare.id} className="flex items-center gap-3 px-4 py-3.5 group hover:bg-gray-900/60 transition-colors">
+                          <div key={compare.id} className="flex items-center gap-3 px-4 py-3.5 group hover:bg-neutral-50 transition-colors">
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-50 text-sm mb-1">{compare.name}</p>
+                              <p className="font-medium text-neutral-900 text-sm mb-1">{compare.name}</p>
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                 {entries.map((e, i) => {
                                   const Icon = platformIcons[e.platform];
-                                  const tint = platformTint[e.platform] || 'text-gray-500';
+                                  const tint = platformTint[e.platform] || 'text-neutral-400';
                                   return (
-                                    <span key={i} className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                                    <span key={i} className="inline-flex items-center gap-1.5 text-xs text-neutral-500">
                                       {Icon && <Icon className={`w-3 h-3 ${tint}`} />}
                                       {e.username}
                                     </span>
@@ -909,14 +909,14 @@ export default function Dashboard() {
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <button
                                 onClick={() => handleDeleteCompare(compare.id)}
-                                className="p-2 rounded-md text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                className="p-2 rounded-md text-neutral-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
                                 title="Delete"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                               <Link
                                 to={`/compare?creators=${compare.creators_param}`}
-                                className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-50 transition-colors px-2"
+                                className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900 transition-colors px-2"
                               >
                                 Open <ChevronRight className="w-3.5 h-3.5" />
                               </Link>
@@ -933,10 +933,10 @@ export default function Dashboard() {
               {activeTab === 'recent' && (
                 <div>
                   {recentlyViewed.length === 0 ? (
-                    <div className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-14 text-center">
-                      <Clock className="w-6 h-6 text-gray-700 mx-auto mb-4" />
-                      <p className="text-gray-100 font-medium mb-1">Nothing here yet</p>
-                      <p className="text-gray-500 text-sm">Creators you visit will show up here.</p>
+                    <div className={`${CARD} p-14 text-center`}>
+                      <Clock className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                      <p className="text-neutral-900 font-medium mb-1">Nothing here yet</p>
+                      <p className="text-neutral-500 text-sm">Creators you visit will show up here.</p>
                     </div>
                   ) : (
                     <>
@@ -946,15 +946,15 @@ export default function Dashboard() {
                             <button
                               onClick={() => setRecentlyViewedIndex(Math.max(0, recentlyViewedIndex - 8))}
                               disabled={recentlyViewedIndex === 0}
-                              className="p-1.5 rounded-md border border-gray-800 text-gray-500 hover:text-gray-200 hover:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              className="p-1.5 rounded-md bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-xs text-gray-600 tabular-nums">{Math.floor(recentlyViewedIndex / 8) + 1} / {Math.ceil(recentlyViewed.length / 8)}</span>
+                            <span className="text-xs text-neutral-400 tabular-nums">{Math.floor(recentlyViewedIndex / 8) + 1} / {Math.ceil(recentlyViewed.length / 8)}</span>
                             <button
                               onClick={() => setRecentlyViewedIndex(Math.min(recentlyViewed.length - 8, recentlyViewedIndex + 8))}
                               disabled={recentlyViewedIndex >= recentlyViewed.length - 8}
-                              className="p-1.5 rounded-md border border-gray-800 text-gray-500 hover:text-gray-200 hover:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              className="p-1.5 rounded-md bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
@@ -962,7 +962,7 @@ export default function Dashboard() {
                         ) : <div />}
                         <button
                           onClick={handleClearHistory}
-                          className="text-xs text-gray-600 hover:text-red-400 transition-colors"
+                          className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
                         >
                           Clear all
                         </button>
@@ -970,12 +970,12 @@ export default function Dashboard() {
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                         {recentlyViewed.slice(recentlyViewedIndex, recentlyViewedIndex + 8).map((creator, idx) => {
                           const PlatformIcon = platformIcons[creator.platform] || Users;
-                          const tint = platformTint[creator.platform] || 'text-gray-500';
+                          const tint = platformTint[creator.platform] || 'text-neutral-400';
                           return (
                             <Link
                               key={`${creator.platform}-${creator.username}-${idx}`}
                               to={`/${creator.platform}/${creator.username}`}
-                              className="border border-gray-800/60 bg-gray-900/40 rounded-xl p-4 hover:border-gray-700 hover:bg-gray-900/70 transition-colors"
+                              className={`${CARD} p-4 hover:border-neutral-300 transition-colors`}
                             >
                               <CreatorAvatar
                                 src={creator.profileImage}
@@ -985,10 +985,10 @@ export default function Dashboard() {
                                 className="!w-12 !h-12 mx-auto mb-3"
                               />
                               <div className="text-center">
-                                <p className="font-medium text-gray-100 text-[13px] truncate">{creator.displayName}</p>
+                                <p className="font-medium text-neutral-900 text-[13px] truncate">{creator.displayName}</p>
                                 <div className="flex items-center justify-center gap-1.5 mt-1">
                                   <PlatformIcon className={`w-3 h-3 ${tint}`} />
-                                  <span className="text-xs text-gray-600 tabular-nums">
+                                  <span className="text-xs text-neutral-400 tabular-nums">
                                     {formatNumber(creator.subscribers || creator.followers || 0)}
                                   </span>
                                 </div>
@@ -1016,13 +1016,13 @@ function FilterChip({ active, onClick, label, count, icon }) {
       onClick={onClick}
       className={`flex-shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors border ${
         active
-          ? 'bg-gray-100 border-gray-100 text-gray-950'
-          : 'bg-transparent border-gray-800 text-gray-500 hover:text-gray-200 hover:border-gray-700'
+          ? 'bg-neutral-900 border-neutral-900 text-white'
+          : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
       }`}
     >
       {icon}
       {label}
-      <span className={`text-xs tabular-nums ${active ? 'text-gray-500' : 'text-gray-600'}`}>
+      <span className={`text-xs tabular-nums ${active ? 'text-neutral-400' : 'text-neutral-400'}`}>
         {count}
       </span>
     </button>
