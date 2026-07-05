@@ -430,8 +430,12 @@ export default function Account() {
               {/* ── Listings tab ── */}
               {activeTab === 'listings' && (
                 <div className="space-y-4">
-                  <div className="group relative overflow-hidden bg-gray-900 border border-gray-800 rounded-2xl p-6">
-                    <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl" />
+                  {/* No overflow-hidden here: the creator-search dropdown must escape the card.
+                      The glow blob gets its own clipped layer instead. */}
+                  <div className="group relative bg-gray-900 border border-gray-800 rounded-2xl p-6">
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+                      <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl" />
+                    </div>
                     <div className="relative">
                     <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
