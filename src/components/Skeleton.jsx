@@ -126,36 +126,40 @@ export function ProfileSkeleton() {
   );
 }
 
-// Dashboard skeleton — sidebar + content grid
-export function DashboardSkeleton() {
+// Dashboard skeleton — sidebar + content grid. `dark` renders gray-900 bones
+// for the dark dashboard/account pages.
+export function DashboardSkeleton({ dark = false }) {
+  const card = dark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-neutral-200';
+  const bone = dark ? 'bg-gray-800' : 'bg-neutral-200';
+  const boneSoft = dark ? 'bg-gray-800/60' : 'bg-neutral-100';
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
       {/* Profile strip */}
-      <div className="bg-white border border-neutral-200 rounded-2xl p-5 mb-8 flex items-center gap-4 animate-pulse">
-        <div className="w-12 h-12 bg-neutral-200 rounded-xl flex-shrink-0" />
+      <div className={`${card} rounded-2xl p-5 mb-8 flex items-center gap-4 animate-pulse`}>
+        <div className={`w-12 h-12 ${bone} rounded-xl flex-shrink-0`} />
         <div className="flex-1">
-          <div className="h-4 w-40 bg-neutral-200 rounded mb-2" />
-          <div className="h-3 w-32 bg-neutral-200 rounded" />
+          <div className={`h-4 w-40 ${bone} rounded mb-2`} />
+          <div className={`h-3 w-32 ${bone} rounded`} />
         </div>
         <div className="hidden sm:flex gap-8">
-          <div className="h-10 w-12 bg-neutral-200 rounded" />
-          <div className="h-10 w-12 bg-neutral-200 rounded" />
+          <div className={`h-10 w-12 ${bone} rounded`} />
+          <div className={`h-10 w-12 ${bone} rounded`} />
         </div>
       </div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-white border border-neutral-200 rounded-2xl p-5 animate-pulse">
+          <div key={i} className={`${card} rounded-2xl p-5 animate-pulse`}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 bg-neutral-200 rounded-xl" />
+              <div className={`w-11 h-11 ${bone} rounded-xl`} />
               <div className="flex-1">
-                <div className="h-4 w-28 bg-neutral-200 rounded mb-1.5" />
-                <div className="h-3 w-20 bg-neutral-200 rounded" />
+                <div className={`h-4 w-28 ${bone} rounded mb-1.5`} />
+                <div className={`h-3 w-20 ${bone} rounded`} />
               </div>
             </div>
-            <div className="h-3 w-full bg-neutral-100 rounded mb-2" />
-            <div className="h-3 w-3/4 bg-neutral-100 rounded" />
+            <div className={`h-3 w-full ${boneSoft} rounded mb-2`} />
+            <div className={`h-3 w-3/4 ${boneSoft} rounded`} />
           </div>
         ))}
       </div>
