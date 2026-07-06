@@ -1321,15 +1321,12 @@ export default function CreatorProfile() {
                 a stats row with 0 subscribers, so the stat cards would show "0"
                 everywhere. This banner is a friendlier explanation than a zero. */}
             {statsHistory.length === 0 && (creator.subscribers || creator.followers || 0) === 0 && (
-              <div className="mb-6 relative overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl p-5 sm:p-6">
-                <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 bg-indigo-200/40 rounded-full blur-3xl" />
-                <div className="relative flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/30">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
+              <div className="mb-6 bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 sm:p-6">
+                <div className="flex items-start gap-3.5">
+                  <Clock className="w-4 h-4 text-neutral-400 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <h3 className="text-base font-bold text-neutral-900 mb-1">We just added this creator to our tracker.</h3>
-                    <p className="text-sm text-neutral-700 leading-relaxed">
+                    <h3 className="text-sm font-medium text-neutral-900 mb-1">We just added this creator to our tracker.</h3>
+                    <p className="text-sm text-neutral-500 leading-relaxed">
                       Stats will appear once {platformDisplayNames[platform] || platform} reports the first data point. Daily snapshots start as soon as the account has any followers.
                     </p>
                   </div>
@@ -2213,39 +2210,29 @@ export default function CreatorProfile() {
   );
 }
 
-// Pick an accent color per stat label so cards have visual identity.
-// Matches the dark-card pattern from CLAUDE.md (glow blob, ghost number, hover lift).
-const STAT_ACCENTS = {
-  Subscribers:        { glow: 'bg-red-500/10',     glowHover: 'group-hover:bg-red-500/20',     iconBg: 'from-red-500 to-rose-600',         iconShadow: 'shadow-red-500/30',      border: 'hover:border-red-300',     shadow: 'hover:shadow-red-500/10' },
-  Followers:          { glow: 'bg-pink-500/10',    glowHover: 'group-hover:bg-pink-500/20',    iconBg: 'from-pink-500 to-rose-600',        iconShadow: 'shadow-pink-500/30',     border: 'hover:border-pink-300',    shadow: 'hover:shadow-pink-500/10' },
-  'Total Views':      { glow: 'bg-indigo-500/10',  glowHover: 'group-hover:bg-indigo-500/20',  iconBg: 'from-indigo-500 to-violet-600',    iconShadow: 'shadow-indigo-500/30',   border: 'hover:border-indigo-300',  shadow: 'hover:shadow-indigo-500/10' },
-  Videos:             { glow: 'bg-sky-500/10',     glowHover: 'group-hover:bg-sky-500/20',     iconBg: 'from-sky-500 to-cyan-600',         iconShadow: 'shadow-sky-500/30',      border: 'hover:border-sky-300',     shadow: 'hover:shadow-sky-500/10' },
-  'Avg Views/Video':  { glow: 'bg-amber-500/10',   glowHover: 'group-hover:bg-amber-500/20',   iconBg: 'from-amber-500 to-orange-600',     iconShadow: 'shadow-amber-500/30',    border: 'hover:border-amber-300',   shadow: 'hover:shadow-amber-500/10' },
-  'Hours Watched':    { glow: 'bg-purple-500/10',  glowHover: 'group-hover:bg-purple-500/20',  iconBg: 'from-purple-500 to-fuchsia-600',   iconShadow: 'shadow-purple-500/30',   border: 'hover:border-purple-300',  shadow: 'hover:shadow-purple-500/10' },
-  'Paid Subscribers': { glow: 'bg-emerald-500/10', glowHover: 'group-hover:bg-emerald-500/20', iconBg: 'from-emerald-500 to-teal-600',     iconShadow: 'shadow-emerald-500/30',  border: 'hover:border-emerald-300', shadow: 'hover:shadow-emerald-500/10' },
-  'Monthly Listeners':{ glow: 'bg-amber-500/10',   glowHover: 'group-hover:bg-amber-500/20',   iconBg: 'from-amber-500 to-orange-600',     iconShadow: 'shadow-amber-500/30',    border: 'hover:border-amber-300',   shadow: 'hover:shadow-amber-500/10' },
-  Posts:              { glow: 'bg-sky-500/10',     glowHover: 'group-hover:bg-sky-500/20',     iconBg: 'from-sky-500 to-cyan-600',         iconShadow: 'shadow-sky-500/30',      border: 'hover:border-sky-300',     shadow: 'hover:shadow-sky-500/10' },
+// Precision system: stat identity is a muted icon tint, nothing else.
+const STAT_TINTS = {
+  Subscribers:        'text-red-500',
+  Followers:          'text-pink-500',
+  'Total Views':      'text-indigo-500',
+  Videos:             'text-sky-500',
+  'Avg Views/Video':  'text-amber-500',
+  'Hours Watched':    'text-purple-500',
+  'Paid Subscribers': 'text-emerald-600',
+  'Monthly Listeners':'text-amber-500',
+  Posts:              'text-sky-500',
 };
-const DEFAULT_ACCENT = { glow: 'bg-indigo-500/10', glowHover: 'group-hover:bg-indigo-500/20', iconBg: 'from-indigo-500 to-purple-600', iconShadow: 'shadow-indigo-500/30', border: 'hover:border-indigo-300', shadow: 'hover:shadow-indigo-500/10' };
 
 function StatCard({ icon: Icon, label, value, sublabel }) {
-  const accent = STAT_ACCENTS[label] || DEFAULT_ACCENT;
+  const tint = STAT_TINTS[label] || 'text-neutral-400';
   return (
-    <div className={`group relative bg-white rounded-2xl border border-neutral-200 overflow-hidden transition-all duration-300 ${accent.border} hover:-translate-y-1 hover:shadow-2xl ${accent.shadow}`}>
-      {/* Glow blob */}
-      <div className={`pointer-events-none absolute -top-12 -right-12 w-32 h-32 ${accent.glow} rounded-full blur-3xl ${accent.glowHover} transition-colors duration-500`} />
-      <div className="relative p-3 sm:p-5">
-        <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-          {Icon && (
-            <div className={`w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br ${accent.iconBg} rounded-md sm:rounded-lg flex items-center justify-center shadow-md ${accent.iconShadow} group-hover:scale-105 transition-transform duration-300 flex-shrink-0`}>
-              <Icon className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-            </div>
-          )}
-          <p className="text-[10px] sm:text-sm text-neutral-500 font-semibold uppercase tracking-wider leading-tight line-clamp-2 break-words">{label}</p>
-        </div>
-        <p className="text-lg sm:text-3xl font-extrabold text-neutral-900 tabular-nums truncate">{value}</p>
-        {sublabel && <p className="text-[10px] sm:text-xs text-neutral-400 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
+    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-3 sm:p-5">
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+        {Icon && <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${tint}`} />}
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 leading-tight line-clamp-2 break-words">{label}</p>
       </div>
+      <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">{value}</p>
+      {sublabel && <p className="text-[10px] sm:text-xs text-neutral-400 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
     </div>
   );
 }
@@ -2256,17 +2243,13 @@ function SummaryCard({ label, sublabel, value, change }) {
   // Use smaller text for longer values (like earnings ranges)
   const isLongValue = value && value.length > 12;
 
-  const bgClass = isNegative
-    ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-200'
-    : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200';
-
   return (
-    <div className={`rounded-2xl p-4 sm:p-5 border ${bgClass}`}>
-      <p className={`font-bold text-neutral-900 mb-1 ${isLongValue ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl'}`}>{value}</p>
-      <p className="text-xs sm:text-sm font-medium text-neutral-600">{label}</p>
-      {sublabel && <p className="text-xs text-neutral-500 mt-1">{sublabel}</p>}
+    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 sm:p-5">
+      <p className={`font-semibold text-neutral-900 mb-1 tabular-nums ${isLongValue ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl'}`}>{value}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">{label}</p>
+      {sublabel && <p className="text-xs text-neutral-400 mt-1">{sublabel}</p>}
       {change !== undefined && change !== null && (
-        <p className={`text-xs mt-2 font-medium ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-500'}`}>
+        <p className={`text-xs mt-2 font-medium tabular-nums ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400'}`}>
           {isPositive ? '+' : ''}{formatNumber(change)}
         </p>
       )}
@@ -2277,31 +2260,23 @@ function SummaryCard({ label, sublabel, value, change }) {
 function GrowthRateCard({ label, value, platform }) {
   const isPositive = value > 0;
   const isNegative = value < 0;
-  const isNeutral = value === 0;
 
-  const bgClass = isNegative
-    ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-200'
-    : isPositive
-    ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200'
-    : 'bg-white border-neutral-200';
-
-  const iconColor = isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400';
-  const valueColor = isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-500';
+  const valueColor = isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400';
 
   const followerLabel = platform === 'kick' ? 'Paid Subscribers'
     : platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers'
     : 'Subscribers';
 
   return (
-    <div className={`rounded-2xl border p-5 ${bgClass}`}>
+    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-neutral-700">{label}</span>
-        <TrendingUp className={`w-5 h-5 ${iconColor} ${isNegative ? 'rotate-180' : ''}`} />
+        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">{label}</span>
+        <TrendingUp className={`w-4 h-4 ${valueColor} ${isNegative ? 'rotate-180' : ''}`} />
       </div>
-      <div className={`text-2xl font-bold ${valueColor}`}>
+      <div className={`text-2xl font-semibold tabular-nums ${valueColor}`}>
         {isPositive ? '+' : ''}{value.toFixed(2)}%
       </div>
-      <p className="text-xs text-neutral-700 mt-1">{followerLabel} growth rate</p>
+      <p className="text-xs text-neutral-400 mt-1">{followerLabel} growth rate</p>
     </div>
   );
 }
@@ -2402,30 +2377,26 @@ function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
         {predictions.map((pred, index) => (
           <div
             key={pred.milestone}
-            className={`rounded-xl p-4 ${
+            className={`rounded-xl p-4 border ${
               index === 0
-                ? 'bg-gradient-to-br from-indigo-950/30 to-purple-950/30 border border-indigo-800'
-                : 'bg-neutral-50'
+                ? 'bg-neutral-900 border-neutral-900'
+                : 'bg-white border-neutral-200/80'
             }`}
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                index === 0 ? 'bg-indigo-600 text-white' : 'bg-neutral-100 text-neutral-500'
-              }`}>
-                <Target className="w-4 h-4" />
-              </div>
-              <span className={`text-2xl font-bold ${
-                index === 0 ? 'text-indigo-600' : 'text-neutral-900'
+              <Target className={`w-4 h-4 ${index === 0 ? 'text-neutral-400' : 'text-neutral-300'}`} />
+              <span className={`text-2xl font-semibold tabular-nums ${
+                index === 0 ? 'text-white' : 'text-neutral-900'
               }`}>
                 {formatMilestone(pred.milestone)}
               </span>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-neutral-700 flex items-center gap-1">
+              <p className={`text-sm flex items-center gap-1 tabular-nums ${index === 0 ? 'text-neutral-300' : 'text-neutral-600'}`}>
                 <Clock className="w-3.5 h-3.5" />
                 {formatDays(pred.daysNeeded)}
               </p>
-              <p className="text-xs text-neutral-700">
+              <p className={`text-xs tabular-nums ${index === 0 ? 'text-neutral-500' : 'text-neutral-400'}`}>
                 Est. {pred.estimatedDate.toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -2436,7 +2407,7 @@ function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
           </div>
         ))}
       </div>
-      <p className="text-xs text-neutral-700 mt-4">
+      <p className="text-xs text-neutral-400 mt-4">
         * Predictions assume consistent growth. Actual results may vary based on content, algorithm changes, and other factors.
       </p>
     </div>
