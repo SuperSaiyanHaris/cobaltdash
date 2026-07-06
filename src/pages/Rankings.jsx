@@ -20,38 +20,39 @@ import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
 
+// Platform identity is the icon tint plus a thin hover rule — no colored
+// buttons or tinted card headers.
 const platforms = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-red-600',    hoverColor: 'hover:bg-red-500',    lightBg: 'bg-red-50',     textColor: 'text-red-700',    available: true },
-  { id: 'tiktok',  name: 'TikTok',  icon: TikTokIcon, color: 'bg-pink-600',  hoverColor: 'hover:bg-pink-500',   lightBg: 'bg-pink-50',    textColor: 'text-pink-700',   available: true },
-  { id: 'twitch',  name: 'Twitch',  icon: Twitch,   color: 'bg-purple-600', hoverColor: 'hover:bg-purple-500', lightBg: 'bg-purple-50',  textColor: 'text-purple-700', available: true },
-  { id: 'kick',    name: 'Kick',    icon: KickIcon, color: 'bg-green-600',  hoverColor: 'hover:bg-green-500',  lightBg: 'bg-green-50',   textColor: 'text-green-700',  available: true },
-  { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, color: 'bg-sky-500',  hoverColor: 'hover:bg-sky-400',    lightBg: 'bg-sky-50',     textColor: 'text-sky-700',    available: true },
-  { id: 'music',   name: 'Music',   icon: Music,        color: 'bg-amber-600',  hoverColor: 'hover:bg-amber-500',  lightBg: 'bg-amber-50',   textColor: 'text-amber-700',  available: true },
-  { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, color: 'bg-violet-600', hoverColor: 'hover:bg-violet-500', lightBg: 'bg-violet-50',  textColor: 'text-violet-700', available: true },
-  { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   color: 'bg-lime-600',   hoverColor: 'hover:bg-lime-500',   lightBg: 'bg-lime-50',    textColor: 'text-lime-700',   available: true },
-  { id: 'substack',name: 'Substack',icon: SubstackIcon, color: 'bg-orange-600', hoverColor: 'hover:bg-orange-500', lightBg: 'bg-orange-50',  textColor: 'text-orange-700', available: true },
+  { id: 'youtube', name: 'YouTube', icon: Youtube,      tint: 'text-red-500',     bar: 'bg-red-500',    available: true },
+  { id: 'tiktok',  name: 'TikTok',  icon: TikTokIcon,   tint: 'text-pink-500',    bar: 'bg-pink-500',   available: true },
+  { id: 'twitch',  name: 'Twitch',  icon: Twitch,       tint: 'text-purple-500',  bar: 'bg-purple-500', available: true },
+  { id: 'kick',    name: 'Kick',    icon: KickIcon,     tint: 'text-green-600',   bar: 'bg-green-600',  available: true },
+  { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon,  tint: 'text-sky-500',     bar: 'bg-sky-500',    available: true },
+  { id: 'music',   name: 'Music',   icon: Music,        tint: 'text-amber-500',   bar: 'bg-amber-500',  available: true },
+  { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, tint: 'text-violet-500',  bar: 'bg-violet-500', available: true },
+  { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   tint: 'text-lime-600',    bar: 'bg-lime-600',   available: true },
+  { id: 'substack',name: 'Substack',icon: SubstackIcon, tint: 'text-orange-500',  bar: 'bg-orange-500', available: true },
 ];
 
 const topCounts = [50, 100, 500];
 
 const MotionLink = motion(Link);
 
-// Readable rank badge for the light theme. Top 3 get tinted "medal" pills with
-// dark, high-contrast text; everyone else gets a clean neutral numeral. Replaces
-// the old dark-theme treatment (light text on light bg = unreadable).
+// Typographic backbone shared with the dashboard/account precision system
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+
+// Rank is a plain tabular numeral — position is the hierarchy. The podium
+// (1/2/3) gets a small medal dot instead of gradient pills.
 function RankBadge({ rank, size = 'md' }) {
-  const box = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm';
-  const base = `${box} inline-flex items-center justify-center rounded-lg font-bold tabular-nums flex-shrink-0`;
-  if (rank === 1) {
-    return <span className={`${base} bg-gradient-to-br from-amber-100 to-yellow-200 text-amber-800 ring-1 ring-amber-300 shadow-sm shadow-amber-500/20`}>{rank}</span>;
-  }
-  if (rank === 2) {
-    return <span className={`${base} bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 ring-1 ring-slate-300`}>{rank}</span>;
-  }
-  if (rank === 3) {
-    return <span className={`${base} bg-gradient-to-br from-orange-100 to-amber-200 text-orange-800 ring-1 ring-orange-300`}>{rank}</span>;
-  }
-  return <span className={`${base} bg-neutral-100 text-neutral-500`}>{rank}</span>;
+  const medal = rank === 1 ? 'bg-amber-400' : rank === 2 ? 'bg-neutral-300' : rank === 3 ? 'bg-orange-300' : null;
+  const text = size === 'sm' ? 'text-xs' : 'text-sm';
+  return (
+    <span className={`inline-flex items-center gap-1.5 flex-shrink-0 ${size === 'sm' ? 'w-8' : 'w-10'}`}>
+      {medal && <span className={`w-1.5 h-1.5 rounded-full ${medal}`} />}
+      <span className={`${text} font-semibold tabular-nums ${rank <= 3 ? 'text-neutral-900' : 'text-neutral-400'}`}>{rank}</span>
+    </span>
+  );
 }
 
 // SEO helpers per platform
@@ -230,33 +231,33 @@ function RankingsOverview() {
         description="Live rankings of the top creators across YouTube, TikTok, Twitch, Kick, Bluesky, and Music. Updated daily with subscriber counts, follower stats, and growth metrics."
         keywords="top youtubers, top tiktokers, top twitch streamers, top kick streamers, top bluesky accounts, top music artists, creator rankings, most subscribers, most followers, live rankings 2026"
       />
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Header */}
-        <div className="relative overflow-hidden border-b border-neutral-200">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-neutral-900">Creator Rankings</h1>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live
-              </span>
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
+            <div>
+              <p className={`${MICRO} mb-3`}>Rankings</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Rankings</h1>
+              <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
             </div>
-            <p className="text-sm sm:text-base text-neutral-500">Top creators across all platforms. Updated daily.</p>
+            <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
+            </div>
           </div>
         </div>
 
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {[1,2,3,4].map(i => (
-                <div key={i} className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+                <div key={i} className={`${CARD} p-6`}>
                   <TableSkeleton rows={5} />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {platforms.map((platform) => {
                 const Icon = platform.icon;
                 const creators = platformData[platform.id] || [];
@@ -269,15 +270,13 @@ function RankingsOverview() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md hover:border-neutral-300 transition-all"
+                    className={`${CARD} overflow-hidden hover:border-neutral-300 transition-colors`}
                   >
                     {/* Platform Header */}
-                    <div className={`flex items-center px-5 py-4 ${platform.lightBg} border-b border-neutral-200`}>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200/80">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 ${platform.color} rounded-lg flex items-center justify-center`}>
-                          <Icon className="w-5 h-5 text-white" />
-                        </div>
-                        <h2 className="font-bold text-neutral-900">Top {platform.name} Creators</h2>
+                        <Icon className={`w-5 h-5 ${platform.tint}`} />
+                        <h2 className="font-medium text-neutral-900">Top {platform.name} Creators</h2>
                       </div>
                     </div>
 
@@ -298,14 +297,14 @@ function RankingsOverview() {
                               <Link
                                 key={slotKey}
                                 to={`/${c?.platform}/${c?.username}`}
-                                className="flex items-center gap-3 px-5 py-3 bg-amber-50 hover:bg-amber-100 border-y border-amber-200/60 transition-colors group"
+                                className="flex items-center gap-3 px-5 py-3 bg-amber-50/60 hover:bg-amber-50 transition-colors group"
                               >
-                                <span className="inline-flex items-center justify-center gap-0.5 px-1.5 h-6 rounded-md text-[10px] font-bold flex-shrink-0 bg-amber-200 border border-amber-300 text-amber-900" title="Premium featured listing">
-                                  <span className="text-[9px]">★</span>Ad
+                                <span className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] flex-shrink-0 bg-amber-100 border border-amber-200 text-amber-700" title="Premium featured listing">
+                                  Ad
                                 </span>
                                 <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="sm" rounded="rounded-lg" />
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-amber-700 transition-colors">{c?.display_name}</p>
+                                  <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name}</p>
                                 </div>
                               </Link>
                             );
@@ -317,20 +316,19 @@ function RankingsOverview() {
                               <Link
                                 key={slotKey}
                                 to="/promote"
-                                className="flex items-center gap-3 px-5 py-3 bg-amber-50/60 hover:bg-amber-50 border-y border-dashed border-amber-300 transition-colors group relative overflow-hidden"
+                                className="flex items-center gap-3 px-5 py-3 bg-amber-50/40 hover:bg-amber-50 border-y border-dashed border-amber-200 transition-colors group"
                               >
-                                <div className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-amber-200/40 to-transparent animate-marquee" />
-                                <span className="inline-flex items-center justify-center gap-0.5 px-1.5 h-6 rounded-md text-[10px] font-bold flex-shrink-0 bg-amber-200 border border-amber-300 text-amber-900" title="Premium featured listing available">
-                                  <span className="text-[9px]">★</span>Ad
+                                <span className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] flex-shrink-0 bg-amber-100 border border-amber-200 text-amber-700" title="Premium featured listing available">
+                                  Ad
                                 </span>
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0 shadow shadow-amber-500/20">
+                                <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600 text-xs font-semibold flex-shrink-0">
                                   ★
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-amber-700 transition-colors">Your Creator Here</p>
-                                  <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wider">Premium slot available</p>
+                                  <p className="text-sm font-medium text-neutral-900 truncate">Your Creator Here</p>
+                                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-600">Premium slot available</p>
                                 </div>
-                                <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
+                                <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
                                   Claim <ArrowRight className="w-3 h-3" />
                                 </span>
                               </Link>
@@ -352,12 +350,13 @@ function RankingsOverview() {
                               <RankBadge rank={index + 1} size="sm" />
                               <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="sm" />
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-indigo-600 transition-colors">
+                                <p className="text-sm font-medium text-neutral-900 truncate">
                                   {creator.display_name}
                                 </p>
                               </div>
-                              <span className="text-sm font-medium text-neutral-700 flex-shrink-0">
-                                {formatNumber(creator.subscribers)} {follLabel}
+                              <span className="flex-shrink-0 flex items-baseline gap-1.5">
+                                <span className="text-sm font-semibold text-neutral-900 tabular-nums">{formatNumber(creator.subscribers)}</span>
+                                <span className={MICRO}>{follLabel}</span>
                               </span>
                             </Link>
                           );
@@ -367,12 +366,13 @@ function RankingsOverview() {
                     </div>
 
                     {/* View Full Rankings Button */}
-                    <div className="px-5 py-3 border-t border-neutral-200">
+                    <div className="border-t border-neutral-200/80">
                       <Link
                         to={`/rankings/${platform.id}`}
-                        className={`block w-full text-center py-2.5 rounded-xl text-sm font-medium ${platform.color} text-white ${platform.hoverColor} transition-colors`}
+                        className="flex items-center justify-center gap-1.5 w-full py-3 text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 transition-colors group/cta"
                       >
                         View Top 50 {platform.name} Creators
+                        <ArrowRight className="w-3.5 h-3.5 group-hover/cta:translate-x-0.5 transition-transform" />
                       </Link>
                     </div>
                   </motion.div>
@@ -572,10 +572,10 @@ function PlatformRankings({ urlPlatform }) {
   }, [sortedRankings, sponsoredListings, selectedPlatform]);
 
   const SortIcon = ({ column }) => {
-    if (sortColumn !== column) return <ArrowUpDown className="w-3.5 h-3.5 text-neutral-700" />;
+    if (sortColumn !== column) return <ArrowUpDown className="w-3 h-3 text-neutral-300" />;
     return sortDirection === 'desc'
-      ? <ArrowDown className="w-3.5 h-3.5 text-indigo-500" />
-      : <ArrowUp className="w-3.5 h-3.5 text-indigo-500" />;
+      ? <ArrowDown className="w-3 h-3 text-neutral-900" />
+      : <ArrowUp className="w-3 h-3 text-neutral-900" />;
   };
 
   const handlePlatformChange = (platformId) => {
@@ -620,25 +620,25 @@ function PlatformRankings({ urlPlatform }) {
       />
       {listSchema && <StructuredData schema={listSchema} />}
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Header */}
-        <div className="relative overflow-hidden border-b border-neutral-200">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live
-              </span>
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
+            <div>
+              <p className={`${MICRO} mb-3`}>Rankings</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
+              <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
             </div>
-            <p className="text-sm sm:text-base text-neutral-700">{getSubheading(currentPlatform)}</p>
+            <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
+            </div>
           </div>
         </div>
 
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           {/* Platform Tabs */}
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-1.5 mb-6">
             {platforms.map((platform) => {
               const Icon = platform.icon;
               const isSelected = selectedPlatform === platform.id;
@@ -648,15 +648,15 @@ function PlatformRankings({ urlPlatform }) {
                   key={platform.id}
                   onClick={() => platform.available && handlePlatformChange(platform.id)}
                   disabled={!platform.available}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
                     isSelected
-                      ? `${platform.color} text-white shadow-md`
+                      ? 'bg-neutral-900 border-neutral-900 text-white'
                       : platform.available
-                      ? 'bg-white text-neutral-700 border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
-                      : 'bg-neutral-50 text-neutral-400 cursor-not-allowed'
+                      ? 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+                      : 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
                   }`}
                 >
-                  {Icon && <Icon className="w-5 h-5" />}
+                  {Icon && <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : platform.tint}`} />}
                   {platform.name}
                   {!platform.available && <span className="text-xs opacity-75">(Soon)</span>}
                 </button>
@@ -666,18 +666,18 @@ function PlatformRankings({ urlPlatform }) {
 
           {/* Rank Type Tabs + Top Count Selector */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="flex gap-1 p-1 bg-neutral-100 rounded-xl w-fit">
+            <div className={`flex gap-0.5 p-0.5 ${CARD} !rounded-lg w-fit`}>
               {rankTypes.map((type) => (
                 <button
                   key={type.id}
                   onClick={() => setSelectedRankType(type.id)}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     selectedRankType === type.id
-                      ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200'
-                      : 'text-neutral-600 hover:text-neutral-900'
+                      ? 'bg-neutral-900 text-white'
+                      : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
-                  <type.icon className="w-4 h-4 flex-shrink-0" />
+                  <type.icon className="w-3.5 h-3.5 flex-shrink-0" />
                   <span className={selectedRankType === type.id ? 'inline' : 'hidden sm:inline'}>{type.name}</span>
                 </button>
               ))}
@@ -687,16 +687,15 @@ function PlatformRankings({ urlPlatform }) {
             <div className="relative">
               <button
                 onClick={() => setTopCountOpen(!topCountOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 rounded-xl font-medium text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 transition-all"
+                className="flex items-center gap-2 h-9 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
               >
-                <Trophy className="w-4 h-4 text-indigo-500" />
                 Top {topCount}
-                <ChevronDown className={`w-4 h-4 text-neutral-700 transition-transform ${topCountOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${topCountOpen ? 'rotate-180' : ''}`} />
               </button>
               {topCountOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setTopCountOpen(false)} />
-                  <div className="absolute left-0 top-full mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg z-40 min-w-[120px] overflow-hidden">
+                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-neutral-200 rounded-lg shadow-xl z-40 min-w-[120px] overflow-hidden">
                     {topCounts.map(count => (
                       <button
                         key={count}
@@ -704,10 +703,10 @@ function PlatformRankings({ urlPlatform }) {
                           setTopCount(count);
                           setTopCountOpen(false);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
+                        className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
                           topCount === count
-                            ? 'bg-indigo-50 text-indigo-700'
-                            : 'text-neutral-700 hover:bg-neutral-50'
+                            ? 'bg-neutral-50 text-neutral-900 font-medium'
+                            : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'
                         }`}
                       >
                         Top {count}
@@ -720,14 +719,14 @@ function PlatformRankings({ urlPlatform }) {
           </div>
 
           {/* Rankings Table */}
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+          <div className={`${CARD} overflow-hidden`}>
             {/* Sticky Table Header */}
-            <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-neutral-200 text-sm font-semibold text-neutral-700 uppercase tracking-wider">
+            <div className={`hidden md:grid grid-cols-12 gap-4 px-6 py-3 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-neutral-200/80 ${MICRO}`}>
               <div className="col-span-1">Rank</div>
               <div className={creatorColSpanHeader}>Creator</div>
               <button
                 onClick={() => handleSort('subscribers')}
-                className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
+                className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-900 transition-colors cursor-pointer uppercase tracking-[0.14em]"
               >
                 <span>{followerLabel}</span>
                 <SortIcon column="subscribers" />
@@ -737,7 +736,7 @@ function PlatformRankings({ urlPlatform }) {
                 secondaryCol.sortKey ? (
                   <button
                     onClick={() => handleSort(secondaryCol.sortKey)}
-                    className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-700 transition-colors cursor-pointer"
+                    className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-900 transition-colors cursor-pointer uppercase tracking-[0.14em]"
                   >
                     <span>{secondaryCol.label}</span>
                     <SortIcon column={secondaryCol.sortKey} />
@@ -748,13 +747,13 @@ function PlatformRankings({ urlPlatform }) {
               )}
               <button
                 onClick={() => handleSort('growth')}
-                className="col-span-1 flex items-center justify-end gap-1.5 text-right hover:text-neutral-700 transition-colors cursor-pointer group"
+                className="col-span-1 flex items-center justify-end gap-1.5 text-right hover:text-neutral-900 transition-colors cursor-pointer group uppercase tracking-[0.14em]"
               >
                 <span>Growth</span>
                 <SortIcon column="growth" />
                 <div className="relative">
-                  <Info className="w-3.5 h-3.5 text-neutral-700 cursor-help" />
-                  <div className="absolute right-0 top-6 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 pointer-events-none normal-case tracking-normal font-normal">
+                  <Info className="w-3 h-3 text-neutral-300 cursor-help" />
+                  <div className="absolute right-0 top-6 w-48 p-2 bg-neutral-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 pointer-events-none normal-case tracking-normal font-normal">
                     {selectedPlatform === 'youtube'
                       ? 'YouTube growth based on total views'
                       : selectedPlatform === 'kick'
@@ -789,11 +788,9 @@ function PlatformRankings({ urlPlatform }) {
             {/* Empty State */}
             {!loading && !error && rankings.length === 0 && (
               <div className="px-6 py-16 text-center">
-                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Trophy className="w-8 h-8 text-neutral-700" />
-                </div>
-                <p className="text-neutral-700 font-medium mb-2">No ranking data available yet</p>
-                <p className="text-sm text-neutral-700">Rankings will appear here once creators are tracked</p>
+                <Trophy className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                <p className="text-neutral-900 font-medium mb-1">No ranking data available yet</p>
+                <p className="text-sm text-neutral-500">Rankings will appear here once creators are tracked</p>
               </div>
             )}
 
@@ -808,32 +805,20 @@ function PlatformRankings({ urlPlatform }) {
                 const RowComponent = isGhost ? Link : Link;
                 const rowHref = isGhost ? '/promote' : `/${creator.platform}/${creator.username}`;
                 const rowClass = isGhost
-                  ? 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-dashed border-amber-300 bg-amber-50/60 hover:bg-amber-50 transition-colors group relative overflow-hidden'
-                  : isPremium
-                    ? 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-amber-200/60 bg-amber-50 hover:bg-amber-100 transition-colors group'
-                    : 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-amber-100 bg-amber-50/50 hover:bg-amber-50 transition-colors group';
+                  ? 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-dashed border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-colors group'
+                  : 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 bg-amber-50/60 hover:bg-amber-50 transition-colors group';
                 return (
                   <RowComponent
                     key={`sponsored-${creator.listingId}`}
                     to={rowHref}
                     className={rowClass}
                   >
-                    {/* Ghost gets an animated shimmer to read as "this is the product, not a row" */}
-                    {isGhost && (
-                      <div className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-amber-200/40 to-transparent animate-marquee" />
-                    )}
-
                     {/* "Ad" badge in rank column */}
                     <div className="col-span-2 md:col-span-1 flex items-center">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold tracking-wide ${
-                          isPremium
-                            ? 'bg-amber-200 border border-amber-300 text-amber-900'
-                            : 'bg-amber-100 border border-amber-200 text-amber-800'
-                        }`}
+                        className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] bg-amber-100 border border-amber-200 text-amber-700"
                         title={isPremium ? 'Premium featured listing' : 'Featured listing'}
                       >
-                        {isPremium && <span className="text-[10px]">★</span>}
                         Ad
                       </span>
                     </div>
@@ -842,23 +827,23 @@ function PlatformRankings({ urlPlatform }) {
                     <div className={`col-span-10 flex items-center gap-3 min-w-0 ${creatorColSpanRow}`}>
                       {isGhost ? (
                         <>
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-base font-extrabold flex-shrink-0 shadow-md shadow-amber-500/20">
+                          <div className="w-10 h-10 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600 text-sm font-semibold flex-shrink-0">
                             {isPremium ? '★' : '+'}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-neutral-900 group-hover:text-amber-700 transition-colors">
+                            <p className="font-medium text-neutral-900">
                               Your Creator Here
                             </p>
-                            <p className="text-[11px] text-amber-700 font-semibold uppercase tracking-wider">
+                            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-600 mt-0.5">
                               {isPremium ? 'Premium slot' : 'Basic slot'} available · {creator.slotPrice}
                             </p>
                           </div>
                         </>
                       ) : (
                         <>
-                          <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" />
+                          <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-lg" className="!w-10 !h-10" />
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold truncate text-neutral-900 group-hover:text-amber-700 transition-colors">
+                            <p className="font-medium truncate text-neutral-900">
                               {creator.display_name}
                             </p>
                           </div>
@@ -874,7 +859,7 @@ function PlatformRankings({ urlPlatform }) {
                     {secondaryCol && <div className="hidden md:block col-span-2" />}
                     <div className="hidden md:flex col-span-1 items-center justify-end">
                       {isGhost && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
                           Claim
                           <ArrowRight className="w-3 h-3" />
                         </span>
@@ -894,8 +879,8 @@ function PlatformRankings({ urlPlatform }) {
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                   className="relative grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 hover:bg-neutral-50 transition-colors group"
                 >
-                  {/* Accent edge on hover (platform color) */}
-                  <span className={`pointer-events-none absolute left-0 top-0 bottom-0 w-1 ${currentPlatform?.color || 'bg-indigo-500'} opacity-0 group-hover:opacity-100 transition-opacity rounded-r`} />
+                  {/* Thin platform-tinted rule on hover — the one allowed accent */}
+                  <span className={`pointer-events-none absolute left-0 top-0 bottom-0 w-0.5 ${currentPlatform?.bar || 'bg-neutral-900'} opacity-0 group-hover:opacity-100 transition-opacity`} />
 
                   {/* Rank */}
                   <div className="col-span-2 md:col-span-1">
@@ -904,9 +889,9 @@ function PlatformRankings({ urlPlatform }) {
 
                   {/* Creator Info */}
                   <div className={`col-span-10 flex items-center gap-3 min-w-0 ${creatorColSpanRow}`}>
-                    <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" />
+                    <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-lg" className="!w-10 !h-10" />
                     <div className="min-w-0">
-                      <p className="font-semibold text-neutral-900 truncate transition-colors group-hover:text-indigo-600">
+                      <p className="font-medium text-neutral-900 truncate">
                         {creator.display_name}
                       </p>
                     </div>
@@ -914,7 +899,7 @@ function PlatformRankings({ urlPlatform }) {
 
                   {/* Subscribers / Followers */}
                   <div className="hidden md:block col-span-2 text-right">
-                    <span className="font-semibold text-neutral-900 tabular-nums">{formatNumber(creator.subscribers)}</span>
+                    <span className="text-[15px] font-semibold text-neutral-900 tabular-nums">{formatNumber(creator.subscribers)}</span>
                   </div>
 
                   {/* Sparkline trend */}
@@ -946,7 +931,7 @@ function PlatformRankings({ urlPlatform }) {
                       const denom = typeof base === 'number' && base > Math.abs(g) ? base - g : null;
                       const pct = denom && denom > 0 ? (g / denom) * 100 : null;
                       const showPct = pct !== null && Math.abs(pct) < 1000;
-                      const color = g > 0 ? 'text-emerald-600' : g < 0 ? 'text-red-500' : 'text-neutral-400';
+                      const color = g > 0 ? 'text-emerald-600' : g < 0 ? 'text-red-600' : 'text-neutral-300';
                       const arrow = g > 0 ? '▲' : g < 0 ? '▼' : '·';
                       return (
                         <>
@@ -979,11 +964,11 @@ function PlatformRankings({ urlPlatform }) {
 
           {/* SEO FAQ Section */}
           {!loading && !error && rankings.length > 0 && (
-            <div className="mt-12 bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 sm:p-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-6">
+            <div className={`mt-12 ${CARD} p-6 sm:p-8`}>
+              <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-neutral-900 mb-6">
                 {currentPlatform?.name} Rankings FAQ
               </h2>
-              <div className="space-y-6 text-neutral-700 text-sm sm:text-base leading-relaxed">
+              <div className="space-y-6 text-neutral-600 text-sm sm:text-base leading-relaxed">
                 {selectedPlatform === 'youtube' && (
                   <>
                     <div>
