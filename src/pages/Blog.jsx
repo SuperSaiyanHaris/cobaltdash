@@ -6,18 +6,19 @@ import { getAllPosts, getAllCategories } from '../services/blogService';
 
 const PAGE_SIZE = 9;
 
-// Each category gets its own color identity
+// Category identity is a small dot tint plus a quiet pill — precision system.
+// Sidebar active state is uniform (neutral) so the dot alone carries the color.
 const CATEGORY_COLORS = {
-  'YouTube News':    { pill: 'bg-red-500/10 text-red-600 border border-red-500/20',       sidebar: 'bg-red-500/10 text-red-300',      dot: 'bg-red-500' },
-  'Streaming Gear':  { pill: 'bg-amber-500/10 text-amber-700 border border-amber-500/20', sidebar: 'bg-amber-500/10 text-amber-700',   dot: 'bg-amber-500' },
-  'Growth Tips':     { pill: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20', sidebar: 'bg-emerald-500/10 text-emerald-300', dot: 'bg-emerald-500' },
-  'Creator Economy': { pill: 'bg-sky-500/10 text-sky-700 border border-sky-500/20',       sidebar: 'bg-sky-500/10 text-sky-300',       dot: 'bg-sky-500' },
-  'TikTok':          { pill: 'bg-pink-500/10 text-pink-600 border border-pink-500/20',    sidebar: 'bg-pink-500/10 text-pink-300',     dot: 'bg-pink-500' },
-  'Twitch':          { pill: 'bg-purple-500/10 text-purple-700 border border-purple-500/20', sidebar: 'bg-purple-500/10 text-purple-300', dot: 'bg-purple-500' },
-  'Kick':            { pill: 'bg-green-500/10 text-green-700 border border-green-500/20', sidebar: 'bg-green-500/10 text-green-300',   dot: 'bg-green-500' },
-  'Bluesky':         { pill: 'bg-sky-400/10 text-sky-300 border border-sky-400/20',       sidebar: 'bg-sky-400/10 text-sky-200',       dot: 'bg-sky-400' },
+  'YouTube News':    { pill: 'bg-red-50 text-red-700 border border-red-200/80',           dot: 'bg-red-500' },
+  'Streaming Gear':  { pill: 'bg-amber-50 text-amber-700 border border-amber-200/80',     dot: 'bg-amber-500' },
+  'Growth Tips':     { pill: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80', dot: 'bg-emerald-500' },
+  'Creator Economy': { pill: 'bg-sky-50 text-sky-700 border border-sky-200/80',           dot: 'bg-sky-500' },
+  'TikTok':          { pill: 'bg-pink-50 text-pink-700 border border-pink-200/80',        dot: 'bg-pink-500' },
+  'Twitch':          { pill: 'bg-purple-50 text-purple-700 border border-purple-200/80',  dot: 'bg-purple-500' },
+  'Kick':            { pill: 'bg-green-50 text-green-700 border border-green-200/80',     dot: 'bg-green-500' },
+  'Bluesky':         { pill: 'bg-sky-50 text-sky-700 border border-sky-200/80',           dot: 'bg-sky-400' },
 };
-const DEFAULT_COLORS = { pill: 'bg-indigo-50 text-indigo-600 border border-indigo-500/20', sidebar: 'bg-indigo-50 text-indigo-600', dot: 'bg-indigo-500' };
+const DEFAULT_COLORS = { pill: 'bg-neutral-50 text-neutral-600 border border-neutral-200/80', dot: 'bg-indigo-500' };
 
 function getCatColors(category) {
   return CATEGORY_COLORS[category] || DEFAULT_COLORS;
@@ -94,8 +95,8 @@ export default function Blog() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
   }
@@ -125,8 +126,8 @@ export default function Blog() {
           <button
             key={category}
             onClick={() => onSelect(category)}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              isActive ? colors.sidebar : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50'
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900'
             }`}
           >
             <div className="flex items-center gap-2.5">
@@ -149,21 +150,15 @@ export default function Blog() {
         description="Expert guides on streaming equipment, YouTube growth strategies, and creator economy insights. Grow your channel with data-driven advice."
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
+      <div className="min-h-screen bg-[#fafaf9]">
 
-        {/* Header — with sky glow matching Blog's color identity */}
-        <div className="relative overflow-hidden border-b border-neutral-200">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sky-950/30 to-transparent" />
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[480px] h-72 bg-sky-500/5 rounded-full blur-3xl" />
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-16 relative">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <div className="max-w-6xl mx-auto text-center">
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <div className="w-11 h-11 sm:w-13 sm:h-13 bg-gradient-to-br from-sky-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30">
-                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-900">Creator Resources</h1>
-              </div>
-              <p className="text-lg sm:text-xl text-neutral-500 max-w-2xl mx-auto">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Blog</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Resources</h1>
+              <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-2xl mx-auto">
                 Expert guides on streaming gear, growth strategies, and industry insights to help you succeed as a creator
               </p>
             </div>
@@ -189,7 +184,7 @@ export default function Blog() {
               <div className="lg:hidden fixed bottom-6 left-6 z-40">
                 <button
                   onClick={() => setMobileFiltersOpen(true)}
-                  className="flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-full shadow-lg transition-colors"
+                  className="flex items-center gap-2 px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full shadow-lg transition-colors"
                 >
                   <Filter className="w-5 h-5" />
                   Filters
@@ -258,7 +253,7 @@ export default function Blog() {
                 {/* Featured Post */}
                 {featuredPost && (
                   <Link to={`/blog/${featuredPost.slug}`} className="block mb-8 group">
-                    <article className="bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:border-neutral-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 transition-all duration-300">
+                    <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
                       <div className="md:flex">
                         <div className="md:w-1/2 min-h-64">
                           <img
@@ -306,7 +301,7 @@ export default function Blog() {
                     const colors = getCatColors(post.category);
                     return (
                       <Link key={post.slug} to={`/blog/${post.slug}`} className="group">
-                        <article className="bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:border-neutral-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40 transition-all duration-300 h-full flex flex-col">
+                        <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200 h-full flex flex-col">
                           <div className="relative">
                             <img
                               src={post.image}
@@ -360,23 +355,19 @@ export default function Blog() {
                 )}
 
                 {/* CTA */}
-                <div className="mt-16 group relative overflow-hidden bg-white border border-neutral-200 hover:border-indigo-500/40 rounded-2xl p-8 md:p-12 text-center transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10">
-                  <div className="pointer-events-none absolute -top-16 -left-16 w-48 h-48 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-colors duration-500" />
-                  <div className="pointer-events-none absolute -bottom-16 -right-16 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-colors duration-500" />
-                  <div className="relative">
-                    <h2 className="text-2xl md:text-3xl font-extrabold text-neutral-900 mb-4">
-                      Track Your Channel's Growth
-                    </h2>
-                    <p className="text-neutral-500 mb-6 max-w-2xl mx-auto">
-                      Use ShinyPull's free analytics to monitor your subscribers, views, and compare your growth with top creators.
-                    </p>
-                    <Link
-                      to="/search"
-                      className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
-                    >
-                      Search Creators
-                    </Link>
-                  </div>
+                <div className="mt-16 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-8 md:p-12 text-center">
+                  <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-neutral-900 mb-3">
+                    Track Your Channel's Growth
+                  </h2>
+                  <p className="text-sm text-neutral-500 mb-6 max-w-2xl mx-auto">
+                    Use ShinyPull's free analytics to monitor your subscribers, views, and compare your growth with top creators.
+                  </p>
+                  <Link
+                    to="/search"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Search Creators
+                  </Link>
                 </div>
 
               </div>

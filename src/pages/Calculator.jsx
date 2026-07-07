@@ -39,11 +39,11 @@ const sliderToViews = (pos) =>
   Math.round(Math.pow(10, LOG_MIN + (pos / SLIDER_STEPS) * (LOG_MAX - LOG_MIN)));
 
 const TIER_THRESHOLDS = [
-  { label: 'Small Channel',    range: '< $500/mo',          min: 0,      max: 500,    color: 'text-neutral-500',    bg: 'bg-neutral-50',    border: 'border-neutral-300' },
-  { label: 'Growing',          range: '$500 \u2013 $2K/mo',      min: 500,    max: 2000,   color: 'text-blue-400',    bg: 'bg-blue-950/30',    border: 'border-blue-700/40' },
-  { label: 'Full-Time Viable', range: '$2K \u2013 $10K/mo',      min: 2000,   max: 10000,  color: 'text-emerald-400', bg: 'bg-emerald-50', border: 'border-emerald-700/40' },
-  { label: 'Established',      range: '$10K \u2013 $100K/mo',    min: 10000,  max: 100000, color: 'text-purple-400',  bg: 'bg-purple-50',  border: 'border-purple-700/40' },
-  { label: 'Top 1%',           range: '$100K+/mo',          min: 100000, max: Infinity, color: 'text-yellow-400', bg: 'bg-yellow-950/30',  border: 'border-yellow-700/40' },
+  { label: 'Small Channel',    range: '< $500/mo',          min: 0,      max: 500,    color: 'text-neutral-500', bg: 'bg-neutral-50', border: 'border-neutral-200/80' },
+  { label: 'Growing',          range: '$500 \u2013 $2K/mo',      min: 500,    max: 2000,   color: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200/80' },
+  { label: 'Full-Time Viable', range: '$2K \u2013 $10K/mo',      min: 2000,   max: 10000,  color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200/80' },
+  { label: 'Established',      range: '$10K \u2013 $100K/mo',    min: 10000,  max: 100000, color: 'text-purple-700',  bg: 'bg-purple-50',  border: 'border-purple-200/80' },
+  { label: 'Top 1%',           range: '$100K+/mo',          min: 100000, max: Infinity, color: 'text-amber-700',   bg: 'bg-amber-50',   border: 'border-amber-200/80' },
 ];
 
 const getEarningsTier = (monthlyUSD) =>
@@ -258,42 +258,36 @@ export default function Calculator() {
       <style>{`
         .calc-slider { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; outline: none; cursor: pointer; width: 100%; }
         .calc-slider:disabled { cursor: not-allowed; opacity: 0.35; }
-        .calc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #10b981; cursor: pointer; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); border: 2px solid #064e3b; transition: box-shadow 0.15s; }
+        .calc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #10b981; cursor: pointer; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); border: 2px solid #ffffff; transition: box-shadow 0.15s; }
         .calc-slider:not(:disabled)::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(16,185,129,0.25); }
-        .calc-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #10b981; cursor: pointer; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); border: 2px solid #064e3b; }
-        .calc-slider::-moz-range-track { height: 6px; background: #374151; border-radius: 3px; }
+        .calc-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #10b981; cursor: pointer; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); border: 2px solid #ffffff; }
+        .calc-slider::-moz-range-track { height: 6px; background: #e5e5e5; border-radius: 3px; }
         .calc-slider::-moz-range-progress { height: 6px; background: #10b981; border-radius: 3px; }
       `}</style>
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Header */}
-        <div className="relative overflow-hidden border-b border-neutral-200">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-950/20 to-transparent" />
-          <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[400px] h-64 bg-emerald-500/5 rounded-full blur-3xl" />
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative">
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <div className="max-w-4xl mx-auto text-center">
-              <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
-                <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30 flex-shrink-0">
-                  <CalcIcon className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-900">YouTube Money Calculator</h1>
-              </div>
-              <p className="text-base sm:text-lg text-neutral-500 mb-6">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Earnings</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">YouTube Money Calculator</h1>
+              <p className="mt-2 text-sm sm:text-base text-neutral-500 mb-6">
                 {mode === 'creator' ? "Estimate a creator's earnings using real channel data" : 'Project your own potential YouTube income'}
               </p>
 
               {/* Mode Toggle */}
-              <div className="inline-flex items-center gap-2 p-1 bg-neutral-100 border border-neutral-300 rounded-xl">
+              <div className="inline-flex items-center gap-0.5 p-0.5 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-lg">
                 <button
                   onClick={() => switchMode('creator')}
-                  className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${mode === 'creator' ? 'bg-indigo-600 text-white shadow-sm' : 'text-neutral-700 hover:text-neutral-900'}`}
+                  className={`px-4 sm:px-6 py-1.5 rounded-md font-medium transition-colors text-sm ${mode === 'creator' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
                 >
                   <span className="hidden sm:inline">Estimate a Creator</span>
                   <span className="sm:hidden">Creator</span>
                 </button>
                 <button
                   onClick={() => switchMode('personal')}
-                  className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-all text-sm sm:text-base ${mode === 'personal' ? 'bg-indigo-600 text-white shadow-sm' : 'text-neutral-700 hover:text-neutral-900'}`}
+                  className={`px-4 sm:px-6 py-1.5 rounded-md font-medium transition-colors text-sm ${mode === 'personal' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
                 >
                   <span className="hidden sm:inline">Estimate My Earnings</span>
                   <span className="sm:hidden">My Earnings</span>
@@ -309,8 +303,8 @@ export default function Calculator() {
             {/* Dismissible info banner */}
             {mode === 'creator' && !selectedCreator && !bannerDismissed && (
               <div className="order-1 lg:col-span-2">
-                <div className="flex items-center gap-3 bg-indigo-50 rounded-xl border border-indigo-700/40 px-4 py-3">
-                  <Info className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                <div className="flex items-center gap-3 bg-white rounded-lg border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] px-4 py-3">
+                  <Info className="w-4 h-4 text-neutral-400 flex-shrink-0" />
                   <p className="text-sm text-neutral-700 flex-1">
                     Search for a creator to auto-populate their real daily views and category RPM.
                   </p>
@@ -329,7 +323,7 @@ export default function Calculator() {
                 <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
                   <label className="block text-sm font-medium text-neutral-700 mb-3">
                     Select YouTube Creator
-                    {selectedCreator && <span className="ml-2 text-xs text-emerald-400">(data auto-populated)</span>}
+                    {selectedCreator && <span className="ml-2 text-xs text-emerald-600">(data auto-populated)</span>}
                   </label>
 
                   {selectedCreator ? (
@@ -341,7 +335,7 @@ export default function Calculator() {
                       </div>
                       <Link
                         to={`/youtube/${selectedCreator.username}`}
-                        className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-emerald-50 flex-shrink-0"
+                        className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-emerald-50 flex-shrink-0"
                       >
                         Profile <ExternalLink className="w-3 h-3" />
                       </Link>
@@ -427,7 +421,7 @@ export default function Calculator() {
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-neutral-700">
                     Daily Views
-                    {isLocked && <span className="ml-2 text-xs text-emerald-400">(from channel data)</span>}
+                    {isLocked && <span className="ml-2 text-xs text-emerald-600">(from channel data)</span>}
                     {overrideEnabled && <span className="ml-2 text-xs text-amber-400">(custom)</span>}
                   </label>
                   {mode === 'creator' && selectedCreator && (
@@ -435,7 +429,7 @@ export default function Calculator() {
                       onClick={() => setOverrideEnabled(!overrideEnabled)}
                       className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${
                         overrideEnabled
-                          ? 'bg-amber-50 text-amber-400 border border-amber-700/50 hover:bg-amber-950/60'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100'
                           : 'bg-neutral-100 text-neutral-500 hover:text-neutral-800 border border-neutral-300 hover:border-neutral-300'
                       }`}
                     >
@@ -464,13 +458,13 @@ export default function Calculator() {
                   className="calc-slider"
                   style={{
                     background: isLocked
-                      ? '#374151'
-                      : `linear-gradient(to right, #10b981 0%, #10b981 ${sliderPct}%, #374151 ${sliderPct}%, #374151 100%)`
+                      ? '#e5e5e5'
+                      : `linear-gradient(to right, #10b981 0%, #10b981 ${sliderPct}%, #e5e5e5 ${sliderPct}%, #e5e5e5 100%)`
                   }}
                 />
                 <div className="flex justify-between text-xs text-neutral-400 mt-2">
                   <span>1K</span>
-                  <span className="font-semibold text-emerald-400">{formatNumber(dailyViews)} views/day</span>
+                  <span className="font-semibold text-emerald-600 tabular-nums">{formatNumber(dailyViews)} views/day</span>
                   <span>10M</span>
                 </div>
               </div>
@@ -480,7 +474,7 @@ export default function Calculator() {
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-neutral-700">
                     RPM (Revenue per 1,000 views)
-                    {isLocked && <span className="ml-2 text-xs text-emerald-400">(by category)</span>}
+                    {isLocked && <span className="ml-2 text-xs text-emerald-600">(by category)</span>}
                     {overrideEnabled && <span className="ml-2 text-xs text-amber-400">(custom)</span>}
                   </label>
                   <div className="flex flex-col items-end gap-0.5">
@@ -570,24 +564,24 @@ export default function Calculator() {
                       className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 border border-transparent hover:border-neutral-300 transition-all"
                       title="Copy shareable link"
                     >
-                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
+                      {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Link2 className="w-3.5 h-3.5" />}
                       {copiedLink ? 'Copied!' : 'Share'}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-800/50">
+                  <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200/80">
                     <p className="text-xs text-neutral-500 mb-1">Daily</p>
-                    <p className="text-2xl font-bold text-emerald-400">{formatCurrency(dailyLow)} &ndash; {formatCurrency(dailyHigh)}</p>
+                    <p className="text-2xl font-semibold text-emerald-700 tabular-nums">{formatCurrency(dailyLow)} &ndash; {formatCurrency(dailyHigh)}</p>
                   </div>
-                  <div className="p-4 bg-blue-950/30 rounded-xl border border-blue-800/50">
+                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-200/80">
                     <p className="text-xs text-neutral-500 mb-1">Monthly</p>
-                    <p className="text-2xl font-bold text-blue-400">{formatCurrency(monthlyLow)} &ndash; {formatCurrency(monthlyHigh)}</p>
+                    <p className="text-2xl font-semibold text-blue-700 tabular-nums">{formatCurrency(monthlyLow)} &ndash; {formatCurrency(monthlyHigh)}</p>
                   </div>
-                  <div className="p-4 bg-purple-50 rounded-xl border border-purple-800/50">
+                  <div className="p-4 bg-purple-50 rounded-xl border border-purple-200/80">
                     <p className="text-xs text-neutral-500 mb-1">Yearly</p>
-                    <p className="text-2xl font-bold text-purple-400">{formatCurrency(yearlyLow)} &ndash; {formatCurrency(yearlyHigh)}</p>
+                    <p className="text-2xl font-semibold text-purple-700 tabular-nums">{formatCurrency(yearlyLow)} &ndash; {formatCurrency(yearlyHigh)}</p>
                   </div>
                 </div>
               </div>
@@ -615,7 +609,7 @@ export default function Calculator() {
                         const entry = chartData.find(d => d.period === label);
                         if (!entry) return null;
                         return (
-                          <div style={{ background: '#111827', border: '1px solid #374151', borderRadius: '12px', padding: '10px 14px' }}>
+                          <div style={{ background: '#ffffff', border: '1px solid #e5e5e5', borderRadius: '12px', padding: '10px 14px' }}>
                             <p style={{ color: '#f3f4f6', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>{label}</p>
                             <p style={{ color: '#9ca3af', fontSize: 12 }}>{formatCurrency(entry.low)} &ndash; {formatCurrency(entry.high)}</p>
                           </div>
@@ -643,8 +637,8 @@ export default function Calculator() {
             <div className="order-4 lg:col-span-2">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-start gap-3 bg-white border border-neutral-200 rounded-2xl p-5">
-                  <div className="w-9 h-9 bg-emerald-950/60 border border-emerald-800/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CalcIcon className="w-4 h-4 text-emerald-400" />
+                  <div className="w-9 h-9 bg-emerald-50 border border-emerald-200/80 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CalcIcon className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-neutral-800 mb-1">The Formula</p>
@@ -653,8 +647,8 @@ export default function Calculator() {
                 </div>
 
                 <div className="flex items-start gap-3 bg-white border border-neutral-200 rounded-2xl p-5">
-                  <div className="w-9 h-9 bg-blue-950/60 border border-blue-800/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-4 h-4 text-blue-400" />
+                  <div className="w-9 h-9 bg-blue-50 border border-blue-200/80 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-neutral-800 mb-1">RPM by Niche</p>
@@ -663,8 +657,8 @@ export default function Calculator() {
                 </div>
 
                 <div className="flex items-start gap-3 bg-white border border-neutral-200 rounded-2xl p-5">
-                  <div className="w-9 h-9 bg-purple-950/60 border border-purple-800/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Database className="w-4 h-4 text-purple-400" />
+                  <div className="w-9 h-9 bg-purple-50 border border-purple-200/80 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Database className="w-4 h-4 text-purple-600" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-neutral-800 mb-1">
