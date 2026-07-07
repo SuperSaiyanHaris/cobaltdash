@@ -12,15 +12,19 @@ import { getRankedCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
 import CreatorAvatar from '../components/CreatorAvatar';
 
+// Typographic backbone shared with the rest of the precision system
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+
 const PLATFORMS = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube, textColor: 'text-red-400', activeBg: 'bg-red-50', activeBorder: 'border-red-300', followerLabel: 'subscribers', growthLabel: 'views gained', growthNote: 'YouTube rounds subscriber counts by policy, so views are used as the growth metric.' },
-  { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, textColor: 'text-pink-400', activeBg: 'bg-pink-50', activeBorder: 'border-pink-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
-  { id: 'twitch', name: 'Twitch', icon: Twitch, textColor: 'text-purple-400', activeBg: 'bg-purple-50', activeBorder: 'border-purple-300', followerLabel: 'followers', growthLabel: 'watch hours gained', growthNote: 'Twitch growth is measured by hours watched per month, the standard streaming metric.' },
-  { id: 'kick', name: 'Kick', icon: KickIcon, textColor: 'text-green-400', activeBg: 'bg-green-50', activeBorder: 'border-green-300', followerLabel: 'paid subs', growthLabel: 'paid subs gained', growthNote: 'On Kick, the publicly available number is paid subscribers rather than free followers.' },
-  { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, textColor: 'text-sky-400', activeBg: 'bg-sky-50', activeBorder: 'border-sky-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
-  { id: 'music', name: 'Music', icon: Music, textColor: 'text-amber-400', activeBg: 'bg-amber-50', activeBorder: 'border-amber-300', followerLabel: 'listeners', growthLabel: 'listeners gained', growthNote: 'Monthly listener growth. Reflects how many more unique listeners an artist reached this month vs. last.' },
-  { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, textColor: 'text-violet-400', activeBg: 'bg-violet-50', activeBorder: 'border-violet-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
-  { id: 'rumble', name: 'Rumble', icon: RumbleIcon, textColor: 'text-lime-600', activeBg: 'bg-lime-50', activeBorder: 'border-lime-300', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
+  { id: 'youtube', name: 'YouTube', icon: Youtube, tint: 'text-red-500', followerLabel: 'subscribers', growthLabel: 'views gained', growthNote: 'YouTube rounds subscriber counts by policy, so views are used as the growth metric.' },
+  { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, tint: 'text-pink-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
+  { id: 'twitch', name: 'Twitch', icon: Twitch, tint: 'text-purple-500', followerLabel: 'followers', growthLabel: 'watch hours gained', growthNote: 'Twitch growth is measured by hours watched per month, the standard streaming metric.' },
+  { id: 'kick', name: 'Kick', icon: KickIcon, tint: 'text-green-600', followerLabel: 'paid subs', growthLabel: 'paid subs gained', growthNote: 'On Kick, the publicly available number is paid subscribers rather than free followers.' },
+  { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, tint: 'text-sky-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
+  { id: 'music', name: 'Music', icon: Music, tint: 'text-amber-500', followerLabel: 'listeners', growthLabel: 'listeners gained', growthNote: 'Monthly listener growth. Reflects how many more unique listeners an artist reached this month vs. last.' },
+  { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, tint: 'text-violet-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
+  { id: 'rumble', name: 'Rumble', icon: RumbleIcon, tint: 'text-lime-600', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
 ];
 
 export default function Trending() {
@@ -52,30 +56,31 @@ export default function Trending() {
         description="See the fastest growing YouTube, TikTok, Twitch, Kick, Bluesky, and Music artists this month. Rankings updated daily."
         keywords="trending creators, fastest growing youtubers, fastest growing tiktok accounts, trending streamers, creator growth rankings"
       />
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Page header */}
-        <div className="bg-white/60 border-b border-neutral-200">
-          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Updated Daily</span>
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Page header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-12 flex items-end justify-between gap-6">
+            <div>
+              <p className={`${MICRO} mb-3`}>Trending</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Trending Creators</h1>
+              <p className="mt-2 text-sm text-neutral-500">Fastest growing channels and accounts over the last 30 days.</p>
+              <p className="mt-3 text-sm text-neutral-400 leading-relaxed max-w-2xl">
+                These rankings show which creators are gaining the most ground right now. Each platform uses the metric that best captures real growth.
+                YouTube ranks by total views gained since subscriber counts are rounded by policy.
+                Twitch and Kick rank by hours watched, which is the standard metric sponsors and analytics platforms use.
+                TikTok, Bluesky, and Music rank by follower and listener growth directly.
+              </p>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-900 mb-2">Trending Creators</h1>
-            <p className="text-neutral-500 text-base sm:text-lg mb-4">Fastest growing channels and accounts over the last 30 days.</p>
-            <p className="text-neutral-400 text-sm sm:text-base leading-relaxed max-w-2xl">
-              These rankings show which creators are gaining the most ground right now. Each platform uses the metric that best captures real growth.
-              YouTube ranks by total views gained since subscriber counts are rounded by policy.
-              Twitch and Kick rank by hours watched, which is the standard metric sponsors and analytics platforms use.
-              TikTok, Bluesky, and Music rank by follower and listener growth directly.
-            </p>
+            <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium text-emerald-600 tracking-wide">UPDATED DAILY</span>
+            </div>
           </div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Platform tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-8 scrollbar-hide">
+          <div className="flex gap-1.5 overflow-x-auto pb-3 mb-6 scrollbar-hide">
             {PLATFORMS.map(p => {
               const PIcon = p.icon;
               const isActive = p.id === activePlatform;
@@ -83,13 +88,13 @@ export default function Trending() {
                 <button
                   key={p.id}
                   onClick={() => setActivePlatform(p.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-200 border flex-shrink-0 ${
+                  className={`flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border flex-shrink-0 ${
                     isActive
-                      ? `${p.activeBg} ${p.activeBorder} ${p.textColor}`
-                      : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-800 hover:border-neutral-300'
+                      ? 'bg-neutral-900 border-neutral-900 text-white'
+                      : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
                   }`}
                 >
-                  <PIcon className="w-4 h-4" />
+                  <PIcon className={`w-4 h-4 ${isActive ? 'text-white' : p.tint}`} />
                   {p.name}
                 </button>
               );
@@ -99,7 +104,7 @@ export default function Trending() {
           {/* Metric note */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs text-neutral-400">
-              Ranked by <span className="text-neutral-500 font-medium">{platform.growthLabel}</span> over the last 30 days
+              Ranked by <span className="text-neutral-600 font-medium">{platform.growthLabel}</span> over the last 30 days
               {platform.growthNote && <span className="hidden sm:inline">. {platform.growthNote}</span>}
             </p>
           </div>
@@ -107,12 +112,12 @@ export default function Trending() {
           {/* Creator list */}
           {loading ? (
             <div className="flex justify-center py-20">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+              <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
             </div>
           ) : creators.length === 0 ? (
-            <p className="text-center py-20 text-neutral-400">No growth data available yet for this platform.</p>
+            <p className="text-center py-20 text-neutral-400 text-sm">No growth data available yet for this platform.</p>
           ) : (
-            <div className="space-y-2">
+            <div className={`${CARD} divide-y divide-neutral-100 overflow-hidden`}>
               {creators.map((creator, i) => {
 
                 const baseSubs = creator.latestStats.subscribers - creator.growth30d;
@@ -121,22 +126,26 @@ export default function Trending() {
                   <Link
                     key={creator.id}
                     to={`/${activePlatform}/${creator.username}`}
-                    className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-neutral-200 rounded-xl hover:border-neutral-300 hover:bg-neutral-50 transition-all duration-200 group"
+                    className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-neutral-50 transition-colors"
                   >
-                    <span className="w-6 text-center text-sm font-bold text-neutral-400 flex-shrink-0">{i + 1}</span>
+                    <span className={`w-6 text-right text-sm font-semibold tabular-nums flex-shrink-0 ${i < 3 ? 'text-neutral-900' : 'text-neutral-400'}`}>{i + 1}</span>
                     <CreatorAvatar
                       src={creator.profile_image}
                       name={creator.display_name}
                       size="lg"
-                      className="!w-10 !h-10 sm:!w-11 sm:!h-11"
+                      rounded="rounded-lg"
+                      className="!w-10 !h-10"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-neutral-900 truncate group-hover:text-white text-sm sm:text-base">{creator.display_name}</p>
-                      <p className="text-xs text-neutral-400 truncate">{formatNumber(creator.latestStats.subscribers)} {platform.followerLabel}</p>
+                      <p className="font-medium text-neutral-900 truncate text-sm">{creator.display_name}</p>
+                      <p className="text-xs text-neutral-400 truncate tabular-nums">{formatNumber(creator.latestStats.subscribers)} {platform.followerLabel}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="font-bold text-emerald-400 text-sm sm:text-base">+{formatNumber(creator.growth30d)}</p>
-                      <p className="text-xs text-neutral-400">{platform.growthLabel}</p>
+                      <p className="font-semibold text-emerald-600 text-sm tabular-nums">
+                        +{formatNumber(creator.growth30d)}
+                        {growthPct && <span className="ml-1.5 text-xs font-medium text-emerald-600/70">+{growthPct}%</span>}
+                      </p>
+                      <p className={MICRO}>{platform.growthLabel}</p>
                     </div>
                   </Link>
                 );
@@ -146,8 +155,8 @@ export default function Trending() {
 
           {/* Methodology note */}
           {!loading && creators.length > 0 && (
-            <div className="mt-10 bg-white/60 border border-neutral-200 rounded-2xl p-6 sm:p-8">
-              <h2 className="text-base font-bold text-neutral-900 mb-3">How growth is calculated</h2>
+            <div className={`mt-10 ${CARD} p-6 sm:p-8`}>
+              <h2 className="text-base font-medium text-neutral-900 mb-3">How growth is calculated</h2>
               <div className="space-y-2 text-sm text-neutral-500 leading-relaxed">
                 <p>Growth is the difference between a creator's latest stat and their stat from 30 days ago. All data is publicly available, collected multiple times per day.</p>
                 <p>YouTube uses total view growth instead of subscribers because YouTube rounds subscriber counts to three significant figures by policy. Twitch and Kick use hours watched, the metric the streaming industry uses to measure audience engagement. TikTok, Bluesky, and Music use follower and listener growth, which are the primary public metrics on those platforms.</p>

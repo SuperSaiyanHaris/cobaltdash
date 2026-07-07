@@ -329,8 +329,8 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, sparklines,
               </div>
             </div>
             {mrSpark && mrSpark.length >= 2 && (
-              <div className="p-3 sm:p-4 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-lg">
-                <p className="text-[10px] text-indigo-600 uppercase tracking-wider font-bold mb-2">30-day subscriber growth</p>
+              <div className="p-3 sm:p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-[0.14em] font-medium mb-2">30-day subscriber growth</p>
                 <Sparkline data={mrSpark} width={500} height={48} fluid />
               </div>
             )}
@@ -628,7 +628,7 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
             >
               <Link
                 to={`/blog/${post.slug}`}
-                className="group block bg-white border border-neutral-200 rounded-2xl overflow-hidden hover:border-neutral-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                className="group block bg-white border border-neutral-200 rounded-2xl overflow-hidden hover:border-neutral-300 transition-colors duration-200"
               >
                 {post.image && (
                   <div className="aspect-[16/9] overflow-hidden bg-neutral-100">
@@ -982,7 +982,7 @@ export default function Home() {
               >
                 <Link
                   to={feat.to}
-                  className="group block h-full bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                  className="group block h-full bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-300 hover:bg-neutral-50/50 transition-colors duration-200"
                 >
                   <div className={`w-11 h-11 rounded-xl border ${FEATURE_COLORS[feat.accent]} flex items-center justify-center mb-5`}>
                     <feat.Icon className="w-5 h-5" />
