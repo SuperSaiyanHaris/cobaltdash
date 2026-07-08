@@ -34,18 +34,18 @@ export default function BlogPost() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-neutral-900 mb-4">Post Not Found</h1>
-          <Link to="/blog" className="text-indigo-600 hover:text-indigo-300">
+          <Link to="/blog" className="text-indigo-600 hover:text-indigo-700">
             Back to Blog
           </Link>
         </div>
@@ -94,7 +94,7 @@ export default function BlogPost() {
       <StructuredData schema={blogPostSchema} />
       <StructuredData schema={breadcrumbSchema} />
 
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen bg-[#fafaf9]">
         {(() => {
           const theme = getCategoryTheme(post.category);
           return (
@@ -106,9 +106,7 @@ export default function BlogPost() {
                   className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-luminosity"
                 />
               )}
-              {/* Decorative blobs for atmosphere when no image, or to enrich one */}
-              <div className={`pointer-events-none absolute -top-24 -left-24 w-80 h-80 ${theme.glow} rounded-full blur-3xl`} />
-              <div className={`pointer-events-none absolute -bottom-32 -right-16 w-96 h-96 ${theme.glow} rounded-full blur-3xl opacity-70`} />
+              {/* Dark gradient scrim keeps the back button + any overlaid text legible on the cover image */}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
 
               <button
@@ -187,7 +185,7 @@ export default function BlogPost() {
                     to={`/blog/${related.slug}`}
                     className="group"
                   >
-                    <article className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-neutral-300 transition-all duration-200">
+                    <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
                       <img
                         src={related.image}
                         alt={related.title}
@@ -207,25 +205,21 @@ export default function BlogPost() {
             </div>
           )}
 
-          {/* CTA — dark card pattern, accent for visual contrast on the white page */}
-          <div className="mb-12 relative overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 p-8 sm:p-10 text-center">
-            <div className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
-            <div className="relative">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3 tracking-tight">
-                Track any creator's growth.
-              </h2>
-              <p className="text-neutral-300 mb-6 max-w-md mx-auto">
-                Daily subscriber and follower counts across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music.
-              </p>
-              <Link
-                to="/search"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-neutral-900 font-bold rounded-xl hover:bg-neutral-100 hover:-translate-y-0.5 hover:shadow-lg transition-all"
-              >
-                Search creators
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+          {/* CTA — light precision card */}
+          <div className="mb-12 bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 sm:p-10 text-center">
+            <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-3 tracking-tight">
+              Track any creator's growth.
+            </h2>
+            <p className="text-sm text-neutral-500 mb-6 max-w-md mx-auto">
+              Daily subscriber and follower counts across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music.
+            </p>
+            <Link
+              to="/search"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors"
+            >
+              Search creators
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </div>

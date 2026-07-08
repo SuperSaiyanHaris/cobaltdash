@@ -493,13 +493,12 @@ export default function Reports() {
       <div className="min-h-screen bg-[#fafafa]">
 
         {/* Page header */}
-        <div className="relative overflow-hidden border-b border-neutral-200 bg-white">
-          <div className="absolute -top-32 -right-20 w-96 h-96 rounded-full bg-amber-100/40 blur-3xl pointer-events-none" />
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <div className="border-b border-neutral-200/80 bg-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-2">Custom report builder</p>
-                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900">Reports</h1>
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Reports</p>
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Reports</h1>
                 <p className="mt-2 text-sm sm:text-base text-neutral-600 max-w-xl">
                   Pick creators, choose a date range and metrics, then export the data as CSV. Save report templates to re-run them with one click.
                 </p>
