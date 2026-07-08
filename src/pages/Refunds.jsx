@@ -63,7 +63,7 @@ export default function Refunds() {
 
               <Section title="Contact">
                 <p>
-                  Questions? Email <a href="mailto:shinypull@proton.me" className="text-indigo-400 hover:text-indigo-300">shinypull@proton.me</a>.
+                  Questions? Email <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">shinypull@proton.me</a>.
                 </p>
               </Section>
 

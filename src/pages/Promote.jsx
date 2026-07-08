@@ -13,6 +13,10 @@ import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import { getRankedCreators } from '../services/creatorService';
 import { PLATFORM_COUNT } from '../lib/constants';
 
+// Typographic backbone shared with the rest of the precision system
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+
 /**
  * /promote, public landing page for Featured Listings.
  * Explains the product to potential B2B buyers without requiring auth.
@@ -77,29 +81,27 @@ export default function Promote() {
         keywords="creator promotion, sponsored ranking, featured listing, B2B creator marketing, talent promotion, agency tools"
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <section className="relative overflow-hidden border-b border-neutral-200">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.08),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(139,92,246,0.06),transparent_50%)]" />
-
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12 sm:pb-16">
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Hero — white block, hairline rule, typographic. Amber is the Featured
+            Listings product accent (functional, kept). */}
+        <section className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-12 sm:pb-14">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="text-center max-w-3xl mx-auto"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-700 text-xs font-semibold uppercase tracking-wider mb-6">
-                <Megaphone className="w-3.5 h-3.5" />
-                Featured Listings
+              <div className="inline-flex items-center gap-1.5 mb-5">
+                <Megaphone className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">Featured Listings</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-neutral-900 mb-5 tracking-tight leading-[1.1]">
-                Put your creator in front of <span className="text-amber-700">the people watching the data</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-neutral-900 mb-5 tracking-tight leading-[1.1]">
+                Put your creator in front of <span className="text-amber-600">the people watching the data</span>
               </h1>
 
-              <p className="text-base sm:text-lg lg:text-xl text-neutral-500 mb-9 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-neutral-500 mb-8 max-w-2xl mx-auto leading-relaxed">
                 Get featured directly in our live rankings across every platform we track. Visibility next to MrBeast, Ninja, Charli D'Amelio. Cancel anytime.
               </p>
 
@@ -108,14 +110,14 @@ export default function Promote() {
                   <button
                     type="button"
                     disabled
-                    className="inline-flex items-center gap-2 px-7 py-3.5 bg-neutral-200 text-neutral-500 font-bold rounded-xl cursor-not-allowed select-none"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-medium rounded-lg cursor-not-allowed select-none"
                   >
                     Sold out — check back soon
                   </button>
                 ) : (
                   <Link
                     to={ctaHref} onClick={handleCtaClick}
-                    className="inline-flex items-center gap-2 px-7 py-3.5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium rounded-lg transition-colors"
                   >
                     <Sparkles className="w-4 h-4" />
                     Get featured
@@ -124,24 +126,24 @@ export default function Promote() {
                 )}
                 <Link
                   to="/rankings"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-800 font-semibold rounded-xl transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-neutral-50 border border-neutral-200 hover:border-neutral-300 text-neutral-800 text-sm font-medium rounded-lg transition-colors"
                 >
                   See live rankings
                 </Link>
               </div>
 
-              {/* Quick stats strip */}
-              <div className="mt-12 grid grid-cols-3 max-w-2xl mx-auto rounded-2xl border border-neutral-200 bg-white/60 backdrop-blur-sm overflow-hidden">
+              {/* Quick stats strip — one bordered container, hairline-divided cells */}
+              <div className={`mt-12 grid grid-cols-3 max-w-2xl mx-auto ${CARD} divide-x divide-neutral-200/80`}>
                 {[
                   { label: 'Creators tracked', value: stats.creators, format: 'number' },
                   { label: 'Platforms covered', value: PLATFORM_COUNT, format: 'number' },
                   { label: 'Pages per day', value: stats.dailyVisitors, format: 'number' },
-                ].map((s, i) => (
-                  <div key={s.label} className={`p-4 sm:p-6 text-center ${i !== 2 ? 'border-r border-neutral-200' : ''}`}>
-                    <p className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tabular-nums">
+                ].map((s) => (
+                  <div key={s.label} className="p-4 sm:p-5 text-center">
+                    <p className="text-2xl sm:text-3xl font-semibold text-neutral-900 tabular-nums">
                       <CountUp value={s.value} format={s.format} />{s.label === 'Pages per day' && '+'}
                     </p>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 mt-1 uppercase tracking-wider">{s.label}</p>
+                    <p className={`${MICRO} mt-1.5`}>{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -150,113 +152,105 @@ export default function Promote() {
         </section>
 
         {/* Pricing tiers */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900">Two ways to get featured</h2>
-            <p className="mt-3 text-neutral-500 text-base sm:text-lg">Pick the slot. Pick the platform. Live in minutes.</p>
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">Two ways to get featured</h2>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">Pick the slot. Pick the platform. Live in minutes.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-5 sm:gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
             {/* Basic */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="group relative overflow-hidden bg-white border border-neutral-200 hover:border-indigo-300 rounded-2xl p-7 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10"
+              className={`group ${CARD} p-7 sm:p-8 hover:border-neutral-300 transition-colors`}
             >
-              <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100 transition-colors duration-500" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-500/20 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Basic</span>
-                </div>
-                <p className="text-4xl font-extrabold text-neutral-900 mt-3">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
-                <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
-                <ul className="space-y-2.5 mb-7">
-                  {[
-                    'Rank 15, 20, 25, 30... on your chosen platform',
-                    'Shows on both desktop and mobile rankings',
-                    'Cancel anytime',
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
-                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-indigo-600" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {basicSoldOut ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-400 cursor-not-allowed select-none">
-                    Sold out — check back soon
-                  </span>
-                ) : (
-                  <Link
-                    to={ctaHref} onClick={handleCtaClick}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-600 group-hover:gap-3 transition-all"
-                  >
-                    Get a Basic slot <ArrowRight className="w-4 h-4" />
-                  </Link>
-                )}
-              </div>
+              <span className={`${MICRO} text-neutral-500`}>Basic</span>
+              <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
+              <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
+              <ul className="space-y-2.5 mb-7">
+                {[
+                  'Rank 15, 20, 25, 30... on your chosen platform',
+                  'Shows on both desktop and mobile rankings',
+                  'Cancel anytime',
+                ].map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-neutral-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              {basicSoldOut ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 cursor-not-allowed select-none">
+                  Sold out — check back soon
+                </span>
+              ) : (
+                <Link
+                  to={ctaHref} onClick={handleCtaClick}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-900 group-hover:gap-3 transition-all"
+                >
+                  Get a Basic slot <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </motion.div>
 
-            {/* Premium */}
+            {/* Premium — one amber top rule is the differentiation */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="group relative overflow-hidden bg-gradient-to-br from-amber-50 to-white border border-amber-200 hover:border-amber-300 rounded-2xl p-7 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-200/40"
+              className={`group ${CARD} border-t-2 border-t-amber-400 p-7 sm:p-8 hover:border-neutral-300 hover:border-t-amber-500 transition-colors`}
             >
-              <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 bg-amber-200/40 rounded-full blur-3xl group-hover:bg-amber-200/60 transition-colors duration-500" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-bold rounded-full uppercase tracking-wider">⭐ Premium</span>
-                  <span className="text-[10px] text-amber-700/80 font-semibold">Only 2 slots / platform</span>
-                </div>
-                <p className="text-4xl font-extrabold text-neutral-900 mt-3">$149<span className="text-base font-normal text-neutral-500">/mo</span></p>
-                <p className="text-sm text-neutral-700 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
-                <ul className="space-y-2.5 mb-7">
-                  {[
-                    'Between rank 4-5 and 9-10, top of fold visibility',
-                    'Golden card treatment, ⭐ Premium label',
-                    'Maximum 2 slots per platform. Scarce inventory.',
-                    'Cancel anytime',
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-800">
-                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {premiumSoldOut ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-400 cursor-not-allowed select-none">
-                    Sold out — check back soon
-                  </span>
-                ) : (
-                  <Link
-                    to={ctaHref} onClick={handleCtaClick}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-800 group-hover:gap-3 transition-all"
-                  >
-                    Get a Premium slot <ArrowRight className="w-4 h-4" />
-                  </Link>
-                )}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">⭐ Premium</span>
+                <span className="text-[10px] text-amber-600/80 font-medium">Only 2 slots / platform</span>
               </div>
+              <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$149<span className="text-base font-normal text-neutral-400">/mo</span></p>
+              <p className="text-sm text-neutral-500 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
+              <ul className="space-y-2.5 mb-7">
+                {[
+                  'Between rank 4-5 and 9-10, top of fold visibility',
+                  'Golden card treatment, ⭐ Premium label',
+                  'Maximum 2 slots per platform. Scarce inventory.',
+                  'Cancel anytime',
+                ].map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              {premiumSoldOut ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 cursor-not-allowed select-none">
+                  Sold out — check back soon
+                </span>
+              ) : (
+                <Link
+                  to={ctaHref} onClick={handleCtaClick}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 group-hover:gap-3 transition-all"
+                >
+                  Get a Premium slot <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </motion.div>
           </div>
         </section>
 
         {/* How it works */}
-        <section className="bg-white/60 border-y border-neutral-200">
+        <section className="bg-white border-y border-neutral-200/80">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
             <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900">How it works</h2>
-              <p className="mt-3 text-neutral-500 text-base sm:text-lg">Live in under a minute.</p>
+              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">How it works</h2>
+              <p className="mt-2 text-sm sm:text-base text-neutral-500">Live in under a minute.</p>
             </div>
-            <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
               {[
-                { Icon: Users,      title: 'Pick a creator',       body: `Search any creator across our ${PLATFORM_COUNT} platforms. If they're tracked here, they're eligible.`, accent: 'from-indigo-500 to-purple-600', shadow: 'shadow-indigo-500/30' },
-                { Icon: Megaphone,  title: 'Choose your slot',     body: 'Basic ($49) for steady visibility starting at rank 15. Premium ($149) for top-of-page placement.', accent: 'from-amber-500 to-orange-600', shadow: 'shadow-amber-500/30' },
-                { Icon: TrendingUp, title: 'Live in minutes',      body: 'Stripe Checkout. Confirmation, then your creator appears on the live rankings page right away.', accent: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/30' },
+                { Icon: Users,      title: 'Pick a creator',       body: `Search any creator across our ${PLATFORM_COUNT} platforms. If they're tracked here, they're eligible.`, tint: 'text-indigo-500' },
+                { Icon: Megaphone,  title: 'Choose your slot',     body: 'Basic ($49) for steady visibility starting at rank 15. Premium ($149) for top-of-page placement.', tint: 'text-amber-500' },
+                { Icon: TrendingUp, title: 'Live in minutes',      body: 'Stripe Checkout. Confirmation, then your creator appears on the live rankings page right away.', tint: 'text-emerald-600' },
               ].map((step, i) => (
                 <motion.div
                   key={step.title}
@@ -264,13 +258,11 @@ export default function Promote() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className="bg-white border border-neutral-200 rounded-2xl p-6 relative overflow-hidden group hover:border-neutral-300 transition-colors"
+                  className={`${CARD} p-6 relative`}
                 >
-                  <span className="absolute top-4 right-4 text-3xl font-black text-gray-800/80 group-hover:text-neutral-300 transition-colors">0{i + 1}</span>
-                  <div className={`w-11 h-11 bg-gradient-to-br ${step.accent} rounded-xl flex items-center justify-center shadow-lg ${step.shadow} mb-4`}>
-                    <step.Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-base font-bold text-neutral-900 mb-1.5">{step.title}</h3>
+                  <span className="absolute top-5 right-5 text-xs font-medium text-neutral-300 tabular-nums">0{i + 1}</span>
+                  <step.Icon className={`w-5 h-5 ${step.tint} mb-4`} />
+                  <h3 className="text-base font-medium text-neutral-900 mb-1.5">{step.title}</h3>
                   <p className="text-sm text-neutral-500 leading-relaxed">{step.body}</p>
                 </motion.div>
               ))}
@@ -280,8 +272,8 @@ export default function Promote() {
                 buyers see the exact slot they're paying for before checkout. */}
             <div className="mt-14 sm:mt-16">
               <div className="text-center mb-8">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 mb-2">Live preview</p>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-neutral-900">This is what your slot looks like.</h3>
+                <p className={`${MICRO} text-amber-600 mb-2`}>Live preview</p>
+                <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-neutral-900">This is what your slot looks like.</h3>
               </div>
               <div className="max-w-3xl mx-auto">
                 <FeaturedListingPreview topCreators={topCreators} showCtas={false} />
@@ -292,8 +284,8 @@ export default function Promote() {
 
         {/* FAQ */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 text-center mb-10">FAQ</h2>
-          <div className="space-y-4">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 text-center mb-10">FAQ</h2>
+          <div className="space-y-3">
             {[
               {
                 q: 'Can I feature someone who isn\'t in your database?',
@@ -316,8 +308,8 @@ export default function Promote() {
                 a: 'Slots are first come, first served. When the slot you want is full, checkout is disabled for that tier until an opening frees up. The moment someone above you cancels or their listing expires, every lower placement automatically moves up one position and the next available slot opens for purchase. No manual waitlist.',
               },
             ].map((item) => (
-              <div key={item.q} className="bg-white border border-neutral-200 rounded-xl p-5">
-                <h3 className="font-semibold text-neutral-900 mb-1.5">{item.q}</h3>
+              <div key={item.q} className={`${CARD} p-5`}>
+                <h3 className="font-medium text-neutral-900 mb-1.5">{item.q}</h3>
                 <p className="text-sm text-neutral-500 leading-relaxed">{item.a}</p>
               </div>
             ))}
@@ -325,10 +317,10 @@ export default function Promote() {
         </section>
 
         {/* Final CTA */}
-        <section className="border-t border-neutral-200">
+        <section className="border-t border-neutral-200/80">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 mb-3">Ready to get featured?</h2>
-            <p className="text-base text-neutral-500 mb-6 max-w-xl mx-auto">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 mb-3">Ready to get featured?</h2>
+            <p className="text-sm text-neutral-500 mb-6 max-w-xl mx-auto">
               {premiumSoldOut && basicSoldOut
                 ? 'All slots are currently filled. Check back soon — the queue moves the moment a slot opens.'
                 : 'Most listings go live in under 60 seconds.'}
@@ -337,14 +329,14 @@ export default function Promote() {
               <button
                 type="button"
                 disabled
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-neutral-200 text-neutral-500 font-bold rounded-xl cursor-not-allowed select-none"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-medium rounded-lg cursor-not-allowed select-none"
               >
                 Sold out — check back soon
               </button>
             ) : (
               <Link
                 to={ctaHref} onClick={handleCtaClick}
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium rounded-lg transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
                 Start now

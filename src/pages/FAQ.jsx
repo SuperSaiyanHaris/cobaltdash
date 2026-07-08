@@ -108,8 +108,8 @@ const faqs = [
         q: 'I found incorrect data. How do I report it?',
         a: (
           <>
-            Use the <Link to="/contact" className="text-indigo-400 hover:text-indigo-300">contact form</Link> or email us at{' '}
-            <a href="mailto:shinypull@proton.me" className="text-indigo-400 hover:text-indigo-300">shinypull@proton.me</a>.
+            Use the <Link to="/contact" className="text-indigo-600 hover:text-indigo-700">contact form</Link> or email us at{' '}
+            <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">shinypull@proton.me</a>.
             Let us know the creator name, platform, and what looks wrong.
           </>
         ),
@@ -122,19 +122,19 @@ function FAQItem({ q, a }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border border-neutral-200 rounded-xl overflow-hidden">
+    <div className="border border-neutral-200/80 rounded-xl overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left bg-white hover:bg-neutral-50 transition-colors"
       >
         <span className="font-semibold text-neutral-900">{q}</span>
         {open
-          ? <ChevronUp className="w-5 h-5 text-indigo-400 flex-shrink-0" />
+          ? <ChevronUp className="w-5 h-5 text-neutral-900 flex-shrink-0" />
           : <ChevronDown className="w-5 h-5 text-neutral-400 flex-shrink-0" />
         }
       </button>
       {open && (
-        <div className="px-6 py-4 bg-white/50 border-t border-neutral-200 text-neutral-700 leading-relaxed">
+        <div className="px-6 py-4 border-t border-neutral-100 text-neutral-700 leading-relaxed">
           {typeof a === 'string' ? a : a}
         </div>
       )}
@@ -163,21 +163,22 @@ export default function FAQ() {
       />
       <StructuredData schema={faqSchema} />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <div className="relative overflow-hidden border-b border-neutral-200 py-16">
-          <div className="max-w-3xl mx-auto px-4 text-center">
-            <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">Frequently Asked Questions</h1>
-            <p className="text-xl text-neutral-500">
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-3xl mx-auto px-4 py-12 sm:py-14 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">FAQ</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Frequently Asked Questions</h1>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">
               Common questions about ShinyPull, our data, and how everything works.
             </p>
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 py-12 space-y-12">
+        <div className="max-w-3xl mx-auto px-4 py-12 space-y-10">
           {faqs.map((section) => (
             <div key={section.category}>
-              <h2 className="text-lg font-bold text-indigo-400 uppercase tracking-wider mb-4">
+              <h2 className="text-[10px] font-medium text-neutral-400 uppercase tracking-[0.14em] mb-4">
                 {section.category}
               </h2>
               <div className="space-y-3">
