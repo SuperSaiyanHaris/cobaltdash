@@ -61,7 +61,7 @@ export default function Contact() {
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
                 <p className="text-neutral-700 mb-8">
                   Have a question, feedback, or need support? We'd love to hear from you.
                 </p>
@@ -92,7 +92,7 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8">
+            <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
               {status === 'success' ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">

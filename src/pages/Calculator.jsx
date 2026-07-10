@@ -320,7 +320,7 @@ export default function Calculator() {
 
               {/* Creator Search */}
               {mode === 'creator' && (
-                <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+                <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                   <label className="block text-sm font-medium text-neutral-700 mb-3">
                     Select YouTube Creator
                     {selectedCreator && <span className="ml-2 text-xs text-emerald-600">(data auto-populated)</span>}
@@ -386,7 +386,7 @@ export default function Calculator() {
 
               {/* Creator stats — INPUT CONTEXT, lives in left column */}
               {selectedCreator && (
-                <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+                <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                   <h4 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
                     <Youtube className="w-4 h-4 text-red-500" />
                     {selectedCreator.displayName}'s Stats
@@ -417,7 +417,7 @@ export default function Calculator() {
               )}
 
               {/* Daily Views */}
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-neutral-700">
                     Daily Views
@@ -470,7 +470,7 @@ export default function Calculator() {
               </div>
 
               {/* RPM + Currency (combined) */}
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-neutral-700">
                     RPM (Revenue per 1,000 views)
@@ -530,7 +530,7 @@ export default function Calculator() {
             <div className="space-y-5 order-3 lg:col-start-2">
 
               {/* Earnings cards */}
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-emerald-500" />
@@ -587,7 +587,7 @@ export default function Calculator() {
               </div>
 
               {/* Bar chart — stacked low + range band */}
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                 <h4 className="text-sm font-semibold text-neutral-700 mb-0.5">Earnings Breakdown</h4>
                 <p className="text-xs text-neutral-400 mb-4">Solid = low estimate &nbsp;&middot;&nbsp; Faded = upside range</p>
                 <ResponsiveContainer width="100%" height={220}>

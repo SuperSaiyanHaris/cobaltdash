@@ -18,7 +18,7 @@ export default function Terms() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
             <div className="prose max-w-none">
               <p className="text-neutral-700 mb-8 leading-relaxed">
                 This is the terms of use agreement (the "Agreement") that governs your use of ShinyPull's website

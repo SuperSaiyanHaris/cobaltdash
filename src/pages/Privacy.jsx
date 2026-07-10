@@ -18,7 +18,7 @@ export default function Privacy() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
             <div className="prose max-w-none">
               <Section title="Legal Notes">
                 <p className="mb-4">

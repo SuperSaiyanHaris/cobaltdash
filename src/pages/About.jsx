@@ -22,7 +22,7 @@ export default function About() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">What We Do</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               ShinyPull tracks publicly available statistics for content creators and music artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music.
@@ -36,7 +36,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Why We Built This</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               The creator economy moves fast. Sponsorship deals, channel acquisitions, platform migrations, audience shifts. The people making decisions in this space need accurate data, not estimates from tools that haven't been updated in years.
@@ -80,7 +80,7 @@ export default function About() {
             })}
           </div>
 
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Our Data</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               All data shown on ShinyPull is publicly available information. We only show statistics that anyone can
@@ -94,7 +94,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 mb-6">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Contact</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               Questions, feedback, or something looks wrong? We'd love to hear from you.
@@ -102,7 +102,7 @@ export default function About() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors text-sm"
+                className="inline-flex items-center justify-center px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl transition-colors text-sm"
               >
                 Contact form
               </Link>
