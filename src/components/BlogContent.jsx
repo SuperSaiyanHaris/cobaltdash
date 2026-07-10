@@ -37,7 +37,7 @@ function CreatorMentions({ creators }) {
   if (!creators.length) return null;
   return (
     <div className="mt-12 pt-8 border-t border-neutral-200">
-      <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-4">Creators in this post</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-4">Creators in this post</p>
       <div className="flex flex-wrap gap-2">
         {creators.map(({ platform, username, displayName }) => {
           const meta = PLATFORM_META[platform];
@@ -47,7 +47,7 @@ function CreatorMentions({ creators }) {
             <Link
               key={`${platform}/${username}`}
               to={`/${platform}/${username}`}
-              className={`group inline-flex items-center gap-1.5 px-3 py-1.5 ${bg} border ${border} rounded-full hover:scale-105 transition-all text-sm font-semibold ${color}`}
+              className={`group inline-flex items-center gap-1.5 px-3 py-1.5 ${bg} border ${border} rounded-full hover:opacity-80 transition-opacity text-sm font-medium ${color}`}
             >
               <Icon className="w-3.5 h-3.5 flex-shrink-0" />
               {displayName || username}
@@ -78,10 +78,10 @@ function CalloutBox({ type, children }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-15%' }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className={`relative ${s.bg} border ${s.border} rounded-2xl pl-6 pr-6 py-5 my-8 overflow-hidden`}
+      className={`relative ${s.bg} border ${s.border} rounded-xl pl-6 pr-6 py-5 my-8 overflow-hidden`}
     >
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${s.bar}`} />
-      <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${s.color} mb-3`}>
+      <div className={`flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] ${s.color} mb-3`}>
         <Icon className="w-4 h-4" />
         {s.label}
       </div>
@@ -98,11 +98,10 @@ function TldrBox({ children, theme }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-15%' }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className={`relative my-10 rounded-2xl bg-gradient-to-br ${theme.intro} overflow-hidden`}
+      className={`my-10 rounded-xl ${theme.accentBg} border ${theme.accentBorder}`}
     >
-      <div className={`pointer-events-none absolute -top-12 -right-12 w-40 h-40 ${theme.glow} rounded-full blur-3xl`} />
-      <div className="relative px-6 py-5 sm:px-8 sm:py-6">
-        <div className={`inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full ${theme.pill} text-xs font-bold uppercase tracking-widest`}>
+      <div className="px-6 py-5 sm:px-8 sm:py-6">
+        <div className={`inline-flex items-center gap-1.5 mb-4 text-[10px] font-medium uppercase tracking-[0.14em] ${theme.accentText}`}>
           <Sparkles className="w-3 h-3" />
           The Quick Read
         </div>
@@ -139,15 +138,12 @@ function StatsStrip({ raw, theme }) {
       className={`grid grid-cols-1 ${cols} gap-3 sm:gap-4 my-10`}
     >
       {items.map((item, i) => (
-        <div key={i} className="relative group bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 hover:border-neutral-300 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className={`pointer-events-none absolute -top-6 -right-6 w-20 h-20 ${theme.glow} rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity`} />
-          <div className="relative">
-            <div className={`text-3xl sm:text-4xl font-black bg-gradient-to-br ${gradientStops} bg-clip-text text-transparent leading-none`}>
-              {item.value}
-            </div>
-            <div className="mt-2 text-xs sm:text-sm text-neutral-600 font-medium leading-snug">
-              {item.label}
-            </div>
+        <div key={i} className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6">
+          <div className="text-3xl sm:text-4xl font-semibold text-neutral-900 tabular-nums leading-none">
+            {item.value}
+          </div>
+          <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 leading-snug">
+            {item.label}
           </div>
         </div>
       ))}
@@ -177,17 +173,13 @@ function buildMarkdownComponents(theme, getH2Index) {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="relative mt-14 sm:mt-20 mb-6 sm:mb-8 first:mt-0"
         >
-          {/* Ghost number watermark, top-right */}
-          <span className="pointer-events-none absolute -top-4 right-0 text-5xl sm:text-6xl font-black text-neutral-100 select-none leading-none">
-            {num}
-          </span>
-          <div className="relative flex items-start gap-4">
-            <div className={`mt-2 flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${theme.iconBg} flex items-center justify-center shadow-lg ${theme.iconShadow}`}>
-              <CategoryIcon className="w-5 h-5 text-white" />
+          <div className="flex items-start gap-3">
+            <div className="mt-1 flex-shrink-0 w-9 h-9 rounded-lg bg-neutral-50 border border-neutral-200/80 flex items-center justify-center">
+              <CategoryIcon className={`w-5 h-5 ${theme.accentText}`} />
             </div>
             <div className="min-w-0">
-              <div className={`h-1 w-12 sm:w-16 ${theme.h2Bar} rounded-full mb-3`} />
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">{children}</h2>
+              <div className={`h-0.5 w-10 sm:w-12 ${theme.accentBg} border ${theme.accentBorder} rounded-full mb-2.5`} />
+              <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-900 tracking-tight leading-tight">{children}</h2>
             </div>
           </div>
         </motion.div>
@@ -209,11 +201,10 @@ function buildMarkdownComponents(theme, getH2Index) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mb-10 sm:mb-14"
+            className="mb-10 sm:mb-14"
           >
-            <div className={`pointer-events-none absolute -top-12 -left-12 w-44 h-44 ${theme.glow} rounded-full blur-3xl`} />
-            <div className={`relative p-6 sm:p-8 bg-gradient-to-br ${theme.intro} rounded-2xl`}>
-              <Quote className={`w-6 h-6 ${theme.accentText} mb-3 opacity-70`} />
+            <div className={`p-6 sm:p-8 ${theme.accentBg} border ${theme.accentBorder} rounded-xl`}>
+              <Quote className={`w-5 h-5 ${theme.accentText} mb-3 opacity-70`} />
               <p className="text-base sm:text-lg text-neutral-800 leading-relaxed font-medium">
                 {children}
               </p>
@@ -300,7 +291,7 @@ function buildMarkdownComponents(theme, getH2Index) {
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, margin: '-15%' }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative my-12 px-6 py-6 sm:px-10 sm:py-8 bg-neutral-50 rounded-2xl"
+        className="relative my-12 px-6 py-6 sm:px-10 sm:py-8 bg-neutral-50 border border-neutral-200/80 rounded-xl"
       >
         <Quote className={`absolute top-4 left-4 w-8 h-8 ${theme.accentText} opacity-30`} />
         <div className={`absolute left-0 top-4 bottom-4 w-1.5 ${theme.h2Bar} rounded-full`} />
@@ -320,7 +311,7 @@ function buildMarkdownComponents(theme, getH2Index) {
           src={src}
           alt={alt || ''}
           loading="lazy"
-          className="w-full rounded-2xl object-cover max-h-[480px] border border-neutral-200 shadow-md"
+          className="w-full rounded-xl object-cover max-h-[480px] border border-neutral-200/80"
         />
         {alt && <figcaption className="mt-3 text-center text-xs text-neutral-500 italic">{alt}</figcaption>}
       </motion.figure>

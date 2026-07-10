@@ -98,27 +98,25 @@ export default function FeaturedListingPreview({ topCreators = [], showCtas = tr
                   whileInView={{ opacity: 1, scaleY: 1 }}
                   viewport={{ once: true, margin: '-20%' }}
                   transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="grid grid-cols-[28px_1fr_auto_auto] sm:grid-cols-[28px_1fr_100px_70px] items-center gap-3 sm:gap-4 px-3 py-3 rounded-lg bg-amber-50 border border-amber-200 origin-top relative overflow-hidden"
+                  className="grid grid-cols-[28px_1fr_auto_auto] sm:grid-cols-[28px_1fr_100px_70px] items-center gap-3 sm:gap-4 px-3 py-3 rounded-lg bg-amber-50/60 border border-amber-200 origin-top"
                 >
-                  {/* Marquee sheen so the slot reads as "this is the paid product" */}
-                  <div className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-amber-200/40 to-transparent animate-marquee" />
-                  <span className="inline-flex items-center justify-center gap-0.5 px-1.5 h-6 rounded-md text-[10px] font-bold flex-shrink-0 bg-amber-200 border border-amber-300 text-amber-900" title="Premium featured listing">
-                    <span className="text-[9px]">★</span>Ad
+                  <span className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] flex-shrink-0 bg-amber-100 border border-amber-200 text-amber-700" title="Premium featured listing">
+                    Ad
                   </span>
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-[11px] font-extrabold flex-shrink-0">
-                      Y
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600 text-[11px] font-semibold flex-shrink-0">
+                      ★
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-neutral-900 truncate">Your Creator Here</p>
-                      <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wider">Sponsored</p>
+                      <p className="text-sm font-medium text-neutral-900 truncate">Your Creator Here</p>
+                      <p className="text-[10px] text-amber-600 font-medium uppercase tracking-[0.1em]">Sponsored</p>
                     </div>
                   </div>
-                  <div className="hidden sm:flex items-center justify-end text-[11px] text-amber-700 font-semibold tabular-nums">
+                  <div className="hidden sm:flex items-center justify-end text-[11px] text-amber-700 font-medium tabular-nums">
                     $149/mo
                   </div>
                   <div className="text-right">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700">
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
                       Claim slot <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>
@@ -133,7 +131,7 @@ export default function FeaturedListingPreview({ topCreators = [], showCtas = tr
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
             <Link
               to="/promote"
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-amber-500/20"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium text-sm rounded-lg transition-colors"
             >
               See plans (from $49/mo)
               <ArrowRight className="w-4 h-4" />

@@ -186,7 +186,7 @@ export default function Header() {
                         className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-neutral-200 transition-all"
                         aria-label="Account menu"
                       >
-                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        <div className="w-8 h-8 bg-neutral-900 rounded-full flex items-center justify-center text-white text-xs font-semibold">
                           {initials}
                         </div>
                       </button>

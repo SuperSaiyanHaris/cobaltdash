@@ -1479,13 +1479,7 @@ export default function CreatorProfile() {
                 href={creator.latestPost.url || creator.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`group block mb-6 bg-white border rounded-2xl p-4 sm:p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
-                  platform === 'rumble'
-                    ? 'border-lime-200 hover:border-lime-400 hover:shadow-lime-100'
-                    : platform === 'substack'
-                      ? 'border-orange-200 hover:border-orange-400 hover:shadow-orange-100'
-                      : 'border-violet-200 hover:border-violet-400 hover:shadow-violet-100'
-                }`}
+                className="group block mb-6 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-4 sm:p-5 hover:border-neutral-300 transition-colors"
               >
                 <div className="flex gap-4">
                   {creator.latestPost.thumbnail && (
