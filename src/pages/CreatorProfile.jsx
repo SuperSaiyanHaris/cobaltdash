@@ -854,7 +854,7 @@ export default function CreatorProfile() {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8">
+          <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
             <div className="flex items-start gap-6 mb-8">
               <div className={`w-24 h-24 ${colors.light} rounded-2xl flex items-center justify-center`}>
                 {Icon && <Icon className={`w-12 h-12 ${colors.text}`} />}
@@ -1683,7 +1683,7 @@ export default function CreatorProfile() {
                 href={`https://youtube.com/watch?v=${latestVideo.videoId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden mb-6 hover:shadow-md hover:border-neutral-300 transition-all group"
+                className="block bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6 hover:border-neutral-300 transition-colors group"
               >
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative sm:w-72 flex-shrink-0">
@@ -1797,7 +1797,7 @@ export default function CreatorProfile() {
 
             {/* Music: Top Albums */}
             {platform === 'music' && musicAlbums.length > 0 && (
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden mb-6">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
                 <div className="px-6 py-4 border-b border-neutral-200">
                   <h3 className="text-lg font-semibold text-neutral-900">Top Albums</h3>
                 </div>
@@ -1840,7 +1840,7 @@ export default function CreatorProfile() {
 
             {/* Music: Top Tracks */}
             {platform === 'music' && musicTracks.length > 0 && (
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden mb-6">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
                 <div className="px-6 py-4 border-b border-neutral-200">
                   <h3 className="text-lg font-semibold text-neutral-900">Top Tracks</h3>
                 </div>
@@ -1873,7 +1873,7 @@ export default function CreatorProfile() {
 
             {/* Daily Metrics Table */}
             {metrics ? (
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
                 <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-neutral-900">Daily Channel Metrics</h3>
                   <button
@@ -2180,16 +2180,14 @@ export default function CreatorProfile() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 text-center">
-                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-neutral-900 mb-2">Building Historical Data</h3>
-                <p className="text-neutral-700 text-sm mb-2">
-                  This creator is being tracked! We collect daily snapshots to show growth trends and metrics.
+              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 text-center">
+                <TrendingUp className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                <h3 className="text-base font-medium text-neutral-900 mb-1.5">Building Historical Data</h3>
+                <p className="text-neutral-500 text-sm mb-2">
+                  This creator is being tracked. We collect daily snapshots to show growth trends and metrics.
                 </p>
-                <p className="text-xs text-neutral-700">
-                  {statsHistory.length} day(s) of data collected • Check back soon for trends!
+                <p className="text-xs text-neutral-400 tabular-nums">
+                  {statsHistory.length} day(s) of data collected • Check back soon for trends
                 </p>
               </div>
             )}
@@ -2367,7 +2365,7 @@ function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 mb-6">
+    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6 mb-6">
       <div className="flex items-center gap-2 mb-4">
         <Target className="w-5 h-5 text-indigo-600" />
         <h3 className="text-lg font-semibold text-neutral-900">Milestone Predictions</h3>
@@ -2630,7 +2628,7 @@ function GrowthChart({ data, range, onRangeChange, metric, onMetricChange, platf
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 mb-6">
+    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6 mb-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex flex-wrap gap-1 bg-neutral-100 p-1 rounded-lg">
           {metrics.map((m) => (
