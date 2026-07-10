@@ -3,79 +3,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Search, Trophy, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, FileSpreadsheet, ChevronDown, LayoutGrid, TrendingUp, Megaphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+// Feature launcher entries. `tint` is the only color each gets — a muted icon
+// tint for wayfinding, no gradient boxes (precision system).
 const moreLinks = [
-  {
-    path: '/trending',
-    label: 'Trending',
-    description: 'Fastest growing creators',
-    icon: TrendingUp,
-    gradient: 'from-emerald-500 to-teal-600',
-    hoverBorder: 'hover:border-emerald-500/40',
-    hoverBg: 'hover:bg-emerald-950/20',
-  },
-  {
-    path: '/compare',
-    label: 'Compare',
-    description: 'Side-by-side creator stats',
-    icon: Scale,
-    gradient: 'from-violet-600 to-purple-700',
-    hoverBorder: 'hover:border-violet-500/40',
-    hoverBg: 'hover:bg-violet-950/20',
-  },
-  {
-    path: '/youtube/money-calculator',
-    label: 'Earnings Calc',
-    description: 'Estimate YouTube revenue',
-    icon: Calculator,
-    gradient: 'from-emerald-500 to-teal-600',
-    hoverBorder: 'hover:border-emerald-500/40',
-    hoverBg: 'hover:bg-emerald-950/20',
-  },
-  {
-    path: '/dashboard',
-    label: 'Dashboard',
-    description: 'Your followed creators',
-    icon: LayoutDashboard,
-    gradient: 'from-indigo-500 to-blue-600',
-    hoverBorder: 'hover:border-indigo-500/40',
-    hoverBg: 'hover:bg-indigo-950/20',
-  },
-  {
-    path: '/reports',
-    label: 'Reports',
-    description: 'Bulk exports and analytics',
-    icon: FileSpreadsheet,
-    gradient: 'from-amber-500 to-orange-500',
-    hoverBorder: 'hover:border-amber-500/40',
-    hoverBg: 'hover:bg-amber-950/20',
-  },
-  {
-    path: '/promote',
-    label: 'Get Featured',
-    description: 'Promote your creator on ShinyPull',
-    icon: Megaphone,
-    gradient: 'from-amber-400 to-yellow-500',
-    hoverBorder: 'hover:border-amber-400/40',
-    hoverBg: 'hover:bg-amber-950/20',
-  },
-  {
-    path: '/blog',
-    label: 'Blog',
-    description: 'Creator economy insights',
-    icon: BookOpen,
-    gradient: 'from-sky-500 to-cyan-600',
-    hoverBorder: 'hover:border-sky-500/40',
-    hoverBg: 'hover:bg-sky-950/20',
-  },
-  {
-    path: '/support',
-    label: 'Support',
-    description: 'Get help from our team',
-    icon: Heart,
-    gradient: 'from-rose-500 to-pink-600',
-    hoverBorder: 'hover:border-rose-500/40',
-    hoverBg: 'hover:bg-rose-950/20',
-  },
+  { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
+  { path: '/compare', label: 'Compare', description: 'Side-by-side creator stats', icon: Scale, tint: 'text-violet-500' },
+  { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
+  { path: '/dashboard', label: 'Dashboard', description: 'Your followed creators', icon: LayoutDashboard, tint: 'text-indigo-500' },
+  { path: '/reports', label: 'Reports', description: 'Bulk exports and analytics', icon: FileSpreadsheet, tint: 'text-sky-500' },
+  { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },
+  { path: '/blog', label: 'Blog', description: 'Creator economy insights', icon: BookOpen, tint: 'text-cyan-500' },
+  { path: '/support', label: 'Support', description: 'Get help from our team', icon: Heart, tint: 'text-rose-500' },
 ];
 
 export default function Header() {
@@ -208,18 +146,16 @@ export default function Header() {
                             key={link.path}
                             to={link.path}
                             onClick={() => setMoreMenuOpen(false)}
-                            className={`group flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
-                              active
-                                ? 'bg-neutral-50 border-neutral-300'
-                                : 'bg-white border-transparent hover:bg-neutral-50 hover:border-neutral-200'
+                            className={`group flex items-center gap-3 p-2.5 rounded-lg transition-colors ${
+                              active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
                             }`}
                           >
-                            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${link.gradient} flex items-center justify-center flex-shrink-0`}>
-                              <Icon className="w-[18px] h-[18px] text-white" />
+                            <div className="w-9 h-9 rounded-lg bg-neutral-50 border border-neutral-200/80 flex items-center justify-center flex-shrink-0">
+                              <Icon className={`w-4 h-4 ${link.tint}`} />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="font-semibold text-neutral-900 text-sm leading-tight">{link.label}</p>
+                                <p className="font-medium text-neutral-900 text-sm leading-tight">{link.label}</p>
                                 {link.badge && (
                                   <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 leading-none flex-shrink-0">
                                     {link.badge}
@@ -376,17 +312,15 @@ export default function Header() {
                         key={link.path}
                         to={link.path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all duration-200 ${
-                          active
-                            ? 'bg-neutral-50 border-neutral-300'
-                            : 'bg-white border-transparent hover:bg-neutral-50 hover:border-neutral-200'
+                        className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
+                          active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${link.gradient} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="w-4 h-4 text-white" />
+                        <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200/80 flex items-center justify-center flex-shrink-0">
+                          <Icon className={`w-4 h-4 ${link.tint}`} />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-neutral-900 text-sm leading-tight truncate">{link.label}</p>
+                          <p className="font-medium text-neutral-900 text-sm leading-tight truncate">{link.label}</p>
                           {link.badge && (
                             <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 leading-none">
                               {link.badge}
