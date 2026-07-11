@@ -245,7 +245,7 @@ export default function BlogAdmin() {
   if (authLoading || (!user && !adminChecked)) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
   }
@@ -261,7 +261,7 @@ export default function BlogAdmin() {
             onClick={() => window.dispatchEvent(new CustomEvent('openAuthPanel', {
               detail: { message: 'Sign in to access the admin panel' }
             }))}
-            className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-500 transition-colors"
+            className="px-6 py-3 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 transition-colors"
           >
             Sign In
           </button>
@@ -273,7 +273,7 @@ export default function BlogAdmin() {
   if (!adminChecked) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
   }
@@ -285,7 +285,7 @@ export default function BlogAdmin() {
           <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">Access Denied</h1>
           <p className="text-neutral-700 mb-6">You don't have permission to access this page.</p>
-          <Link to="/" className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-500 transition-colors">
+          <Link to="/" className="px-6 py-3 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 transition-colors">
             Go Home
           </Link>
         </div>
@@ -296,7 +296,7 @@ export default function BlogAdmin() {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
   }
@@ -322,7 +322,7 @@ export default function BlogAdmin() {
               {!isEditingPost && (
                 <button
                   onClick={handleNewPost}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   New Post
@@ -371,7 +371,7 @@ export default function BlogAdmin() {
                       <Eye className="w-4 h-4" />
                       Preview
                     </button>
-                    <button onClick={handleSavePost} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors disabled:opacity-50">
+                    <button onClick={handleSavePost} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                       Save
                     </button>
@@ -445,7 +445,7 @@ export default function BlogAdmin() {
                   <FileText className="w-12 h-12 text-neutral-700 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-neutral-900 mb-2">No posts yet</h3>
                   <p className="text-neutral-700 mb-4">Create your first blog post to get started</p>
-                  <button onClick={handleNewPost} className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors">
+                  <button onClick={handleNewPost} className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors">
                     <Plus className="w-4 h-4" /> Create Post
                   </button>
                 </div>

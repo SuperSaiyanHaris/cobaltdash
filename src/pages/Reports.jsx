@@ -733,7 +733,7 @@ export default function Reports() {
                       <button
                         onClick={saveReport}
                         disabled={!saveName.trim()}
-                        className="p-1.5 bg-indigo-600 text-white rounded-lg disabled:opacity-40"
+                        className="p-1.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg disabled:opacity-40 transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
