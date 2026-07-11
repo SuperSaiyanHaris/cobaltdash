@@ -122,11 +122,11 @@ export default function ShareProfile() {
         description={`${creator.display_name}'s ${platform} stats. ${formatNumber(latestCount)} ${config.primary.toLowerCase()}${growth30d !== null ? `, ${growth30d >= 0 ? '+' : ''}${formatNumber(growth30d)} in the last 30 days` : ''}.`}
       />
 
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
-          <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="bg-white border border-neutral-200/80 rounded-xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
             {/* Platform accent bar */}
-            <div className={`h-1.5 ${colors.bg}`} />
+            <div className={`h-1 ${colors.bg}`} />
 
             <div className="p-6 sm:p-8">
               {/* Profile header */}
@@ -150,23 +150,23 @@ export default function ShareProfile() {
                 </div>
               </div>
 
-              {/* Stats grid */}
-              <div className={`grid gap-3 mb-6 ${secondary ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              {/* Stats strip — one bordered container, hairline-divided cells */}
+              <div className={`grid ${secondary ? 'grid-cols-3' : 'grid-cols-2'} divide-x divide-neutral-200/80 border border-neutral-200/80 rounded-lg mb-6`}>
                 {/* Primary */}
-                <div className="bg-neutral-50 rounded-xl p-3 sm:p-4">
-                  <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">{config.primary}</p>
-                  <p className="text-xl sm:text-2xl font-black text-neutral-900">{formatNumber(latestCount)}</p>
+                <div className="p-3 sm:p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">{config.primary}</p>
+                  <p className="text-xl sm:text-2xl font-semibold text-neutral-900 tabular-nums">{formatNumber(latestCount)}</p>
                 </div>
 
                 {/* 30-day growth */}
                 {growth30d !== null && (
-                  <div className="bg-neutral-50 rounded-xl p-3 sm:p-4">
-                    <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Last 30d</p>
-                    <p className={`text-xl sm:text-2xl font-black ${growth30d >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <div className="p-3 sm:p-4">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">Last 30d</p>
+                    <p className={`text-xl sm:text-2xl font-semibold tabular-nums ${growth30d >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {growth30d >= 0 ? '+' : ''}{formatNumber(growth30d)}
                     </p>
                     {growthPct !== null && (
-                      <div className={`flex items-center gap-0.5 mt-1 text-xs font-semibold ${growth30d >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                      <div className={`flex items-center gap-0.5 mt-1 text-xs font-medium tabular-nums ${growth30d >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         {growth30d >= 0
                           ? <TrendingUp className="w-3 h-3" />
                           : <TrendingDown className="w-3 h-3" />}
@@ -178,9 +178,9 @@ export default function ShareProfile() {
 
                 {/* Secondary (views / likes / posts) */}
                 {secondary && (
-                  <div className="bg-neutral-50 rounded-xl p-3 sm:p-4">
-                    <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1">{secondary.label}</p>
-                    <p className="text-xl sm:text-2xl font-black text-neutral-900">{formatNumber(secondary.value)}</p>
+                  <div className="p-3 sm:p-4">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">{secondary.label}</p>
+                    <p className="text-xl sm:text-2xl font-semibold text-neutral-900 tabular-nums">{formatNumber(secondary.value)}</p>
                   </div>
                 )}
               </div>
@@ -205,7 +205,7 @@ export default function ShareProfile() {
                       />
                       <YAxis hide />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', color: '#f3f4f6', fontSize: '12px' }}
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#404040', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                         formatter={(value) => [formatNumber(value), config.primary]}
                       />
                       <Area
@@ -228,7 +228,7 @@ export default function ShareProfile() {
                 </p>
                 <Link
                   to={`/${platform}/${username}`}
-                  className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors whitespace-nowrap"
+                  className="text-xs font-medium text-neutral-900 hover:text-neutral-600 transition-colors whitespace-nowrap"
                 >
                   Full stats →
                 </Link>

@@ -339,7 +339,7 @@ export default function Calculator() {
                       >
                         Profile <ExternalLink className="w-3 h-3" />
                       </Link>
-                      <button onClick={clearCreator} className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0" title="Clear creator">
+                      <button onClick={clearCreator} className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0" title="Clear creator">
                         <X className="w-4 h-4" />
                       </button>
                     </div>

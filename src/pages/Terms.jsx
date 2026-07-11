@@ -62,7 +62,7 @@ export default function Terms() {
                   is not allowed</strong> and may result in you being blocked from ShinyPull's website and data.
                   The only way you may gather large amounts of data is by requesting data directly from ShinyPull
                   (email our staff at{' '}
-                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-300">
+                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">
                     shinypull@proton.me
                   </a>
                   ).
@@ -93,7 +93,7 @@ export default function Terms() {
                   ShinyPull displays statistics that are publicly available on the platforms we track. We only
                   gather information that anyone can already see on a creator's public profile or page. We do not
                   access or store private account data. If you have a question about the data we show, contact us at{' '}
-                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-300">
+                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">
                     shinypull@proton.me
                   </a>.
                 </p>
@@ -257,7 +257,7 @@ export default function Terms() {
               <Section title="Contact Information">
                 <p>
                   For questions about these Terms, please contact us at{' '}
-                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-300">
+                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">
                     shinypull@proton.me
                   </a>
                 </p>

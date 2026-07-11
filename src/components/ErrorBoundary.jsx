@@ -72,7 +72,7 @@ class ErrorBoundary extends Component {
                   Technical details
                 </summary>
                 <div className="mt-2 p-4 bg-white rounded-lg overflow-auto">
-                  <pre className="text-xs text-red-400 whitespace-pre-wrap">
+                  <pre className="text-xs text-red-600 whitespace-pre-wrap">
                     {this.state.error.toString()}
                     {this.state.errorInfo?.componentStack}
                   </pre>

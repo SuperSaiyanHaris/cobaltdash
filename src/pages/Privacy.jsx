@@ -102,7 +102,7 @@ export default function Privacy() {
                   To remove the authorization token for third party authenticated accounts you can do so in three
                   different, equally good ways: 1) At that third party site via their own tools 2) In your dashboard
                   in the authenticated accounts section or 3) by contacting us at{' '}
-                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-300">
+                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">
                     shinypull@proton.me
                   </a>{' '}
                   and responding to any follow up questions needed to authenticate you. No matter what method you
@@ -137,10 +137,10 @@ export default function Privacy() {
                 </p>
                 <p className="mb-4">
                   You may opt out of personalized advertising by visiting{' '}
-                  <a href="https://www.google.com/settings/ads" className="text-indigo-600 hover:text-indigo-300" target="_blank" rel="noopener noreferrer">
+                  <a href="https://www.google.com/settings/ads" className="text-indigo-600 hover:text-indigo-700" target="_blank" rel="noopener noreferrer">
                     Google's Ads Settings
                   </a>. You can also opt out of third-party vendor cookies at{' '}
-                  <a href="https://www.aboutads.info/choices/" className="text-indigo-600 hover:text-indigo-300" target="_blank" rel="noopener noreferrer">
+                  <a href="https://www.aboutads.info/choices/" className="text-indigo-600 hover:text-indigo-700" target="_blank" rel="noopener noreferrer">
                     www.aboutads.info/choices
                   </a>.
                 </p>
@@ -163,7 +163,7 @@ export default function Privacy() {
               <Section title="Contact Us">
                 <p>
                   If you have questions about this Privacy Policy, please reach out at{' '}
-                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-300">
+                  <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700">
                     shinypull@proton.me
                   </a>
                 </p>

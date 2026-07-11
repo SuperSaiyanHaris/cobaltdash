@@ -541,7 +541,7 @@ export default function Reports() {
                         </span>
                         <button
                           onClick={() => deleteReport(r.id)}
-                          className="p-1 text-neutral-400 hover:text-red-400 transition-colors"
+                          className="p-1 text-neutral-400 hover:text-red-600 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -703,7 +703,7 @@ export default function Reports() {
                 <span className="text-xs text-neutral-400">Add at least one creator to generate a report.</span>
               )}
               {reportError && (
-                <span className="text-xs text-red-400">{reportError}</span>
+                <span className="text-xs text-red-600">{reportError}</span>
               )}
             </div>
           </div>
