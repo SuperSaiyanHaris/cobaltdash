@@ -60,3 +60,6 @@ temp_*.txt
 # PowerShell scripts (may contain or expose credentials — never commit)
 *.ps1
 _*.html
+
+# Generated at build time by scripts/generateSitemap.js
+public/sitemap*.xml

@@ -1,6 +1,17 @@
 /**
- * Generate sitemap.xml for SEO
- * Run: node scripts/generateSitemap.js
+ * Generate segmented sitemaps for SEO.
+ * Run: node scripts/generateSitemap.js  (also runs automatically in `npm run build`)
+ *
+ * Why segmented: a single 40K-URL sitemap from a low-authority domain gives Google
+ * no crawl-priority signal. Instead we emit a sitemap INDEX (sitemap.xml) pointing at:
+ *   - sitemap-core.xml      static pages + rankings + blog posts (~100 URLs, crawl first)
+ *   - sitemap-top.xml       creators currently in rankings_cache (the head — a few
+ *                           thousand pages with real search demand)
+ *   - sitemap-creators-N.xml  everything else, chunked 10K per file (the long tail)
+ * Segmentation also makes GSC's per-sitemap "discovered / indexed" counts diagnostic:
+ * you can see whether the head is indexed while the tail lags, instead of one opaque 40K blob.
+ *
+ * robots.txt keeps pointing at /sitemap.xml — a sitemap index is valid there.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -16,6 +27,7 @@ const supabase = createClient(
 
 const SITE_URL = 'https://shinypull.com';
 const TODAY = new Date().toISOString().split('T')[0];
+const CHUNK_SIZE = 10000;
 
 // Static pages with their priority and change frequency
 const staticPages = [
@@ -80,12 +92,25 @@ function generateSitemapXML(urls) {
   return xml;
 }
 
+function generateIndexXML(files) {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  files.forEach((file) => {
+    xml += '  <sitemap>\n';
+    xml += `    <loc>${SITE_URL}/${file}</loc>\n`;
+    xml += `    <lastmod>${TODAY}</lastmod>\n`;
+    xml += '  </sitemap>\n';
+  });
+  xml += '</sitemapindex>';
+  return xml;
+}
+
 async function generateSitemap() {
-  console.log('🗺️ Generating sitemap.xml...\n');
+  console.log('🗺️ Generating segmented sitemaps...\n');
 
-  const urls = [...staticPages];
+  // ---- Core: static pages + blog posts -------------------------------------
+  const coreUrls = [...staticPages];
 
-  // Fetch blog posts
   console.log('📝 Fetching blog posts...');
   const { data: posts, error: postsError } = await supabase
     .from('blog_posts')
@@ -98,7 +123,7 @@ async function generateSitemap() {
   } else {
     console.log(`   Found ${posts.length} blog posts`);
     posts.forEach(post => {
-      urls.push({
+      coreUrls.push({
         url: `/blog/${post.slug}`,
         lastmod: post.updated_at || post.published_at,
         changefreq: 'weekly',
@@ -107,8 +132,46 @@ async function generateSitemap() {
     });
   }
 
-  // Fetch creator profiles (paginate to get all)
-  console.log('👤 Fetching creator profiles...');
+  // ---- Top: creators currently in rankings_cache (the head) ----------------
+  console.log('🏆 Fetching ranked creators (priority tier)...');
+  const topKeys = new Set();
+  const topUrls = [];
+  {
+    let page = 0;
+    const pageSize = 1000;
+    let more = true;
+    while (more) {
+      const { data: rows, error } = await supabase
+        .from('rankings_cache')
+        .select('platform, username')
+        .eq('rank_type', 'subscribers')
+        .order('platform', { ascending: true })
+        .order('rank_position', { ascending: true })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      if (error) {
+        console.error('❌ Error fetching rankings_cache:', error);
+        break;
+      }
+      (rows || []).forEach(r => {
+        if (!r.username) return;
+        const key = `${r.platform}/${r.username.toLowerCase()}`;
+        if (topKeys.has(key)) return;
+        topKeys.add(key);
+        topUrls.push({
+          url: `/${r.platform}/${r.username}`,
+          lastmod: TODAY,          // ranked creators get fresh stats daily
+          changefreq: 'daily',
+          priority: 0.7,
+        });
+      });
+      more = rows && rows.length === pageSize;
+      page++;
+    }
+    console.log(`   Found ${topUrls.length} ranked creators`);
+  }
+
+  // ---- Tail: every other creator, chunked ----------------------------------
+  console.log('👤 Fetching all creator profiles...');
   let allCreators = [];
   let creatorPage = 0;
   const creatorPageSize = 1000;
@@ -136,34 +199,43 @@ async function generateSitemap() {
     }
   }
 
-  if (allCreators.length > 0) {
-    console.log(`   Found ${allCreators.length} creator profiles`);
+  const tailUrls = [];
+  {
     const seen = new Set();
     allCreators.forEach(creator => {
       const key = `${creator.platform}/${creator.username.toLowerCase()}`;
-      if (seen.has(key)) return;
+      if (seen.has(key) || topKeys.has(key)) return;
       seen.add(key);
-      urls.push({
+      tailUrls.push({
         url: `/${creator.platform}/${creator.username}`,
         lastmod: creator.updated_at,
-        // Profile pages change at most daily but for 24K URLs Google interprets
-        // "daily" as a crawl request we can't satisfy. "weekly" + priority 0.5
-        // signals these are long-tail and not high-priority for re-crawl.
         changefreq: 'weekly',
-        priority: 0.5,
+        priority: 0.4,
       });
     });
   }
+  console.log(`   ${allCreators.length} creators total, ${tailUrls.length} in long tail`);
 
-  // Generate XML
-  const xml = generateSitemapXML(urls);
+  // ---- Write files ----------------------------------------------------------
+  const files = [];
 
-  // Write to public folder
-  writeFileSync('public/sitemap.xml', xml);
+  writeFileSync('public/sitemap-core.xml', generateSitemapXML(coreUrls));
+  files.push('sitemap-core.xml');
 
-  console.log('\n✅ Sitemap generated successfully!');
-  console.log(`   Total URLs: ${urls.length}`);
-  console.log(`   Location: public/sitemap.xml`);
+  writeFileSync('public/sitemap-top.xml', generateSitemapXML(topUrls));
+  files.push('sitemap-top.xml');
+
+  for (let i = 0; i < tailUrls.length; i += CHUNK_SIZE) {
+    const n = Math.floor(i / CHUNK_SIZE) + 1;
+    writeFileSync(`public/sitemap-creators-${n}.xml`, generateSitemapXML(tailUrls.slice(i, i + CHUNK_SIZE)));
+    files.push(`sitemap-creators-${n}.xml`);
+  }
+
+  writeFileSync('public/sitemap.xml', generateIndexXML(files));
+
+  console.log('\n✅ Sitemaps generated successfully!');
+  console.log(`   Index: public/sitemap.xml -> ${files.length} sitemaps`);
+  console.log(`   Core: ${coreUrls.length} URLs · Top: ${topUrls.length} URLs · Tail: ${tailUrls.length} URLs`);
   console.log(`   Submit to Google Search Console: ${SITE_URL}/sitemap.xml`);
 }
 
