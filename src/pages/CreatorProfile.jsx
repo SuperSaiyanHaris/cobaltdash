@@ -190,41 +190,91 @@ export default function CreatorProfile() {
     try {
       let channelData = null;
 
-      if (platform === 'youtube') {
-        // Priority 1: Use platformId from navigation state (e.g. from search results)
-        // This avoids the race condition where search results haven't been persisted to DB yet
-        const navPlatformId = location.state?.platformId;
-        if (navPlatformId) {
-          try {
-            channelData = await getYouTubeChannelById(navPlatformId);
-          } catch (e) {
-            logger.warn('Failed to fetch by nav platformId, falling back:', e);
-          }
-        }
+      // DB fallback for the live-first platforms (YouTube/Twitch/Kick/Bluesky):
+      // if the platform API is down, rate-limited, or a key is invalid, render
+      // the profile from our own stored data instead of failing the whole page.
+      // Counts stay null here — the standard merge logic below fills them from
+      // the latest creator_stats row (same mechanism Rumble uses).
+      const buildDbFallback = async () => {
+        const dbCreator = await getCreatorByUsername(platform, username);
+        if (!dbCreator) return null;
+        return {
+          platform,
+          platformId: dbCreator.platform_id,
+          username: dbCreator.username,
+          displayName: dbCreator.display_name,
+          profileImage: dbCreator.profile_image,
+          bannerImage: dbCreator.banner_image,
+          verified: dbCreator.verified,
+          description: dbCreator.description,
+          country: dbCreator.country,
+          category: dbCreator.category,
+          subscribers: null,
+          followers: null,
+          totalPosts: null,
+          totalViews: null,
+        };
+      };
 
-        // Priority 2: Check database for stored platform_id
-        if (!channelData) {
-          const knownCreator = await getCreatorByUsername('youtube', username);
-          if (knownCreator?.platform_id) {
-            channelData = await getYouTubeChannelById(knownCreator.platform_id);
-            // Verify the DB record points to the right channel — the stored username
-            // must match what was requested (prevents stale/wrong DB mappings)
-            if (channelData && channelData.username?.toLowerCase() !== username.toLowerCase()) {
-              channelData = null;
+      if (platform === 'youtube') {
+        try {
+          // Priority 1: Use platformId from navigation state (e.g. from search results)
+          // This avoids the race condition where search results haven't been persisted to DB yet
+          const navPlatformId = location.state?.platformId;
+          if (navPlatformId) {
+            try {
+              channelData = await getYouTubeChannelById(navPlatformId);
+            } catch (e) {
+              logger.warn('Failed to fetch by nav platformId, falling back:', e);
             }
           }
-        }
 
-        // Priority 3: Look up by username/handle
-        if (!channelData) {
-          channelData = await getYouTubeChannel(username);
+          // Priority 2: Check database for stored platform_id
+          if (!channelData) {
+            const knownCreator = await getCreatorByUsername('youtube', username);
+            if (knownCreator?.platform_id) {
+              channelData = await getYouTubeChannelById(knownCreator.platform_id);
+              // Verify the DB record points to the right channel — the stored username
+              // must match what was requested (prevents stale/wrong DB mappings)
+              if (channelData && channelData.username?.toLowerCase() !== username.toLowerCase()) {
+                channelData = null;
+              }
+            }
+          }
+
+          // Priority 3: Look up by username/handle
+          if (!channelData) {
+            channelData = await getYouTubeChannel(username);
+          }
+        } catch (liveErr) {
+          channelData = await buildDbFallback();
+          if (!channelData) throw liveErr;
+          logger.warn('YouTube live fetch failed, showing stored data:', liveErr);
         }
       } else if (platform === 'twitch') {
-        channelData = await getTwitchChannel(username);
+        try {
+          channelData = await getTwitchChannel(username);
+        } catch (liveErr) {
+          channelData = await buildDbFallback();
+          if (!channelData) throw liveErr;
+          logger.warn('Twitch live fetch failed, showing stored data:', liveErr);
+        }
       } else if (platform === 'kick') {
-        channelData = await getKickChannel(username);
+        try {
+          channelData = await getKickChannel(username);
+        } catch (liveErr) {
+          channelData = await buildDbFallback();
+          if (!channelData) throw liveErr;
+          logger.warn('Kick live fetch failed, showing stored data:', liveErr);
+        }
       } else if (platform === 'bluesky') {
-        channelData = await getBlueskyProfile(username);
+        try {
+          channelData = await getBlueskyProfile(username);
+        } catch (liveErr) {
+          channelData = await buildDbFallback();
+          if (!channelData) throw liveErr;
+          logger.warn('Bluesky live fetch failed, showing stored data:', liveErr);
+        }
       } else if (platform === 'mastodon') {
         // Mastodon username is the full webfinger handle, e.g. "user@hachyderm.io".
         // DB-first because (a) the federated network has ~30 instances we track —
@@ -459,20 +509,35 @@ export default function CreatorProfile() {
           if (platform === 'youtube' && channelData.hasPublicPage === false) {
             logger.info('Skipping DB save for YouTube channel without public page:', username);
           } else if (platform !== 'tiktok') {
-            // TikTok already fetched history above; other platforms do it here
-            const dbCreator = await upsertCreator(channelData);
+            // TikTok already fetched history above; other platforms do it here.
+            // If the write path is down (proxy outage, RLS), fall back to the
+            // existing DB row so the read-only history fetch below still runs.
+            let dbCreator;
+            try {
+              dbCreator = await upsertCreator(channelData);
+            } catch (upsertErr) {
+              dbCreator = await getCreatorByUsername(platform, channelData.username || username);
+              if (!dbCreator) throw upsertErr;
+              logger.warn('Upsert failed, reading existing creator row:', upsertErr);
+            }
             setDbCreatorId(dbCreator.id);
             setCreator(prev => ({ ...prev, dbCreatedAt: dbCreator.created_at }));
 
             // Save stats first, then fetch history. Skip when channelData has
             // null counts (Rumble synthesized-from-DB case) — the daily
             // collection script keeps stats fresh from the right IP range.
+            // Non-fatal: a failed stats write must never block the read-only
+            // history fetch below.
             if (channelData.subscribers || channelData.followers) {
-              await saveCreatorStats(dbCreator.id, {
-                subscribers: channelData.subscribers || channelData.followers,
-                totalViews: channelData.totalViews,
-                totalPosts: channelData.totalPosts,
-              });
+              try {
+                await saveCreatorStats(dbCreator.id, {
+                  subscribers: channelData.subscribers || channelData.followers,
+                  totalViews: channelData.totalViews,
+                  totalPosts: channelData.totalPosts,
+                });
+              } catch (statsErr) {
+                logger.warn('Failed to save stats snapshot:', statsErr);
+              }
             }
 
             // Now fetch history + hours watched in parallel (both read-only)
@@ -489,9 +554,11 @@ export default function CreatorProfile() {
               setStatsHistory(history);
               // For platforms where we didn't live-fetch current stats (Rumble:
               // edge 403s our IPs), populate the displayed counts from the
-              // most recent stats row.
+              // most recent stats row. getCreatorStats returns ASCENDING order,
+              // so the latest row is the LAST element (history[0] was showing
+              // 90-day-old counts on every DB-first profile).
               if (history.length > 0 && !channelData.subscribers && !channelData.followers) {
-                const latest = history[0];
+                const latest = history[history.length - 1];
                 setCreator(prev => ({
                   ...prev,
                   subscribers: latest.subscribers || latest.followers || 0,
