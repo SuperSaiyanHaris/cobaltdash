@@ -124,6 +124,7 @@ export default function CreatorProfile() {
   const [copiedProfile, setCopiedProfile] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
+  const [copiedBadge, setCopiedBadge] = useState(false);
   const shareRef = useRef(null);
 
   useEffect(() => {
@@ -642,6 +643,9 @@ export default function CreatorProfile() {
   const profileUrl = `${window.location.origin}/${platform}/${creator?.username || username}`;
   const shareUrl = `${window.location.origin}/s/${platform}/${creator?.username || username}`;
   const embedCode = `<iframe src="${shareUrl}" width="520" height="400" frameborder="0" style="border-radius:16px;border:1px solid #e5e5e5" allowfullscreen></iframe>`;
+  // Live SVG badge served by the edge — the anchor makes every embed a backlink.
+  const badgeUrl = `https://shinypull.com/badge/${platform}/${encodeURIComponent(creator?.username || username)}`;
+  const badgeEmbed = `<a href="${profileUrl}?utm_source=badge"><img src="${badgeUrl}" width="240" height="64" alt="${(creator?.display_name || username)} ${platform} stats on ShinyPull"></a>`;
   // Share + embed are free for everyone — kept variable for minimal blast radius.
   const isMod = true;
 
@@ -679,6 +683,14 @@ export default function CreatorProfile() {
       setCopiedEmbed(true);
       toast.success('Embed code copied', { description: 'Paste into Notion, your site, or anywhere iframes work.' });
       setTimeout(() => setCopiedEmbed(false), 2000);
+    });
+  };
+
+  const handleCopyBadge = () => {
+    navigator.clipboard.writeText(badgeEmbed).then(() => {
+      setCopiedBadge(true);
+      toast.success('Badge code copied', { description: 'Paste the HTML anywhere. The count stays up to date automatically.' });
+      setTimeout(() => setCopiedBadge(false), 2000);
     });
   };
 
@@ -1168,7 +1180,37 @@ export default function CreatorProfile() {
                           {copiedEmbed ? 'Copied!' : 'Copy'}
                         </button>
                       </div>
-                      {isMod && <p className="text-xs text-neutral-400">Embed works in Notion, websites, and anywhere iframes are supported.</p>}
+                      {isMod && <p className="text-xs text-neutral-400 mb-4">Embed works in Notion, websites, and anywhere iframes are supported.</p>}
+
+                      {/* Stats badge — live-count image that links back to this profile */}
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Stats badge</p>
+                      </div>
+                      <a href={profileUrl} onClick={(e) => e.preventDefault()} className="inline-block mb-2 cursor-default">
+                        <img
+                          src={badgeUrl}
+                          width="240"
+                          height="64"
+                          alt={`${creator?.display_name || username} stats badge`}
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </a>
+                      <div className="flex items-center gap-2 mb-3">
+                        <input
+                          readOnly
+                          value={badgeEmbed}
+                          className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate bg-neutral-100 border-neutral-300 text-neutral-800"
+                        />
+                        <button
+                          onClick={handleCopyBadge}
+                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                            copiedBadge ? 'bg-emerald-600 text-white' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                          }`}
+                        >
+                          {copiedBadge ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <p className="text-xs text-neutral-400">A live badge for your website or blog. The count updates automatically and links back to this page.</p>
                     </div>
                   )}
 

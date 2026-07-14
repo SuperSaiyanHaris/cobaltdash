@@ -32,6 +32,8 @@ export const config = {
     // live-count routes explicitly. :username matches any non-slash chars incl. dots.
     '/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
     '/live/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
+    // Embeddable SVG stats badge (served straight from the edge, no Vercel function)
+    '/badge/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
   ],
 };
 
@@ -382,6 +384,71 @@ async function getBlogContent(slug) {
 }
 
 // ---------------------------------------------------------------------------
+// Embeddable SVG stats badge — /badge/:platform/:username
+//
+// Creators paste `<a href="{profile}"><img src="{badge}"></a>` on their own
+// sites; the anchor is a real backlink to us and the image shows a live count.
+// SVG-in-<img> can't load external fonts, so the badge uses system font stacks.
+// ---------------------------------------------------------------------------
+
+const BADGE_TINTS = {
+  youtube: '#ef4444', tiktok: '#ec4899', twitch: '#a855f7', kick: '#16a34a',
+  bluesky: '#0ea5e9', music: '#f59e0b', mastodon: '#7c3aed', rumble: '#65a30d',
+  substack: '#ea580c',
+};
+
+function badgeSvg({ name, count, metric, platform }) {
+  const tint = BADGE_TINTS[platform] || '#171717';
+  const displayName = name.length > 22 ? name.slice(0, 21) + '…' : name;
+  const countText = count !== null ? `${formatNumber(count)} ${metric}` : 'creator stats';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="64" viewBox="0 0 240 64" role="img" aria-label="${esc(name)}: ${esc(countText)}">
+  <title>${esc(name)} — ${esc(countText)} — ShinyPull</title>
+  <rect x="0.5" y="0.5" width="239" height="63" rx="9.5" fill="#ffffff" stroke="#e5e5e5"/>
+  <circle cx="18" cy="22" r="4" fill="${tint}"/>
+  <text x="30" y="26" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="600" fill="#171717">${esc(displayName)}</text>
+  <text x="30" y="47" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#171717">${esc(countText)}</text>
+  <text x="228" y="57" text-anchor="end" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif" font-size="8" font-weight="500" letter-spacing="1" fill="#a3a3a3">SHINYPULL.COM</text>
+</svg>`;
+}
+
+async function handleBadge(platform, username) {
+  const select = 'username,display_name,creator_stats(subscribers,recorded_at)';
+  const rows = await supabaseGet(
+    `creators?platform=eq.${platform}&username=ilike.${encodeURIComponent(username)}` +
+    `&select=${encodeURIComponent(select)}` +
+    `&creator_stats.order=recorded_at.desc&creator_stats.limit=1` +
+    `&order=updated_at.desc&limit=1`
+  );
+
+  if (!rows || !rows.length) {
+    // Unknown creator (or DB hiccup): neutral brand badge, short cache, 404
+    // so crawlers/embedders know it's not a real resource.
+    return new Response(
+      badgeSvg({ name: 'ShinyPull', count: null, metric: '', platform: '' }),
+      { status: 404, headers: { 'content-type': 'image/svg+xml', 'cache-control': 'public, s-maxage=300' } }
+    );
+  }
+
+  const c = rows[0];
+  const latest = (c.creator_stats || [])[0];
+  const svg = badgeSvg({
+    name: c.display_name || c.username,
+    count: latest ? latest.subscribers : null,
+    metric: METRIC_LABELS[platform] || 'followers',
+    platform,
+  });
+
+  return new Response(svg, {
+    headers: {
+      'content-type': 'image/svg+xml',
+      // Counts move at most daily; badges can be a few hours stale.
+      'cache-control': 'public, s-maxage=21600, stale-while-revalidate=86400',
+      'access-control-allow-origin': '*',
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Static-page meta (unchanged behavior)
 // ---------------------------------------------------------------------------
 
@@ -508,6 +575,13 @@ function getMeta(pathname, searchParams) {
 
 export default async function middleware(request) {
   const url = new URL(request.url);
+
+  // SVG badge endpoint — returns an image, never HTML.
+  const badgeMatch = url.pathname.match(/^\/badge\/(\w+)\/([^/]+)$/);
+  if (badgeMatch && PLATFORM_NAMES[badgeMatch[1]]) {
+    return handleBadge(badgeMatch[1], decodeURIComponent(badgeMatch[2]));
+  }
+
   const meta = getMeta(url.pathname, url.searchParams);
 
   if (!meta) return; // No modification needed — fall through to normal serving
