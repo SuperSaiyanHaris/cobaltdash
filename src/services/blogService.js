@@ -19,16 +19,18 @@ export const getAllPosts = withErrorHandling(
 );
 
 /**
- * Get a single post by its slug (includes full content)
+ * Get a single post by its slug (includes full content).
+ * Pass { includeDrafts: true } for the ?preview=1 review flow — drafts render
+ * before publishing. Blog rows are world-readable by design (public content).
  */
 export const getPostBySlug = withErrorHandling(
-  async (slug) => {
-    const { data, error } = await supabase
+  async (slug, { includeDrafts = false } = {}) => {
+    let query = supabase
       .from('blog_posts')
       .select('*')
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .single();
+      .eq('slug', slug);
+    if (!includeDrafts) query = query.eq('is_published', true);
+    const { data, error } = await query.single();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;

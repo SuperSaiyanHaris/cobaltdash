@@ -296,7 +296,9 @@ async function getRankingsContent(platform) {
 /** Minimal markdown -> HTML. Escapes everything first; supports the subset our posts use. */
 function markdownToHtml(md) {
   // Drop product/creator embed directives — they only render client-side.
+  // Raw {{html}} blocks are bespoke visual layout; crawlers get the prose.
   let text = md
+    .replace(/\{\{html\}\}[\s\S]*?\{\{\/html\}\}/g, '')
     .replace(/\{\{product-grid\}\}[\s\S]*?\{\{\/product-grid\}\}/g, '')
     .replace(/\{\{[^}]*\}\}/g, '');
 

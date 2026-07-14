@@ -360,6 +360,17 @@ export default function BlogContent({ content, category }) {
     .replace(/\{\{product-grid\}\}\n?/g, '')
     .replace(/\{\{\/product-grid\}\}\n?/g, '');
 
+  // Raw HTML blocks — extracted FIRST so their inner markup never touches the
+  // markdown pipeline. Lets individual posts ship their own bespoke layout and
+  // scoped <style>. Safe because blog content is service-role/admin-authored
+  // only (RLS blocks anon/authenticated writes to blog_posts).
+  const htmlBlocks = [];
+  cleanedContent = cleanedContent.replace(/\{\{html\}\}([\s\S]*?)\{\{\/html\}\}/g, (_, raw) => {
+    const idx = htmlBlocks.length;
+    htmlBlocks.push(raw.trim());
+    return `\n{{__html_${idx}__}}\n`;
+  });
+
   const statsBlocks = [];
   cleanedContent = cleanedContent.replace(/\{\{stats\}\}([\s\S]*?)\{\{\/stats\}\}/g, (_, raw) => {
     const idx = statsBlocks.length;
@@ -368,7 +379,7 @@ export default function BlogContent({ content, category }) {
   });
 
   const parts = cleanedContent.split(
-    /(\{\{callout:[^}]+\}\}|\{\{\/callout\}\}|\{\{tldr\}\}|\{\{\/tldr\}\}|\{\{__stats_\d+__\}\})/g
+    /(\{\{callout:[^}]+\}\}|\{\{\/callout\}\}|\{\{tldr\}\}|\{\{\/tldr\}\}|\{\{__stats_\d+__\}\}|\{\{__html_\d+__\}\})/g
   );
 
   let inCallout = false;
@@ -401,6 +412,21 @@ export default function BlogContent({ content, category }) {
       const raw = statsBlocks[Number(statsToken[1])];
       if (raw) {
         elements.push(<StatsStrip key={`stats-${index}`} raw={raw} theme={theme} />);
+      }
+      return;
+    }
+
+    const htmlToken = part.match(/^\{\{__html_(\d+)__\}\}$/);
+    if (htmlToken) {
+      const raw = htmlBlocks[Number(htmlToken[1])];
+      if (raw) {
+        elements.push(
+          <div
+            key={`html-${index}`}
+            className="blog-raw-html"
+            dangerouslySetInnerHTML={{ __html: raw }}
+          />
+        );
       }
       return;
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
 import StructuredData, { createBlogPostingSchema, createBreadcrumbSchema } from '../components/StructuredData';
@@ -12,6 +12,10 @@ import { getCategoryTheme } from '../lib/blogTheme';
 export default function BlogPost() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // ?preview=1 lets drafts render for review before publishing. Draft slugs
+  // are unguessable and posts are public content anyway, so no gating needed.
+  const isPreview = searchParams.get('preview') === '1';
   const [post, setPost] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +23,7 @@ export default function BlogPost() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const postData = await getPostBySlug(slug);
+      const postData = await getPostBySlug(slug, { includeDrafts: isPreview });
       setPost(postData);
 
       if (postData?.category) {
@@ -30,7 +34,7 @@ export default function BlogPost() {
       setLoading(false);
     }
     fetchData();
-  }, [slug]);
+  }, [slug, isPreview]);
 
   if (loading) {
     return (
@@ -137,6 +141,11 @@ export default function BlogPost() {
               <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${getCategoryTheme(post.category).pill}`}>
                 {post.category}
               </span>
+              {isPreview && !post.is_published && (
+                <span className="inline-block ml-2 px-3 py-1 rounded-full text-sm font-semibold mb-4 bg-neutral-900 text-white">
+                  DRAFT
+                </span>
+              )}
 
               {/* Title */}
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
@@ -147,11 +156,13 @@ export default function BlogPost() {
               <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-700 mb-8 pb-8 border-b border-neutral-200">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {new Date(post.published_at).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
+                  {post.published_at
+                    ? new Date(post.published_at).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })
+                    : 'Not yet published'}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
