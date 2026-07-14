@@ -652,6 +652,12 @@ async function collectDailyStats() {
           if (result.error) {
             console.log(`   ❌ ${result.creator.display_name}: ${result.error}`);
             errorCount++;
+          } else if (!result.stats.followers) {
+            // Banned/deactivated accounts resolve with total=0 (HTTP 200).
+            // A 0 is never a real value for a tracked creator — skip the write
+            // so the account keeps its last-good count (data rule: never write 0).
+            console.log(`   ⚠️  ${result.creator.display_name}: Skipping — API returned 0 followers`);
+            errorCount++;
           } else {
             statsToUpsert.push({
               creator_id: result.creator.id,
@@ -692,7 +698,7 @@ async function collectDailyStats() {
 
         for (const creator of batch) {
           const channelData = channelMap.get(creator.username.toLowerCase());
-          if (channelData) {
+          if (channelData && channelData.subscribers > 0) {
             statsToUpsert.push({
               creator_id: creator.id,
               recorded_at: today,
