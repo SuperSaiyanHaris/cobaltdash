@@ -138,9 +138,22 @@ export default async function handler(req, res) {
         if (!id || postData?.is_published === undefined) {
           return res.status(400).json({ error: 'Missing id or is_published' });
         }
+        const update = { is_published: postData.is_published };
+        // Stamp the publish date the first time a post goes live — a null
+        // published_at breaks blog sorting and shows no date on the post.
+        if (postData.is_published) {
+          const { data: existing } = await supabase
+            .from('blog_posts')
+            .select('published_at')
+            .eq('id', id)
+            .single();
+          if (!existing?.published_at) {
+            update.published_at = new Date().toISOString().split('T')[0];
+          }
+        }
         const { data, error } = await supabase
           .from('blog_posts')
-          .update({ is_published: postData.is_published })
+          .update(update)
           .eq('id', id)
           .select()
           .single();
