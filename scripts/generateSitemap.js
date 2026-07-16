@@ -192,7 +192,11 @@ async function generateSitemap() {
       .from('creators')
       .select('platform, username, updated_at')
       .not('username', 'is', null)
+      // updated_at is not unique, so it alone is not a stable sort for range
+      // pagination: rows sharing a timestamp can repeat and skip across pages.
+      // The 'id' tiebreaker makes the ordering total so no creator is dropped.
       .order('updated_at', { ascending: false })
+      .order('id', { ascending: true })
       .range(creatorPage * creatorPageSize, (creatorPage + 1) * creatorPageSize - 1);
 
     if (creatorsError) {
