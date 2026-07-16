@@ -20,6 +20,7 @@ import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbum
 import { Music } from 'lucide-react';
 import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
+import CountUp from '../components/CountUp';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
 import { followCreator, unfollowCreator, isFollowing as checkIsFollowing, getFollowedCreators } from '../services/followService';
@@ -1462,6 +1463,7 @@ export default function CreatorProfile() {
                 icon={Users}
                 label={platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subscribers' : platform === 'music' ? 'Monthly Listeners' : 'Subscribers'}
                 value={formatNumber(creator.subscribers || creator.followers)}
+                rawValue={creator.subscribers || creator.followers}
                 sublabel={creator.hiddenSubscribers ? '(hidden)' : (platform === 'youtube' && (creator.subscribers || 0) >= 1000) ? '(rounded by YouTube)' : creator.broadcasterType ? `(${creator.broadcasterType})` : null}
               />
 
@@ -1472,11 +1474,13 @@ export default function CreatorProfile() {
                     icon={Eye}
                     label="Total Likes"
                     value={formatNumber(creator.totalViews || 0)}
+                    rawValue={creator.totalViews || 0}
                   />
                   <StatCard
                     icon={Video}
                     label="Videos"
                     value={formatNumber(creator.totalPosts || 0)}
+                    rawValue={creator.totalPosts || 0}
                   />
                 </>
               )}
@@ -1487,6 +1491,7 @@ export default function CreatorProfile() {
                   icon={Video}
                   label="Posts"
                   value={formatNumber(creator.totalPosts || 0)}
+                  rawValue={creator.totalPosts || 0}
                 />
               )}
 
@@ -1496,6 +1501,7 @@ export default function CreatorProfile() {
                   icon={Video}
                   label="Posts"
                   value={formatNumber(creator.totalPosts || 0)}
+                  rawValue={creator.totalPosts || 0}
                 />
               )}
 
@@ -1505,6 +1511,7 @@ export default function CreatorProfile() {
                   icon={Video}
                   label="Videos"
                   value={formatNumber(creator.totalPosts || 0)}
+                  rawValue={creator.totalPosts || 0}
                 />
               )}
 
@@ -1515,6 +1522,7 @@ export default function CreatorProfile() {
                     icon={Play}
                     label="Total Plays"
                     value={formatNumber(creator.totalViews || 0)}
+                    rawValue={creator.totalViews || 0}
                   />
                   {creator.description && (
                     <StatCard
@@ -1546,6 +1554,7 @@ export default function CreatorProfile() {
                   icon={Eye}
                   label="Total Views"
                   value={formatNumber(creator.totalViews)}
+                  rawValue={creator.totalViews}
                 />
               ) : null}
 
@@ -1569,6 +1578,7 @@ export default function CreatorProfile() {
                   icon={Video}
                   label="Videos"
                   value={formatNumber(creator.totalPosts)}
+                  rawValue={creator.totalPosts}
                 />
               )}
 
@@ -1578,6 +1588,7 @@ export default function CreatorProfile() {
                   icon={TrendingUp}
                   label="Avg Views/Video"
                   value={creator.totalPosts > 0 ? formatNumber(Math.round(creator.totalViews / creator.totalPosts)) : '-'}
+                  rawValue={creator.totalPosts > 0 ? Math.round(creator.totalViews / creator.totalPosts) : undefined}
                 />
               )}
             </div>
@@ -2326,15 +2337,20 @@ const STAT_TINTS = {
   Posts:              'text-sky-500',
 };
 
-function StatCard({ icon: Icon, label, value, sublabel }) {
+function StatCard({ icon: Icon, label, value, rawValue, sublabel }) {
   const tint = STAT_TINTS[label] || 'text-neutral-400';
+  // When a clean numeric value is provided, animate it counting up so the stat
+  // grid reads as "live data". Falls back to the preformatted string otherwise.
+  const animate = typeof rawValue === 'number' && isFinite(rawValue);
   return (
-    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-3 sm:p-5">
+    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-3 sm:p-5 transition-colors hover:border-neutral-300">
       <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
         {Icon && <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${tint}`} />}
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 leading-tight line-clamp-2 break-words">{label}</p>
       </div>
-      <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">{value}</p>
+      <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">
+        {animate ? <CountUp value={rawValue} duration={1.1} /> : value}
+      </p>
       {sublabel && <p className="text-[10px] sm:text-xs text-neutral-400 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
     </div>
   );
@@ -2805,6 +2821,8 @@ function GrowthChart({ data, range, onRangeChange, metric, onMetricChange, platf
               fill={`url(#${metric}Gradient)`}
               dot={false}
               activeDot={{ r: 6, fill: currentMetric.color, stroke: '#ffffff', strokeWidth: 2 }}
+              animationDuration={1100}
+              animationEasing="ease-out"
             />
           </AreaChart>
         </ResponsiveContainer>

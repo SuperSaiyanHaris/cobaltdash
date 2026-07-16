@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Typography identity — headings use Space Grotesk (the display face), body/
+   numbers stay Inter. Applied at the base layer so every heading gets it
+   without touching each component; tabular stat numbers live in <p>/<span>
+   and are unaffected. Slight negative tracking suits the grotesk at large sizes.
+   Opt out on any heading with the `font-body` utility. */
+@layer base {
+  h1, h2, h3, h4 {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
 /* =========================================================================
    Design tokens — Polished SaaS light theme (Linear/Vercel/Stripe inspired)
    ========================================================================= */
