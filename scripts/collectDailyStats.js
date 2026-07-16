@@ -508,6 +508,11 @@ async function collectDailyStats() {
     const { data, error: fetchError } = await supabase
       .from('creators')
       .select('*')
+      // .order('id') is REQUIRED: range pagination without a stable unique
+      // sort lets Postgres return rows in any order per page, which silently
+      // repeats some creators and skips others. Skipped creators get no stats
+      // this run, which looks like an API failure but is really a paging bug.
+      .order('id')
       .range(from, from + pageSize - 1);
     if (fetchError) {
       console.error('❌ Error fetching creators:', fetchError.message);

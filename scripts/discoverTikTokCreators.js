@@ -36,6 +36,10 @@ async function getExistingTikTokUsernames() {
       .from('creators')
       .select('username')
       .eq('platform', 'tiktok')
+      // .order('id') is REQUIRED: range pagination without a stable unique sort
+      // can repeat and skip rows across pages, so this existing-username set
+      // would be incomplete and we'd re-queue creators already tracked.
+      .order('id')
       .range(from, from + pageSize - 1);
 
     if (error) throw new Error(`Supabase error: ${error.message}`);
@@ -60,6 +64,10 @@ async function getAlreadyQueued() {
       .from('creator_requests')
       .select('username')
       .eq('platform', 'tiktok')
+      // .order('id') is REQUIRED: range pagination without a stable unique sort
+      // can repeat and skip rows across pages, so this already-queued set would
+      // be incomplete and we'd re-queue the same usernames.
+      .order('id')
       .range(from, from + pageSize - 1);
 
     if (error) throw new Error(`Supabase error: ${error.message}`);
@@ -86,6 +94,10 @@ async function getCandidates(existingTikTok, alreadyQueued) {
       .from('creators')
       .select('username, display_name')
       .in('platform', ['youtube', 'twitch', 'kick'])
+      // .order('id') is REQUIRED: range pagination without a stable unique sort
+      // can repeat and skip rows across pages, so the candidate list would be
+      // incomplete and non-deterministic between runs.
+      .order('id')
       .range(from, from + pageSize - 1);
 
     if (error) throw new Error(`Supabase error: ${error.message}`);

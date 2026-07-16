@@ -89,6 +89,10 @@ async function existingArtists() {
       .from('creators')
       .select('username,platform_id')
       .eq('platform', 'music')
+      // .order('id') is REQUIRED: range pagination without a stable unique sort
+      // can repeat and skip rows across pages, so this existing-id set would be
+      // incomplete and we'd re-insert duplicate creators.
+      .order('id')
       .range(from, from + 999);
     if (error) throw error;
     if (!data || data.length === 0) break;

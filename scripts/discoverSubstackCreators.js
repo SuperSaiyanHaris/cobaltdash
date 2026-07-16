@@ -54,7 +54,10 @@ async function existingIds() {
   let from = 0;
   while (true) {
     const { data, error } = await supabase
-      .from('creators').select('platform_id').eq('platform', 'substack').range(from, from + 999);
+      // .order('id') is REQUIRED: range pagination without a stable unique sort
+      // can repeat and skip rows across pages, so this existing-id set would be
+      // incomplete and we'd re-insert duplicate creators.
+      .from('creators').select('platform_id').eq('platform', 'substack').order('id').range(from, from + 999);
     if (error) throw error;
     if (!data || data.length === 0) break;
     data.forEach((r) => r.platform_id && ids.add(r.platform_id));

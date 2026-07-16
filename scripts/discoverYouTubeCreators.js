@@ -159,6 +159,10 @@ async function getExistingChannelIds() {
       .from('creators')
       .select('platform_id')
       .eq('platform', 'youtube')
+      // .order('id') is REQUIRED: range pagination without a stable unique sort
+      // can repeat and skip rows across pages, so this existing-id set would be
+      // incomplete and we'd re-insert duplicate creators.
+      .order('id')
       .range(from, from + pageSize - 1);
 
     if (error) throw new Error(`Supabase error: ${error.message}`);
