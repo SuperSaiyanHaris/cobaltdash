@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, Plus, Youtube, Twitch, Users, Eye, Video, TrendingUp, ArrowRight, Scale, Loader2, DollarSign, TrendingDown, Minus, Info, Bookmark, Check, Sparkles, Swords } from 'lucide-react';
+import { Search, X, Plus, Youtube, Twitch, Users, Eye, Video, TrendingUp, ArrowRight, Scale, Loader2, DollarSign, TrendingDown, Minus, Info, Bookmark, Check, Sparkles, Swords, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -12,6 +12,8 @@ import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import { Music } from 'lucide-react';
 import { CompareCardSkeleton } from '../components/Skeleton';
+import CreatorAvatar from '../components/CreatorAvatar';
+import CountUp from '../components/CountUp';
 import { searchChannels as searchYouTube, getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
 import { searchChannels as searchTwitch, getChannelByUsername as getTwitchChannel } from '../services/twitchService';
 import { searchChannels as searchKick, getChannelByUsername as getKickChannel } from '../services/kickService';
@@ -43,20 +45,28 @@ const POPULAR_MATCHUPS = [
 
 // Platform identity is the icon tint alone — precision system
 const platformConfig = {
-  youtube: { icon: Youtube, color: 'text-red-500' },
-  tiktok: { icon: TikTokIcon, color: 'text-pink-500' },
-  twitch: { icon: Twitch, color: 'text-purple-500' },
-  kick: { icon: KickIcon, color: 'text-green-600' },
-  bluesky: { icon: BlueskyIcon, color: 'text-sky-500' },
-  music: { icon: Music, color: 'text-amber-500' },
-  mastodon: { icon: MastodonIcon, color: 'text-violet-500' },
-  rumble: { icon: RumbleIcon, color: 'text-lime-600' },
-  substack: { icon: SubstackIcon, color: 'text-orange-500' },
+  youtube: { icon: Youtube, color: 'text-red-500', label: 'YouTube' },
+  tiktok: { icon: TikTokIcon, color: 'text-pink-500', label: 'TikTok' },
+  twitch: { icon: Twitch, color: 'text-purple-500', label: 'Twitch' },
+  kick: { icon: KickIcon, color: 'text-green-600', label: 'Kick' },
+  bluesky: { icon: BlueskyIcon, color: 'text-sky-500', label: 'Bluesky' },
+  music: { icon: Music, color: 'text-amber-500', label: 'Music' },
+  mastodon: { icon: MastodonIcon, color: 'text-violet-500', label: 'Mastodon' },
+  rumble: { icon: RumbleIcon, color: 'text-lime-600', label: 'Rumble' },
+  substack: { icon: SubstackIcon, color: 'text-orange-500', label: 'Substack' },
 };
+const PLATFORM_ORDER = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
 
 // Typographic backbone shared with the rest of the precision system
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+
+/** Followers/subscribers/listeners label per platform — used in cards, table, and search results. */
+function metricLabel(platform) {
+  if (platform === 'twitch' || platform === 'tiktok' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble') return 'Followers';
+  if (platform === 'music') return 'Listeners';
+  return 'Subs';
+}
 
 export default function Compare() {
   const [creators, setCreators] = useState([null, null]);
@@ -390,6 +400,10 @@ export default function Compare() {
   };
 
   const filledCreators = creators.filter(Boolean);
+  // The special two-up "Arena" hero only makes sense for the classic 1v1 —
+  // once a 3rd slot exists (filled or being searched) we fall back to the
+  // scalable grid so nothing has to awkwardly wrap a VS emblem.
+  const isHeadToHead = creators.length === 2 && filledCreators.length === 2;
 
   // Helper: Format growth percentage
   const formatGrowth = (percentage) => {
@@ -425,6 +439,49 @@ export default function Compare() {
     return `${formatCurrency(monthlyLow)} - ${formatCurrency(monthlyHigh)}`;
   };
 
+  const SaveClearActions = ({ compact }) => (
+    <div className={`flex items-center gap-2 ${compact ? '' : 'justify-between w-full'}`}>
+      <div className="flex items-center gap-2">
+        {savedFlash ? (
+          <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-emerald-600 font-medium bg-emerald-50 border border-emerald-200 rounded-lg">
+            <Check className="w-3.5 h-3.5" />
+            Saved!
+          </span>
+        ) : existingSave ? (
+          <button
+            onClick={handleRemoveSave}
+            disabled={removing}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-neutral-600 bg-white hover:text-red-600 border border-neutral-200 hover:border-red-300 rounded-lg transition-colors font-medium"
+          >
+            <Bookmark className="w-3.5 h-3.5 fill-current" />
+            {removing ? 'Removing...' : 'Saved'}
+          </button>
+        ) : (
+          <button
+            onClick={handleOpenSave}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors font-medium"
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            Save
+          </button>
+        )}
+      </div>
+      {!compact && (
+        <button
+          onClick={() => {
+            setCreators([null, null]);
+            navigate('/compare', { replace: true });
+            setSaveDialogOpen(false);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-neutral-500 hover:text-red-600 rounded-lg transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+          Clear all
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <>
       <SEO
@@ -438,7 +495,10 @@ export default function Compare() {
         <div className="bg-white border-b border-neutral-200/80">
           <div className={`w-full px-4 sm:px-6 lg:px-8 ${filledCreators.length >= 2 ? 'py-8' : 'py-10 sm:py-14'}`}>
             <div className="max-w-4xl mx-auto text-center">
-              <p className={`${MICRO} mb-3`}>Head to head</p>
+              <p className={`${MICRO} mb-3 flex items-center justify-center gap-1.5`}>
+                <Swords className="w-3 h-3" />
+                Head to head
+              </p>
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
                 Compare any two creators
               </h1>
@@ -459,50 +519,10 @@ export default function Compare() {
             </div>
           )}
 
-          {/* Clear All / Save row */}
+          {/* Action row — only once there's something to save or clear */}
           {!loadingFromUrl && filledCreators.length > 0 && (
-            <div className="flex flex-col gap-2 mb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {filledCreators.length >= 2 && (
-                    savedFlash ? (
-                      <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-emerald-600 font-medium bg-emerald-50 border border-emerald-200 rounded-lg">
-                        <Check className="w-3.5 h-3.5" />
-                        Saved!
-                      </span>
-                    ) : existingSave ? (
-                      <button
-                        onClick={handleRemoveSave}
-                        disabled={removing}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm text-neutral-600 bg-white hover:text-red-600 border border-neutral-200 hover:border-red-300 rounded-lg transition-colors font-medium"
-                      >
-                        <Bookmark className="w-3.5 h-3.5 fill-current" />
-                        {removing ? 'Removing...' : 'Saved'}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleOpenSave}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors font-medium"
-                      >
-                        <Bookmark className="w-3.5 h-3.5" />
-                        Save Comparison
-                      </button>
-                    )
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setCreators([null, null]);
-                    navigate('/compare', { replace: true });
-                    setSaveDialogOpen(false);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-neutral-500 hover:text-red-600 rounded-lg transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Clear all
-                </button>
-              </div>
-              {/* Save Dialog - own row */}
+            <div className="flex flex-col gap-2 mb-4">
+              <SaveClearActions />
               {saveDialogOpen && (
                 <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-lg px-3 py-2">
                   <input
@@ -533,165 +553,108 @@ export default function Compare() {
             </div>
           )}
 
-          {/* Empty state — popular matchups, with platform-tinted gradient
-              backgrounds so each card reads as its own matchup. */}
+          {/* Empty state — popular matchups. Plain CSS fade instead of a
+              delayed framer-motion animate (which was landing at a permanent
+              opacity:0 in some environments) so this never goes invisible. */}
           {!loadingFromUrl && filledCreators.length < 2 && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="mb-10"
-            >
+            <div className="mb-10 animate-fade-in">
               <div className="text-center mb-5">
                 <p className={MICRO}>Popular matchups</p>
                 <p className="mt-1.5 text-sm text-neutral-500">Or pick from these classics. One click loads them both.</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {POPULAR_MATCHUPS.map(({ url, aName, bName, aPlatform, bPlatform }, idx) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {POPULAR_MATCHUPS.map(({ url, aName, bName, aPlatform, bPlatform }) => {
                   const AIcon = platformConfig[aPlatform]?.icon;
                   const BIcon = platformConfig[bPlatform]?.icon;
                   return (
-                    <motion.div
+                    <Link
                       key={url}
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 + idx * 0.04 }}
+                      to={`/compare?creators=${url}`}
+                      className={`group relative block ${CARD} hover:border-neutral-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all overflow-hidden`}
                     >
-                      <Link
-                        to={`/compare?creators=${url}`}
-                        className={`block ${CARD} hover:border-neutral-300 transition-colors`}
-                      >
-                        <div className="flex items-center px-4 py-3.5">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {AIcon && <AIcon className={`w-4 h-4 flex-shrink-0 ${platformConfig[aPlatform]?.color}`} />}
-                            <span className="text-sm font-medium text-neutral-900 truncate">{aName}</span>
-                          </div>
-                          <span className="mx-3 text-[10px] font-semibold text-neutral-300 tracking-[0.14em] flex-shrink-0 select-none">
-                            VS
-                          </span>
-                          <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                            <span className="text-sm font-medium text-neutral-900 truncate text-right">{bName}</span>
-                            {BIcon && <BIcon className={`w-4 h-4 flex-shrink-0 ${platformConfig[bPlatform]?.color}`} />}
-                          </div>
+                      <span className="pointer-events-none absolute left-0 top-0 bottom-0 w-0.5 bg-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex items-center px-5 py-4">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {AIcon && <AIcon className={`w-4 h-4 flex-shrink-0 ${platformConfig[aPlatform]?.color}`} />}
+                          <span className="text-sm font-semibold text-neutral-900 truncate">{aName}</span>
                         </div>
-                      </Link>
-                    </motion.div>
+                        <span className="mx-3 text-[10px] font-bold text-neutral-300 tracking-[0.14em] flex-shrink-0 select-none">
+                          VS
+                        </span>
+                        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                          <span className="text-sm font-semibold text-neutral-900 truncate text-right">{bName}</span>
+                          {BIcon && <BIcon className={`w-4 h-4 flex-shrink-0 ${platformConfig[bPlatform]?.color}`} />}
+                        </div>
+                      </div>
+                    </Link>
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           )}
 
-          {/* Creator Slots */}
-          {!loadingFromUrl && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <AnimatePresence mode="popLayout">
-            {creators.map((creator, index) => (
-              <motion.div
-                key={creator ? `${creator.platform}:${creator.username}` : `slot-${index}`}
-                layout
-                initial={{ opacity: 0, scale: 0.96, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {creator ? (
-                  <CreatorCard
-                    creator={creator}
-                    onRemove={() => removeCreator(index)}
-                    growthData={growthData}
-                  />
-                ) : (
-                  <SearchableSlot
-                    onSelect={(creator) => selectCreator(index, creator)}
-                    onRemove={creators.length > 2 ? () => removeSlot(index) : null}
-                  />
+          {/* Head-to-head arena — the premium centerpiece for the classic 1v1 */}
+          {!loadingFromUrl && isHeadToHead && (
+            <ArenaHero
+              creatorA={filledCreators[0]}
+              creatorB={filledCreators[1]}
+              growthData={growthData}
+              onRemoveA={() => removeCreator(0)}
+              onRemoveB={() => removeCreator(1)}
+              onAddCreator={creators.length < maxCompare ? addSlot : null}
+              getGrowthColor={getGrowthColor}
+              getGrowthIcon={getGrowthIcon}
+              formatGrowth={formatGrowth}
+            />
+          )}
+
+          {/* Scalable roster grid — setup mode, and 3+ way compares */}
+          {!loadingFromUrl && !isHeadToHead && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <AnimatePresence mode="popLayout">
+                {creators.map((creator, index) => (
+                  <motion.div
+                    key={creator ? `${creator.platform}:${creator.username}` : `slot-${index}`}
+                    layout
+                    initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    {creator ? (
+                      <RosterCard
+                        creator={creator}
+                        onRemove={() => removeCreator(index)}
+                        growthData={growthData}
+                        getGrowthColor={getGrowthColor}
+                        getGrowthIcon={getGrowthIcon}
+                        formatGrowth={formatGrowth}
+                      />
+                    ) : (
+                      <SearchableSlot
+                        onSelect={(creator) => selectCreator(index, creator)}
+                        onRemove={creators.length > 2 ? () => removeSlot(index) : null}
+                      />
+                    )}
+                  </motion.div>
+                ))}
+                {/* Add slot button */}
+                {creators.length < maxCompare && (
+                  <motion.button
+                    layout
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    onClick={addSlot}
+                    className="group min-h-[280px] border border-dashed border-neutral-300 hover:border-neutral-400 rounded-xl flex flex-col items-center justify-center gap-3 text-neutral-400 hover:text-neutral-900 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-sm font-medium">Add creator</span>
+                    <span className="text-[11px] text-neutral-400 tabular-nums">Slot {creators.length + 1} of {maxCompare}</span>
+                  </motion.button>
                 )}
-              </motion.div>
-            ))}
-            {/* Add slot button */}
-            {creators.length < maxCompare && (
-              <motion.button
-                layout
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                onClick={addSlot}
-                className="group min-h-[280px] border border-dashed border-neutral-300 hover:border-neutral-400 rounded-xl flex flex-col items-center justify-center gap-3 text-neutral-400 hover:text-neutral-900 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-sm font-medium">Add creator</span>
-                <span className="text-[11px] text-neutral-400 tabular-nums">Slot {creators.length + 1} of {maxCompare}</span>
-              </motion.button>
-            )}
-            </AnimatePresence>
-          </div>
-          )}
-
-          {/* VS centerpiece — bigger, cinematic when 2+ loaded. Avatars flank
-              an animated VS badge that pulses, with platform pills below each. */}
-          {!loadingFromUrl && filledCreators.length >= 2 && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className={`mb-8 ${CARD} p-5 sm:p-6`}
-            >
-              <div className="flex items-center justify-center gap-4 sm:gap-8">
-                {/* Left creator */}
-                <div className="flex-1 flex items-center justify-end gap-3 min-w-0">
-                  <div className="text-right min-w-0">
-                    <p className="text-sm sm:text-base font-semibold text-neutral-900 truncate">{filledCreators[0].displayName}</p>
-                    {(() => {
-                      const P = platformConfig[filledCreators[0].platform]?.icon;
-                      return P ? (
-                        <span className="inline-flex items-center gap-1.5 mt-1 justify-end">
-                          <P className={`w-3 h-3 ${platformConfig[filledCreators[0].platform]?.color}`} />
-                          <span className={MICRO}>{filledCreators[0].platform}</span>
-                        </span>
-                      ) : null;
-                    })()}
-                  </div>
-                  <img
-                    src={filledCreators[0].profileImage}
-                    alt=""
-                    loading="lazy"
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0"
-                  />
-                </div>
-
-                {/* VS divider */}
-                <span className="flex-shrink-0 text-[11px] font-semibold text-neutral-300 tracking-[0.2em] select-none">VS</span>
-
-                {/* Right creator */}
-                <div className="flex-1 flex items-center gap-3 min-w-0">
-                  <img
-                    src={filledCreators[1].profileImage}
-                    alt=""
-                    loading="lazy"
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover flex-shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm sm:text-base font-semibold text-neutral-900 truncate">{filledCreators[1].displayName}</p>
-                    {(() => {
-                      const P = platformConfig[filledCreators[1].platform]?.icon;
-                      return P ? (
-                        <span className="inline-flex items-center gap-1.5 mt-1">
-                          <P className={`w-3 h-3 ${platformConfig[filledCreators[1].platform]?.color}`} />
-                          <span className={MICRO}>{filledCreators[1].platform}</span>
-                        </span>
-                      ) : null;
-                    })()}
-                  </div>
-                </div>
-              </div>
-
-              {filledCreators.length > 2 && (
-                <p className="mt-3 text-center text-xs text-neutral-400 tabular-nums">
-                  +{filledCreators.length - 2} more in the comparison
-                </p>
-              )}
-            </motion.div>
+              </AnimatePresence>
+            </div>
           )}
 
           {/* Comparison Section */}
@@ -725,7 +688,7 @@ export default function Compare() {
                               {i > 0 && (
                                 <span className="absolute -left-1 top-1/2 -translate-y-1/2 -translate-x-full text-[10px] font-semibold text-neutral-300 select-none tracking-[0.14em]">VS</span>
                               )}
-                              <img src={creator.profileImage} alt="" loading="lazy" className="w-6 h-6 rounded-md" />
+                              <CreatorAvatar src={creator.profileImage} name={creator.displayName} size="xs" rounded="rounded-md" />
                               <span className="truncate max-w-[120px]">{creator.displayName}</span>
                             </div>
                           </th>
@@ -750,6 +713,7 @@ export default function Compare() {
                         icon={Users}
                         tooltip="YouTube and Kick track subscribers. Twitch, TikTok, and Bluesky track followers. Music tracks monthly listeners. Kick shows paid subscribers only, not total followers."
                         values={filledCreators.map(c => formatNumber(c.subscribers || c.followers))}
+                        barValues={filledCreators.map(c => c.subscribers || c.followers || 0)}
                         highlight={getWinner(filledCreators.map(c => c.subscribers || c.followers))}
                       />
                       <ComparisonRow
@@ -764,6 +728,11 @@ export default function Compare() {
                           }
                           return formatNumber(c.totalViews);
                         })}
+                        barValues={filledCreators.map(c => {
+                          if (c.platform === 'bluesky') return null;
+                          if (c.platform === 'twitch' || c.platform === 'kick') return growthData[c.platformId]?.hoursWatched || null;
+                          return c.totalViews || null;
+                        })}
                         highlight={getWinner(filledCreators.map(c => {
                           if (c.platform === 'bluesky') return null;
                           if (c.platform === 'twitch' || c.platform === 'kick') return growthData[c.platformId]?.hoursWatched || null;
@@ -777,6 +746,9 @@ export default function Compare() {
                         values={filledCreators.map(c =>
                           (c.platform === 'twitch' || c.platform === 'kick' || c.platform === 'music') ? '—' : formatNumber(c.totalPosts)
                         )}
+                        barValues={filledCreators.map(c =>
+                          (c.platform === 'twitch' || c.platform === 'kick' || c.platform === 'music') ? null : (c.totalPosts || null)
+                        )}
                         highlight={filledCreators.every(c => c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'music') ? getWinner(filledCreators.map(c => c.totalPosts)) : null}
                       />
                       <ComparisonRow
@@ -786,6 +758,9 @@ export default function Compare() {
                         values={filledCreators.map(c =>
                           (c.platform === 'twitch' || c.platform === 'kick' || c.platform === 'bluesky' || c.platform === 'mastodon' || c.platform === 'rumble' || c.platform === 'substack' || c.platform === 'music') ? '—' :
                           c.totalPosts > 0 ? formatNumber(Math.round(c.totalViews / c.totalPosts)) : '—'
+                        )}
+                        barValues={filledCreators.map(c =>
+                          (c.platform === 'twitch' || c.platform === 'kick' || c.platform === 'bluesky' || c.platform === 'mastodon' || c.platform === 'rumble' || c.platform === 'substack' || c.platform === 'music' || !(c.totalPosts > 0)) ? null : c.totalViews / c.totalPosts
                         )}
                         highlight={filledCreators.every(c => c.platform !== 'twitch' && c.platform !== 'kick' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'substack' && c.platform !== 'music') ?
                           getWinner(filledCreators.map(c => c.totalPosts > 0 ? c.totalViews / c.totalPosts : 0)) : null}
@@ -859,7 +834,7 @@ export default function Compare() {
                           to={`/${creator.platform}/${creator.username}`}
                           className="flex items-center gap-2 px-3 py-2.5 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 transition-colors group"
                         >
-                          <img src={creator.profileImage} alt="" loading="lazy" className="w-6 h-6 rounded-md flex-shrink-0" />
+                          <CreatorAvatar src={creator.profileImage} name={creator.displayName} size="xs" rounded="rounded-md" className="flex-shrink-0" />
                           <span className="flex-1 min-w-0 text-sm font-medium text-neutral-700 truncate group-hover:text-neutral-900 transition-colors">{creator.displayName}</span>
                           <ArrowRight className="w-3.5 h-3.5 text-neutral-300 group-hover:text-neutral-900 group-hover:translate-x-0.5 flex-shrink-0 transition-all" />
                         </Link>
@@ -888,7 +863,7 @@ export default function Compare() {
                         to={`/${creator.platform}/${creator.username}`}
                         className="flex items-center gap-2 p-2.5 border border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors group"
                       >
-                        <img src={creator.profileImage} alt="" loading="lazy" className="w-6 h-6 rounded-md flex-shrink-0" />
+                        <CreatorAvatar src={creator.profileImage} name={creator.displayName} size="xs" rounded="rounded-md" className="flex-shrink-0" />
                         <span className="flex-1 min-w-0 text-sm font-medium text-neutral-700 truncate group-hover:text-neutral-900 transition-colors">{creator.displayName}</span>
                         <ArrowRight className="w-3 h-3 text-neutral-300 group-hover:text-neutral-900 flex-shrink-0 transition-colors" />
                       </Link>
@@ -905,9 +880,91 @@ export default function Compare() {
   );
 }
 
-function CreatorCard({ creator, onRemove, growthData }) {
+/**
+ * The premium centerpiece — two large creator busts flanking a VS emblem,
+ * with a single count-up headline stat and a growth chip each. Full metric
+ * breakdown lives in the table below, so this stays uncluttered by design.
+ */
+function ArenaHero({ creatorA, creatorB, growthData, onRemoveA, onRemoveB, onAddCreator, getGrowthColor, getGrowthIcon, formatGrowth }) {
+  return (
+    <div className={`${CARD} p-6 sm:p-10 mb-8 relative`}>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-6 lg:gap-14">
+        <ArenaCreator creator={creatorA} growthData={growthData} onRemove={onRemoveA} getGrowthColor={getGrowthColor} getGrowthIcon={getGrowthIcon} formatGrowth={formatGrowth} />
+        <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-full bg-neutral-900 text-white shadow-[0_2px_10px_rgba(0,0,0,0.18)] select-none">
+          <span className="text-xs font-bold tracking-[0.1em]">VS</span>
+        </div>
+        <ArenaCreator creator={creatorB} growthData={growthData} onRemove={onRemoveB} getGrowthColor={getGrowthColor} getGrowthIcon={getGrowthIcon} formatGrowth={formatGrowth} />
+      </div>
+      {onAddCreator && (
+        <div className="mt-8 pt-5 border-t border-neutral-100 text-center">
+          <button
+            onClick={onAddCreator}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 hover:text-neutral-900 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add a third creator to compare
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArenaCreator({ creator, growthData, onRemove, getGrowthColor, getGrowthIcon, formatGrowth }) {
   const config = platformConfig[creator.platform] || platformConfig.youtube;
   const Icon = config.icon;
+  const growth = growthData[creator.platformId];
+  const GrowthIcon = growth ? getGrowthIcon(growth.growth30Day) : null;
+
+  return (
+    <div className="group/arena relative flex-1 flex flex-col items-center text-center min-w-0 max-w-[260px]">
+      <button
+        onClick={onRemove}
+        title="Remove"
+        className="absolute -top-2 right-6 sm:right-1/2 sm:translate-x-[72px] p-1.5 rounded-full bg-white border border-neutral-200 text-neutral-400 hover:text-red-600 hover:border-red-200 transition-colors opacity-0 group-hover/arena:opacity-100 z-10"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+      <Link to={`/${creator.platform}/${creator.username}`} className="flex flex-col items-center min-w-0 max-w-full">
+        <CreatorAvatar
+          src={creator.profileImage}
+          name={creator.displayName}
+          size="2xl"
+          rounded="rounded-2xl"
+          className="ring-1 ring-neutral-200/80 group-hover/arena:ring-neutral-300 transition-all"
+        />
+        <p className="mt-4 text-lg sm:text-xl font-semibold text-neutral-900 tracking-tight truncate max-w-full">{creator.displayName}</p>
+        <span className="mt-1 inline-flex items-center gap-1.5">
+          <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${config.color}`} />
+          <span className={MICRO}>{config.label}</span>
+        </span>
+      </Link>
+      <div className="mt-5">
+        <CountUp
+          value={creator.subscribers || creator.followers || 0}
+          duration={1.2}
+          className="text-3xl sm:text-4xl font-bold text-neutral-900 tabular-nums tracking-tight"
+        />
+        <p className={`${MICRO} mt-1`}>{metricLabel(creator.platform)}</p>
+      </div>
+      {growth && growth.growth30Day ? (
+        <span className={`mt-3 inline-flex items-center gap-1 text-xs font-medium ${getGrowthColor(growth.growth30Day)}`}>
+          <GrowthIcon className="w-3.5 h-3.5" />
+          {formatGrowth(growth.growth30Day)} <span className="text-neutral-400 font-normal">· 30d</span>
+        </span>
+      ) : (
+        <span className="mt-3 h-[18px]" />
+      )}
+    </div>
+  );
+}
+
+/** Card used in the scalable grid (setup mode, and 3+ way compares). */
+function RosterCard({ creator, onRemove, growthData, getGrowthColor, getGrowthIcon, formatGrowth }) {
+  const config = platformConfig[creator.platform] || platformConfig.youtube;
+  const Icon = config.icon;
+  const growth = growthData?.[creator.platformId];
+  const GrowthIcon = growth ? getGrowthIcon(growth.growth30Day) : null;
 
   return (
     <div className="relative group/card">
@@ -920,47 +977,81 @@ function CreatorCard({ creator, onRemove, growthData }) {
       </button>
       <Link
         to={`/${creator.platform}/${creator.username}`}
-        className={`block ${CARD} p-5 hover:border-neutral-300 transition-colors`}
+        className={`block ${CARD} p-5 min-h-[280px] hover:border-neutral-300 transition-colors`}
       >
-        <div className="flex items-center gap-3.5 mb-4">
-          <img
-            src={creator.profileImage}
-            alt={creator.displayName}
-            className="w-12 h-12 rounded-lg object-cover"
-          />
+        <div className="flex items-center gap-3.5 mb-5">
+          <CreatorAvatar src={creator.profileImage} name={creator.displayName} size="xl" rounded="rounded-xl" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-neutral-900 truncate">{creator.displayName}</p>
+            <p className="font-semibold text-sm text-neutral-900 truncate">{creator.displayName}</p>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <Icon className={`w-3 h-3 flex-shrink-0 ${config.color}`} />
               <p className="text-xs text-neutral-400 truncate">@{creator.username}</p>
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 divide-x divide-neutral-200/80 border border-neutral-200/80 rounded-lg">
-          <div className="p-3">
-            <p className={MICRO}>{creator.platform === 'twitch' || creator.platform === 'tiktok' || creator.platform === 'bluesky' || creator.platform === 'mastodon' || creator.platform === 'rumble' ? 'Followers' : creator.platform === 'music' ? 'Listeners' : 'Subs'}</p>
-            <p className="mt-1 text-lg font-semibold text-neutral-900 tabular-nums leading-none">{formatNumber(creator.subscribers || creator.followers)}</p>
-          </div>
-          <div className="p-3">
-            {(creator.platform === 'twitch' || creator.platform === 'kick') ? (
-              <>
-                <p className={MICRO}>Watch Hrs</p>
-                <p className="mt-1 text-lg font-semibold text-neutral-900 tabular-nums leading-none">
-                  {growthData?.[creator.platformId]?.hoursWatched
-                    ? formatNumber(growthData[creator.platformId].hoursWatched)
-                    : '–'}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className={MICRO}>{creator.platform === 'tiktok' ? 'Likes' : creator.platform === 'bluesky' ? 'Posts' : creator.platform === 'music' ? 'Total Plays' : 'Views'}</p>
-                <p className="mt-1 text-lg font-semibold text-neutral-900 tabular-nums leading-none">{creator.platform === 'bluesky' ? formatNumber(creator.totalPosts) : formatNumber(creator.totalViews)}</p>
-              </>
-            )}
-          </div>
+        <div className="text-center py-2">
+          <CountUp
+            value={creator.subscribers || creator.followers || 0}
+            duration={1}
+            className="text-2xl font-bold text-neutral-900 tabular-nums tracking-tight"
+          />
+          <p className={`${MICRO} mt-1`}>{metricLabel(creator.platform)}</p>
+          {growth && growth.growth30Day ? (
+            <span className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${getGrowthColor(growth.growth30Day)}`}>
+              <GrowthIcon className="w-3 h-3" />
+              {formatGrowth(growth.growth30Day)} <span className="text-neutral-400 font-normal">· 30d</span>
+            </span>
+          ) : null}
         </div>
         <p className="text-xs text-neutral-400 text-center mt-3 group-hover/card:text-neutral-900 transition-colors">View profile →</p>
       </Link>
+    </div>
+  );
+}
+
+/** Compact icon+label dropdown replacing a row of 9 squeezed platform buttons. */
+function PlatformDropdown({ platform, onChange }) {
+  const [open, setOpen] = useState(false);
+  const config = platformConfig[platform] || platformConfig.youtube;
+  const Icon = config.icon;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 transition-colors"
+      >
+        <Icon className={`w-4 h-4 flex-shrink-0 ${config.color}`} />
+        <span className="flex-1 text-left text-sm font-medium text-neutral-900 truncate">{config.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1.5 w-full min-w-[180px] bg-white border border-neutral-200 rounded-lg shadow-xl z-40 overflow-hidden py-1">
+            {PLATFORM_ORDER.map((id) => {
+              const p = platformConfig[id];
+              const PIcon = p.icon;
+              const active = id === platform;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => { onChange(id); setOpen(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                    active ? 'bg-neutral-50 text-neutral-900 font-medium' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                  }`}
+                >
+                  <PIcon className={`w-4 h-4 flex-shrink-0 ${p.color}`} />
+                  {p.label}
+                  {active && <Check className="w-3.5 h-3.5 ml-auto text-neutral-400" />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1068,34 +1159,9 @@ function SearchableSlot({ onSelect, onRemove }) {
         </button>
       )}
 
-      {/* Platform chips — replaces the select dropdown */}
-      <div className="flex gap-1 mb-3">
-        {[
-          { id: 'youtube',  Icon: Youtube,      label: 'YouTube' },
-          { id: 'tiktok',   Icon: TikTokIcon,   label: 'TikTok' },
-          { id: 'twitch',   Icon: Twitch,       label: 'Twitch' },
-          { id: 'kick',     Icon: KickIcon,     label: 'Kick' },
-          { id: 'bluesky',  Icon: BlueskyIcon,  label: 'Bluesky' },
-          { id: 'music',    Icon: Music,        label: 'Music' },
-          { id: 'mastodon', Icon: MastodonIcon, label: 'Mastodon' },
-          { id: 'rumble',   Icon: RumbleIcon,   label: 'Rumble' },
-          { id: 'substack', Icon: SubstackIcon, label: 'Substack' },
-        ].map(({ id, Icon, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => { setSearchPlatform(id); setSearchResults([]); }}
-            title={label}
-            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-md border transition-colors ${
-              searchPlatform === id
-                ? 'bg-neutral-900 border-neutral-900 text-white'
-                : 'bg-white border-neutral-200 hover:border-neutral-300'
-            }`}
-          >
-            <Icon className={`w-4 h-4 ${searchPlatform === id ? 'text-white' : platformConfig[id]?.color}`} />
-            <span className={`text-[9px] font-medium leading-none ${searchPlatform === id ? 'text-white' : 'text-neutral-500'}`}>{label}</span>
-          </button>
-        ))}
+      <p className={`${MICRO} mb-1.5`}>Platform</p>
+      <div className="mb-3">
+        <PlatformDropdown platform={searchPlatform} onChange={(id) => { setSearchPlatform(id); setSearchResults([]); }} />
       </div>
 
       <form onSubmit={handleSearch} className="space-y-2">
@@ -1143,15 +1209,11 @@ function SearchableSlot({ onSelect, onRemove }) {
                 onClick={() => handleSelect(result)}
                 className="w-full flex items-center gap-3 p-2 bg-neutral-50 hover:bg-neutral-100 rounded-lg transition-colors text-left"
               >
-                <img
-                  src={result.profileImage}
-                  alt={result.displayName}
-                  className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                />
+                <CreatorAvatar src={result.profileImage} name={result.displayName} size="md" rounded="rounded-lg" className="flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm text-neutral-900 truncate">{result.displayName}</p>
                   <p className="text-xs text-neutral-500 truncate tabular-nums">
-                    {formatNumber(result.subscribers || result.followers)} {result.platform === 'twitch' || result.platform === 'tiktok' || result.platform === 'bluesky' || result.platform === 'mastodon' || result.platform === 'rumble' ? 'followers' : result.platform === 'music' ? 'listeners' : 'subs'}
+                    {formatNumber(result.subscribers || result.followers)} {metricLabel(result.platform).toLowerCase()}
                   </p>
                 </div>
                 {(() => {
@@ -1208,7 +1270,26 @@ function InfoTooltip({ text }) {
   );
 }
 
-function ComparisonRow({ label, icon: Icon, values, highlight, tooltip }) {
+/** A subtle background fill behind a table cell, proportional to value/max —
+ * the "instrument panel" read that lets you see who's ahead without reading
+ * the numbers. Skipped entirely when values aren't a fair apples-to-apples
+ * comparison (handled by the caller passing null in barValues). */
+function BarCell({ value, max, isWinner }) {
+  if (value == null || !max) return null;
+  const pct = Math.max(4, Math.min(100, (value / max) * 100));
+  return (
+    <span
+      className="absolute inset-y-1 left-1 rounded-md -z-10"
+      style={{
+        width: `${pct}%`,
+        background: isWinner ? 'rgba(16,185,129,0.10)' : 'rgba(23,23,23,0.045)',
+      }}
+    />
+  );
+}
+
+function ComparisonRow({ label, icon: Icon, values, highlight, tooltip, barValues }) {
+  const max = barValues ? Math.max(0, ...barValues.filter((v) => v != null)) : null;
   return (
     <tr className="border-b border-neutral-200 hover:bg-neutral-50 transition-colors">
       <td className="px-6 py-4 text-neutral-700 font-medium">
@@ -1223,11 +1304,12 @@ function ComparisonRow({ label, icon: Icon, values, highlight, tooltip }) {
         return (
           <td
             key={index}
-            className={`px-6 py-4 text-center font-semibold tabular-nums ${
-              isWinner ? 'text-emerald-700 bg-emerald-50/60' : 'text-neutral-700'
+            className={`relative px-6 py-4 text-center font-semibold tabular-nums ${
+              isWinner ? 'text-emerald-700' : 'text-neutral-700'
             }`}
           >
-            <span className="inline-flex items-center gap-1.5">
+            {barValues && <BarCell value={barValues[index]} max={max} isWinner={isWinner} />}
+            <span className="relative inline-flex items-center gap-1.5">
               {isWinner && (
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" title="Leading" />
               )}
@@ -1346,7 +1428,7 @@ function MobileComparisonTable({ creators, growthData, getGrowthColor, formatEar
           const PlatformIcon = config.icon;
           return (
             <div key={c.platformId} className="px-2 py-2 flex flex-col items-center gap-1.5 border-l border-neutral-200">
-              <img src={c.profileImage} alt="" loading="lazy" className="w-10 h-10 rounded-xl object-cover" />
+              <CreatorAvatar src={c.profileImage} name={c.displayName} size="md" rounded="rounded-xl" />
               <p className="text-[11px] font-semibold text-neutral-900 text-center leading-tight truncate w-full px-1">{c.displayName}</p>
               <span className="inline-flex items-center gap-1">
                 <PlatformIcon className={`w-2.5 h-2.5 ${config.color}`} />
@@ -1360,6 +1442,7 @@ function MobileComparisonTable({ creators, growthData, getGrowthColor, formatEar
       {/* Metric rows */}
       {rows.map((row, i) => {
         const winnerIdx = !row.isGrowth && !row.isEarnings ? winnerOf(row.nums.map(n => n ?? 0)) : null;
+        const barMax = !row.isGrowth && !row.isEarnings ? Math.max(0, ...row.nums.filter(n => n != null)) : null;
         return (
           <div
             key={row.label}
@@ -1374,16 +1457,26 @@ function MobileComparisonTable({ creators, growthData, getGrowthColor, formatEar
               const isWinner = winnerIdx === idx;
               const [primary, secondary] = row.display[idx];
               const color = (row.isGrowth || row.isEarnings) ? row.colors[idx] : (isWinner ? 'text-emerald-600' : 'text-neutral-900');
+              const barPct = barMax && row.nums[idx] != null ? Math.max(4, Math.min(100, (row.nums[idx] / barMax) * 100)) : null;
               return (
                 <div
                   key={c.platformId}
-                  className={`px-2 py-3 flex flex-col items-center justify-center border-l border-neutral-200 ${isWinner ? 'bg-emerald-50' : ''}`}
+                  className="relative px-2 py-3 flex flex-col items-center justify-center border-l border-neutral-200"
                 >
-                  <span className={`text-xs font-bold text-center leading-tight ${color}`}>{primary}</span>
-                  {secondary && (
-                    <span className={`text-[10px] text-center leading-tight mt-0.5 opacity-70 ${color}`}>{secondary}</span>
+                  {barPct != null && (
+                    <span
+                      className="absolute inset-y-1 left-0.5 right-0.5 rounded-md -z-10"
+                      style={{
+                        width: `calc(${barPct}% - 4px)`,
+                        background: isWinner ? 'rgba(16,185,129,0.10)' : 'rgba(23,23,23,0.045)',
+                      }}
+                    />
                   )}
-                  {isWinner && <span className="text-[10px] text-emerald-600 mt-0.5">✓</span>}
+                  <span className={`relative text-xs font-bold text-center leading-tight ${color}`}>{primary}</span>
+                  {secondary && (
+                    <span className={`relative text-[10px] text-center leading-tight mt-0.5 opacity-70 ${color}`}>{secondary}</span>
+                  )}
+                  {isWinner && <span className="relative text-[10px] text-emerald-600 mt-0.5">✓</span>}
                 </div>
               );
             })}
@@ -1395,7 +1488,7 @@ function MobileComparisonTable({ creators, growthData, getGrowthColor, formatEar
 }
 
 function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
-  const CREATOR_COLORS = ['#6366f1', '#10b981', '#f59e0b'];
+  const CREATOR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#e11d48', '#0ea5e9', '#8b5cf6', '#0d9488', '#f97316'];
 
   // When two creators share a display name (e.g. same person on YouTube + Bluesky),
   // append the platform so chart keys and legend labels stay unique.
@@ -1440,7 +1533,7 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
         <h3 className="text-sm font-medium text-neutral-900">Performance Overview</h3>
         <span className="text-xs text-neutral-400">100 = top among compared</span>
       </div>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={320}>
         <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
           <PolarGrid stroke="#e5e5e5" />
           <PolarAngleAxis dataKey="metric" tick={{ fill: '#737373', fontSize: 11, fontWeight: 500 }} />
@@ -1452,13 +1545,10 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
               dataKey={creatorLabel(c)}
               stroke={CREATOR_COLORS[i % CREATOR_COLORS.length]}
               fill={CREATOR_COLORS[i % CREATOR_COLORS.length]}
-              fillOpacity={0.1}
-              strokeWidth={2}
+              fillOpacity={0.12}
+              strokeWidth={2.5}
             />
           ))}
-          <Legend
-            formatter={(value) => <span style={{ color: '#525252', fontSize: '12px' }}>{value}</span>}
-          />
           <Tooltip
             contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
             formatter={(value, name) => [`${value}/100`, name]}
@@ -1467,6 +1557,15 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
           />
         </RadarChart>
       </ResponsiveContainer>
+      {/* Custom legend — color swatch + avatar reads better than plain recharts text */}
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-1 pt-4 border-t border-neutral-100">
+        {creators.map((c, i) => (
+          <span key={c.platformId} className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-600">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: CREATOR_COLORS[i % CREATOR_COLORS.length] }} />
+            {creatorLabel(c)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1478,4 +1577,3 @@ function getWinner(values) {
   const winners = values.filter(v => v === max);
   return winners.length === 1 ? winnerIndex : null;
 }
-
