@@ -26,9 +26,12 @@ async function fetchCategories(platform) {
   for (;;) {
     const { data, error } = await supabase
       .from('creators')
-      .select('category')
+      .select('id, category')
       .eq('platform', platform)
       .not('category', 'is', null)
+      // Stable sort is required for range pagination — without it, pages can
+      // repeat and skip rows, so the counts below would be quietly wrong.
+      .order('id')
       .range(from, from + 999);
     if (error) throw error;
     if (!data?.length) break;

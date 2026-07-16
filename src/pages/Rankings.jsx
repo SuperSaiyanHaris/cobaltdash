@@ -725,7 +725,7 @@ function PlatformRankings({ urlPlatform }) {
               already has authority. */}
           {platformHubs.length > 0 && (
             <div className="mb-6">
-              <p className={`${MICRO} mb-2`}>Browse by genre</p>
+              <p className={`${MICRO} mb-2`}>{selectedPlatform === 'music' ? 'Browse by genre' : 'Browse by category'}</p>
               <div className="flex flex-wrap gap-1.5">
                 {platformHubs.map((h) => (
                   <Link

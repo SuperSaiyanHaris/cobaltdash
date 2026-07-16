@@ -32,6 +32,28 @@ export const MIN_HUB_CREATORS = 15;
  *              one strong page instead of two thin competing ones.
  */
 export const HUBS = [
+  // --- YouTube categories -------------------------------------------------
+  // Populated by scripts/classifyYouTubeCreators.js from the Data API's
+  // topicDetails. The generic buckets that classifier also produces
+  // (Entertainment, Society, Hobby, Military) deliberately have no hub: they
+  // are catch-alls, not things anyone searches for.
+  { slug: 'gaming-youtubers',    title: 'Gaming',     noun: 'YouTubers', platform: 'youtube', categories: ['Gaming'] },
+  { slug: 'music-youtubers',     title: 'Music',      noun: 'YouTubers', platform: 'youtube', categories: ['Music'] },
+  { slug: 'film-tv-youtubers',   title: 'Film & TV',  noun: 'YouTubers', platform: 'youtube', categories: ['Film & TV'] },
+  { slug: 'food-youtubers',      title: 'Food',       noun: 'YouTubers', platform: 'youtube', categories: ['Food'] },
+  { slug: 'sports-youtubers',    title: 'Sports',     noun: 'YouTubers', platform: 'youtube', categories: ['Sports'] },
+  { slug: 'lifestyle-youtubers', title: 'Lifestyle',  noun: 'YouTubers', platform: 'youtube', categories: ['Lifestyle'] },
+  { slug: 'tech-youtubers',      title: 'Tech',       noun: 'YouTubers', platform: 'youtube', categories: ['Technology'] },
+  { slug: 'education-youtubers', title: 'Educational', noun: 'YouTubers', platform: 'youtube', categories: ['Education'] },
+  { slug: 'fitness-youtubers',   title: 'Fitness',    noun: 'YouTubers', platform: 'youtube', categories: ['Fitness'] },
+  { slug: 'travel-youtubers',    title: 'Travel',     noun: 'YouTubers', platform: 'youtube', categories: ['Travel'] },
+  { slug: 'pet-youtubers',       title: 'Pet',        noun: 'YouTubers', platform: 'youtube', categories: ['Pets'] },
+  { slug: 'health-youtubers',    title: 'Health',     noun: 'YouTubers', platform: 'youtube', categories: ['Health'] },
+  { slug: 'beauty-youtubers',    title: 'Beauty',     noun: 'YouTubers', platform: 'youtube', categories: ['Beauty'] },
+  { slug: 'car-youtubers',       title: 'Car',        noun: 'YouTubers', platform: 'youtube', categories: ['Cars'] },
+  { slug: 'politics-youtubers',  title: 'Politics',   noun: 'YouTubers', platform: 'youtube', categories: ['Politics'] },
+  { slug: 'religion-youtubers',  title: 'Religion',   noun: 'YouTubers', platform: 'youtube', categories: ['Religion'] },
+
   // --- Music genres -------------------------------------------------------
   // Populated from Last.fm genre tags, which are clean and stable.
   { slug: 'pop-artists',              title: 'Pop',              noun: 'artists', platform: 'music', categories: ['pop'] },

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Music, ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
+import { Music, Youtube, ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
 import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -28,9 +28,25 @@ const PLATFORM_META = {
     tint: 'text-amber-500',
     bar: 'bg-amber-500',
     metric: 'Monthly Listeners',
+    metricShort: 'listeners',
+    colLabel: 'Artist',
     eyebrow: 'Music genre',
     rankingsPath: '/rankings/music',
     rankingsLabel: 'All music artists',
+    siblingLabel: 'Other music genres',
+  },
+  youtube: {
+    name: 'YouTube',
+    icon: Youtube,
+    tint: 'text-red-500',
+    bar: 'bg-red-500',
+    metric: 'Subscribers',
+    metricShort: 'subscribers',
+    colLabel: 'Channel',
+    eyebrow: 'YouTube category',
+    rankingsPath: '/rankings/youtube',
+    rankingsLabel: 'All YouTubers',
+    siblingLabel: 'Other YouTube categories',
   },
 };
 
@@ -47,11 +63,13 @@ function RankBadge({ rank }) {
 }
 
 export function hubSeo(hub, count) {
+  const meta = PLATFORM_META[hub.platform] || PLATFORM_META.music;
+  const t = hub.title.toLowerCase();
   const title = `Best ${hub.title} ${titleCase(hub.noun)} (2026) - Top ${count || ''} Ranked`.replace(/\s+/g, ' ');
   return {
     title,
-    description: `The best ${hub.title} ${hub.noun} ranked by monthly listeners. ${count ? `${count} ${hub.noun} ` : ''}tracked and updated daily. See who the biggest ${hub.title} ${hub.noun} are in 2026.`,
-    keywords: `best ${hub.title.toLowerCase()} ${hub.noun}, top ${hub.title.toLowerCase()} ${hub.noun}, biggest ${hub.title.toLowerCase()} ${hub.noun} 2026, most popular ${hub.title.toLowerCase()} ${hub.noun}, ${hub.title.toLowerCase()} rankings`,
+    description: `The best ${hub.title} ${hub.noun} ranked by ${meta.metricShort}. ${count ? `${count} ${hub.noun} ` : ''}tracked and updated daily. See who the biggest ${hub.title} ${hub.noun} are in 2026.`,
+    keywords: `best ${t} ${hub.noun}, top ${t} ${hub.noun}, biggest ${t} ${hub.noun} 2026, most popular ${t} ${hub.noun}, ${t} rankings`,
   };
 }
 
@@ -110,7 +128,7 @@ function Hub({ hub }) {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
       name: `Best ${hub.title} ${titleCase(hub.noun)}`,
-      description: `The best ${hub.title} ${hub.noun} ranked by monthly listeners, updated daily.`,
+      description: `The best ${hub.title} ${hub.noun} ranked by ${meta.metricShort}, updated daily.`,
       numberOfItems: creators.length,
       itemListElement: creators.map((c, i) => ({
         '@type': 'ListItem',
@@ -178,7 +196,7 @@ function Hub({ hub }) {
           <div className={`${CARD} overflow-hidden`}>
             <div className={`hidden md:grid grid-cols-12 gap-4 px-6 py-3 sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-neutral-200/80 ${MICRO}`}>
               <div className="col-span-1">Rank</div>
-              <div className="col-span-6">Artist</div>
+              <div className="col-span-6">{meta.colLabel}</div>
               <div className="col-span-3 text-right">{meta.metric}</div>
               <div className="col-span-2 text-right">30-Day Trend</div>
             </div>
@@ -229,7 +247,7 @@ function Hub({ hub }) {
                       {/* On mobile the metric column is hidden, so surface the
                           number under the name instead of losing it. */}
                       <p className="md:hidden text-xs text-neutral-500 tabular-nums mt-0.5">
-                        {formatNumber(c.subscribers)} listeners
+                        {formatNumber(c.subscribers)} {meta.metricShort}
                       </p>
                     </div>
                   </div>
@@ -268,7 +286,7 @@ function Hub({ hub }) {
           {/* Sibling categories — the internal linking spine that lets a crawler
               (or a reader) reach every other hub from any one of them. */}
           <div className="mt-12 pt-8 border-t border-neutral-200/80">
-            <p className={`${MICRO} mb-3`}>Other {meta.name.toLowerCase()} categories</p>
+            <p className={`${MICRO} mb-3`}>{meta.siblingLabel}</p>
             <div className="flex flex-wrap gap-1.5">
               {siblings.map((h) => (
                 <Link
@@ -298,8 +316,8 @@ export function HubIndex() {
     <>
       <SEO
         title="Best Creators by Category (2026) - Ranked Lists"
-        description="Browse the best creators by category. Ranked lists of the top artists in every genre, updated daily with live stats."
-        keywords="best creators by category, best artists by genre, top music genres, creator category rankings"
+        description="Browse the best creators by category. Ranked lists of the top YouTubers and artists in every category, updated daily with live stats."
+        keywords="best creators by category, best youtubers by category, best gaming youtubers, best artists by genre, creator category rankings"
       />
       <div className="min-h-screen bg-[#fafaf9]">
         <div className="bg-white border-b border-neutral-200/80">
@@ -309,7 +327,7 @@ export function HubIndex() {
               Best creators by category
             </h1>
             <p className="mt-2 text-sm text-neutral-500">
-              Ranked lists by genre. Updated daily.
+              Ranked lists by category. Updated daily.
             </p>
           </div>
         </div>

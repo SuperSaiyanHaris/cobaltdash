@@ -553,7 +553,7 @@ function getMeta(pathname, searchParams) {
   if (pathname === '/best') {
     return {
       title: 'Best Creators by Category - ShinyPull',
-      description: 'Browse the best creators by category. Ranked lists of the top artists in every genre, updated daily.',
+      description: 'Browse the best creators by category. Ranked lists of the top YouTubers and artists in every category, updated daily.',
     };
   }
 
