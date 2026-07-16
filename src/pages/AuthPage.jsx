@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Youtube, Twitch, Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
@@ -100,12 +100,6 @@ export default function AuthPage({ initialMode = 'signin' }) {
         {/* Left — the form */}
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16">
           <div className="w-full max-w-sm mx-auto">
-            <Link to="/" aria-label="ShinyPull home" className="flex items-baseline gap-[3px] mb-10 w-max">
-              <span className="text-[26px] leading-none font-bold tracking-tight text-neutral-900">ShinyPu</span>
-              <span aria-hidden="true" className="inline-block w-[6px] h-[17px] rounded-[2px] bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
-              <span aria-hidden="true" className="inline-block w-[6px] h-[23px] rounded-[2px] -ml-px bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
-            </Link>
-
             <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-1">
               {mode === 'signup' ? 'Create your account' : mode === 'reset' ? 'Reset password' : 'Sign in'}
             </h1>
