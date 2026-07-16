@@ -393,6 +393,7 @@ function PlatformRankings({ urlPlatform }) {
   const [selectedRankType, setSelectedRankType] = useState('subscribers');
   const [topCount, setTopCount] = useState(50);
   const [topCountOpen, setTopCountOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [rankings, setRankings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -666,7 +667,7 @@ function PlatformRankings({ urlPlatform }) {
             })}
           </div>
 
-          {/* Rank Type Tabs + Top Count Selector */}
+          {/* Rank Type Tabs + Top Count + Category dropdowns — one compact row */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             <div className={`flex gap-0.5 p-0.5 ${CARD} !rounded-lg w-fit`}>
               {rankTypes.map((type) => (
@@ -718,27 +719,39 @@ function PlatformRankings({ urlPlatform }) {
                 </>
               )}
             </div>
-          </div>
 
-          {/* Category hubs for platforms that have them. This is the main
-              internal link into /best/* — topically adjacent and on a page that
-              already has authority. */}
-          {platformHubs.length > 0 && (
-            <div className="mb-6">
-              <p className={`${MICRO} mb-2`}>{selectedPlatform === 'music' ? 'Browse by genre' : 'Browse by category'}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {platformHubs.map((h) => (
-                  <Link
-                    key={h.slug}
-                    to={`/best/${h.slug}`}
-                    className="flex items-center h-8 px-3 rounded-lg text-xs font-medium border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
-                  >
-                    {h.title}
-                  </Link>
-                ))}
+            {/* Category dropdown — collapses what used to be a wall of up to 16
+                chips (the biggest source of pre-table clutter, especially on
+                mobile) into one control that matches the Top Count dropdown. */}
+            {platformHubs.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setCategoryOpen(!categoryOpen)}
+                  className="flex items-center gap-2 h-9 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+                >
+                  {selectedPlatform === 'music' ? 'Browse by genre' : 'Browse by category'}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${categoryOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {categoryOpen && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setCategoryOpen(false)} />
+                    <div className="absolute left-0 top-full mt-1.5 bg-white border border-neutral-200 rounded-lg shadow-xl z-40 w-64 sm:w-72 p-2 grid grid-cols-2 gap-1 max-h-80 overflow-y-auto">
+                      {platformHubs.map((h) => (
+                        <Link
+                          key={h.slug}
+                          to={`/best/${h.slug}`}
+                          onClick={() => setCategoryOpen(false)}
+                          className="px-3 py-2 rounded-md text-sm text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors truncate"
+                        >
+                          {h.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Rankings Table */}
           <div className={`${CARD} overflow-hidden`}>
