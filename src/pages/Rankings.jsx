@@ -19,20 +19,25 @@ import SEO from '../components/SEO';
 import StructuredData from '../components/StructuredData';
 import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
+import { supabase } from '../lib/supabase';
+import { PLATFORM_COUNT } from '../lib/constants';
+import CountUp from '../components/CountUp';
 import logger from '../lib/logger';
 
 // Platform identity is the icon tint plus a thin hover rule — no colored
-// buttons or tinted card headers.
+// buttons or tinted card headers. `heroBg` is the one deliberate exception:
+// the #1 row on the rankings overview is a genuine achievement (top of an
+// entire platform), so it earns the platform's own color as a trophy tint.
 const platforms = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube,      tint: 'text-red-500',     bar: 'bg-red-500',    available: true },
-  { id: 'tiktok',  name: 'TikTok',  icon: TikTokIcon,   tint: 'text-pink-500',    bar: 'bg-pink-500',   available: true },
-  { id: 'twitch',  name: 'Twitch',  icon: Twitch,       tint: 'text-purple-500',  bar: 'bg-purple-500', available: true },
-  { id: 'kick',    name: 'Kick',    icon: KickIcon,     tint: 'text-green-600',   bar: 'bg-green-600',  available: true },
-  { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon,  tint: 'text-sky-500',     bar: 'bg-sky-500',    available: true },
-  { id: 'music',   name: 'Music',   icon: Music,        tint: 'text-amber-500',   bar: 'bg-amber-500',  available: true },
-  { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, tint: 'text-violet-500',  bar: 'bg-violet-500', available: true },
-  { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   tint: 'text-lime-600',    bar: 'bg-lime-600',   available: true },
-  { id: 'substack',name: 'Substack',icon: SubstackIcon, tint: 'text-orange-500',  bar: 'bg-orange-500', available: true },
+  { id: 'youtube', name: 'YouTube', icon: Youtube,      tint: 'text-red-500',     bar: 'bg-red-500',    heroBg: 'bg-red-50/70',     available: true },
+  { id: 'tiktok',  name: 'TikTok',  icon: TikTokIcon,   tint: 'text-pink-500',    bar: 'bg-pink-500',   heroBg: 'bg-pink-50/70',    available: true },
+  { id: 'twitch',  name: 'Twitch',  icon: Twitch,       tint: 'text-purple-500',  bar: 'bg-purple-500', heroBg: 'bg-purple-50/70',  available: true },
+  { id: 'kick',    name: 'Kick',    icon: KickIcon,     tint: 'text-green-600',   bar: 'bg-green-600',  heroBg: 'bg-green-50/70',   available: true },
+  { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon,  tint: 'text-sky-500',     bar: 'bg-sky-500',    heroBg: 'bg-sky-50/70',     available: true },
+  { id: 'music',   name: 'Music',   icon: Music,        tint: 'text-amber-500',   bar: 'bg-amber-500',  heroBg: 'bg-amber-50/70',   available: true },
+  { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, tint: 'text-violet-500',  bar: 'bg-violet-500', heroBg: 'bg-violet-50/70',  available: true },
+  { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   tint: 'text-lime-600',    bar: 'bg-lime-600',   heroBg: 'bg-lime-50/70',    available: true },
+  { id: 'substack',name: 'Substack',icon: SubstackIcon, tint: 'text-orange-500',  bar: 'bg-orange-500', heroBg: 'bg-orange-50/70',  available: true },
 ];
 
 const topCounts = [50, 100, 500];
@@ -43,14 +48,12 @@ const MotionLink = motion(Link);
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
-// Rank is a plain tabular numeral — position is the hierarchy. The podium
-// (1/2/3) gets a small medal dot instead of gradient pills.
+// Rank is a plain tabular numeral — position alone is the hierarchy signal,
+// no medal-colored dots.
 function RankBadge({ rank, size = 'md' }) {
-  const medal = rank === 1 ? 'bg-amber-400' : rank === 2 ? 'bg-neutral-300' : rank === 3 ? 'bg-orange-300' : null;
   const text = size === 'sm' ? 'text-xs' : 'text-sm';
   return (
-    <span className={`inline-flex items-center gap-1.5 flex-shrink-0 ${size === 'sm' ? 'w-8' : 'w-10'}`}>
-      {medal && <span className={`w-1.5 h-1.5 rounded-full ${medal}`} />}
+    <span className={`inline-flex items-center flex-shrink-0 ${size === 'sm' ? 'w-8' : 'w-10'}`}>
       <span className={`${text} font-semibold tabular-nums ${rank <= 3 ? 'text-neutral-900' : 'text-neutral-400'}`}>{rank}</span>
     </span>
   );
@@ -182,6 +185,7 @@ function RankingsOverview() {
   const [platformData, setPlatformData] = useState({});
   const [sponsoredByPlatform, setSponsoredByPlatform] = useState({});
   const [loading, setLoading] = useState(true);
+  const [liveStats, setLiveStats] = useState({ creators: null, dataPoints: null });
 
   useEffect(() => {
     const loadAll = async () => {
@@ -223,6 +227,14 @@ function RankingsOverview() {
       });
     };
     loadAll();
+
+    // Live stat strip — same lightweight count-only queries as the home page.
+    Promise.all([
+      supabase.from('creators').select('*', { count: 'exact', head: true }).then(r => r.count),
+      supabase.from('creator_stats').select('*', { count: 'estimated', head: true }).then(r => r.count),
+    ]).then(([creators, dataPoints]) => {
+      if (creators > 0 && dataPoints > 0) setLiveStats({ creators, dataPoints });
+    });
   }, []);
 
   return (
@@ -235,22 +247,44 @@ function RankingsOverview() {
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
-            <div>
-              <p className={`${MICRO} mb-3`}>Rankings</p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Rankings</h1>
-              <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <div className="flex items-end justify-between gap-6">
+              <div>
+                <p className={`${MICRO} mb-3`}>Rankings</p>
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Rankings</h1>
+                <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
+              </div>
             </div>
-            <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
-            </div>
+
+            {/* Live stat strip — the same real, honest counts the home page
+                shows, giving first-time visitors something concrete before
+                they've scanned a single row. */}
+            {liveStats.creators && liveStats.dataPoints && (
+              <div className="mt-8 grid grid-cols-3 max-w-xl bg-white border border-neutral-200 rounded-xl divide-x divide-neutral-200 overflow-hidden">
+                {[
+                  { label: 'Creators tracked', value: liveStats.creators },
+                  { label: 'Daily data points', value: liveStats.dataPoints },
+                  { label: 'Platforms', value: PLATFORM_COUNT },
+                ].map((s) => (
+                  <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
+                    <p className="text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
+                      <CountUp value={s.value} />
+                    </p>
+                    <p className={`${MICRO} mt-1.5`}>{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {[1,2,3,4].map(i => (
                 <div key={i} className={`${CARD} p-6`}>
                   <TableSkeleton rows={5} />
@@ -258,7 +292,7 @@ function RankingsOverview() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {platforms.map((platform) => {
                 const Icon = platform.icon;
                 const creators = platformData[platform.id] || [];
@@ -276,8 +310,8 @@ function RankingsOverview() {
                     {/* Platform Header */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200/80">
                       <div className="flex items-center gap-2.5">
-                        <Icon className={`w-5 h-5 ${platform.tint}`} />
-                        <h2 className="font-medium text-neutral-900">Top {platform.name} Creators</h2>
+                        <Icon className={`w-5 h-5 flex-shrink-0 ${platform.tint}`} />
+                        <h2 className="font-semibold text-neutral-900">Top {platform.name} Creators</h2>
                       </div>
                     </div>
 
@@ -342,6 +376,36 @@ function RankingsOverview() {
                           if (index === 4) pushPremiumSlot('premium-ghost-1', premiumListings[0]);
                           // Premium slot 2: between rank 9 and 10
                           if (index === 9) pushPremiumSlot('premium-ghost-2', premiumListings[1]);
+
+                          // #1 gets a hero treatment tinted in the platform's
+                          // own color — topping an entire platform is the
+                          // whole point of this page, so that row should look
+                          // like it. A big count-up number does the "premium"
+                          // work; no chart needed here.
+                          if (index === 0) {
+                            items.push(
+                              <Link
+                                key={creator.id}
+                                to={`/${creator.platform}/${creator.username}`}
+                                className={`relative flex items-center gap-3.5 px-5 py-4 transition-colors group ${platform.heroBg}`}
+                              >
+                                <span className={`absolute left-0 top-0 bottom-0 w-1 ${platform.bar}`} />
+                                <Trophy className={`w-5 h-5 flex-shrink-0 ${platform.tint}`} />
+                                <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-xl" className="!w-11 !h-11 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold text-neutral-900 truncate">{creator.display_name}</p>
+                                  <p className="mt-0.5 flex items-baseline gap-1.5">
+                                    <span className="text-xl font-bold text-neutral-900 tabular-nums leading-none">
+                                      <CountUp value={creator.subscribers} duration={1.1} />
+                                    </span>
+                                    <span className={MICRO}>{follLabel}</span>
+                                  </p>
+                                </div>
+                              </Link>
+                            );
+                            return;
+                          }
+
                           items.push(
                             <Link
                               key={creator.id}
