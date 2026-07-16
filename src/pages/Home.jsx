@@ -24,6 +24,7 @@ import Sparkline from '../components/Sparkline';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import PreviewRankingRow from '../components/PreviewRankingRow';
 import { PLATFORM_COUNT } from '../lib/constants';
+import { isMac as IS_MAC } from '../lib/platform';
 
 const PLATFORMS = [
   { id: 'youtube',  name: 'YouTube',  Icon: Youtube,      accent: '#ef4444' },
@@ -53,8 +54,6 @@ const TOP_CARD_META = [
 ];
 
 const FALLBACK_NAMES = ['MrBeast', 'T-Series', 'Cocomelon', 'SET India', 'Vlad and Niki'];
-
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || '');
 
 // Same CPM range the earnings calculator advertises.
 const CPM_LOW = 0.5;

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Search, Trophy, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, FileSpreadsheet, ChevronDown, LayoutGrid, TrendingUp, Megaphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { isMac } from '../lib/platform';
 
 // Feature launcher entries. `tint` is the only color each gets — a muted icon
 // tint for wayfinding, no gradient boxes (precision system).
@@ -113,7 +114,7 @@ export default function Header() {
               <Search className="w-4 h-4" />
               <span>Search</span>
               <kbd className="hidden lg:inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 text-[10px] font-semibold bg-white border border-neutral-200 rounded text-neutral-500">
-                <span className="text-xs leading-none">⌘</span>K
+                {isMac ? <span className="text-xs leading-none">⌘</span> : 'Ctrl+'}K
               </kbd>
             </button>
 

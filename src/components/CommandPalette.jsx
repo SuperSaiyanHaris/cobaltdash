@@ -14,6 +14,7 @@ import RumbleIcon from './RumbleIcon';
 import SubstackIcon from './SubstackIcon';
 import CreatorAvatar from './CreatorAvatar';
 import { searchCreators } from '../services/creatorService';
+import { isMac } from '../lib/platform';
 
 const PLATFORM_ICONS = {
   youtube: { Icon: Youtube, color: 'text-red-400' },
@@ -62,14 +63,20 @@ export default function CommandPalette() {
   const navigate = useNavigate();
   const searchTimer = useRef(null);
 
-  // Global keyboard listener — Cmd/Ctrl+K to open, / to open (when not typing)
+  // Global keyboard listener — Cmd/Ctrl+K to open, / to open (when not typing),
+  // Escape to close. Escape is a plain setOpen(false) rather than a toggle, so
+  // it's a harmless no-op when the palette is already closed — no need to read
+  // `open` here and risk a stale closure.
   useEffect(() => {
     function onKey(e) {
-      const isMac = navigator.platform.toLowerCase().includes('mac');
       const modPressed = isMac ? e.metaKey : e.ctrlKey;
       if (modPressed && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setOpen((o) => !o);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setOpen(false);
         return;
       }
       // Slash to open, but only when no input is focused
