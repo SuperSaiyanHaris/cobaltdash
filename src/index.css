@@ -256,13 +256,23 @@ h1, h2, h3, h4 {
 .animate-marquee       { animation: marquee-x 120s linear infinite; }
 .animate-marquee:hover { animation-play-state: paused; }
 
+/* Auth-page showcase: columns of creator cards drift vertically. The inner list
+   is duplicated, so translating by -50% loops seamlessly. Transform-only (GPU
+   cheap); no backdrop-blur on the cards. */
+@keyframes auth-scroll-up   { from { transform: translateY(0); }     to { transform: translateY(-50%); } }
+@keyframes auth-scroll-down { from { transform: translateY(-50%); }  to { transform: translateY(0); } }
+.auth-col-up   { animation: auth-scroll-up   60s linear infinite; }
+.auth-col-down { animation: auth-scroll-down 60s linear infinite; }
+
 /* WCAG 2.3.3 — kill decorative looping animations for reduced-motion users.
    Loading spinners (animate-spin) are deliberately left alone. */
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .animate-pulse,
   .animate-ping,
-  .animate-pulse-slow {
+  .animate-pulse-slow,
+  .auth-col-up,
+  .auth-col-down {
     animation: none;
   }
 }

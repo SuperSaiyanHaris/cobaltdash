@@ -565,6 +565,8 @@ function getMeta(pathname, searchParams) {
     '/privacy':      { title: 'Privacy Policy - ShinyPull',      description: "ShinyPull's privacy policy." },
     '/terms':        { title: 'Terms of Service - ShinyPull',    description: "ShinyPull's terms of service." },
     '/reset-password': { title: 'Reset Password - ShinyPull',    description: 'Reset your ShinyPull account password.', noindex: true },
+    '/auth/sign-in':   { title: 'Sign In - ShinyPull',           description: 'Sign in to ShinyPull to follow creators and build a personal dashboard.', noindex: true },
+    '/auth/sign-up':   { title: 'Sign Up - ShinyPull',           description: 'Create a free ShinyPull account to follow creators across nine platforms.', noindex: true },
   };
   if (staticPages[pathname]) return staticPages[pathname];
 

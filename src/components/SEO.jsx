@@ -9,6 +9,7 @@ export default function SEO({
   image = DEFAULT_OG_IMAGE,
   type = 'website',
   article = null, // { publishedTime, modifiedTime, author, section }
+  noindex = false,
 }) {
   const location = useLocation();
   const url = getSiteUrl(location.pathname);
@@ -68,7 +69,7 @@ export default function SEO({
     }
     
     // Additional SEO tags
-    updateMetaTag('robots', 'index, follow');
+    updateMetaTag('robots', noindex ? 'noindex, follow' : 'index, follow');
     updateMetaTag('author', 'ShinyPull');
     
     // Canonical URL
@@ -80,7 +81,7 @@ export default function SEO({
     }
     canonical.setAttribute('href', url);
     
-  }, [fullTitle, metaDescription, keywords, url, image, type, article]);
+  }, [fullTitle, metaDescription, keywords, url, image, type, article, noindex]);
   
   return null;
 }

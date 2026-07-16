@@ -234,12 +234,12 @@ export default function Header() {
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={() => openAuth()}
+                <Link
+                  to="/auth/sign-in"
                   className="flex items-center gap-2 px-3.5 py-2 bg-neutral-900 text-white rounded-lg text-sm font-semibold hover:bg-neutral-800 transition-colors"
                 >
                   Sign in
-                </button>
+                </Link>
               )}
             </div>
           </nav>
@@ -360,15 +360,13 @@ export default function Header() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => {
-                      openAuth();
-                      setMobileMenuOpen(false);
-                    }}
+                  <Link
+                    to="/auth/sign-in"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center gap-2 py-3 px-6 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-colors w-full"
                   >
                     Sign in
-                  </button>
+                  </Link>
                 )}
               </div>
             </div>

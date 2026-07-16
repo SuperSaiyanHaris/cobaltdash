@@ -393,6 +393,24 @@ async function _fetchTopByPlatform() {
   return (data || []).map((c) => ({ ...c, id: c.creator_id, computedAt: c.computed_at }));
 }
 
+/**
+ * Creators for the auth-page showcase wall: top ranks across the popular
+ * platforms, enough to fill a few floating columns. Read-only, anon-safe.
+ */
+export const getShowcaseCreators = withErrorHandling(
+  async (perPlatform = 8) => {
+    const { data, error } = await supabase
+      .from('rankings_cache')
+      .select('creator_id, platform, username, display_name, profile_image, subscribers')
+      .eq('rank_type', 'subscribers')
+      .in('platform', ['youtube', 'twitch', 'tiktok', 'kick', 'bluesky', 'music', 'rumble'])
+      .lte('rank_position', perPlatform);
+    if (error) throw error;
+    return (data || []).map((c) => ({ ...c, id: c.creator_id }));
+  },
+  'creatorService.getShowcaseCreators'
+);
+
 export const getTopCreatorsByPlatform = withErrorHandling(
   async () => {
     const now = Date.now();
