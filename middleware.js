@@ -23,6 +23,10 @@
  * new platforms/routes. The "adding a new platform" checklist in CLAUDE.md flags this file.
  */
 
+// The hub taxonomy is shared with the app and the sitemap builder. It is plain
+// ESM with no dependencies specifically so it can be bundled into the edge runtime.
+import { getHub, HUBS } from './src/lib/hubs.js';
+
 export const config = {
   matcher: [
     // All paths except API routes and static assets (files with extensions).
@@ -122,6 +126,96 @@ async function supabaseGet(path, timeoutMs = 2500) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** POST to a PostgREST RPC. Same anon key, timeout, and graceful-null contract as supabaseGet. */
+async function supabaseRpc(fn, body, timeoutMs = 2500) {
+  const base = process.env.VITE_SUPABASE_URL;
+  const key = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!base || !key) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${base}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        authorization: `Bearer ${key}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Hub page content (/best/:slug)
+// ---------------------------------------------------------------------------
+
+async function getHubContent(hub) {
+  // Via RPC, not rankings_cache: that table only holds each platform's global
+  // top 500, which for a genre hub returns a near-empty list.
+  const rows = await supabaseRpc('get_hub_creators', {
+    p_platform: hub.platform,
+    p_categories: hub.categories,
+    p_limit: 100,
+  });
+  if (!rows || !rows.length) return { status: 'error' };
+
+  const metric = METRIC_LABELS[hub.platform] || 'followers';
+  const top = rows[0];
+  const nounTitle = hub.noun.charAt(0).toUpperCase() + hub.noun.slice(1);
+
+  const title = `Best ${hub.title} ${nounTitle} (${new Date().getFullYear()}) - Top ${rows.length} Ranked`;
+  const description = `The best ${hub.title} ${hub.noun} ranked by ${metric}. ` +
+    `#1 is ${top.display_name || top.username} with ${formatNumber(top.subscribers)} ${metric}. ` +
+    `${rows.length} ${hub.noun} tracked, updated daily.`;
+
+  let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
+  html += `<h1 style="font-size:1.5rem;font-weight:600">Best ${esc(hub.title)} ${esc(nounTitle)}</h1>`;
+  html += `<p>The biggest ${esc(hub.title)} ${esc(hub.noun)}, ranked by ${metric} and updated daily.</p>`;
+  html += `<ol>`;
+  for (const r of rows) {
+    const nm = r.display_name || r.username;
+    html += `<li><a href="/${hub.platform}/${encodeURIComponent(r.username)}" style="color:#171717">${esc(nm)}</a>` +
+      (r.subscribers !== null && r.subscribers !== undefined ? `, ${formatNumber(r.subscribers)} ${metric}` : '') + `</li>`;
+  }
+  html += `</ol>`;
+
+  // Sibling links so a crawler landing on any hub can reach the whole set.
+  const siblings = HUBS.filter(h => h.platform === hub.platform && h.slug !== hub.slug);
+  if (siblings.length) {
+    html += `<p>Other categories: `;
+    html += siblings
+      .map(h => `<a href="/best/${h.slug}" style="color:#171717">${esc(h.title)}</a>`)
+      .join(' · ');
+    html += `</p>`;
+  }
+  html += `<p><a href="/best" style="color:#171717">All categories</a> · <a href="/rankings/${hub.platform}" style="color:#171717">All ${esc(hub.platform)} rankings</a></p>`;
+  html += `</div>`;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Best ${hub.title} ${nounTitle}`,
+    description: `The best ${hub.title} ${hub.noun} ranked by ${metric}, updated daily.`,
+    numberOfItems: rows.length,
+    itemListElement: rows.slice(0, 25).map((r, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: r.display_name || r.username,
+      url: `${SITE_URL}/${hub.platform}/${encodeURIComponent(r.username)}`,
+    })),
+  };
+
+  return { status: 'ok', title, description, html, jsonLd };
 }
 
 // ---------------------------------------------------------------------------
@@ -455,6 +549,33 @@ async function handleBadge(platform, username) {
 // ---------------------------------------------------------------------------
 
 function getMeta(pathname, searchParams) {
+  // /best — hub index
+  if (pathname === '/best') {
+    return {
+      title: 'Best Creators by Category - ShinyPull',
+      description: 'Browse the best creators by category. Ranked lists of the top artists in every genre, updated daily.',
+    };
+  }
+
+  // /best/:slug — hub page. An unknown slug is a soft 404: the SPA renders its
+  // NotFound, so mark it noindex rather than letting Google index an empty shell.
+  const hubMatch = pathname.match(/^\/best\/([^/]+)$/);
+  if (hubMatch) {
+    const hub = getHub(hubMatch[1]);
+    if (!hub) {
+      return {
+        title: 'Page Not Found - ShinyPull',
+        description: 'This page does not exist.',
+        noindex: true,
+      };
+    }
+    const nounTitle = hub.noun.charAt(0).toUpperCase() + hub.noun.slice(1);
+    return {
+      title: `Best ${hub.title} ${nounTitle} - ShinyPull`,
+      description: `The best ${hub.title} ${hub.noun} ranked by ${METRIC_LABELS[hub.platform] || 'followers'}. Updated daily.`,
+    };
+  }
+
   // /rankings or /rankings/:platform
   const rankingsMatch = pathname.match(/^\/rankings(?:\/(\w+))?$/);
   if (rankingsMatch) {
@@ -595,9 +716,14 @@ export default async function middleware(request) {
   const profileMatch = url.pathname.match(/^\/(\w+)\/([^/]+)$/);
   const rankingsMatch = url.pathname.match(/^\/rankings\/(\w+)$/);
   const blogMatch = url.pathname.match(/^\/blog\/([^/]+)$/);
+  const hubMatch = url.pathname.match(/^\/best\/([^/]+)$/);
 
   try {
-    if (rankingsMatch && PLATFORM_NAMES[rankingsMatch[1]]) {
+    if (hubMatch) {
+      const hub = getHub(hubMatch[1]);
+      // Unknown slug: getMeta already returned noindex; no content to build.
+      if (hub) content = await getHubContent(hub);
+    } else if (rankingsMatch && PLATFORM_NAMES[rankingsMatch[1]]) {
       content = await getRankingsContent(rankingsMatch[1]);
     } else if (blogMatch && blogMatch[1] !== 'admin') {
       content = await getBlogContent(decodeURIComponent(blogMatch[1]));

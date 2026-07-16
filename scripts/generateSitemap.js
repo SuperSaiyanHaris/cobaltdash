@@ -17,6 +17,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { writeFileSync } from 'fs';
 import { config } from 'dotenv';
+import { HUBS } from '../src/lib/hubs.js';
 
 config();
 
@@ -43,6 +44,15 @@ const staticPages = [
   { url: '/rankings/mastodon',lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/rankings/rumble',  lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/rankings/substack',lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
+  { url: '/best', lastmod: TODAY, changefreq: 'weekly', priority: 0.85 },
+  // One entry per hub, generated from the shared taxonomy so a new hub can
+  // never be added to the app and forgotten here.
+  ...HUBS.map((h) => ({
+    url: `/best/${h.slug}`,
+    lastmod: TODAY,
+    changefreq: 'daily',
+    priority: 0.8,
+  })),
   { url: '/compare', lastmod: TODAY, changefreq: 'weekly', priority: 0.8 },
   { url: '/trending', lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/youtube/money-calculator', lastmod: TODAY, changefreq: 'monthly', priority: 0.8 },

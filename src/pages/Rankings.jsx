@@ -14,6 +14,7 @@ import FunErrorState from '../components/FunErrorState';
 import CreatorAvatar from '../components/CreatorAvatar';
 import Sparkline from '../components/Sparkline';
 import { getRankedCreators, getFeaturedListings, getSparklineData } from '../services/creatorService';
+import { getHubsByPlatform } from '../lib/hubs';
 import SEO from '../components/SEO';
 import StructuredData from '../components/StructuredData';
 import { analytics } from '../lib/analytics';
@@ -608,6 +609,7 @@ function PlatformRankings({ urlPlatform }) {
   const creatorColSpanHeader = secondaryCol ? 'col-span-4' : 'col-span-5';
   const creatorColSpanRow = secondaryCol ? 'md:col-span-4' : 'md:col-span-5';
   const currentPlatform = platforms.find(p => p.id === selectedPlatform);
+  const platformHubs = getHubsByPlatform(selectedPlatform);
   const seoData = getSeoData(currentPlatform, selectedRankType, topCount);
   const listSchema = createRankingListSchema(rankings, currentPlatform, topCount);
 
@@ -717,6 +719,26 @@ function PlatformRankings({ urlPlatform }) {
               )}
             </div>
           </div>
+
+          {/* Category hubs for platforms that have them. This is the main
+              internal link into /best/* — topically adjacent and on a page that
+              already has authority. */}
+          {platformHubs.length > 0 && (
+            <div className="mb-6">
+              <p className={`${MICRO} mb-2`}>Browse by genre</p>
+              <div className="flex flex-wrap gap-1.5">
+                {platformHubs.map((h) => (
+                  <Link
+                    key={h.slug}
+                    to={`/best/${h.slug}`}
+                    className="flex items-center h-8 px-3 rounded-lg text-xs font-medium border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+                  >
+                    {h.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Rankings Table */}
           <div className={`${CARD} overflow-hidden`}>

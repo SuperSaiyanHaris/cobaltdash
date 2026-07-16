@@ -10,6 +10,7 @@ import SubstackIcon from './SubstackIcon';
 const FEATURE_LINKS = [
   ['/search',                    'Creator Search'],
   ['/rankings',                  'Top Rankings'],
+  ['/best',                      'Best by Category'],
   ['/trending',                  'Trending Creators'],
   ['/compare',                   'Compare Creators'],
   ['/youtube/money-calculator',  'Money Calculator'],

@@ -63,6 +63,8 @@ const Reports = lazyWithRetry(() => import('./pages/Reports'));
 const FAQ = lazyWithRetry(() => import('./pages/FAQ'));
 const Methodology = lazyWithRetry(() => import('./pages/Methodology'));
 const Trending = lazyWithRetry(() => import('./pages/Trending'));
+const HubPage = lazyWithRetry(() => import('./pages/HubPage'));
+const HubIndex = lazyWithRetry(() => import('./pages/HubPage').then((m) => ({ default: m.HubIndex })));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 
 // Minimal loading fallback
@@ -151,6 +153,8 @@ function LayoutWrapper() {
           <Route path="/search" element={<Search />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/rankings/:platform" element={<Rankings />} />
+          <Route path="/best" element={<HubIndex />} />
+          <Route path="/best/:slug" element={<HubPage />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/youtube/money-calculator" element={<Calculator />} />
           <Route path="/trending" element={<Trending />} />

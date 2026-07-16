@@ -30,6 +30,7 @@
     "discover:tiktok": "node scripts/discoverTikTokCreators.js",
     "refresh:tiktok": "node scripts/refreshTikTokProfiles.js",
     "refresh:rankings": "node scripts/refreshRankingsCache.js",
+    "audit:hubs": "node scripts/auditHubs.js",
     "generate:blog": "node scripts/generateBlogDraft.js",
     "lint": "eslint src/"
   },

@@ -393,6 +393,61 @@ async function _fetchTopByPlatform() {
   return (data || []).map((c) => ({ ...c, id: c.creator_id, computedAt: c.computed_at }));
 }
 
+// --- Hub pages (/best/:slug) ---
+// Deliberately NOT sourced from rankings_cache: that table only holds the top
+// 500 per platform, so a genre hub built on it would show the handful of its
+// members big enough to chart globally (ambient returned 1 of 44) and silently
+// drop the rest. The RPC reads creators + creator_stats directly and ranks
+// within the category. Same SWR cache pattern as rankings.
+const _hubCache = new Map(); // slug → { data, ts }
+const HUB_TTL = 10 * 60 * 1000;
+
+async function _fetchHubCreators(hub, limit) {
+  const { data, error } = await supabase.rpc('get_hub_creators', {
+    p_platform: hub.platform,
+    p_categories: hub.categories,
+    p_limit: limit,
+  });
+  if (error) throw error;
+  return (data || []).map((c, i) => ({
+    ...c,
+    id: c.creator_id,
+    platform: hub.platform,
+    rank: i + 1,
+    latestStats: {
+      subscribers: c.subscribers,
+      followers: c.subscribers,
+      total_views: c.total_views,
+    },
+    totalViews: c.total_views,
+  }));
+}
+
+/**
+ * Ranked creators for a hub, biggest first. `hub` is an entry from
+ * src/lib/hubs.js. Read-only and anon-safe.
+ */
+export const getHubCreators = withErrorHandling(
+  async (hub, limit = 100) => {
+    if (!hub) return [];
+    const key = `${hub.slug}:${limit}`;
+    const hit = _hubCache.get(key);
+    const now = Date.now();
+    if (hit) {
+      if (now - hit.ts > HUB_TTL) {
+        _fetchHubCreators(hub, limit)
+          .then((data) => _hubCache.set(key, { data, ts: Date.now() }))
+          .catch(() => {}); // keep serving stale on background failure
+      }
+      return hit.data;
+    }
+    const data = await _fetchHubCreators(hub, limit);
+    _hubCache.set(key, { data, ts: now });
+    return data;
+  },
+  'creatorService.getHubCreators'
+);
+
 /**
  * Creators for the auth-page showcase wall: top ranks across the popular
  * platforms, enough to fill a few floating columns. Read-only, anon-safe.
