@@ -163,7 +163,7 @@ export default function Header() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-neutral-500 leading-tight mt-0.5 truncate">{link.description}</p>
+                              <p className="text-xs text-neutral-500 leading-tight mt-0.5 line-clamp-2">{link.description}</p>
                             </div>
                           </Link>
                         );
@@ -277,29 +277,45 @@ export default function Header() {
           <nav className="md:hidden py-4 border-t border-neutral-200 bg-white">
             <div className="flex flex-col gap-1">
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  window.dispatchEvent(new CustomEvent('openCommandPalette'));
-                }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors w-full"
-              >
-                <Search className="w-5 h-5" />
-                <span>Search</span>
-              </button>
-              <Link
-                to="/rankings"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                  isActive('/rankings')
-                    ? 'bg-neutral-100 text-neutral-900'
-                    : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900'
-                }`}
-              >
-                <Trophy className="w-5 h-5" />
-                <span>Rankings</span>
-              </Link>
+              {/* Quick access — same boxed-icon treatment as Features below,
+                  so these two don't read as plain leftover rows the eye skips
+                  past on the way to the grid. */}
+              <div>
+                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest px-1 mb-2">Quick access</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.dispatchEvent(new CustomEvent('openCommandPalette'));
+                    }}
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-neutral-50 transition-colors text-left"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                      <Search className="w-4 h-4 text-indigo-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-neutral-900 text-sm leading-tight">Search</p>
+                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Find any creator</p>
+                    </div>
+                  </button>
+                  <Link
+                    to="/rankings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
+                      isActive('/rankings') ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
+                      <Trophy className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-neutral-900 text-sm leading-tight">Rankings</p>
+                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Top creators live</p>
+                    </div>
+                  </Link>
+                </div>
+              </div>
 
               {/* Features grid */}
               <div className="mt-3 pt-3 border-t border-neutral-200">
