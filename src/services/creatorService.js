@@ -168,6 +168,75 @@ export const getCreatorStats = withErrorHandling(
 );
 
 /**
+ * All-time peak stat value + the date it happened, straight off full
+ * creator_stats history (not just the recent window getCreatorStats fetches).
+ */
+export const getCreatorPeakStats = withErrorHandling(
+  async (creatorId) => {
+    const { data, error } = await supabase
+      .from('creator_stats')
+      .select('subscribers, recorded_at')
+      .eq('creator_id', creatorId)
+      .order('subscribers', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data || null;
+  },
+  'creatorService.getCreatorPeakStats'
+);
+
+/**
+ * Where a creator sits in their platform's ranking. rank is null when the
+ * creator doesn't clear the rankings_cache top-500 threshold — callers must
+ * hide the stat then, not estimate a rank we don't actually have.
+ */
+export const getCreatorRankContext = withErrorHandling(
+  async (creatorId, platform) => {
+    const [{ data: rankRow }, { count }] = await Promise.all([
+      supabase
+        .from('rankings_cache')
+        .select('rank_position')
+        .eq('platform', platform)
+        .eq('rank_type', 'subscribers')
+        .eq('creator_id', creatorId)
+        .maybeSingle(),
+      supabase
+        .from('creators')
+        .select('id', { count: 'exact', head: true })
+        .eq('platform', platform),
+    ]);
+    return { rank: rankRow?.rank_position ?? null, total: count ?? 0 };
+  },
+  'creatorService.getCreatorRankContext'
+);
+
+/**
+ * Creators ranked just above/below this one on the same platform, straight
+ * off rankings_cache's (platform, rank_type, rank_position) primary key, so
+ * it's a cheap indexed range read, not a new table scan. Only meaningful for
+ * creators who clear the top-500 cache; callers must hide the module when
+ * rank is null rather than fall back to a weaker signal.
+ */
+export const getNearbyRankedCreators = withErrorHandling(
+  async (platform, rank, span = 3) => {
+    if (!rank) return [];
+    const { data, error } = await supabase
+      .from('rankings_cache')
+      .select('creator_id, username, display_name, profile_image, subscribers, rank_position')
+      .eq('platform', platform)
+      .eq('rank_type', 'subscribers')
+      .gte('rank_position', Math.max(1, rank - span))
+      .lte('rank_position', rank + span)
+      .neq('rank_position', rank)
+      .order('rank_position', { ascending: true });
+    if (error) throw error;
+    return (data || []).map((c) => ({ ...c, id: c.creator_id }));
+  },
+  'creatorService.getNearbyRankedCreators'
+);
+
+/**
  * Get hours watched stats for a Twitch creator
  */
 export const getHoursWatched = withErrorHandling(

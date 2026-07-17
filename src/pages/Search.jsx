@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search as SearchIcon, Youtube, Twitch, User, AlertCircle, ArrowRight, Clock, CheckCircle, X } from 'lucide-react';
+import { Search as SearchIcon, Youtube, Twitch, User, AlertCircle, ArrowRight, Clock, CheckCircle, X, ChevronDown } from 'lucide-react';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -65,6 +65,59 @@ const platforms = [
   { id: 'rumble', name: 'Rumble', icon: RumbleIcon, available: true },
   { id: 'substack', name: 'Substack', icon: SubstackIcon, available: true },
 ];
+
+const SORT_OPTIONS = [
+  { id: 'relevance', label: 'Relevance' },
+  { id: 'most', label: 'Most followers' },
+  { id: 'fewest', label: 'Fewest followers' },
+  { id: 'az', label: 'A to Z' },
+];
+
+const RANGE_OPTIONS = [
+  { id: 'any', label: 'Any size', min: 0, max: Infinity },
+  { id: 'under100k', label: 'Under 100K', min: 0, max: 100_000 },
+  { id: '100k-1m', label: '100K – 1M', min: 100_000, max: 1_000_000 },
+  { id: '1m-10m', label: '1M – 10M', min: 1_000_000, max: 10_000_000 },
+  { id: '10mplus', label: '10M+', min: 10_000_000, max: Infinity },
+];
+
+// Small bordered dropdown shared by the sort + range controls. Same open/close
+// pattern as the Rankings "Top Count" / "Browse by category" dropdowns.
+function FilterDropdown({ label, options, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.id === value) || options[0];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 h-9 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+      >
+        <span className="text-neutral-400">{label}:</span> {current.label}
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 sm:left-0 top-full mt-1.5 bg-white border border-neutral-200 rounded-lg shadow-xl z-40 min-w-[170px] py-1">
+            {options.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => { onChange(o.id); setOpen(false); }}
+                className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
+                  o.id === value ? 'text-neutral-900 font-medium bg-neutral-50' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // Relevance + popularity score for sorting search results.
 // Ensures big creators who "contain" the query beat tiny channels that "start with" it.
@@ -165,6 +218,8 @@ export default function Search() {
   const [requestStatus, setRequestStatus] = useState(null); // null, 'requesting', 'success', 'error'
   const [requestMessage, setRequestMessage] = useState('');
   const [normalizedUsername, setNormalizedUsername] = useState('');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [rangeFilter, setRangeFilter] = useState('any');
   const { user } = useAuth();
 
   // Normalize a display name / search query to a likely TikTok username
@@ -193,6 +248,10 @@ export default function Search() {
     // Clear request status when switching platforms
     setRequestStatus(null);
     setRequestMessage('');
+    // A follower-size bucket that made sense for the last platform (e.g.
+    // "10M+" on YouTube) can be misleading on a much smaller platform.
+    setSortBy('relevance');
+    setRangeFilter('any');
     // Always write platform to URL so back-button restores it correctly
     const q = query.trim() || searchParams.get('q') || '';
     const newParams = { platform: platformId };
@@ -373,6 +432,20 @@ export default function Search() {
   };
 
   const currentPlatform = platforms.find(p => p.id === selectedPlatform);
+
+  const selectedRange = RANGE_OPTIONS.find((r) => r.id === rangeFilter) || RANGE_OPTIONS[0];
+  const filteredResults = results.filter((c) => {
+    const count = c.subscribers || c.followers || 0;
+    return count >= selectedRange.min && count <= selectedRange.max;
+  });
+  const displayedResults = [...filteredResults].sort((a, b) => {
+    const aCount = a.subscribers || a.followers || 0;
+    const bCount = b.subscribers || b.followers || 0;
+    if (sortBy === 'most') return bCount - aCount;
+    if (sortBy === 'fewest') return aCount - bCount;
+    if (sortBy === 'az') return (a.displayName || '').localeCompare(b.displayName || '');
+    return 0; // relevance: results are already scored/ordered from the search itself
+  });
 
   return (
     <>
@@ -626,9 +699,31 @@ export default function Search() {
           {/* Results */}
           {results.length > 0 && (
             <div className="mb-8">
-              <p className={`${MICRO} mb-3`}>{results.length} creators found</p>
+              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                <p className={MICRO}>
+                  {displayedResults.length === results.length
+                    ? `${results.length} creators found`
+                    : `${displayedResults.length} of ${results.length} creators`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <FilterDropdown label="Sort" options={SORT_OPTIONS} value={sortBy} onChange={setSortBy} />
+                  <FilterDropdown label="Size" options={RANGE_OPTIONS} value={rangeFilter} onChange={setRangeFilter} />
+                </div>
+              </div>
+
+              {displayedResults.length === 0 ? (
+                <div className={`text-center py-10 ${CARD}`}>
+                  <p className="text-sm text-neutral-500">No creators in this size range.</p>
+                  <button
+                    onClick={() => setRangeFilter('any')}
+                    className="mt-2 text-sm text-neutral-900 font-medium hover:underline"
+                  >
+                    Clear size filter
+                  </button>
+                </div>
+              ) : (
               <div className={`${CARD} divide-y divide-neutral-100 overflow-hidden`}>
-                {results.map((creator) => {
+                {displayedResults.map((creator) => {
                   const Icon = platformIcons[creator.platform] || User;
                   const tint = platformTint[creator.platform] || 'text-neutral-400';
 
@@ -668,6 +763,7 @@ export default function Search() {
                   );
                 })}
               </div>
+              )}
             </div>
           )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Youtube, Twitch, Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale } from 'lucide-react';
+import { Youtube, Twitch, Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -18,7 +18,7 @@ import { getSubstackPublication } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
-import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched } from '../services/creatorService';
+import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getNearbyRankedCreators } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import CountUp from '../components/CountUp';
 import { ProfileSkeleton } from '../components/Skeleton';
@@ -126,11 +126,40 @@ export default function CreatorProfile() {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [copiedBadge, setCopiedBadge] = useState(false);
+  const [peakStats, setPeakStats] = useState(null);
+  const [rankContext, setRankContext] = useState(null);
+  const [nearbyCreators, setNearbyCreators] = useState([]);
   const shareRef = useRef(null);
 
   useEffect(() => {
     loadCreator();
   }, [platform, username]);
+
+  // Record/rank context is purely supplementary — fetched separately so a
+  // failure here never blocks the main profile load. Nearby creators only
+  // fetched once we know the rank, since it's a range read keyed off it.
+  useEffect(() => {
+    if (!dbCreatorId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [peak, rank] = await Promise.all([
+          getCreatorPeakStats(dbCreatorId),
+          getCreatorRankContext(dbCreatorId, platform),
+        ]);
+        if (cancelled) return;
+        setPeakStats(peak);
+        setRankContext(rank);
+        if (rank?.rank) {
+          const nearby = await getNearbyRankedCreators(platform, rank.rank);
+          if (!cancelled) setNearbyCreators(nearby);
+        }
+      } catch (err) {
+        logger.warn('Failed to load record/rank context:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [dbCreatorId, platform]);
 
   // Live-refresh stats while the tab is visible.
   // Polls supabase for the latest creator_stats row every 60s — cheap query, no external API hits.
@@ -1876,6 +1905,14 @@ export default function CreatorProfile() {
               </Link>
             )}
 
+            <RecordRankCard
+              rankContext={rankContext}
+              peakStats={peakStats}
+              currentCount={primaryCount}
+              primaryLabel={primaryLabel}
+              platformName={platformName}
+            />
+
             {/* Milestone Predictions — hidden for music since monthly listeners fluctuate
                 (rolling 30-day window, not monotonically increasing like subs/followers) */}
             {metrics && platform !== 'music' && (
@@ -2317,6 +2354,14 @@ export default function CreatorProfile() {
                 })}</span>
               </div>
             )}
+
+            <SimilarCreators
+              creators={nearbyCreators}
+              platform={platform}
+              platformName={platformName}
+              primaryLabel={primaryLabel}
+              excludeId={dbCreatorId}
+            />
           </div>
         </div>
       </div>
@@ -2415,6 +2460,97 @@ function formatHoursWatched(hours) {
   if (hours >= 1000000) return `${(hours / 1000000).toFixed(1)}M`;
   if (hours >= 1000) return `${(hours / 1000).toFixed(1)}K`;
   return Math.round(hours).toLocaleString();
+}
+
+// Bands the raw rank/total ratio into human round numbers instead of a
+// precise-looking decimal ("top 0.69%") that reads as fake precision.
+function getPercentileBand(rank, total) {
+  if (!rank || !total) return null;
+  const pct = (rank / total) * 100;
+  if (pct <= 1) return 1;
+  if (pct <= 5) return 5;
+  if (pct <= 10) return 10;
+  if (pct <= 25) return 25;
+  if (pct <= 50) return 50;
+  return null; // below median isn't a flattering stat to surface
+}
+
+// Stat strip: one bordered container, hairline-divided cells, per the site's
+// precision-instrument system. Hides entirely when neither stat is available
+// rather than showing an empty or half-guessed card.
+function RecordRankCard({ rankContext, peakStats, currentCount, primaryLabel, platformName }) {
+  const rank = rankContext?.rank;
+  const total = rankContext?.total;
+  const band = getPercentileBand(rank, total);
+  const hasRank = Boolean(rank && total);
+
+  const peakValue = peakStats?.subscribers;
+  const showPeakCell = Boolean(peakValue && peakValue > 0);
+  const isCurrentPeak = showPeakCell && currentCount >= peakValue;
+
+  if (!hasRank && !showPeakCell) return null;
+
+  const cellCount = (hasRank ? 1 : 0) + (showPeakCell ? 1 : 0);
+
+  return (
+    <div className={`grid grid-cols-1 ${cellCount === 2 ? 'sm:grid-cols-2' : ''} bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-neutral-200/80 mb-6`}>
+      {hasRank && (
+        <div className="p-5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-2 flex items-center gap-1.5">
+            <Trophy className="w-3 h-3" /> Platform rank
+          </p>
+          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">#{formatNumber(rank)}</p>
+          <p className="text-xs text-neutral-500 mt-1">
+            of {formatNumber(total)} {platformName} creators tracked{band ? ` · top ${band}%` : ''}
+          </p>
+        </div>
+      )}
+      {showPeakCell && (
+        <div className="p-5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-2">All-time high</p>
+          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+            {formatNumber(peakValue)} <span className="text-sm font-normal text-neutral-400">{primaryLabel}</span>
+          </p>
+          <p className="text-xs text-neutral-500 mt-1">
+            {isCurrentPeak ? 'Currently at a record high' : `Reached ${new Date(peakStats.recorded_at + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// "Similar in size" — creators ranked just above/below this one on the same
+// platform. It's a scale signal (rank proximity), not a content-category
+// match, so the copy is worded around size rather than claiming similarity
+// of niche/content.
+function SimilarCreators({ creators, platform, platformName, primaryLabel, excludeId }) {
+  const filtered = (creators || []).filter((c) => c.id !== excludeId);
+  if (filtered.length === 0) return null;
+
+  return (
+    <div className="mt-8 pt-8 border-t border-neutral-200/80">
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">Nearby in the rankings</p>
+      <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-4">Similar-sized {platformName} creators</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {filtered.map((c) => (
+          <Link
+            key={c.id}
+            to={`/${platform}/${c.username}`}
+            className="flex items-center gap-3 p-3 bg-white border border-neutral-200/80 rounded-xl hover:border-neutral-300 transition-colors"
+          >
+            <CreatorAvatar src={c.profile_image} name={c.display_name} size="md" className="flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
+              <p className="text-xs text-neutral-500 tabular-nums mt-0.5">
+                {formatNumber(c.subscribers)} {primaryLabel} · #{formatNumber(c.rank_position)}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
