@@ -171,19 +171,6 @@ const HeroFocalCard = memo(function HeroFocalCard({ tops, sparklines }) {
       className="hidden min-[1280px]:flex absolute top-1/2 -translate-y-1/2 flex-col gap-5 w-[24rem]"
       style={{ left: 'max(2rem, calc(50% - 30rem - 25rem))' }}
     >
-      {/* Live activity ribbon */}
-      <motion.div
-        animate={{ y: [0, -4, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        className="inline-flex items-center gap-2 self-start px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-400/25 rounded-full backdrop-blur-md"
-      >
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-        </span>
-        <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-300">Live across {PLATFORM_COUNT} platforms</span>
-      </motion.div>
-
       {/* Rotating #1 platform card */}
       <motion.div
         animate={{ y: [0, -6, 0] }}
@@ -801,33 +788,37 @@ export default function Home() {
         {/* ============== CINEMATIC HERO ==============
             Full-bleed hero — section min-height ensures the bg image + left stack always have room.
             Hard bottom edge (no gradient fade) per project preference. */}
-        <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white min-h-[720px] md:min-h-[900px]">
-          {/* Background photo — <picture> so only the matching crop is ever
-              downloaded (a hidden <img> still fetches). Preloaded from
-              index.html so the request starts before React boots. */}
-          <picture>
-            <source media="(min-width: 768px)" srcSet="/hero-bg2.webp" />
-            <img
-              src="/hero-bg-mobile2.webp"
-              alt=""
-              aria-hidden="true"
-              fetchpriority="high"
-              className="absolute inset-0 w-full h-full object-cover object-center opacity-90"
-            />
-          </picture>
+        <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white min-h-[680px] md:min-h-[760px] flex flex-col">
+          {/* Bespoke background — no stock photography. Two large, soft brand-color
+              washes anchored at opposite corners (same technique as the auth page
+              showcase panel) plus a faint engineering dot-grid for texture. Nothing
+              here is a discrete "orb" shape; it's ambient light, not a decoration. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(55% 45% at 85% 8%, rgba(99,102,241,0.20), transparent 65%), ' +
+                'radial-gradient(50% 45% at 8% 78%, rgba(217,70,239,0.14), transparent 65%), ' +
+                'radial-gradient(40% 35% at 95% 85%, rgba(34,211,238,0.10), transparent 70%)',
+            }}
+          />
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
 
-          {/* Light dark overlay for text legibility without washing out the artwork. */}
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#0a0a0f]/40 via-[#0a0a0f]/35 to-[#0a0a0f]" />
+          {/* Fade to solid at the bottom edge so the section resolves cleanly
+              into the page below, no hard seam. */}
+          <div className="absolute inset-x-0 bottom-0 h-40 pointer-events-none bg-gradient-to-b from-transparent to-[#0a0a0f]" />
 
           {/* TOP MARQUEE — randomized top creators across platforms.
               Height is reserved (min-h) even before data loads so the strip
               appearing never shifts the page / jumps the scroll on mobile. */}
-          <div className="relative pt-5 pb-1 overflow-hidden mask-gradient min-h-[4.25rem]">
+          <div className="relative flex-shrink-0 pt-5 pb-1 overflow-hidden mask-gradient min-h-[4.25rem]">
             <HeroMarquee creators={marqueeCreators} />
           </div>
 
-          {/* Center stage */}
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-10 sm:pb-28">
+          {/* Center stage — fills the remaining height and centers vertically,
+              so the section reads as intentionally composed at any content length. */}
+          <div className="relative flex-1 flex flex-col justify-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
             {/* Headline — condensed to 2 lines, lighter weight above the fold */}
             <motion.h1
@@ -868,49 +859,54 @@ export default function Home() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Try chips */}
-              <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
-                <span className="text-xs text-white/70">Try:</span>
-                {['mrbeast', 'ninja', 'taylor swift'].map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => navigate(`/search?q=${encodeURIComponent(q)}`)}
-                    className="text-xs font-medium text-white/80 hover:text-white bg-white/[0.06] border border-white/10 hover:border-white/25 hover:bg-white/[0.12] rounded-full px-2.5 py-1 transition-all backdrop-blur-md"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
             </motion.form>
 
-            {/* Platform pills — compact glass row to keep links to each ranking */}
+            {/* Live-across-N-platforms — one quiet statement, visible at every
+                viewport (the rotating focal card below is desktop-only, so this
+                is the only place mobile/tablet visitors see the claim). */}
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35 }}
-              className="mt-12 flex flex-wrap justify-center gap-2 sm:gap-3 max-w-3xl mx-auto"
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-8 flex justify-center"
+            >
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-400/25 rounded-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                </span>
+                <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-300">Live across {PLATFORM_COUNT} platforms</span>
+              </div>
+            </motion.div>
+
+            {/* Platform icons — quiet, icon-only, no chip backgrounds. Identity
+                is the tint alone, per the site's precision system. */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mt-5 flex flex-wrap justify-center items-center gap-x-5 gap-y-3 max-w-md mx-auto"
             >
               {PLATFORMS.map(({ id, name, Icon, accent }) => (
                 <Link
                   key={id}
                   to={`/rankings/${id}`}
-                  className="group inline-flex items-center gap-2 px-3.5 py-2 bg-white/[0.06] border border-white/10 hover:border-white/30 hover:bg-white/[0.12] rounded-full backdrop-blur-md transition-all"
+                  aria-label={name}
+                  title={name}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
                 >
-                  <Icon className="w-4 h-4 transition-colors" style={{ color: accent }} />
-                  <span className="text-sm font-semibold text-white/90 group-hover:text-white">{name}</span>
+                  <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
                 </Link>
               ))}
             </motion.div>
 
-            {/* Featured Listings promo — demoted below the core action so the
-                B2B upsell never competes with search for first attention */}
+            {/* Featured Listings promo — smallest, quietest element in the stack;
+                the B2B upsell never competes with search for first attention */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="mt-10 flex justify-center"
+              className="mt-8 flex justify-center"
             >
               <Link
                 to="/promote"
