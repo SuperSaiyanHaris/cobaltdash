@@ -248,16 +248,10 @@ function RankingsOverview() {
         {/* Header — white block, hairline rule, typographic */}
         <div className="bg-white border-b border-neutral-200/80">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <div className="flex items-end justify-between gap-6">
-              <div>
-                <p className={`${MICRO} mb-3`}>Rankings</p>
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Rankings</h1>
-                <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
-              </div>
+            <div>
+              <p className={`${MICRO} mb-3`}>Rankings</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Rankings</h1>
+              <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
             </div>
 
             {/* Live stat strip — the same real, honest counts the home page
@@ -690,16 +684,10 @@ function PlatformRankings({ urlPlatform }) {
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
-            <div>
-              <p className={`${MICRO} mb-3`}>Rankings</p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
-              <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
-            </div>
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <p className={`${MICRO} mb-3`}>Rankings</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
+            <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
           </div>
         </div>
 
