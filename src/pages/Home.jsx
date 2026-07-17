@@ -789,20 +789,9 @@ export default function Home() {
             Full-bleed hero — section min-height ensures the bg image + left stack always have room.
             Hard bottom edge (no gradient fade) per project preference. */}
         <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white min-h-[680px] md:min-h-[760px] flex flex-col">
-          {/* Bespoke background — no stock photography. Two large, soft brand-color
-              washes anchored at opposite corners (same technique as the auth page
-              showcase panel) plus a faint engineering dot-grid for texture. Nothing
-              here is a discrete "orb" shape; it's ambient light, not a decoration. */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(55% 45% at 85% 8%, rgba(99,102,241,0.20), transparent 65%), ' +
-                'radial-gradient(50% 45% at 8% 78%, rgba(217,70,239,0.14), transparent 65%), ' +
-                'radial-gradient(40% 35% at 95% 85%, rgba(34,211,238,0.10), transparent 70%)',
-            }}
-          />
+          {/* Bespoke background — no stock photography, no gradient glow washes.
+              Flat dark base plus a faint engineering dot-grid for texture only.
+              Content (headline, search, focal card) carries all the visual weight. */}
           <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
 
           {/* Fade to solid at the bottom edge so the section resolves cleanly

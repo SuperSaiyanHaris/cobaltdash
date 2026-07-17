@@ -311,8 +311,9 @@ h1, h2, h3, h4 {
 .hero-dot-grid {
   background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
   background-size: 28px 28px;
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 85%);
-          mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 85%);
+  /* Straight top/bottom fade only — no circular or elliptical falloff shape. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 80%, transparent);
+          mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 80%, transparent);
 }
 
 /* =========================================================================
