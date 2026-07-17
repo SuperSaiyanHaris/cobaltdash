@@ -112,7 +112,7 @@ export default function Promote() {
                     disabled
                     className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-medium rounded-lg cursor-not-allowed select-none"
                   >
-                    Sold out — check back soon
+                    Sold out, check back soon
                   </button>
                 ) : (
                   <Link
@@ -184,7 +184,7 @@ export default function Promote() {
               </ul>
               {basicSoldOut ? (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 cursor-not-allowed select-none">
-                  Sold out — check back soon
+                  Sold out, check back soon
                 </span>
               ) : (
                 <Link
@@ -225,7 +225,7 @@ export default function Promote() {
               </ul>
               {premiumSoldOut ? (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 cursor-not-allowed select-none">
-                  Sold out — check back soon
+                  Sold out, check back soon
                 </span>
               ) : (
                 <Link
@@ -322,7 +322,7 @@ export default function Promote() {
             <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 mb-3">Ready to get featured?</h2>
             <p className="text-sm text-neutral-500 mb-6 max-w-xl mx-auto">
               {premiumSoldOut && basicSoldOut
-                ? 'All slots are currently filled. Check back soon — the queue moves the moment a slot opens.'
+                ? 'All slots are currently filled. The queue moves the moment a slot opens, check back soon.'
                 : 'Most listings go live in under 60 seconds.'}
             </p>
             {premiumSoldOut && basicSoldOut ? (
@@ -331,7 +331,7 @@ export default function Promote() {
                 disabled
                 className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-medium rounded-lg cursor-not-allowed select-none"
               >
-                Sold out — check back soon
+                Sold out, check back soon
               </button>
             ) : (
               <Link

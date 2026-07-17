@@ -14,15 +14,16 @@ export default function Refunds() {
     <>
       <SEO
         title="Refund Policy"
-        description="ShinyPull's refund policy for Featured Listings and paid products."
+        description="ShinyPull's refund policy for Featured Listings."
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <div className="relative overflow-hidden border-b border-neutral-200 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">Refund Policy</h1>
-            <p className="text-neutral-500">Last updated: February 28, 2026</p>
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Legal</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Refund Policy</h1>
+            <p className="mt-2 text-sm text-neutral-500">Last updated: July 16, 2026</p>
           </div>
         </div>
 
@@ -32,24 +33,26 @@ export default function Refunds() {
 
               <Section title="No Refunds">
                 <p>
-                  All purchases on ShinyPull are final. We do not offer refunds on monthly subscription
-                  charges, partial billing periods, or renewals.
+                  ShinyPull's browsing, search, rankings, and dashboard features are free to use. The
+                  only paid purchase on ShinyPull is a Featured Listing, a monthly placement in our
+                  rankings tables. All Featured Listing charges are final. We do not offer refunds on
+                  monthly charges, partial billing periods, or renewals.
                 </p>
                 <p>
-                  By subscribing, you acknowledge that you are purchasing access to a digital service
-                  that is made available immediately upon payment.
+                  By purchasing a Featured Listing, you acknowledge that you are purchasing a placement
+                  that goes live immediately upon payment.
                 </p>
               </Section>
 
               <Section title="Cancellations">
                 <p>
-                  You can cancel your subscription at any time from your Account page. When you cancel,
-                  your plan stays active until the end of the current billing period. You won't be
+                  You can cancel a Featured Listing at any time from your Account page. When you cancel,
+                  the listing stays active until the end of the current billing period. You won't be
                   charged again after that.
                 </p>
                 <p>
                   Cancelling mid-cycle does not entitle you to a refund for the remaining days. Your
-                  access continues until the period you already paid for ends.
+                  listing stays live until the period you already paid for ends.
                 </p>
               </Section>
 

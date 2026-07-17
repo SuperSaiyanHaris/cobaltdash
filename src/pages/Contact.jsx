@@ -47,12 +47,13 @@ export default function Contact() {
         description="Get in touch with the ShinyPull team. We're here to help with questions, feedback, and support."
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <div className="relative overflow-hidden border-b border-neutral-200 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">Contact Us</h1>
-            <p className="text-xl text-neutral-500">
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Contact</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Get in touch</h1>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">
               We'd love to hear from you
             </p>
           </div>
@@ -68,19 +69,19 @@ export default function Contact() {
 
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Mail className="w-6 h-6 text-indigo-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Email</h3>
-                      <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-600">
+                      <a href="mailto:shinypull@proton.me" className="text-indigo-600 hover:text-indigo-700 transition-colors">
                         shinypull@proton.me
                       </a>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
                       <MessageSquare className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
@@ -95,14 +96,14 @@ export default function Contact() {
             <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
               {status === 'success' ? (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="w-8 h-8 text-emerald-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-neutral-900 mb-2">Message Sent!</h3>
-                  <p className="text-neutral-700">We'll get back to you soon.</p>
+                  <h3 className="text-xl font-semibold tracking-tight text-neutral-900 mb-2">Message sent</h3>
+                  <p className="text-neutral-500 text-sm">We'll get back to you soon.</p>
                   <button
                     onClick={() => setStatus('idle')}
-                    className="mt-4 text-indigo-600 hover:text-indigo-600 font-medium"
+                    className="mt-4 text-indigo-600 hover:text-indigo-700 transition-colors font-medium text-sm"
                   >
                     Send another message
                   </button>

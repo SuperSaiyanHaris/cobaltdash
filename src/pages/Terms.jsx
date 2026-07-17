@@ -8,12 +8,13 @@ export default function Terms() {
         description="Read the ShinyPull Terms of Service to understand the rules and regulations for using our platform."
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <div className="relative overflow-hidden border-b border-neutral-200 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">Terms of Service</h1>
-            <p className="text-neutral-500">Last updated: March 1, 2026</p>
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Legal</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Terms of Service</h1>
+            <p className="mt-2 text-sm text-neutral-500">Last updated: July 16, 2026</p>
           </div>
         </div>
 
@@ -197,35 +198,16 @@ export default function Terms() {
                 </p>
               </Section>
 
-              <Section title="Subscription Plans and Historical Data">
+              <Section title="Historical Data">
                 <p className="mb-4">
-                  ShinyPull offers paid subscription plans (Sub and Mod) that include access to historical
-                  statistics. The availability of historical data depends on two factors: when ShinyPull
-                  launched data collection, and when a specific creator was first added to the platform.
-                </p>
-                <p className="mb-4">
-                  ShinyPull launched data collection in February 2026. No historical data exists prior to
-                  that date, regardless of subscription tier. Additionally, individual creators are tracked
-                  from the date they first appear in ShinyPull search results or when their profile page is
-                  first viewed on the platform. A creator added in June 2026 will only have data from June
-                  2026 onward, even for Mod subscribers.
-                </p>
-                <p className="mb-4">
-                  Subscription plan descriptions referencing "1 year of history" or "full history" refer to
-                  the maximum data range ShinyPull will make available as data accumulates over time, not a
-                  guarantee that data exists for any specific creator or prior time period.
-                </p>
-                <p className="mb-4">
-                  As the platform matures and more data is collected, longer historical ranges will become
-                  available to subscribers at or above the applicable tier. ShinyPull makes no representation
-                  that historical data predating the platform's launch or a creator's first appearance on
-                  ShinyPull will ever be available.
+                  The availability of historical statistics depends on two factors: when ShinyPull launched
+                  data collection, and when a specific creator was first added to the platform.
                 </p>
                 <p>
-                  Subscriptions are sold based on access to features and data ranges as they exist and grow
-                  over time. No refunds will be issued solely because historical data does not yet span the
-                  full range described in a plan or because a specific creator was not yet tracked when a
-                  subscription began.
+                  ShinyPull launched data collection in February 2026. No historical data exists prior to
+                  that date. Individual creators are tracked from the date they first appear in ShinyPull
+                  search results or when their profile page is first viewed on the platform. A creator added
+                  in June 2026 will only have data from June 2026 onward.
                 </p>
               </Section>
 
@@ -235,22 +217,6 @@ export default function Terms() {
                 </p>
                 <p>
                   Sponsored listings do not influence organic ranking positions. Rankings are based solely on subscriber and follower counts collected from public platform data.
-                </p>
-              </Section>
-
-              <Section title="Amazon Associates Disclosure">
-                <p className="mb-4">
-                  ShinyPull is a participant in the Amazon Services LLC Associates Program, an affiliate
-                  advertising program designed to provide a means for sites to earn advertising fees by
-                  advertising and linking to Amazon.com.
-                </p>
-                <p className="mb-4">
-                  <strong>As an Amazon Associate I earn from qualifying purchases.</strong>
-                </p>
-                <p>
-                  When you click on product links in our blog posts and make a purchase, we may earn a
-                  commission at no additional cost to you. This helps support our platform and allows us
-                  to continue providing free analytics and content to streamers and content creators.
                 </p>
               </Section>
 
@@ -264,7 +230,7 @@ export default function Terms() {
               </Section>
 
               <p className="text-sm text-neutral-700 mt-8">
-                This Document is Effective as of March 1, 2026.
+                This Document is Effective as of July 16, 2026.
               </p>
             </div>
           </div>

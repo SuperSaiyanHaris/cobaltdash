@@ -9,14 +9,15 @@ const PAGE_SIZE = 9;
 // Category identity is a small dot tint plus a quiet pill — precision system.
 // Sidebar active state is uniform (neutral) so the dot alone carries the color.
 const CATEGORY_COLORS = {
-  'YouTube News':    { pill: 'bg-red-50 text-red-700 border border-red-200/80',           dot: 'bg-red-500' },
-  'Streaming Gear':  { pill: 'bg-amber-50 text-amber-700 border border-amber-200/80',     dot: 'bg-amber-500' },
-  'Growth Tips':     { pill: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80', dot: 'bg-emerald-500' },
-  'Creator Economy': { pill: 'bg-sky-50 text-sky-700 border border-sky-200/80',           dot: 'bg-sky-500' },
-  'TikTok':          { pill: 'bg-pink-50 text-pink-700 border border-pink-200/80',        dot: 'bg-pink-500' },
-  'Twitch':          { pill: 'bg-purple-50 text-purple-700 border border-purple-200/80',  dot: 'bg-purple-500' },
-  'Kick':            { pill: 'bg-green-50 text-green-700 border border-green-200/80',     dot: 'bg-green-500' },
-  'Bluesky':         { pill: 'bg-sky-50 text-sky-700 border border-sky-200/80',           dot: 'bg-sky-400' },
+  'YouTube News':      { pill: 'bg-red-50 text-red-700 border border-red-200/80',           dot: 'bg-red-500' },
+  'Platform Updates':  { pill: 'bg-indigo-50 text-indigo-700 border border-indigo-200/80',   dot: 'bg-indigo-500' },
+  'Industry News':     { pill: 'bg-sky-50 text-sky-700 border border-sky-200/80',           dot: 'bg-sky-500' },
+  'Industry Insights': { pill: 'bg-sky-50 text-sky-700 border border-sky-200/80',           dot: 'bg-sky-400' },
+  'Analytics':          { pill: 'bg-violet-50 text-violet-700 border border-violet-200/80',  dot: 'bg-violet-500' },
+  'Creator Economy':   { pill: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80', dot: 'bg-emerald-500' },
+  'Creator Spotlight': { pill: 'bg-pink-50 text-pink-700 border border-pink-200/80',        dot: 'bg-pink-500' },
+  'Twitch Trends':     { pill: 'bg-purple-50 text-purple-700 border border-purple-200/80',  dot: 'bg-purple-500' },
+  'Rankings':          { pill: 'bg-amber-50 text-amber-700 border border-amber-200/80',     dot: 'bg-amber-500' },
 };
 const DEFAULT_COLORS = { pill: 'bg-neutral-50 text-neutral-600 border border-neutral-200/80', dot: 'bg-indigo-500' };
 
@@ -146,8 +147,8 @@ export default function Blog() {
   return (
     <>
       <SEO
-        title="Blog - Creator Tips, Streaming Gear & Industry Insights"
-        description="Expert guides on streaming equipment, YouTube growth strategies, and creator economy insights. Grow your channel with data-driven advice."
+        title="Blog - Creator Analytics, Platform News & Industry Insights"
+        description="Analysis of creator economy trends, platform updates, and rankings across YouTube, TikTok, Twitch, and more. Data-driven insights for creators and fans."
       />
 
       <div className="min-h-screen bg-[#fafaf9]">
@@ -159,7 +160,7 @@ export default function Blog() {
               <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Blog</p>
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Resources</h1>
               <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-2xl mx-auto">
-                Expert guides on streaming gear, growth strategies, and industry insights to help you succeed as a creator
+                Platform news, rankings breakdowns, and creator economy analysis, backed by the data we track every day
               </p>
             </div>
           </div>
@@ -349,7 +350,7 @@ export default function Blog() {
                       onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
                       className="px-8 py-3 bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-700 hover:text-neutral-900 font-medium rounded-xl transition-all duration-200"
                     >
-                      Load more — {remaining} remaining
+                      Load more ({remaining} remaining)
                     </button>
                   </div>
                 )}

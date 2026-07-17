@@ -8,12 +8,13 @@ export default function Privacy() {
         description="Learn how ShinyPull collects, uses, and protects your personal information."
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <div className="relative overflow-hidden border-b border-neutral-200 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">Privacy Policy</h1>
-            <p className="text-neutral-500">Last updated: February 11, 2026</p>
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Legal</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Privacy Policy</h1>
+            <p className="mt-2 text-sm text-neutral-500">Last updated: July 16, 2026</p>
           </div>
         </div>
 
