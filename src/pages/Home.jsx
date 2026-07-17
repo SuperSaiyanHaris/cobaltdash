@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
-  Youtube, Twitch, LineChart, DollarSign, Users, Music,
+  Youtube, Twitch, LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import KickIcon from '../components/KickIcon';
@@ -168,27 +168,42 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
 // Platform icon + tint lookup, reused from the hero's platform-icon row.
 const PLATFORM_LOOKUP = Object.fromEntries(PLATFORMS.map((p) => [p.id, p]));
 
-// Champions — the #1 creator on every platform, all at once. Replaces the old
-// hero-embedded rotating single-card slideshow (4s auto-advance read as rushed,
-// and it lived in the hero where it collided with the creator showcase band
-// below it). Static grid instead of a rotation: every platform's leader is
-// visible at a glance, no waiting for a slideshow to cycle around. Light
-// section (this isn't the hero) — plain white cards, same language as
-// Features below it. Deliberately NOT CountUp here: these cards are below
-// the fold on load, and CountUp shows a literal "0" until scrolled into view,
-// which reads as broken data in a dense grid (see Rankings' compact rows for
-// the same reasoning) — plain formatNumber() instead.
+// Champions — the #1 creator on every platform, fanned out coverflow-style
+// (Ripit.co's homepage card-fan carousel is the reference) instead of a plain
+// grid — a static "line after line of #1s" grid read as flat, and the user
+// specifically wanted the fanned/rotated card motion instead. One card is
+// centered and full detail (avatar, count, real sparkline); the rest recede
+// to the sides at increasing rotation/scale/fade, like a hand of cards.
+// Auto-advances (paused on hover, and under prefers-reduced-motion the fan
+// just holds on the first card — no forced motion). Arrows + dots for manual
+// control; clicking either doesn't permanently stop auto-advance, this is a
+// decorative showcase, not a tabbed interface the user is expected to "land"
+// on. Deliberately NOT CountUp on the follower number: same reasoning as
+// everywhere else on this page — a below-the-fold CountUp shows a literal
+// "0" until scrolled into view, which reads as broken data.
 function ChampionsGrid({ tops, sparklines }) {
+  const reduceMotion = useReducedMotion();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (reduceMotion || paused || tops.length < 2) return;
+    const id = setInterval(() => setActiveIndex((i) => (i + 1) % tops.length), 3200);
+    return () => clearInterval(id);
+  }, [reduceMotion, paused, tops.length]);
+
   if (tops.length === 0) return null;
 
+  const go = (dir) => setActiveIndex((i) => (i + dir + tops.length) % tops.length);
+
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-10%' }}
         transition={{ duration: 0.5 }}
-        className="text-center mb-12 sm:mb-14"
+        className="text-center mb-10 sm:mb-12"
       >
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 mb-3">Right now</p>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
@@ -199,43 +214,97 @@ function ChampionsGrid({ tops, sparklines }) {
         </p>
       </motion.div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+      <div
+        className="relative h-[300px] sm:h-[340px] flex items-center justify-center"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
         {tops.map((top, i) => {
+          let offset = i - activeIndex;
+          if (offset > tops.length / 2) offset -= tops.length;
+          if (offset < -tops.length / 2) offset += tops.length;
+          const abs = Math.abs(offset);
+          if (abs > 3) return null;
+
+          const isActive = offset === 0;
           const meta = PLATFORM_LOOKUP[top.platform];
           const Icon = meta?.Icon;
           const spark = sparklines[top.id];
+
           return (
             <motion.div
               key={top.platform}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-10%' }}
-              transition={{ duration: 0.4, delay: i * 0.04 }}
+              className="absolute w-[210px] sm:w-[250px]"
+              animate={{
+                x: offset * (reduceMotion ? 0 : 120),
+                y: abs * 12,
+                rotate: reduceMotion ? 0 : offset * 7,
+                scale: 1 - abs * 0.13,
+                opacity: abs > 2 ? 0 : 1 - abs * 0.3,
+                zIndex: 10 - abs,
+              }}
+              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+              style={{ pointerEvents: isActive ? 'auto' : 'none' }}
             >
               <Link
                 to={`/${top.platform}/${top.username}`}
-                className="group block h-full bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 hover:bg-neutral-50/50 transition-colors duration-200"
+                tabIndex={isActive ? 0 : -1}
+                className={`group block bg-white border rounded-2xl p-5 shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-colors ${
+                  isActive ? 'border-neutral-300 hover:border-neutral-400' : 'border-neutral-200'
+                }`}
               >
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3.5">
                   {Icon && <Icon className="w-4 h-4 flex-shrink-0" style={{ color: meta.accent }} />}
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">{top._platformLabel}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">{top._platformLabel}</span>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <CreatorAvatar src={top.profile_image} name={top.display_name} rounded="rounded-xl" className="!w-12 !h-12 flex-shrink-0" />
+                <div className="flex items-center gap-3">
+                  <CreatorAvatar src={top.profile_image} name={top.display_name} rounded="rounded-xl" className="!w-11 !h-11 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-bold text-neutral-900 truncate">{top.display_name}</p>
-                    <p className="text-sm text-neutral-500 tabular-nums">
+                    <p className="font-bold text-neutral-900 truncate text-sm">{top.display_name}</p>
+                    <p className="text-xs text-neutral-500 tabular-nums">
                       {formatNumber(top.subscribers || 0)} {top._metricLabel}
                     </p>
                   </div>
                 </div>
-                <div className="h-8">
-                  {spark && spark.length >= 2 && <Sparkline data={spark} width={280} height={32} fluid />}
-                </div>
+                {isActive && (
+                  <div className="h-7 mt-3">
+                    {spark && spark.length >= 2 && <Sparkline data={spark} width={210} height={28} fluid />}
+                  </div>
+                )}
               </Link>
             </motion.div>
           );
         })}
+      </div>
+
+      <div className="flex items-center justify-center gap-4 mt-6">
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          aria-label="Previous"
+          className="p-2 rounded-full border border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-1.5">
+          {tops.map((t, i) => (
+            <button
+              key={t.platform}
+              type="button"
+              onClick={() => setActiveIndex(i)}
+              aria-label={`Show ${t._platformLabel}`}
+              className={`h-1.5 rounded-full transition-all ${i === activeIndex ? 'w-6 bg-neutral-900' : 'w-1.5 bg-neutral-300 hover:bg-neutral-400'}`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          aria-label="Next"
+          className="p-2 rounded-full border border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </section>
   );
