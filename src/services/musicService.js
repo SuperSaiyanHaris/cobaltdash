@@ -17,12 +17,18 @@ function stripHtml(html) {
     .trim() || null;
 }
 
+// Last.fm serves this exact gray placeholder graphic for every artist it has
+// no real photo for, instead of omitting the field. Treat it as "no image" so
+// CreatorAvatar's own initials fallback renders instead of Last.fm's asset.
+const LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
+
 function getBestImage(images) {
   if (!images || !images.length) return null;
   const priority = ['extralarge', 'mega', 'large', 'medium', 'small'];
   for (const size of priority) {
     const img = images.find(i => i.size === size);
-    if (img?.['#text']) return img['#text'];
+    const url = img?.['#text'];
+    if (url && !url.includes(LASTFM_PLACEHOLDER_HASH)) return url;
   }
   return null;
 }
