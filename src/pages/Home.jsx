@@ -115,32 +115,48 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
   );
 });
 
-// Decorative ticker. Kept out of the tab order entirely (pills remain
+const SHOWCASE_ICONS = { youtube: Youtube, twitch: Twitch };
+const SHOWCASE_TINT = { youtube: 'text-red-400', twitch: 'text-purple-400' };
+const SHOWCASE_METRIC = { youtube: 'subscribers', twitch: 'followers' };
+
+// Real-creator showcase band — bigger card treatment borrowed from the auth
+// page's showcase columns, so this reads as a considered section rather than
+// a cramped ticker. Kept out of the tab order entirely (cards remain
 // clickable) so keyboard users reach the search input immediately; the
 // duplicated copy is hidden from assistive tech.
 const HeroMarquee = memo(function HeroMarquee({ creators }) {
   if (creators.length === 0) return null;
 
   const strip = (hidden) => (
-    <div className="flex gap-4 sm:gap-6" aria-hidden={hidden || undefined}>
-      {creators.map((c, i) => (
-        <Link
-          key={`${c.id}-${i}`}
-          to={`/${c.platform}/${c.username}`}
-          tabIndex={-1}
-          className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/[0.08] border border-white/10 rounded-full hover:bg-white/[0.14] transition-colors"
-        >
-          <CreatorAvatar src={c.profile_image} name={c.display_name} size="xs" />
-          <span className="text-xs font-semibold text-white/90">{c.display_name}</span>
-          <span className="text-[10px] text-white/70 tabular-nums">{formatNumber(c.subscribers)}</span>
-        </Link>
-      ))}
+    <div className="flex gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
+      {creators.map((c, i) => {
+        const Icon = SHOWCASE_ICONS[c.platform] || Youtube;
+        return (
+          <Link
+            key={`${c.id}-${i}`}
+            to={`/${c.platform}/${c.username}`}
+            tabIndex={-1}
+            className="inline-flex items-center gap-3 px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl hover:bg-white/[0.09] hover:border-white/20 transition-colors w-64 flex-shrink-0"
+          >
+            <CreatorAvatar src={c.profile_image} name={c.display_name} rounded="rounded-lg" className="!w-11 !h-11 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${SHOWCASE_TINT[c.platform] || 'text-neutral-400'}`} />
+                <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
+              </div>
+              <p className="text-xs text-white/60 tabular-nums mt-0.5">
+                {formatNumber(c.subscribers)} {SHOWCASE_METRIC[c.platform] || 'followers'}
+              </p>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 
   return (
     <div
-      className="flex gap-4 sm:gap-6 animate-marquee whitespace-nowrap"
+      className="flex gap-3 sm:gap-4 animate-marquee whitespace-nowrap"
       style={{ width: 'max-content' }}
     >
       {strip(false)}
@@ -647,48 +663,12 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
 });
 
 const FEATURES = [
-  {
-    Icon: Trophy,
-    title: 'Live Rankings',
-    body: 'See the top creators on each platform updated daily. Sort by followers, views, or fastest growing.',
-    to: '/rankings',
-    accent: 'amber',
-  },
-  {
-    Icon: Search,
-    title: 'Universal Search',
-    body: `Look up any creator across ${PLATFORM_COUNT} platforms with one search. Hit ${IS_MAC ? '⌘K' : 'Ctrl K'} from anywhere.`,
-    to: '/search',
-    accent: 'indigo',
-  },
-  {
-    Icon: Scale,
-    title: 'Head-to-Head Compare',
-    body: 'Stack creators side-by-side. Subscribers, views, watch hours, growth rates, all at once.',
-    to: '/compare',
-    accent: 'violet',
-  },
-  {
-    Icon: TrendingUp,
-    title: 'Trending This Month',
-    body: 'The fastest-growing creators across every platform. Catch trends before they peak.',
-    to: '/trending',
-    accent: 'emerald',
-  },
-  {
-    Icon: Calculator,
-    title: 'Earnings Estimator',
-    body: 'Estimate any YouTuber\'s ad revenue based on view counts and average CPM ranges.',
-    to: '/youtube/money-calculator',
-    accent: 'green',
-  },
-  {
-    Icon: LineChart,
-    title: 'Daily Growth History',
-    body: 'Look back at how a creator has grown over weeks and months. Charts, deltas, milestones.',
-    to: '/youtube/mrbeast',
-    accent: 'sky',
-  },
+  { Icon: Trophy,     title: 'Live Rankings',       body: 'Updated daily, every platform',        to: '/rankings',                 accent: 'amber' },
+  { Icon: Search,     title: 'Universal Search',    body: `${IS_MAC ? '⌘K' : 'Ctrl K'} from anywhere`, to: '/search',               accent: 'indigo' },
+  { Icon: Scale,      title: 'Head-to-Head Compare',body: 'Stack any two creators',                to: '/compare',                  accent: 'violet' },
+  { Icon: TrendingUp, title: 'Trending This Month',  body: 'Catch growth before it peaks',          to: '/trending',                 accent: 'emerald' },
+  { Icon: Calculator, title: 'Earnings Estimator',   body: 'Estimate YouTube ad revenue',           to: '/youtube/money-calculator', accent: 'green' },
+  { Icon: LineChart,  title: 'Daily Growth History', body: 'Charts, deltas, milestones',            to: '/youtube/mrbeast',          accent: 'sky' },
 ];
 
 const FEATURE_COLORS = {
@@ -798,13 +778,6 @@ export default function Home() {
               into the page below, no hard seam. */}
           <div className="absolute inset-x-0 bottom-0 h-40 pointer-events-none bg-gradient-to-b from-transparent to-[#0a0a0f]" />
 
-          {/* TOP MARQUEE — randomized top creators across platforms.
-              Height is reserved (min-h) even before data loads so the strip
-              appearing never shifts the page / jumps the scroll on mobile. */}
-          <div className="relative flex-shrink-0 pt-5 pb-1 overflow-hidden mask-gradient min-h-[4.25rem]">
-            <HeroMarquee creators={marqueeCreators} />
-          </div>
-
           {/* Center stage — fills the remaining height and centers vertically,
               so the section reads as intentionally composed at any content length. */}
           <div className="relative flex-1 flex flex-col justify-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -909,6 +882,19 @@ export default function Home() {
 
           </div>
 
+          {/* CREATOR SHOWCASE — real creators, real numbers. Moved out of the
+              cramped strip that used to sit above the headline; now a proper
+              closing section of the hero with room to breathe, using the same
+              bigger-card treatment as the auth page's showcase columns. */}
+          <div className="relative flex-shrink-0 pt-2 pb-10 sm:pb-14">
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-4">
+              Live across the creator economy
+            </p>
+            <div className="overflow-hidden mask-gradient">
+              <HeroMarquee creators={marqueeCreators} />
+            </div>
+          </div>
+
           {/* LEFT FOCAL CARD — the rotating #1-per-platform creator, centered vertically
               in the empty left half of the BG image. */}
           <HeroFocalCard tops={topByPlatform} sparklines={sparklines} />
@@ -950,8 +936,8 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
               Track creators like a pro
             </h2>
-            <p className="mt-4 text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto">
-              Everything you need to follow the creator economy. No paywalls. Just data.
+            <p className="mt-4 text-base sm:text-lg text-neutral-600">
+              No paywalls. Just data.
             </p>
           </motion.div>
 
@@ -966,17 +952,16 @@ export default function Home() {
               >
                 <Link
                   to={feat.to}
-                  className="group block h-full bg-white border border-neutral-200 rounded-2xl p-6 hover:border-neutral-300 hover:bg-neutral-50/50 transition-colors duration-200"
+                  className="group flex items-center gap-4 h-full bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 hover:bg-neutral-50/50 transition-colors duration-200"
                 >
-                  <div className={`w-11 h-11 rounded-xl border ${FEATURE_COLORS[feat.accent]} flex items-center justify-center mb-5`}>
+                  <div className={`w-11 h-11 rounded-xl border ${FEATURE_COLORS[feat.accent]} flex items-center justify-center flex-shrink-0`}>
                     <feat.Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="text-lg font-bold text-neutral-900 mb-2">{feat.title}</h3>
-                  <p className="text-sm text-neutral-600 leading-relaxed mb-4">{feat.body}</p>
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-neutral-900 group-hover:gap-2 transition-all">
-                    Open
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-bold text-neutral-900">{feat.title}</h3>
+                    <p className="text-sm text-neutral-500 mt-0.5">{feat.body}</p>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-neutral-300 group-hover:text-neutral-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0" />
                 </Link>
               </motion.div>
             ))}
