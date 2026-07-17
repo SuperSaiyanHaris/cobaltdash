@@ -4,7 +4,7 @@ import { Command } from 'cmdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Trophy, Scale, BarChart3, BookOpen, Calculator, TrendingUp,
-  LayoutDashboard, FileSpreadsheet, Settings, Youtube, Twitch, Music,
+  LayoutDashboard, FileSpreadsheet, Settings, Youtube, Twitch, Music, ArrowRight,
 } from 'lucide-react';
 import KickIcon from './KickIcon';
 import TikTokIcon from './TikTokIcon';
@@ -29,6 +29,7 @@ const PLATFORM_ICONS = {
 };
 
 const QUICK_LINKS = [
+  { label: 'Search Creators',  to: '/search',                    Icon: Search,          color: 'text-indigo-400'  },
   { label: 'Top Rankings',     to: '/rankings',                  Icon: Trophy,          color: 'text-amber-400'   },
   { label: 'Trending Creators',to: '/trending',                  Icon: TrendingUp,      color: 'text-emerald-400' },
   { label: 'Compare Creators', to: '/compare',                   Icon: Scale,           color: 'text-violet-400'  },
@@ -166,8 +167,33 @@ export default function CommandPalette() {
 
               <Command.List className="max-h-[60vh] overflow-y-auto p-2">
                 <Command.Empty className="px-4 py-8 text-center text-sm text-neutral-400">
-                  {searching ? 'Searching…' : query.trim().length >= 2 ? 'No creators found.' : 'Type at least 2 characters to search creators.'}
+                  Type at least 2 characters to search creators.
                 </Command.Empty>
+
+                {/* Escape hatch — this palette only searches creators we already
+                    have in our database. The full Search page can look someone up
+                    live on YouTube/Twitch/Kick/Bluesky/Music even if we've never
+                    seen them before, so always offer a one-click path there
+                    whenever there's a real query, regardless of what (if anything)
+                    the quick DB search below found. */}
+                {query.trim().length >= 2 && (
+                  <Command.Group heading="Search" className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                    <Command.Item
+                      value={`__search_all__${query.trim()}`}
+                      onSelect={() => go(`/search?q=${encodeURIComponent(query.trim())}`)}
+                      className="normal-case flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
+                    >
+                      <Search className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                      <span className="flex-1 text-sm text-neutral-800 truncate">
+                        Search all platforms for <span className="font-semibold">"{query.trim()}"</span>
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" />
+                    </Command.Item>
+                    {!searching && results.length === 0 && (
+                      <p className="px-3 pt-1 pb-1.5 text-xs text-neutral-400">No exact matches in our database yet — try the full search above.</p>
+                    )}
+                  </Command.Group>
+                )}
 
                 {/* Creator results — only when user is searching */}
                 {results.length > 0 && (
@@ -180,7 +206,7 @@ export default function CommandPalette() {
                           key={`${c.platform}-${c.id || c.username}`}
                           value={`${c.platform}-${c.username}-${c.display_name}`}
                           onSelect={() => go(`/${c.platform}/${c.username}`)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
+                          className="normal-case flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
                         >
                           <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" />
                           <div className="flex-1 min-w-0">
@@ -203,7 +229,7 @@ export default function CommandPalette() {
                           key={link.to}
                           value={link.label}
                           onSelect={() => go(link.to)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
+                          className="normal-case flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
                         >
                           <link.Icon className={`w-4 h-4 ${link.color}`} />
                           <span className="text-sm text-neutral-800">{link.label}</span>
@@ -217,7 +243,7 @@ export default function CommandPalette() {
                           key={link.to}
                           value={link.label}
                           onSelect={() => go(link.to)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
+                          className="normal-case flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer aria-selected:bg-neutral-100 hover:bg-neutral-100 transition-colors"
                         >
                           <link.Icon className={`w-4 h-4 ${link.color}`} />
                           <span className="text-sm text-neutral-800">{link.label}</span>
