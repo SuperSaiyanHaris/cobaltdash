@@ -514,12 +514,11 @@ export default function Dashboard() {
 
       <div className="min-h-screen bg-[#fafaf9]">
 
-        {/* Page header — white block, hairline rule, typographic */}
+        {/* Page header — big bold title, live badge */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
             <div>
-              <p className={`${MICRO} mb-3`}>Dashboard</p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
                 Welcome back{displayName ? `, ${displayName}` : ''}.
               </h1>
               <p className="mt-2 text-sm text-neutral-500">
@@ -535,10 +534,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* Stat strip — one white container, hairline-divided cells */}
-          <div className={`grid grid-cols-3 divide-x divide-neutral-200/80 ${CARD} mb-10`}>
+          {/* Stat card — one unified card, hairline-divided cells */}
+          <div className={`grid grid-cols-3 divide-x divide-neutral-200/80 ${CARD} mb-6`}>
             {[
               { label: 'Following', value: followedCreators.length, live: false },
               { label: 'Live now', value: liveCount, live: true },
@@ -554,73 +553,43 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Sidebar + content */}
-          <div className="flex gap-10 items-start">
+          {/* Pill tab nav — one responsive row */}
+          <div className="flex items-center gap-1.5 mb-6">
+            <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {tabs.map(tab => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
+                      isActive
+                        ? 'bg-neutral-900 border-neutral-900 text-white'
+                        : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.count > 0 && (
+                      <span className={`text-xs tabular-nums ${isActive ? 'text-neutral-400' : 'text-neutral-400'}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex-1" />
+            <Link
+              to="/account"
+              className="hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-full text-sm text-neutral-400 hover:text-neutral-900 transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Account Settings
+            </Link>
+          </div>
 
-            {/* Sidebar nav (desktop) */}
-            <aside className="hidden md:flex flex-col w-52 flex-shrink-0">
-              <nav className="space-y-px">
-                {tabs.map(tab => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
-                        isActive
-                          ? 'bg-neutral-900 text-white'
-                          : 'text-neutral-500 hover:text-neutral-900'
-                      }`}
-                    >
-                      <span className="flex-1">{tab.label}</span>
-                      {tab.count > 0 && (
-                        <span className={`text-xs tabular-nums ${isActive ? 'text-neutral-400' : 'text-neutral-400'}`}>
-                          {tab.count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-
-              <div className="mt-6 pt-5 border-t border-neutral-200/80">
-                <Link
-                  to="/account"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
-                >
-                  <Settings className="w-3.5 h-3.5 flex-shrink-0" />
-                  Account Settings
-                </Link>
-              </div>
-            </aside>
-
-            {/* Main content */}
-            <div className="flex-1 min-w-0">
-
-              {/* Mobile tabs — segmented control */}
-              <div className={`flex md:hidden mb-6 ${CARD} !rounded-lg p-0.5 gap-0.5`}>
-                {tabs.map(tab => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md text-xs font-medium transition-colors ${
-                        isActive
-                          ? 'bg-neutral-900 text-white'
-                          : 'text-neutral-500'
-                      }`}
-                    >
-                      <span>{tab.shortLabel}</span>
-                      {tab.count > 0 && (
-                        <span className={`text-[10px] tabular-nums ${isActive ? 'text-neutral-400' : 'text-neutral-400'}`}>
-                          {tab.count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+          {/* Content */}
+          <div>
 
               {/* ── FOLLOWING TAB ── */}
               {activeTab === 'following' && (
@@ -1002,7 +971,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-            </div>
           </div>
         </div>
       </div>

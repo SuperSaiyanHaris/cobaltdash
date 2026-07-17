@@ -6,15 +6,22 @@ import { isMac } from '../lib/platform';
 
 // Feature launcher entries. `tint` is the only color each gets — a muted icon
 // tint for wayfinding, no gradient boxes (precision system).
+// Compare and Dashboard live in the header's center pill nav instead of here.
 const moreLinks = [
   { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
-  { path: '/compare', label: 'Compare', description: 'Side-by-side creator stats', icon: Scale, tint: 'text-violet-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
-  { path: '/dashboard', label: 'Dashboard', description: 'Your followed creators', icon: LayoutDashboard, tint: 'text-indigo-500' },
   { path: '/reports', label: 'Reports', description: 'Bulk exports and analytics', icon: FileSpreadsheet, tint: 'text-sky-500' },
   { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },
   { path: '/blog', label: 'Blog', description: 'Creator economy insights', icon: BookOpen, tint: 'text-cyan-500' },
   { path: '/support', label: 'Support', description: 'Get help from our team', icon: Heart, tint: 'text-rose-500' },
+];
+
+// The 3 primary destinations, always visible as a floating center pill on
+// desktop — same role as Ripit's Packs/Collection/Wallet center nav.
+const CENTER_NAV = [
+  { path: '/rankings',  label: 'Rankings',  icon: Trophy },
+  { path: '/compare',   label: 'Compare',   icon: Scale },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
 export default function Header() {
@@ -73,7 +80,7 @@ export default function Header() {
   return (
     <header ref={mobileMenuRef} className="bg-white/85 backdrop-blur-md border-b border-neutral-200 sticky top-0 z-50">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="relative flex items-center justify-between h-16">
 
           {/* Logo — wordmark where the "ll" of Pull are gradient bars, so the
               wordmark doubles as the bar-chart mark. */}
@@ -88,21 +95,28 @@ export default function Header() {
             <span aria-hidden="true" className="inline-block w-[6px] h-[23px] rounded-[2px] -ml-px bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500 transition-transform group-hover:-translate-y-1" />
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Center pill nav — the 3 primary destinations, floating and
+              centered independent of logo/right-cluster width, same role as
+              a lot of modern app headers' persistent utility nav. */}
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1 p-1 bg-white border border-neutral-200 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            {CENTER_NAV.map(({ path, label, icon: Icon }) => (
+              <Link
+                key={path}
+                to={path}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  isActive(path)
+                    ? 'bg-neutral-900 text-white'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
 
-            {/* Rankings */}
-            <Link
-              to="/rankings"
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/rankings')
-                  ? 'bg-neutral-100 text-neutral-900'
-                  : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              <span>Rankings</span>
-            </Link>
+          {/* Desktop Nav — right cluster: quick search, secondary features, auth */}
+          <nav className="hidden md:flex items-center gap-1">
 
             {/* Search — opens the command palette (Cmd+K) */}
             <button
@@ -112,8 +126,7 @@ export default function Header() {
               aria-label="Open command palette"
             >
               <Search className="w-4 h-4" />
-              <span>Search</span>
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 text-[10px] font-semibold bg-white border border-neutral-200 rounded text-neutral-500">
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-white border border-neutral-200 rounded text-neutral-500">
                 {isMac ? <span className="text-xs leading-none">⌘</span> : 'Ctrl+'}K
               </kbd>
             </button>
@@ -312,6 +325,36 @@ export default function Header() {
                     <div className="min-w-0">
                       <p className="font-medium text-neutral-900 text-sm leading-tight">Rankings</p>
                       <p className="text-xs text-neutral-500 leading-tight mt-0.5">Top creators live</p>
+                    </div>
+                  </Link>
+                  <Link
+                    to="/compare"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
+                      isActive('/compare') ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0">
+                      <Scale className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-neutral-900 text-sm leading-tight">Compare</p>
+                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Side-by-side stats</p>
+                    </div>
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
+                      isActive('/dashboard') ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                      <LayoutDashboard className="w-4 h-4 text-indigo-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-neutral-900 text-sm leading-tight">Dashboard</p>
+                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Your followed creators</p>
                     </div>
                   </Link>
                 </div>
