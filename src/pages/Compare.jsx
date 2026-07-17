@@ -499,7 +499,7 @@ export default function Compare() {
                 <Swords className="w-3 h-3" />
                 Head to head
               </p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
                 Compare any two creators
               </h1>
               <p className="mt-2 text-sm text-neutral-500 max-w-xl mx-auto">

@@ -250,7 +250,7 @@ function RankingsOverview() {
           <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <div>
               <p className={`${MICRO} mb-3`}>Rankings</p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Creator Rankings</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Rankings</h1>
               <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
             </div>
 
@@ -686,7 +686,7 @@ function PlatformRankings({ urlPlatform }) {
         <div className="bg-white border-b border-neutral-200/80">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <p className={`${MICRO} mb-3`}>Rankings</p>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
             <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
           </div>
         </div>

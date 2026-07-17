@@ -62,7 +62,7 @@ export default function Trending() {
           <div className="max-w-4xl mx-auto px-4 py-10 sm:py-12 flex items-end justify-between gap-6">
             <div>
               <p className={`${MICRO} mb-3`}>Trending</p>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Trending Creators</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Trending Creators</h1>
               <p className="mt-2 text-sm text-neutral-500">Fastest growing channels and accounts over the last 30 days.</p>
               <p className="mt-3 text-sm text-neutral-400 leading-relaxed max-w-2xl">
                 These rankings show which creators are gaining the most ground right now. Each platform uses the metric that best captures real growth.

@@ -66,7 +66,7 @@ export default function Support() {
         <div className="bg-white border-b border-neutral-200/80">
           <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16 text-center">
             <p className={`${MICRO} mb-3`}>Support</p>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
               Support ShinyPull
             </h1>
             <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-xl mx-auto mb-7">

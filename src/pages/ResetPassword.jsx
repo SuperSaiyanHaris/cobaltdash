@@ -94,7 +94,7 @@ export default function ResetPassword() {
         <div className="max-w-sm w-full">
           <div className="text-center mb-8">
             <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Account</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-1.5">Set a new password</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-1.5">Set a new password</h1>
             <p className="text-sm text-neutral-500">
               Enter your new password below
             </p>

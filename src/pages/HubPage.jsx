@@ -163,7 +163,7 @@ function Hub({ hub }) {
                   {Icon && <Icon className={`w-3 h-3 ${meta.tint}`} />}
                   {meta.eyebrow}
                 </p>
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
                   Best {hub.title} {titleCase(hub.noun)}
                 </h1>
                 <p className="mt-2 text-sm text-neutral-500">
@@ -323,7 +323,7 @@ export function HubIndex() {
         <div className="bg-white border-b border-neutral-200/80">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <p className={`${MICRO} mb-3`}>Categories</p>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
               Best creators by category
             </h1>
             <p className="mt-2 text-sm text-neutral-500">

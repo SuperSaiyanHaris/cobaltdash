@@ -156,7 +156,7 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
 
   return (
     <div
-      className="flex gap-3 sm:gap-4 animate-marquee whitespace-nowrap"
+      className="flex gap-3 sm:gap-4 animate-marquee-slow whitespace-nowrap"
       style={{ width: 'max-content' }}
     >
       {strip(false)}
@@ -165,78 +165,81 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
   );
 });
 
-const HeroFocalCard = memo(function HeroFocalCard({ tops, sparklines }) {
-  const reduceMotion = useReducedMotion();
-  const [idx, setIdx] = useState(0);
+// Platform icon + tint lookup, reused from the hero's platform-icon row.
+const PLATFORM_LOOKUP = Object.fromEntries(PLATFORMS.map((p) => [p.id, p]));
 
-  useEffect(() => {
-    if (reduceMotion || tops.length < 2) return;
-    const id = setInterval(() => setIdx((i) => (i + 1) % tops.length), 4000);
-    return () => clearInterval(id);
-  }, [tops.length, reduceMotion]);
-
+// Champions — the #1 creator on every platform, all at once. Replaces the old
+// hero-embedded rotating single-card slideshow (4s auto-advance read as rushed,
+// and it lived in the hero where it collided with the creator showcase band
+// below it). Static grid instead of a rotation: every platform's leader is
+// visible at a glance, no waiting for a slideshow to cycle around. Light
+// section (this isn't the hero) — plain white cards, same language as
+// Features below it. Deliberately NOT CountUp here: these cards are below
+// the fold on load, and CountUp shows a literal "0" until scrolled into view,
+// which reads as broken data in a dense grid (see Rankings' compact rows for
+// the same reasoning) — plain formatNumber() instead.
+function ChampionsGrid({ tops, sparklines }) {
   if (tops.length === 0) return null;
-  const top = tops[Math.min(idx, tops.length - 1)];
-  const spark = sparklines[top.id];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -30 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="hidden min-[1280px]:flex absolute top-1/2 -translate-y-1/2 flex-col gap-5 w-[24rem]"
-      style={{ left: 'max(2rem, calc(50% - 30rem - 25rem))' }}
-    >
-      {/* Rotating #1 platform card */}
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
       <motion.div
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-10%' }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12 sm:mb-14"
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={top.platform}
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <Link
-              to={`/${top.platform}/${top.username}`}
-              className="group block bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-3xl p-7 shadow-2xl shadow-black/50 hover:bg-white/[0.12] hover:border-white/30 transition-all"
-            >
-              <div className="flex items-center gap-4 mb-5">
-                <CreatorAvatar src={top.profile_image} name={top.display_name} size="lg" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-white/70 uppercase tracking-wider font-bold">{top._platformLabel}</p>
-                  <p className="text-lg font-bold text-white truncate">{top.display_name}</p>
-                </div>
-              </div>
-              <p className="text-5xl font-black text-white tabular-nums leading-none">
-                <CountUp value={top.subscribers || 0} />
-              </p>
-              <p className="text-sm text-white/70 mt-2">{top._metricLabel}</p>
-              {/* Real 30-day series; height reserved so card size never jumps */}
-              <div className="mt-4 h-10">
-                {spark && spark.length >= 2 && (
-                  <Sparkline data={spark} width={328} height={40} fluid />
-                )}
-              </div>
-            </Link>
-          </motion.div>
-        </AnimatePresence>
-        {/* Platform indicator dots */}
-        <div className="flex justify-center gap-1.5 mt-4" aria-hidden="true">
-          {tops.map((t, i) => (
-            <span
-              key={t.platform}
-              className={`h-1 rounded-full transition-all ${i === idx ? 'w-6 bg-white' : 'w-1 bg-white/30'}`}
-            />
-          ))}
-        </div>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 mb-3">Right now</p>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
+          The #1 on every platform
+        </h2>
+        <p className="mt-4 text-base sm:text-lg text-neutral-600">
+          Real numbers, updated daily, across all {PLATFORM_COUNT} platforms.
+        </p>
       </motion.div>
-    </motion.div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        {tops.map((top, i) => {
+          const meta = PLATFORM_LOOKUP[top.platform];
+          const Icon = meta?.Icon;
+          const spark = sparklines[top.id];
+          return (
+            <motion.div
+              key={top.platform}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-10%' }}
+              transition={{ duration: 0.4, delay: i * 0.04 }}
+            >
+              <Link
+                to={`/${top.platform}/${top.username}`}
+                className="group block h-full bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 hover:bg-neutral-50/50 transition-colors duration-200"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  {Icon && <Icon className="w-4 h-4 flex-shrink-0" style={{ color: meta.accent }} />}
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">{top._platformLabel}</span>
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <CreatorAvatar src={top.profile_image} name={top.display_name} rounded="rounded-xl" className="!w-12 !h-12 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-bold text-neutral-900 truncate">{top.display_name}</p>
+                    <p className="text-sm text-neutral-500 tabular-nums">
+                      {formatNumber(top.subscribers || 0)} {top._metricLabel}
+                    </p>
+                  </div>
+                </div>
+                <div className="h-8">
+                  {spark && spark.length >= 2 && <Sparkline data={spark} width={280} height={32} fluid />}
+                </div>
+              </Link>
+            </motion.div>
+          );
+        })}
+      </div>
+    </section>
   );
-});
+}
 
 /* ---------------------------------------------------------------------------
  * Product preview carousel — owns its rotation state. Auto-advance stops
@@ -885,19 +888,14 @@ export default function Home() {
           {/* CREATOR SHOWCASE — real creators, real numbers. Moved out of the
               cramped strip that used to sit above the headline; now a proper
               closing section of the hero with room to breathe, using the same
-              bigger-card treatment as the auth page's showcase columns. */}
-          <div className="relative flex-shrink-0 pt-2 pb-10 sm:pb-14">
-            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-4">
-              Live across the creator economy
-            </p>
-            <div className="overflow-hidden mask-gradient">
-              <HeroMarquee creators={marqueeCreators} />
-            </div>
+              bigger-card treatment as the auth page's showcase columns. No
+              label needed — the cards speak for themselves. Slower drift
+              (220s, was riding the shared 120s .animate-marquee) since these
+              cards are bigger/richer than a plain ticker and read as rushed
+              at the faster pace. */}
+          <div className="relative flex-shrink-0 pt-2 pb-10 sm:pb-14 overflow-hidden mask-gradient">
+            <HeroMarquee creators={marqueeCreators} />
           </div>
-
-          {/* LEFT FOCAL CARD — the rotating #1-per-platform creator, centered vertically
-              in the empty left half of the BG image. */}
-          <HeroFocalCard tops={topByPlatform} sparklines={sparklines} />
         </section>
 
         {/* ============== PRODUCT PREVIEW ============== */}
@@ -922,6 +920,9 @@ export default function Home() {
             <LiveStatsStrip creators={liveStats.creators} dataPoints={liveStats.dataPoints} />
           </div>
         </section>
+
+        {/* ============== CHAMPIONS ============== */}
+        <ChampionsGrid tops={topByPlatform} sparklines={sparklines} />
 
         {/* ============== FEATURES ============== */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">

@@ -97,7 +97,7 @@ export default function Promote() {
                 <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">Featured Listings</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-neutral-900 mb-5 tracking-tight leading-[1.1]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-neutral-900 mb-5 tracking-tight leading-[1.1]">
                 Put your creator in front of <span className="text-amber-600">the people watching the data</span>
               </h1>
 

@@ -10,12 +10,13 @@ export default function About() {
         description="Learn about ShinyPull - the leading social media analytics platform for tracking YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music artist statistics."
       />
 
-      <div className="min-h-screen bg-[#fafafa]">
-        {/* Hero */}
-        <div className="relative overflow-hidden border-b border-neutral-200 py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h1 className="text-4xl font-extrabold text-neutral-900 mb-4">About ShinyPull</h1>
-            <p className="text-xl text-neutral-500">
+      <div className="min-h-screen bg-[#fafaf9]">
+        {/* Header — white block, hairline rule, typographic */}
+        <div className="bg-white border-b border-neutral-200/80">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">About</p>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">About ShinyPull</h1>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">
               Comprehensive social media analytics for creators and fans
             </p>
           </div>
@@ -23,7 +24,7 @@ export default function About() {
 
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">What We Do</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">What We Do</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               ShinyPull tracks publicly available statistics for content creators and music artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music.
               We collect stats every day and store them as historical snapshots, so you can see exactly how channels and artists have grown over time.
@@ -37,7 +38,7 @@ export default function About() {
           </div>
 
           <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Why We Built This</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">Why We Built This</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               The creator economy moves fast. Sponsorship deals, channel acquisitions, platform migrations, audience shifts. The people making decisions in this space need accurate data, not estimates from tools that haven't been updated in years.
             </p>
@@ -81,7 +82,7 @@ export default function About() {
           </div>
 
           <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Our Data</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">Our Data</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               All data shown on ShinyPull is publicly available information. We only show statistics that anyone can
               already see on each platform, and we never access private account information.
@@ -95,7 +96,7 @@ export default function About() {
           </div>
 
           <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Contact</h2>
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">Contact</h2>
             <p className="text-neutral-700 mb-4 leading-relaxed">
               Questions, feedback, or something looks wrong? We'd love to hear from you.
             </p>

@@ -498,7 +498,7 @@ export default function Reports() {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Reports</p>
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-900">Reports</h1>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Reports</h1>
                 <p className="mt-2 text-sm sm:text-base text-neutral-600 max-w-xl">
                   Pick creators, choose a date range and metrics, then export the data as CSV. Save report templates to re-run them with one click.
                 </p>
