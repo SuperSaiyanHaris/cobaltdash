@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
-  Youtube, Twitch, LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight,
+  Youtube, Twitch, LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import KickIcon from '../components/KickIcon';
@@ -895,22 +895,30 @@ export default function Home() {
               </div>
             </motion.form>
 
-            {/* Live-across-N-platforms — one quiet statement, visible at every
-                viewport (the rotating focal card below is desktop-only, so this
-                is the only place mobile/tablet visitors see the claim). */}
+            {/* Featured Listings CTA — promoted to the primary post-search slot
+                (was the "Live across N platforms" claim, removed as redundant
+                with the platform icon row below). Amber = this site's one
+                functional-color convention for the Premium tier, applied here
+                without a glow/gradient per the no-orbs rule. */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               className="mt-8 flex justify-center"
             >
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-400/25 rounded-full">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              <Link
+                to="/promote"
+                className="group flex items-center gap-3 pl-3.5 pr-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-xl border border-amber-400/25 hover:border-amber-400/40 rounded-2xl transition-all"
+              >
+                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/15 flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-amber-300" />
                 </span>
-                <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-300">Live across {PLATFORM_COUNT} platforms</span>
-              </div>
+                <span className="text-left leading-tight">
+                  <span className="block text-sm font-semibold text-white">Get Featured</span>
+                  <span className="block text-xs text-white/50">Sponsored placement in the live rankings</span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-white/40 group-hover:translate-x-0.5 group-hover:text-white/70 transition-all flex-shrink-0" />
+              </Link>
             </motion.div>
 
             {/* Platform icons — quiet, icon-only, no chip backgrounds. Identity
@@ -932,24 +940,6 @@ export default function Home() {
                   <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
                 </Link>
               ))}
-            </motion.div>
-
-            {/* Featured Listings promo — smallest, quietest element in the stack;
-                the B2B upsell never competes with search for first attention */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="mt-8 flex justify-center"
-            >
-              <Link
-                to="/promote"
-                className="group inline-flex items-center gap-2 px-3 py-1.5 bg-white/[0.07] border border-white/15 rounded-full text-xs font-medium text-white/80 hover:bg-white/[0.12] transition-all"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span><span className="font-semibold text-white">Featured Listings</span> are live</span>
-                <ArrowRight className="w-3 h-3 text-white/50 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
             </motion.div>
 
           </div>
