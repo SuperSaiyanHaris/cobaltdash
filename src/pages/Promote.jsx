@@ -198,9 +198,76 @@ export default function Promote() {
           </div>
         </section>
 
-        {/* Pricing tiers — the entire card is the click target, not just the
-            CTA line at the bottom. */}
+        {/* How it works — white block, takes over the visual weight the
+            pricing section used to have here now that pricing moved down. */}
         <section className="bg-white border-y border-neutral-200/80">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+            <div className="text-center mb-12">
+              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">How it works</h2>
+              <p className="mt-2 text-sm sm:text-base text-neutral-500">Live in under a minute.</p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              {[
+                { Icon: Users,      title: 'Pick a creator',       body: `Search any creator across our ${PLATFORM_COUNT} platforms. If they're tracked here, they're eligible.`, tint: 'text-indigo-500' },
+                { Icon: Megaphone,  title: 'Choose your slot',     body: 'Basic ($49) for steady visibility starting at rank 15. Premium ($149) for top-of-page placement.', tint: 'text-amber-500' },
+                { Icon: TrendingUp, title: 'Live in minutes',      body: 'Stripe Checkout. Confirmation, then your creator appears on the live rankings page right away.', tint: 'text-emerald-600' },
+              ].map((step, i) => (
+                <motion.div
+                  key={step.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.1 }}
+                  className={`${CARD} p-6 relative`}
+                >
+                  <span className="absolute top-5 right-5 text-xs font-medium text-neutral-300 tabular-nums">0{i + 1}</span>
+                  <step.Icon className={`w-5 h-5 ${step.tint} mb-4`} />
+                  <h3 className="text-base font-medium text-neutral-900 mb-1.5">{step.title}</h3>
+                  <p className="text-sm text-neutral-500 leading-relaxed">{step.body}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 text-center mb-10">FAQ</h2>
+          <div className="space-y-3">
+            {[
+              {
+                q: 'Can I feature someone who isn\'t in your database?',
+                a: 'For YouTube, Twitch, Kick, Bluesky, Mastodon, and Music: we add new creators continuously. If they aren\'t tracked yet, request them via the Search page. For TikTok, the Listings page has an instant-add flow that pulls their profile in seconds.',
+              },
+              {
+                q: 'How is this different from a regular ad?',
+                a: 'Featured Listings appear inside our actual ranked tables, not in display banner slots. People are already reading those rows when they look up creators, so attention is built-in.',
+              },
+              {
+                q: 'Are featured slots labeled?',
+                a: 'Yes. Basic shows as "Sponsored" and Premium shows as "⭐ Premium". We don\'t hide that they\'re paid placements. Clarity makes the format trustworthy.',
+              },
+              {
+                q: 'Can I cancel?',
+                a: 'Anytime, from the Listings tab in your account. Cancellation stops the next renewal. Your placement stays active through the end of the current billing period.',
+              },
+              {
+                q: 'What happens if a slot is taken?',
+                a: 'Slots are first come, first served. When the slot you want is full, checkout is disabled for that tier until an opening frees up. The moment someone above you cancels or their listing expires, every lower placement automatically moves up one position and the next available slot opens for purchase. No manual waitlist.',
+              },
+            ].map((item) => (
+              <div key={item.q} className={`${CARD} p-5`}>
+                <h3 className="font-medium text-neutral-900 mb-1.5">{item.q}</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Pricing tiers — last stop before the final CTA, once the preview
+            has been seen and objections answered. The entire card is the
+            click target, not just the CTA line at the bottom. */}
+        <section className="bg-white border-t border-neutral-200/80">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
             <div className="text-center mb-12">
               <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">Two ways to get featured</h2>
@@ -277,69 +344,6 @@ export default function Promote() {
                 </CardShell>
               </motion.div>
             </div>
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">How it works</h2>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500">Live in under a minute.</p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            {[
-              { Icon: Users,      title: 'Pick a creator',       body: `Search any creator across our ${PLATFORM_COUNT} platforms. If they're tracked here, they're eligible.`, tint: 'text-indigo-500' },
-              { Icon: Megaphone,  title: 'Choose your slot',     body: 'Basic ($49) for steady visibility starting at rank 15. Premium ($149) for top-of-page placement.', tint: 'text-amber-500' },
-              { Icon: TrendingUp, title: 'Live in minutes',      body: 'Stripe Checkout. Confirmation, then your creator appears on the live rankings page right away.', tint: 'text-emerald-600' },
-            ].map((step, i) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                className={`${CARD} p-6 relative`}
-              >
-                <span className="absolute top-5 right-5 text-xs font-medium text-neutral-300 tabular-nums">0{i + 1}</span>
-                <step.Icon className={`w-5 h-5 ${step.tint} mb-4`} />
-                <h3 className="text-base font-medium text-neutral-900 mb-1.5">{step.title}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{step.body}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 text-center mb-10">FAQ</h2>
-          <div className="space-y-3">
-            {[
-              {
-                q: 'Can I feature someone who isn\'t in your database?',
-                a: 'For YouTube, Twitch, Kick, Bluesky, Mastodon, and Music: we add new creators continuously. If they aren\'t tracked yet, request them via the Search page. For TikTok, the Listings page has an instant-add flow that pulls their profile in seconds.',
-              },
-              {
-                q: 'How is this different from a regular ad?',
-                a: 'Featured Listings appear inside our actual ranked tables, not in display banner slots. People are already reading those rows when they look up creators, so attention is built-in.',
-              },
-              {
-                q: 'Are featured slots labeled?',
-                a: 'Yes. Basic shows as "Sponsored" and Premium shows as "⭐ Premium". We don\'t hide that they\'re paid placements. Clarity makes the format trustworthy.',
-              },
-              {
-                q: 'Can I cancel?',
-                a: 'Anytime, from the Listings tab in your account. Cancellation stops the next renewal. Your placement stays active through the end of the current billing period.',
-              },
-              {
-                q: 'What happens if a slot is taken?',
-                a: 'Slots are first come, first served. When the slot you want is full, checkout is disabled for that tier until an opening frees up. The moment someone above you cancels or their listing expires, every lower placement automatically moves up one position and the next available slot opens for purchase. No manual waitlist.',
-              },
-            ].map((item) => (
-              <div key={item.q} className={`${CARD} p-5`}>
-                <h3 className="font-medium text-neutral-900 mb-1.5">{item.q}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{item.a}</p>
-              </div>
-            ))}
           </div>
         </section>
 
