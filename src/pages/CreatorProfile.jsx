@@ -20,7 +20,6 @@ import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbum
 import { Music } from 'lucide-react';
 import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getNearbyRankedCreators } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
-import CountUp from '../components/CountUp';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
 import { followCreator, unfollowCreator, isFollowing as checkIsFollowing, getFollowedCreators } from '../services/followService';
@@ -2435,20 +2434,15 @@ const STAT_TINTS = {
   Posts:              'text-sky-500',
 };
 
-function StatCard({ icon: Icon, label, value, rawValue, sublabel }) {
+function StatCard({ icon: Icon, label, value, sublabel }) {
   const tint = STAT_TINTS[label] || 'text-neutral-400';
-  // When a clean numeric value is provided, animate it counting up so the stat
-  // grid reads as "live data". Falls back to the preformatted string otherwise.
-  const animate = typeof rawValue === 'number' && isFinite(rawValue);
   return (
     <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-3 sm:p-5 transition-colors hover:border-neutral-300">
       <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
         {Icon && <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${tint}`} />}
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 leading-tight line-clamp-2 break-words">{label}</p>
       </div>
-      <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">
-        {animate ? <CountUp value={rawValue} duration={1.1} /> : value}
-      </p>
+      <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">{value}</p>
       {sublabel && <p className="text-[10px] sm:text-xs text-neutral-400 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
     </div>
   );
