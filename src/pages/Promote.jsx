@@ -230,119 +230,120 @@ export default function Promote() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 text-center mb-10">FAQ</h2>
-          <div className="space-y-3">
-            {[
-              {
-                q: 'Can I feature someone who isn\'t in your database?',
-                a: 'For YouTube, Twitch, Kick, Bluesky, Mastodon, and Music: we add new creators continuously. If they aren\'t tracked yet, request them via the Search page. For TikTok, the Listings page has an instant-add flow that pulls their profile in seconds.',
-              },
-              {
-                q: 'How is this different from a regular ad?',
-                a: 'Featured Listings appear inside our actual ranked tables, not in display banner slots. People are already reading those rows when they look up creators, so attention is built-in.',
-              },
-              {
-                q: 'Are featured slots labeled?',
-                a: 'Yes. Basic shows as "Sponsored" and Premium shows as "⭐ Premium". We don\'t hide that they\'re paid placements. Clarity makes the format trustworthy.',
-              },
-              {
-                q: 'Can I cancel?',
-                a: 'Anytime, from the Listings tab in your account. Cancellation stops the next renewal. Your placement stays active through the end of the current billing period.',
-              },
-              {
-                q: 'What happens if a slot is taken?',
-                a: 'Slots are first come, first served. When the slot you want is full, checkout is disabled for that tier until an opening frees up. The moment someone above you cancels or their listing expires, every lower placement automatically moves up one position and the next available slot opens for purchase. No manual waitlist.',
-              },
-            ].map((item) => (
-              <div key={item.q} className={`${CARD} p-5`}>
-                <h3 className="font-medium text-neutral-900 mb-1.5">{item.q}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{item.a}</p>
-              </div>
-            ))}
+        {/* Pricing tiers — right after "How it works", ahead of the FAQ.
+            The entire card is the click target, not just the CTA line at
+            the bottom. */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">Two ways to get featured</h2>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">Pick the slot. Pick the platform. Live in minutes.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {/* Basic */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <CardShell
+                soldOut={basicSoldOut}
+                to={ctaHref}
+                onClick={handleCtaClick}
+                className="border-neutral-200/80"
+              >
+                <span className={`${MICRO} text-neutral-500`}>Basic</span>
+                <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
+                <ul className="space-y-2.5 mb-7">
+                  {[
+                    'Rank 15, 20, 25, 30... on your chosen platform',
+                    'Shows on both desktop and mobile rankings',
+                    'Cancel anytime',
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-neutral-400" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <CardFooter soldOut={basicSoldOut} label="Get a Basic slot" tone="neutral" />
+              </CardShell>
+            </motion.div>
+
+            {/* Premium — one amber top rule is the differentiation */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <CardShell
+                soldOut={premiumSoldOut}
+                to={ctaHref}
+                onClick={handleCtaClick}
+                className="border-t-2 border-t-amber-400 hover:border-t-amber-500"
+                hoverTint="hover:bg-amber-50/40"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">⭐ Premium</span>
+                  <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-[10px] font-medium text-amber-700">Only 2 slots / platform</span>
+                </div>
+                <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$149<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <p className="text-sm text-neutral-500 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
+                <ul className="space-y-2.5 mb-7">
+                  {[
+                    'Between rank 4-5 and 9-10, top of fold visibility',
+                    'Golden card treatment, ⭐ Premium label',
+                    'Maximum 2 slots per platform. Scarce inventory.',
+                    'Cancel anytime',
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <CardFooter soldOut={premiumSoldOut} label="Get a Premium slot" tone="amber" />
+              </CardShell>
+            </motion.div>
           </div>
         </section>
 
-        {/* Pricing tiers — last stop before the final CTA, once the preview
-            has been seen and objections answered. The entire card is the
-            click target, not just the CTA line at the bottom. */}
-        <section className="bg-white border-t border-neutral-200/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-            <div className="text-center mb-12">
-              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">Two ways to get featured</h2>
-              <p className="mt-2 text-sm sm:text-base text-neutral-500">Pick the slot. Pick the platform. Live in minutes.</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-              {/* Basic */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <CardShell
-                  soldOut={basicSoldOut}
-                  to={ctaHref}
-                  onClick={handleCtaClick}
-                  className="border-neutral-200/80"
-                >
-                  <span className={`${MICRO} text-neutral-500`}>Basic</span>
-                  <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
-                  <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
-                  <ul className="space-y-2.5 mb-7">
-                    {[
-                      'Rank 15, 20, 25, 30... on your chosen platform',
-                      'Shows on both desktop and mobile rankings',
-                      'Cancel anytime',
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
-                        <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-neutral-400" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <CardFooter soldOut={basicSoldOut} label="Get a Basic slot" tone="neutral" />
-                </CardShell>
-              </motion.div>
-
-              {/* Premium — one amber top rule is the differentiation */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <CardShell
-                  soldOut={premiumSoldOut}
-                  to={ctaHref}
-                  onClick={handleCtaClick}
-                  className="border-t-2 border-t-amber-400 hover:border-t-amber-500"
-                  hoverTint="hover:bg-amber-50/40"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">⭐ Premium</span>
-                    <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-[10px] font-medium text-amber-700">Only 2 slots / platform</span>
-                  </div>
-                  <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$149<span className="text-base font-normal text-neutral-400">/mo</span></p>
-                  <p className="text-sm text-neutral-500 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
-                  <ul className="space-y-2.5 mb-7">
-                    {[
-                      'Between rank 4-5 and 9-10, top of fold visibility',
-                      'Golden card treatment, ⭐ Premium label',
-                      'Maximum 2 slots per platform. Scarce inventory.',
-                      'Cancel anytime',
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
-                        <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <CardFooter soldOut={premiumSoldOut} label="Get a Premium slot" tone="amber" />
-                </CardShell>
-              </motion.div>
+        {/* FAQ — white block, takes over the visual weight pricing had here
+            before it moved up above this section. */}
+        <section className="bg-white border-y border-neutral-200/80">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900 text-center mb-10">FAQ</h2>
+            <div className="space-y-3">
+              {[
+                {
+                  q: 'Can I feature someone who isn\'t in your database?',
+                  a: 'For YouTube, Twitch, Kick, Bluesky, Mastodon, and Music: we add new creators continuously. If they aren\'t tracked yet, request them via the Search page. For TikTok, the Listings page has an instant-add flow that pulls their profile in seconds.',
+                },
+                {
+                  q: 'How is this different from a regular ad?',
+                  a: 'Featured Listings appear inside our actual ranked tables, not in display banner slots. People are already reading those rows when they look up creators, so attention is built-in.',
+                },
+                {
+                  q: 'Are featured slots labeled?',
+                  a: 'Yes. Basic shows as "Sponsored" and Premium shows as "⭐ Premium". We don\'t hide that they\'re paid placements. Clarity makes the format trustworthy.',
+                },
+                {
+                  q: 'Can I cancel?',
+                  a: 'Anytime, from the Listings tab in your account. Cancellation stops the next renewal. Your placement stays active through the end of the current billing period.',
+                },
+                {
+                  q: 'What happens if a slot is taken?',
+                  a: 'Slots are first come, first served. When the slot you want is full, checkout is disabled for that tier until an opening frees up. The moment someone above you cancels or their listing expires, every lower placement automatically moves up one position and the next available slot opens for purchase. No manual waitlist.',
+                },
+              ].map((item) => (
+                <div key={item.q} className={`${CARD} p-5`}>
+                  <h3 className="font-medium text-neutral-900 mb-1.5">{item.q}</h3>
+                  <p className="text-sm text-neutral-500 leading-relaxed">{item.a}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
