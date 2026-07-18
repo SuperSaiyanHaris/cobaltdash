@@ -223,8 +223,9 @@ async function getHubContent(hub) {
 // ---------------------------------------------------------------------------
 
 async function getProfileContent(platform, username) {
-  const select = 'username,display_name,description,category,country,created_at,profile_image,' +
-    'creator_stats(subscribers,total_views,total_posts,recorded_at)';
+  const select = 'id,platform_id,username,display_name,description,category,country,created_at,profile_image,banner_image,verified,' +
+    'latest_post_title,latest_post_url,latest_post_at,latest_post_thumbnail,latest_post_views,' +
+    'creator_stats(subscribers,followers,total_views,total_posts,hours_watched_day,hours_watched_week,hours_watched_month,peak_viewers_day,avg_viewers_day,recorded_at)';
   const rows = await supabaseGet(
     `creators?platform=eq.${platform}&username=ilike.${encodeURIComponent(username)}` +
     `&select=${encodeURIComponent(select)}` +
@@ -332,7 +333,52 @@ async function getProfileContent(platform, username) {
     },
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath };
+  // --- Initial data payload ---------------------------------------------------
+  // Embedded alongside the HTML so CreatorProfile.jsx can seed its first render
+  // with real data instead of an empty loading skeleton. Without this, React's
+  // createRoot().render() replaces the HTML above with a content-free spinner
+  // on mount, and if a crawler's render pass samples the page during that
+  // window (which at scale it does, routinely), it sees an empty shell —
+  // this is what was mass-triggering Search Console's Soft 404 classification
+  // across creator profile pages. Real users get a faster, flash-free first
+  // paint as a side effect. Field names are camelCase to match the shape
+  // CreatorProfile.jsx's `creator` state already uses; statsHistory rows stay
+  // in their raw snake_case DB column form since that's what the component's
+  // history/table/chart code already expects from `getCreatorStats()`.
+  const initialData = {
+    platform,
+    dbId: c.id,
+    platformId: c.platform_id,
+    username: c.username,
+    displayName: name,
+    profileImage: c.profile_image,
+    bannerImage: c.banner_image,
+    verified: c.verified,
+    description: c.description,
+    country: c.country,
+    category: c.category,
+    dbCreatedAt: c.created_at,
+    subscribers: latest ? latest.subscribers : null,
+    followers: latest ? (latest.followers ?? latest.subscribers) : null,
+    totalViews: latest ? latest.total_views : null,
+    totalPosts: latest ? latest.total_posts : null,
+    hoursWatchedDay: latest ? latest.hours_watched_day : null,
+    hoursWatchedWeek: latest ? latest.hours_watched_week : null,
+    hoursWatchedMonth: latest ? latest.hours_watched_month : null,
+    peakViewersDay: latest ? latest.peak_viewers_day : null,
+    avgViewersDay: latest ? latest.avg_viewers_day : null,
+    latestPost: c.latest_post_at ? {
+      publishedAt: c.latest_post_at,
+      title: c.latest_post_title,
+      url: c.latest_post_url,
+      thumbnail: c.latest_post_thumbnail,
+      views: c.latest_post_views,
+      reactions: c.latest_post_views,
+    } : null,
+    statsHistory: stats,
+  };
+
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData };
 }
 
 // ---------------------------------------------------------------------------
@@ -772,6 +818,15 @@ export default async function middleware(request) {
       html = html.replace(
         '</head>',
         `  <script type="application/ld+json">${JSON.stringify(content.jsonLd).replace(/</g, '\\u003c')}</script>\n  </head>`
+      );
+    }
+    // Initial data payload (creator profiles only) — see the comment on
+    // `initialData` in getProfileContent for why this exists. Escaped the
+    // same way as the JSON-LD block above to prevent a </script> breakout.
+    if (content.initialData) {
+      html = html.replace(
+        '</head>',
+        `  <script type="application/json" id="__CREATOR_DATA__">${JSON.stringify(content.initialData).replace(/</g, '\\u003c')}</script>\n  </head>`
       );
     }
   }

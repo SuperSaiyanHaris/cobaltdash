@@ -96,6 +96,26 @@ const platformDisplayNames = {
   substack: 'Substack',
 };
 
+// middleware.js embeds a <script id="__CREATOR_DATA__"> alongside the visible
+// server-rendered content so this component's very first render already has
+// real data instead of an empty loading skeleton — see the comment on
+// `initialData` in middleware.js's getProfileContent for why that matters.
+// Only trusted when it matches the URL actually being rendered (a client-side
+// navigation to a different profile within the same session must not reuse
+// the previous page's embedded data).
+function readEmbeddedCreatorData(platform, username) {
+  if (typeof document === 'undefined') return null;
+  const el = document.getElementById('__CREATOR_DATA__');
+  if (!el) return null;
+  try {
+    const data = JSON.parse(el.textContent);
+    if (data.platform !== platform || data.username?.toLowerCase() !== username?.toLowerCase()) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export default function CreatorProfile() {
   const { platform, username } = useParams();
   const location = useLocation();
@@ -106,16 +126,42 @@ export default function CreatorProfile() {
   const maxFollows = Infinity;
   const historyDays = Infinity;
   const hasExport = true;
-  const [creator, setCreator] = useState(null);
-  const [statsHistory, setStatsHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Lazy initializers so readEmbeddedCreatorData only ever runs once, on the
+  // very first render — not a bug if it's called from multiple initializers,
+  // just wasteful, so it's read once here and reused.
+  const [embeddedData] = useState(() => readEmbeddedCreatorData(platform, username));
+  const [creator, setCreator] = useState(() => embeddedData ? {
+    platform: embeddedData.platform,
+    platformId: embeddedData.platformId,
+    username: embeddedData.username,
+    displayName: embeddedData.displayName,
+    profileImage: embeddedData.profileImage,
+    bannerImage: embeddedData.bannerImage,
+    verified: embeddedData.verified,
+    description: embeddedData.description,
+    country: embeddedData.country,
+    category: embeddedData.category,
+    dbCreatedAt: embeddedData.dbCreatedAt,
+    subscribers: embeddedData.subscribers,
+    followers: embeddedData.followers,
+    totalViews: embeddedData.totalViews,
+    totalPosts: embeddedData.totalPosts,
+    hoursWatchedDay: embeddedData.hoursWatchedDay,
+    hoursWatchedWeek: embeddedData.hoursWatchedWeek,
+    hoursWatchedMonth: embeddedData.hoursWatchedMonth,
+    peakViewersDay: embeddedData.peakViewersDay,
+    avgViewersDay: embeddedData.avgViewersDay,
+    latestPost: embeddedData.latestPost,
+  } : null);
+  const [statsHistory, setStatsHistory] = useState(() => embeddedData?.statsHistory || []);
+  const [loading, setLoading] = useState(() => !embeddedData);
   const [error, setError] = useState(null);
   const [chartRange, setChartRange] = useState(30);
   // Default to views for YouTube (subscriber counts are rounded by YouTube API)
   const [chartMetric, setChartMetric] = useState(platform === 'youtube' ? 'views' : 'subscribers');
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-  const [dbCreatorId, setDbCreatorId] = useState(null); // Store database UUID
+  const [dbCreatorId, setDbCreatorId] = useState(() => embeddedData?.dbId || null); // Store database UUID
   const [isLive, setIsLive] = useState(false);
   const [liveStreamInfo, setLiveStreamInfo] = useState(null);
   const [latestVideo, setLatestVideo] = useState(null);
@@ -130,9 +176,16 @@ export default function CreatorProfile() {
   const [rankContext, setRankContext] = useState(null);
   const [nearbyCreators, setNearbyCreators] = useState([]);
   const shareRef = useRef(null);
+  // True only for the very first loadCreator() call of the very first
+  // profile this component instance renders, and only when that first call
+  // already has embedded data seeded. Lets loadCreator skip the loading-flash
+  // reset on that one call while behaving completely normally on every
+  // subsequent call (a client-side nav to a different creator, a retry, etc).
+  const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
-    loadCreator();
+    loadCreator(isFirstLoadRef.current && !!embeddedData);
+    isFirstLoadRef.current = false;
   }, [platform, username]);
 
   // Record/rank context is purely supplementary — fetched separately so a
@@ -214,8 +267,8 @@ export default function CreatorProfile() {
     };
   }, [dbCreatorId]);
 
-  const loadCreator = async () => {
-    setLoading(true);
+  const loadCreator = async (skipLoadingFlash = false) => {
+    if (!skipLoadingFlash) setLoading(true);
     setError(null);
 
     try {
