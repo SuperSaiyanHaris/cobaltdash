@@ -895,16 +895,36 @@ export default function Home() {
               </div>
             </motion.form>
 
-            {/* Featured Listings CTA — promoted to the primary post-search slot
-                (was the "Live across N platforms" claim, removed as redundant
-                with the platform icon row below). Amber = this site's one
+            {/* Platform icons — quiet, icon-only, no chip backgrounds. Identity
+                is the tint alone, per the site's precision system. */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-8 flex flex-wrap justify-center items-center gap-x-5 gap-y-3 max-w-md mx-auto"
+            >
+              {PLATFORMS.map(({ id, name, Icon, accent }) => (
+                <Link
+                  key={id}
+                  to={`/rankings/${id}`}
+                  aria-label={name}
+                  title={name}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
+                >
+                  <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
+                </Link>
+              ))}
+            </motion.div>
+
+            {/* Featured Listings CTA — sits under the platform icons, the
+                last thing in the post-search stack. Amber = this site's one
                 functional-color convention for the Premium tier, applied here
                 without a glow/gradient per the no-orbs rule. */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-8 flex justify-center"
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mt-5 flex justify-center"
             >
               <Link
                 to="/promote"
@@ -919,27 +939,6 @@ export default function Home() {
                 </span>
                 <ArrowRight className="w-4 h-4 text-white/40 group-hover:translate-x-0.5 group-hover:text-white/70 transition-all flex-shrink-0" />
               </Link>
-            </motion.div>
-
-            {/* Platform icons — quiet, icon-only, no chip backgrounds. Identity
-                is the tint alone, per the site's precision system. */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-5 flex flex-wrap justify-center items-center gap-x-5 gap-y-3 max-w-md mx-auto"
-            >
-              {PLATFORMS.map(({ id, name, Icon, accent }) => (
-                <Link
-                  key={id}
-                  to={`/rankings/${id}`}
-                  aria-label={name}
-                  title={name}
-                  className="opacity-70 hover:opacity-100 transition-opacity"
-                >
-                  <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
-                </Link>
-              ))}
             </motion.div>
 
           </div>

@@ -17,6 +17,39 @@ import { PLATFORM_COUNT } from '../lib/constants';
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
+// Whole-card click target for the pricing tiers. Renders a <Link> when the
+// tier is purchasable (hover = quiet border darkening + a faint bg tint,
+// no lift/scale/shadow per the site's hover convention) or a plain
+// non-interactive <div> when sold out.
+function CardShell({ soldOut, to, onClick, className = '', hoverTint = 'hover:bg-neutral-50/60', children }) {
+  const base = `${CARD} ${className} p-7 sm:p-8 transition-colors`;
+  if (soldOut) {
+    return <div className={`${base} opacity-60 cursor-not-allowed select-none`}>{children}</div>;
+  }
+  return (
+    <Link to={to} onClick={onClick} className={`group block ${base} hover:border-neutral-300 ${hoverTint}`}>
+      {children}
+    </Link>
+  );
+}
+
+// Footer action row, full-bleed hairline separating it from the feature
+// list. Purely visual when soldOut (the whole card is already non-clickable).
+function CardFooter({ soldOut, label, tone }) {
+  const toneClass = tone === 'amber' ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-900';
+  return (
+    <div className="-mx-7 sm:-mx-8 px-7 sm:px-8 pt-4 border-t border-neutral-100">
+      {soldOut ? (
+        <span className="text-sm font-medium text-neutral-400 select-none">Sold out, check back soon</span>
+      ) : (
+        <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${toneClass} group-hover:gap-3 transition-all`}>
+          {label} <ArrowRight className="w-4 h-4" />
+        </span>
+      )}
+    </div>
+  );
+}
+
 /**
  * /promote, public landing page for Featured Listings.
  * Explains the product to potential B2B buyers without requiring auth.
@@ -151,134 +184,128 @@ export default function Promote() {
           </div>
         </section>
 
-        {/* Pricing tiers */}
+        {/* Live preview — moved up front, right after the hero. This is the
+            thing buyers actually want to see first: what the slot looks like
+            in a real rankings table, before they read a single price. */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">Two ways to get featured</h2>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500">Pick the slot. Pick the platform. Live in minutes.</p>
+          <div className="text-center mb-8">
+            <p className={`${MICRO} text-amber-600 mb-2`}>Live preview</p>
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">This is what your slot looks like.</h2>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">The exact card, in the exact table, that goes live under your name.</p>
           </div>
+          <div className="max-w-3xl mx-auto">
+            <FeaturedListingPreview topCreators={topCreators} showCtas={false} />
+          </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-            {/* Basic */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className={`group ${CARD} p-7 sm:p-8 hover:border-neutral-300 transition-colors`}
-            >
-              <span className={`${MICRO} text-neutral-500`}>Basic</span>
-              <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
-              <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
-              <ul className="space-y-2.5 mb-7">
-                {[
-                  'Rank 15, 20, 25, 30... on your chosen platform',
-                  'Shows on both desktop and mobile rankings',
-                  'Cancel anytime',
-                ].map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
-                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-neutral-400" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              {basicSoldOut ? (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 cursor-not-allowed select-none">
-                  Sold out, check back soon
-                </span>
-              ) : (
-                <Link
-                  to={ctaHref} onClick={handleCtaClick}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-900 group-hover:gap-3 transition-all"
-                >
-                  Get a Basic slot <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
-            </motion.div>
+        {/* Pricing tiers — the entire card is the click target, not just the
+            CTA line at the bottom. */}
+        <section className="bg-white border-y border-neutral-200/80">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+            <div className="text-center mb-12">
+              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">Two ways to get featured</h2>
+              <p className="mt-2 text-sm sm:text-base text-neutral-500">Pick the slot. Pick the platform. Live in minutes.</p>
+            </div>
 
-            {/* Premium — one amber top rule is the differentiation */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className={`group ${CARD} border-t-2 border-t-amber-400 p-7 sm:p-8 hover:border-neutral-300 hover:border-t-amber-500 transition-colors`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">⭐ Premium</span>
-                <span className="text-[10px] text-amber-600/80 font-medium">Only 2 slots / platform</span>
-              </div>
-              <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$149<span className="text-base font-normal text-neutral-400">/mo</span></p>
-              <p className="text-sm text-neutral-500 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
-              <ul className="space-y-2.5 mb-7">
-                {[
-                  'Between rank 4-5 and 9-10, top of fold visibility',
-                  'Golden card treatment, ⭐ Premium label',
-                  'Maximum 2 slots per platform. Scarce inventory.',
-                  'Cancel anytime',
-                ].map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
-                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              {premiumSoldOut ? (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 cursor-not-allowed select-none">
-                  Sold out, check back soon
-                </span>
-              ) : (
-                <Link
-                  to={ctaHref} onClick={handleCtaClick}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 group-hover:gap-3 transition-all"
+            <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+              {/* Basic */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <CardShell
+                  soldOut={basicSoldOut}
+                  to={ctaHref}
+                  onClick={handleCtaClick}
+                  className="border-neutral-200/80"
                 >
-                  Get a Premium slot <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
-            </motion.div>
+                  <span className={`${MICRO} text-neutral-500`}>Basic</span>
+                  <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                  <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
+                  <ul className="space-y-2.5 mb-7">
+                    {[
+                      'Rank 15, 20, 25, 30... on your chosen platform',
+                      'Shows on both desktop and mobile rankings',
+                      'Cancel anytime',
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                        <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-neutral-400" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <CardFooter soldOut={basicSoldOut} label="Get a Basic slot" tone="neutral" />
+                </CardShell>
+              </motion.div>
+
+              {/* Premium — one amber top rule is the differentiation */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <CardShell
+                  soldOut={premiumSoldOut}
+                  to={ctaHref}
+                  onClick={handleCtaClick}
+                  className="border-t-2 border-t-amber-400 hover:border-t-amber-500"
+                  hoverTint="hover:bg-amber-50/40"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">⭐ Premium</span>
+                    <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-[10px] font-medium text-amber-700">Only 2 slots / platform</span>
+                  </div>
+                  <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$149<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                  <p className="text-sm text-neutral-500 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
+                  <ul className="space-y-2.5 mb-7">
+                    {[
+                      'Between rank 4-5 and 9-10, top of fold visibility',
+                      'Golden card treatment, ⭐ Premium label',
+                      'Maximum 2 slots per platform. Scarce inventory.',
+                      'Cancel anytime',
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-sm text-neutral-700">
+                        <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <CardFooter soldOut={premiumSoldOut} label="Get a Premium slot" tone="amber" />
+                </CardShell>
+              </motion.div>
+            </div>
           </div>
         </section>
 
         {/* How it works */}
-        <section className="bg-white border-y border-neutral-200/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-            <div className="text-center mb-12">
-              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">How it works</h2>
-              <p className="mt-2 text-sm sm:text-base text-neutral-500">Live in under a minute.</p>
-            </div>
-            <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
-              {[
-                { Icon: Users,      title: 'Pick a creator',       body: `Search any creator across our ${PLATFORM_COUNT} platforms. If they're tracked here, they're eligible.`, tint: 'text-indigo-500' },
-                { Icon: Megaphone,  title: 'Choose your slot',     body: 'Basic ($49) for steady visibility starting at rank 15. Premium ($149) for top-of-page placement.', tint: 'text-amber-500' },
-                { Icon: TrendingUp, title: 'Live in minutes',      body: 'Stripe Checkout. Confirmation, then your creator appears on the live rankings page right away.', tint: 'text-emerald-600' },
-              ].map((step, i) => (
-                <motion.div
-                  key={step.title}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className={`${CARD} p-6 relative`}
-                >
-                  <span className="absolute top-5 right-5 text-xs font-medium text-neutral-300 tabular-nums">0{i + 1}</span>
-                  <step.Icon className={`w-5 h-5 ${step.tint} mb-4`} />
-                  <h3 className="text-base font-medium text-neutral-900 mb-1.5">{step.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{step.body}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* What you get — same browser-mockup preview as the home page so
-                buyers see the exact slot they're paying for before checkout. */}
-            <div className="mt-14 sm:mt-16">
-              <div className="text-center mb-8">
-                <p className={`${MICRO} text-amber-600 mb-2`}>Live preview</p>
-                <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-neutral-900">This is what your slot looks like.</h3>
-              </div>
-              <div className="max-w-3xl mx-auto">
-                <FeaturedListingPreview topCreators={topCreators} showCtas={false} />
-              </div>
-            </div>
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-900">How it works</h2>
+            <p className="mt-2 text-sm sm:text-base text-neutral-500">Live in under a minute.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            {[
+              { Icon: Users,      title: 'Pick a creator',       body: `Search any creator across our ${PLATFORM_COUNT} platforms. If they're tracked here, they're eligible.`, tint: 'text-indigo-500' },
+              { Icon: Megaphone,  title: 'Choose your slot',     body: 'Basic ($49) for steady visibility starting at rank 15. Premium ($149) for top-of-page placement.', tint: 'text-amber-500' },
+              { Icon: TrendingUp, title: 'Live in minutes',      body: 'Stripe Checkout. Confirmation, then your creator appears on the live rankings page right away.', tint: 'text-emerald-600' },
+            ].map((step, i) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className={`${CARD} p-6 relative`}
+              >
+                <span className="absolute top-5 right-5 text-xs font-medium text-neutral-300 tabular-nums">0{i + 1}</span>
+                <step.Icon className={`w-5 h-5 ${step.tint} mb-4`} />
+                <h3 className="text-base font-medium text-neutral-900 mb-1.5">{step.title}</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">{step.body}</p>
+              </motion.div>
+            ))}
           </div>
         </section>
 
