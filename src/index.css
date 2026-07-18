@@ -321,6 +321,17 @@ h1, h2, h3, h4 {
           mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 80%, transparent);
 }
 
+/* Light-background counterpart to .hero-dot-grid, used on the creator
+   profile hero banner (product pages stay light — no dark/colored washes).
+   Same texture-not-content approach, dark dots at low opacity instead of
+   white, fading top to bottom. */
+.hero-dot-grid-light {
+  background-image: radial-gradient(rgba(23, 23, 23, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+          mask-image: linear-gradient(to bottom, #000, transparent);
+}
+
 /* =========================================================================
    Background patterns
    ========================================================================= */

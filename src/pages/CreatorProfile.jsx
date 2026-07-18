@@ -1142,10 +1142,13 @@ export default function CreatorProfile() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileSchema).replace(/<\/script>/gi, '<\\/script>') }} />
       <StructuredData schema={breadcrumbSchema} />
 
-      <div className="min-h-screen bg-[#fafafa]">
+      <div className="min-h-screen bg-[#fafaf9]">
         {/* Hero banner — uses the creator's channel art as background with gradient fade.
-            When no banner exists, render a soft platform-colored gradient instead of dead space. */}
-        <div className="relative h-48 sm:h-56 md:h-72 overflow-hidden">
+            No banner: flat paper + a faint dot-grid texture (same motif as the home hero,
+            adapted for light backgrounds) instead of a colored gradient wash. Product
+            pages stay light and functional-color-only per the site's design system —
+            platform identity already reads from the badge pill below, not this banner. */}
+        <div className="relative h-40 sm:h-48 md:h-56 overflow-hidden">
           {creator.bannerImage ? (
             <>
               <img
@@ -1162,32 +1165,22 @@ export default function CreatorProfile() {
               />
             </>
           ) : (
-            <div className={`absolute inset-0 bg-gradient-to-br ${
-              platform === 'youtube' ? 'from-red-900/30 via-rose-900/15 to-transparent' :
-              platform === 'twitch' ? 'from-purple-900/40 via-violet-900/20 to-transparent' :
-              platform === 'kick' ? 'from-green-900/40 via-emerald-900/20 to-transparent' :
-              platform === 'tiktok' ? 'from-pink-900/35 via-fuchsia-900/15 to-transparent' :
-              platform === 'bluesky' ? 'from-sky-900/40 via-cyan-900/20 to-transparent' :
-              platform === 'mastodon' ? 'from-violet-900/40 via-purple-900/20 to-transparent' :
-              platform === 'rumble' ? 'from-lime-900/40 via-green-900/20 to-transparent' :
-              platform === 'substack' ? 'from-orange-900/40 via-amber-900/20 to-transparent' :
-              'from-amber-900/40 via-orange-900/20 to-transparent'
-            }`} />
+            <div className="absolute inset-0 bg-neutral-100 hero-dot-grid-light" />
           )}
-          {/* Bottom gradient fade so the card hover is seamless */}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#fafafa] via-[#fafafa]/80 to-transparent pointer-events-none" />
+          {/* Bottom gradient fade so the card overlap is seamless */}
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#fafaf9] via-[#fafaf9]/80 to-transparent pointer-events-none" />
         </div>
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="max-w-6xl mx-auto">
             {/* Profile Header — overlaps the banner */}
-            <div className="bg-white rounded-2xl border border-neutral-200 shadow-lg p-4 sm:p-6 md:p-8 mb-6 relative z-10 -mt-32 sm:-mt-36 md:-mt-40">
+            <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 sm:p-6 md:p-8 mb-6 relative z-10 -mt-24 sm:-mt-28 md:-mt-32">
               {/* Action Buttons - Top Right */}
               <div ref={shareRef} className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-2">
                 {/* Compare button */}
                 <button
                   onClick={() => navigate(`/compare?creators=${platform}:${username}`)}
-                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 text-sm shadow-lg border bg-white border-neutral-200 text-neutral-700 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm border bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
                   title="Compare this creator"
                 >
                   <Scale className="w-4 h-4" />
@@ -1198,10 +1191,10 @@ export default function CreatorProfile() {
                 <div>
                   <button
                     onClick={handleShareClick}
-                    className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 text-sm shadow-lg border ${
+                    className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm border ${
                       showSharePanel
-                        ? 'bg-neutral-100 border-neutral-300 text-neutral-900'
-                        : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:text-neutral-900'
+                        ? 'bg-neutral-900 border-neutral-900 text-white'
+                        : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
                     }`}
                   >
                     <Share2 className="w-4 h-4" />
@@ -1322,7 +1315,7 @@ export default function CreatorProfile() {
 
               <div className="flex flex-col md:flex-row items-start gap-4 sm:gap-6">
                 {(platform === 'music' && (!creator.profileImage || creator.profileImage.includes('2a96cbd8b46e442fc41c2b86b821562f'))) ? (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-amber-50 border-4 border-amber-200 shadow-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-amber-50 border-4 border-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] flex items-center justify-center flex-shrink-0">
                     <Music className="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" />
                   </div>
                 ) : (
@@ -1332,12 +1325,12 @@ export default function CreatorProfile() {
                     size="2xl"
                     rounded="rounded-2xl"
                     loading="eager"
-                    className="sm:w-24 sm:h-24 md:w-28 md:h-28 border-4 border-neutral-200 shadow-lg"
+                    className="sm:w-24 sm:h-24 md:w-28 md:h-28 border-4 border-white shadow-[0_2px_10px_rgba(0,0,0,0.08)]"
                   />
                 )}
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-neutral-900">{creator.displayName}</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">{creator.displayName}</h1>
                     <a
                       href={platformUrls[platform]?.(creator.username || username, creator?.platformId)}
                       target="_blank"
@@ -2246,7 +2239,7 @@ export default function CreatorProfile() {
 
                       {/* Summary Rows */}
                       <tr className="bg-indigo-50 font-semibold">
-                        <td className="px-6 py-4 text-indigo-200">Daily Average</td>
+                        <td className="px-6 py-4 text-indigo-900">Daily Average</td>
                         <td className="px-6 py-4 text-right">
                           {/* For large YouTube channels, hide sub average since counts are rounded */}
                           {platform === 'youtube' && (creator.subscribers || 0) >= 1000 ? (
@@ -2283,7 +2276,7 @@ export default function CreatorProfile() {
                               }
                             </td>
                             <td className="px-6 py-4 text-right"></td>
-                            <td className="px-6 py-4 text-right text-indigo-200">
+                            <td className="px-6 py-4 text-right text-indigo-900">
                               {metrics.dailyAverage.views > 0
                                 ? formatEarnings(metrics.dailyAverage.views / 1000 * 2, metrics.dailyAverage.views / 1000 * 7)
                                 : '—'
@@ -2294,7 +2287,7 @@ export default function CreatorProfile() {
                       </tr>
 
                       <tr className="bg-indigo-50 font-semibold">
-                        <td className="px-6 py-4 text-indigo-200">Weekly Average</td>
+                        <td className="px-6 py-4 text-indigo-900">Weekly Average</td>
                         <td className="px-6 py-4 text-right">
                           {platform === 'youtube' ? (
                             <span className="text-neutral-700">—</span>
@@ -2330,7 +2323,7 @@ export default function CreatorProfile() {
                               }
                             </td>
                             <td className="px-6 py-4 text-right"></td>
-                            <td className="px-6 py-4 text-right text-indigo-200">
+                            <td className="px-6 py-4 text-right text-indigo-900">
                               {metrics.weeklyAverage.views > 0
                                 ? formatEarnings(metrics.weeklyAverage.views / 1000 * 2, metrics.weeklyAverage.views / 1000 * 7)
                                 : '—'
@@ -2341,7 +2334,7 @@ export default function CreatorProfile() {
                       </tr>
 
                       <tr className="bg-indigo-50 font-semibold">
-                        <td className="px-6 py-4 text-indigo-200">Last 30 Days</td>
+                        <td className="px-6 py-4 text-indigo-900">Last 30 Days</td>
                         <td className="px-6 py-4 text-right">
                           {platform === 'youtube' ? (
                             <span className="text-neutral-700">—</span>
@@ -2377,7 +2370,7 @@ export default function CreatorProfile() {
                             <td className={`px-6 py-4 text-right ${metrics.last30Days.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                               {metrics.last30Days.videos >= 0 ? '+' : ''}{metrics.last30Days.videos}
                             </td>
-                            <td className="px-6 py-4 text-right text-indigo-200">
+                            <td className="px-6 py-4 text-right text-indigo-900">
                               {metrics.last30Days.views > 0
                                 ? formatEarnings(metrics.last30Days.views / 1000 * 2, metrics.last30Days.views / 1000 * 7)
                                 : '—'
