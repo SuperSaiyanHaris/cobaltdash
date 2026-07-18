@@ -82,6 +82,43 @@ export default async function handler(req, res) {
 
         const rawTier = session.metadata?.featuredPlacementTier;
         const placementTier = (rawTier === 'basic' || rawTier === 'premium') ? rawTier : 'basic';
+
+        // Re-check the premium 2-slots-per-platform cap here, not just at
+        // checkout-session creation. That earlier check (api/stripe-checkout.js)
+        // is a look-then-leap read that two concurrent premium purchases for
+        // the same last slot can both pass — Stripe checkout takes real human
+        // time (redirect, card entry, confirmation), so the race window is
+        // minutes wide, not milliseconds. This is the actual "the listing goes
+        // live" moment, so it's the right place to enforce the hard cap.
+        // If it's genuinely oversold by the time payment clears: cancel the
+        // subscription immediately (stops further billing) and do NOT create
+        // the listing row. This does not auto-refund the first charge — that's
+        // a rare enough edge case (needs two people completing checkout for
+        // the same last slot within the same few-minute window) that it's
+        // safer to flag it loudly for a manual refund than to run untested
+        // refund logic in a webhook.
+        if (placementTier === 'premium') {
+          const { count: premiumCount } = await supabase
+            .from('featured_listings')
+            .select('id', { count: 'exact', head: true })
+            .eq('platform', platform)
+            .eq('placement_tier', 'premium')
+            .eq('status', 'active')
+            .gt('active_until', new Date().toISOString());
+          if (premiumCount >= 2) {
+            console.error(
+              `ALERT: premium slot oversold on ${platform}. Subscription ${session.subscription} ` +
+              `(user ${userId}) paid for a slot that filled during checkout. Canceling the ` +
+              `subscription to stop further billing — the first charge needs a MANUAL REFUND ` +
+              `in the Stripe dashboard.`
+            );
+            if (session.subscription) {
+              await stripe.subscriptions.cancel(session.subscription);
+            }
+            break;
+          }
+        }
+
         const activeFrom = new Date();
         const activeUntil = new Date(activeFrom);
         activeUntil.setDate(activeUntil.getDate() + 30);

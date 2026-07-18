@@ -2,16 +2,16 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Megaphone, Trophy, Sparkles, TrendingUp, Shield, ArrowRight,
-  Check, BarChart3, Users, Eye,
+  Check, BarChart3, Users, Eye, Lock,
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
-import CountUp from '../components/CountUp';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import { getRankedCreators } from '../services/creatorService';
 import { PLATFORM_COUNT } from '../lib/constants';
+import { formatNumber } from '../lib/utils';
 
 // Typographic backbone shared with the rest of the precision system
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
@@ -23,13 +23,27 @@ const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px
 // non-interactive <div> when sold out.
 function CardShell({ soldOut, to, onClick, className = '', hoverTint = 'hover:bg-neutral-50/60', children }) {
   const base = `${CARD} ${className} p-7 sm:p-8 transition-colors`;
+  // Sold out: card content stays fully legible (no blanket opacity fade) —
+  // the badge + disabled footer already say "unavailable" clearly, and a
+  // washed-out card reads cheap. Just not interactive.
   if (soldOut) {
-    return <div className={`${base} opacity-60 cursor-not-allowed select-none`}>{children}</div>;
+    return <div className={`${base} cursor-not-allowed select-none`}>{children}</div>;
   }
   return (
     <Link to={to} onClick={onClick} className={`group block ${base} hover:border-neutral-300 ${hoverTint}`}>
       {children}
     </Link>
+  );
+}
+
+// Small dot + micro-label badge, same convention as the site's LIVE indicator
+// elsewhere — just neutral-toned since "sold out" isn't an alert, it's status.
+function SoldOutBadge() {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-neutral-100 border border-neutral-200 rounded-full text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-600">
+      <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+      Sold out
+    </span>
   );
 }
 
@@ -40,7 +54,10 @@ function CardFooter({ soldOut, label, tone }) {
   return (
     <div className="-mx-7 sm:-mx-8 px-7 sm:px-8 pt-4 border-t border-neutral-100">
       {soldOut ? (
-        <span className="text-sm font-medium text-neutral-400 select-none">Sold out, check back soon</span>
+        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-400 select-none">
+          <Lock className="w-3.5 h-3.5" />
+          Every slot is taken right now, check back soon
+        </span>
       ) : (
         <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${toneClass} group-hover:gap-3 transition-all`}>
           {label} <ArrowRight className="w-4 h-4" />
@@ -57,7 +74,10 @@ function CardFooter({ soldOut, label, tone }) {
  */
 export default function Promote() {
   const { isAuthenticated } = useAuth();
-  const [stats, setStats] = useState({ creators: 0, dailyVisitors: 12000 });
+  // creators starts null (not 0) — 0 would render as a real, wrong number
+  // for a moment before the count query resolves. Same "never fabricate a
+  // 0 loading state" rule the Home hero's stats strip follows.
+  const [stats, setStats] = useState({ creators: null, dailyVisitors: 12000 });
   const [topCreators, setTopCreators] = useState([]);
   // Sold-out flags per tier — true when every reserved slot across every
   // platform is currently filled. Drives the disabled "Sold out" state on
@@ -145,7 +165,8 @@ export default function Promote() {
                     disabled
                     className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-medium rounded-lg cursor-not-allowed select-none"
                   >
-                    Sold out, check back soon
+                    <Lock className="w-4 h-4" />
+                    Every slot is taken right now
                   </button>
                 ) : (
                   <Link
@@ -165,16 +186,23 @@ export default function Promote() {
                 </Link>
               </div>
 
-              {/* Quick stats strip — one bordered container, hairline-divided cells */}
+              {/* Quick stats strip — one bordered container, hairline-divided cells.
+                  Plain formatNumber(), not CountUp: this renders instantly on mount
+                  (no scroll-trigger), so an animate-from-0 would show a fabricated
+                  "0" for a beat before the real count lands. */}
               <div className={`mt-12 grid grid-cols-3 max-w-2xl mx-auto ${CARD} divide-x divide-neutral-200/80`}>
                 {[
-                  { label: 'Creators tracked', value: stats.creators, format: 'number' },
-                  { label: 'Platforms covered', value: PLATFORM_COUNT, format: 'number' },
-                  { label: 'Pages per day', value: stats.dailyVisitors, format: 'number' },
+                  { label: 'Creators tracked', value: stats.creators },
+                  { label: 'Platforms covered', value: PLATFORM_COUNT },
+                  { label: 'Pages per day', value: stats.dailyVisitors, suffix: '+' },
                 ].map((s) => (
                   <div key={s.label} className="p-4 sm:p-5 text-center">
                     <p className="text-2xl sm:text-3xl font-semibold text-neutral-900 tabular-nums">
-                      <CountUp value={s.value} format={s.format} />{s.label === 'Pages per day' && '+'}
+                      {s.value == null ? (
+                        <span className="inline-block h-7 sm:h-8 w-12 rounded bg-neutral-100 animate-pulse align-middle" />
+                      ) : (
+                        <>{formatNumber(s.value)}{s.suffix}</>
+                      )}
                     </p>
                     <p className={`${MICRO} mt-1.5`}>{s.label}</p>
                   </div>
@@ -253,7 +281,10 @@ export default function Promote() {
                 onClick={handleCtaClick}
                 className="border-neutral-200/80"
               >
-                <span className={`${MICRO} text-neutral-500`}>Basic</span>
+                <div className="flex items-center gap-2">
+                  <span className={`${MICRO} text-neutral-500`}>Basic</span>
+                  {basicSoldOut && <SoldOutBadge />}
+                </div>
                 <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$49<span className="text-base font-normal text-neutral-400">/mo</span></p>
                 <p className="text-sm text-neutral-500 mt-4 mb-6">Placed starting at rank 15, then every 5 rows. Visible on the rankings page anyone hits looking for top creators.</p>
                 <ul className="space-y-2.5 mb-7">
@@ -288,7 +319,11 @@ export default function Promote() {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">⭐ Premium</span>
-                  <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-[10px] font-medium text-amber-700">Only 2 slots / platform</span>
+                  {premiumSoldOut ? (
+                    <SoldOutBadge />
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-[10px] font-medium text-amber-700">Only 2 slots / platform</span>
+                  )}
                 </div>
                 <p className="text-4xl font-semibold text-neutral-900 mt-2 tabular-nums">$149<span className="text-base font-normal text-neutral-400">/mo</span></p>
                 <p className="text-sm text-neutral-500 mt-4 mb-6">Top-of-page placement between ranks 4-5 and 9-10. The first thing readers see when comparing top creators.</p>
@@ -363,7 +398,8 @@ export default function Promote() {
                 disabled
                 className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-medium rounded-lg cursor-not-allowed select-none"
               >
-                Sold out, check back soon
+                <Lock className="w-4 h-4" />
+                Every slot is taken right now
               </button>
             ) : (
               <Link
