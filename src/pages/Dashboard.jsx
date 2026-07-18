@@ -14,7 +14,6 @@ import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import CreatorAvatar from '../components/CreatorAvatar';
-import CountUp from '../components/CountUp';
 import { DashboardSkeleton } from '../components/Skeleton';
 import { getFollowedCreators } from '../services/followService';
 import { getSavedCompares, deleteSavedCompare } from '../services/compareService';
@@ -547,7 +546,7 @@ export default function Dashboard() {
               <div key={label} className="px-5 py-4 sm:px-6 sm:py-5">
                 <p className={MICRO}>{label}</p>
                 <p className="mt-1.5 text-2xl sm:text-3xl font-semibold text-neutral-900 tabular-nums leading-none flex items-center gap-2.5">
-                  <CountUp value={value} format="comma" />
+                  {formatNumber(value)}
                   {live && value > 0 && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse mt-0.5" />}
                 </p>
               </div>

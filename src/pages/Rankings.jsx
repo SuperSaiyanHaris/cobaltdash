@@ -390,7 +390,7 @@ function RankingsOverview() {
                                   <p className="text-sm font-semibold text-neutral-900 truncate">{creator.display_name}</p>
                                   <p className="mt-0.5 flex items-baseline gap-1.5">
                                     <span className="text-xl font-bold text-neutral-900 tabular-nums leading-none">
-                                      <CountUp value={creator.subscribers} duration={1.1} />
+                                      {formatNumber(creator.subscribers)}
                                     </span>
                                     <span className={MICRO}>{follLabel}</span>
                                   </p>

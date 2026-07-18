@@ -13,7 +13,6 @@ import SubstackIcon from '../components/SubstackIcon';
 import { Music } from 'lucide-react';
 import { CompareCardSkeleton } from '../components/Skeleton';
 import CreatorAvatar from '../components/CreatorAvatar';
-import CountUp from '../components/CountUp';
 import { searchChannels as searchYouTube, getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
 import { searchChannels as searchTwitch, getChannelByUsername as getTwitchChannel } from '../services/twitchService';
 import { searchChannels as searchKick, getChannelByUsername as getKickChannel } from '../services/kickService';
@@ -940,11 +939,9 @@ function ArenaCreator({ creator, growthData, onRemove, getGrowthColor, getGrowth
         </span>
       </Link>
       <div className="mt-5">
-        <CountUp
-          value={creator.subscribers || creator.followers || 0}
-          duration={1.2}
-          className="text-3xl sm:text-4xl font-bold text-neutral-900 tabular-nums tracking-tight"
-        />
+        <span className="text-3xl sm:text-4xl font-bold text-neutral-900 tabular-nums tracking-tight">
+          {formatNumber(creator.subscribers || creator.followers || 0)}
+        </span>
         <p className={`${MICRO} mt-1`}>{metricLabel(creator.platform)}</p>
       </div>
       {growth && growth.growth30Day ? (
@@ -990,11 +987,9 @@ function RosterCard({ creator, onRemove, growthData, getGrowthColor, getGrowthIc
           </div>
         </div>
         <div className="text-center py-2">
-          <CountUp
-            value={creator.subscribers || creator.followers || 0}
-            duration={1}
-            className="text-2xl font-bold text-neutral-900 tabular-nums tracking-tight"
-          />
+          <span className="text-2xl font-bold text-neutral-900 tabular-nums tracking-tight">
+            {formatNumber(creator.subscribers || creator.followers || 0)}
+          </span>
           <p className={`${MICRO} mt-1`}>{metricLabel(creator.platform)}</p>
           {growth && growth.growth30Day ? (
             <span className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${getGrowthColor(growth.growth30Day)}`}>

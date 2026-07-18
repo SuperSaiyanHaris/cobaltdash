@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Youtube, Twitch, Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
 import KickIcon from '../components/KickIcon';
@@ -926,7 +926,11 @@ export default function CreatorProfile() {
     URL.revokeObjectURL(url);
   };
 
-  const calculateGrowthMetrics = () => {
+  // Memoized on statsHistory only — this component re-renders often for
+  // reasons that have nothing to do with stats (60s live-poll ticks, follow
+  // toggles, share panel open/close), and re-sorting/re-slicing up to 90
+  // rows of history on every one of those renders was pure waste.
+  const metrics = useMemo(() => {
     if (statsHistory.length < 2) return null;
 
     const sortedStats = [...statsHistory].sort((a, b) =>
@@ -988,9 +992,7 @@ export default function CreatorProfile() {
       dailyAverage: { subs: dailyAvgSubs, views: dailyAvgViews },
       weeklyAverage: { subs: weeklyAvgSubs, views: weeklyAvgViews },
     };
-  };
-
-  const metrics = calculateGrowthMetrics();
+  }, [statsHistory]);
 
   if (loading) {
     return (
