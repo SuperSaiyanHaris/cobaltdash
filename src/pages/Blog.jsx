@@ -97,6 +97,10 @@ export default function Blog() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+        <SEO
+          title="Blog - Creator Analytics, Platform News & Industry Insights"
+          description="Analysis of creator economy trends, platform updates, and rankings across YouTube, TikTok, Twitch, and more. Data-driven insights for creators and fans."
+        />
         <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );

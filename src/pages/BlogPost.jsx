@@ -39,6 +39,7 @@ export default function BlogPost() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+        <SEO title="Loading..." noindex />
         <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
@@ -47,6 +48,7 @@ export default function BlogPost() {
   if (!post) {
     return (
       <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+        <SEO title="Post Not Found" noindex />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-neutral-900 mb-4">Post Not Found</h1>
           <Link to="/blog" className="text-indigo-600 hover:text-indigo-700">

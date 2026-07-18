@@ -924,7 +924,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-5 flex justify-center"
+              className="mt-8 sm:mt-10 flex justify-center"
             >
               <Link
                 to="/promote"

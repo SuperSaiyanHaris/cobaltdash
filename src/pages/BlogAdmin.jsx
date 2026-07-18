@@ -245,6 +245,7 @@ export default function BlogAdmin() {
   if (authLoading || (!user && !adminChecked)) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <SEO title="Blog Admin" noindex />
         <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
@@ -253,6 +254,7 @@ export default function BlogAdmin() {
   if (!user) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
+        <SEO title="Blog Admin" noindex />
         <div className="text-center">
           <ShieldAlert className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">Sign In Required</h1>
@@ -273,6 +275,7 @@ export default function BlogAdmin() {
   if (!adminChecked) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <SEO title="Blog Admin" noindex />
         <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );
@@ -281,6 +284,7 @@ export default function BlogAdmin() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
+        <SEO title="Blog Admin" noindex />
         <div className="text-center">
           <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">Access Denied</h1>
@@ -296,6 +300,7 @@ export default function BlogAdmin() {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <SEO title="Blog Admin" noindex />
         <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );

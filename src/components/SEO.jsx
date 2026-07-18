@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DEFAULT_OG_IMAGE, getSiteUrl } from '../lib/config';
 
@@ -18,7 +18,11 @@ export default function SEO({
   const defaultDescription = 'Track YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, and Music creator statistics. View subscriber counts, follower growth, rankings, and analytics updated daily.';
   const metaDescription = description || defaultDescription;
   
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so document.title updates in the same
+  // paint cycle as the new page's content, instead of one tick later. That
+  // gap is exactly what let a previous page's title flash/stick in the
+  // browser tab during client-side navigation before this fix.
+  useLayoutEffect(() => {
     // Update title
     document.title = fullTitle;
     

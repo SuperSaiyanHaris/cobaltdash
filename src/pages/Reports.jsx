@@ -477,6 +477,7 @@ export default function Reports() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+        <SEO title="Loading..." noindex />
         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
       </div>
     );

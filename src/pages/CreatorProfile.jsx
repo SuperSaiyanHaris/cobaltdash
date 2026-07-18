@@ -941,12 +941,18 @@ export default function CreatorProfile() {
   const metrics = calculateGrowthMetrics();
 
   if (loading) {
-    return <ProfileSkeleton />;
+    return (
+      <>
+        <SEO title="Loading..." noindex />
+        <ProfileSkeleton />
+      </>
+    );
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-8">
+        <SEO title="Creator Not Found" noindex />
         <div className="max-w-4xl mx-auto">
           <FunErrorState
             type={error.includes('not found') || error.includes('Not found') ? 'notfound' : 'server'}
@@ -962,6 +968,7 @@ export default function CreatorProfile() {
   if (!creator) {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-8">
+        <SEO title="Creator Not Found" noindex />
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8">
             <div className="flex items-start gap-6 mb-8">
