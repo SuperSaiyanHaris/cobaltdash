@@ -189,7 +189,7 @@ export default function Dashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#fafaf9]">
-        <SEO title="Loading..." noindex />
+        <SEO title="Loading..." />
         <DashboardSkeleton />
       </div>
     );

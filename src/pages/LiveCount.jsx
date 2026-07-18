@@ -264,7 +264,7 @@ export default function LiveCount() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black flex items-center justify-center">
-        <SEO title="Loading..." noindex />
+        <SEO title="Loading..." />
         <div className="text-center">
           <div className="w-20 h-20 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
           <p className="text-gray-300 text-lg">Loading live count...</p>

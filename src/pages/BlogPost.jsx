@@ -39,7 +39,7 @@ export default function BlogPost() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
-        <SEO title="Loading..." noindex />
+        <SEO title="Loading..." />
         <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
       </div>
     );

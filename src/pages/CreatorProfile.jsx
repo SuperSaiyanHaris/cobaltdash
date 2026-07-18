@@ -943,7 +943,7 @@ export default function CreatorProfile() {
   if (loading) {
     return (
       <>
-        <SEO title="Loading..." noindex />
+        <SEO title="Loading..." />
         <ProfileSkeleton />
       </>
     );
