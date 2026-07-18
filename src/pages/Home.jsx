@@ -882,7 +882,7 @@ export default function Home() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   aria-label="Search any creator"
-                  placeholder="Search any creator: MrBeast, Ninja, Charli D'Amelio..."
+                  placeholder="Search any creator"
                   className="w-full pl-12 pr-32 py-4 bg-transparent text-white placeholder-white/60 focus:outline-none text-base"
                 />
                 <button
