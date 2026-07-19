@@ -758,7 +758,7 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
 
 const FEATURES = [
   { Icon: Trophy,     title: 'Live Rankings',       body: 'Updated daily, every platform',        to: '/rankings',                 accent: 'amber' },
-  { Icon: Search,     title: 'Universal Search',    body: `${IS_MAC ? '⌘K' : 'Ctrl K'} from anywhere`, to: '/search',               accent: 'indigo' },
+  { Icon: Search,     title: 'Universal Search',    body: 'Find any creator instantly', bodyDesktop: `${IS_MAC ? '⌘K' : 'Ctrl K'} from anywhere`, to: '/search', accent: 'indigo' },
   { Icon: Scale,      title: 'Head-to-Head Compare',body: 'Stack any two creators',                to: '/compare',                  accent: 'violet' },
   { Icon: TrendingUp, title: 'Trending This Month',  body: 'Catch growth before it peaks',          to: '/trending',                 accent: 'emerald' },
   { Icon: Calculator, title: 'Earnings Estimator',   body: 'Estimate YouTube ad revenue',           to: '/youtube/money-calculator', accent: 'green' },
@@ -1039,7 +1039,14 @@ export default function Home() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base font-bold text-neutral-900">{feat.title}</h3>
-                    <p className="text-sm text-neutral-500 mt-0.5">{feat.body}</p>
+                    <p className="text-sm text-neutral-500 mt-0.5">
+                      {feat.bodyDesktop ? (
+                        <>
+                          <span className="sm:hidden">{feat.body}</span>
+                          <span className="hidden sm:inline">{feat.bodyDesktop}</span>
+                        </>
+                      ) : feat.body}
+                    </p>
                   </div>
                   <ArrowUpRight className="w-4 h-4 text-neutral-300 group-hover:text-neutral-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0" />
                 </Link>
