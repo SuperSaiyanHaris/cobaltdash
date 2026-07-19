@@ -178,7 +178,7 @@ function Hub({ hub }) {
               </div>
               <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
+                <span className="text-xs font-medium text-emerald-600 tracking-wide">UPDATED DAILY</span>
               </div>
             </div>
           </div>

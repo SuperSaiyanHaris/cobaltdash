@@ -67,13 +67,12 @@ export default function Milestones() {
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Milestones</h1>
               <p className="mt-2 text-sm text-neutral-500">Real subscriber, follower, and listener thresholds crossed, as they happen.</p>
               <p className="mt-3 text-sm text-neutral-400 leading-relaxed max-w-2xl">
-                Every time a tracked creator's public number crosses a round threshold, it shows up here automatically,
-                detected straight from daily snapshots. Nothing on this page is written by hand.
+                Every time a tracked creator's number crosses a round threshold, it shows up here.
               </p>
             </div>
             <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-600 tracking-wide">LIVE</span>
+              <span className="text-xs font-medium text-emerald-600 tracking-wide">UPDATED DAILY</span>
             </div>
           </div>
         </div>
@@ -160,10 +159,10 @@ export default function Milestones() {
 
           {!loading && milestones.length > 0 && (
             <div className={`mt-10 ${CARD} p-6 sm:p-8`}>
-              <h2 className="text-base font-medium text-neutral-900 mb-3">How milestones are detected</h2>
+              <h2 className="text-base font-medium text-neutral-900 mb-3">How milestones work</h2>
               <div className="space-y-2 text-sm text-neutral-500 leading-relaxed">
-                <p>Every tracked creator's daily snapshot is checked against a set of round thresholds for their platform. When a creator's public number moves from below a threshold to at or above it, that's recorded as a milestone the first time it happens.</p>
-                <p>Thresholds are scaled per platform, since a Kick paid-subscriber count and a YouTube subscriber count operate on completely different scales. Nothing here is predicted or estimated. Every entry reflects a real number that was actually recorded.</p>
+                <p>When a creator's public number moves from below one of these thresholds to at or above it, that's recorded as a milestone the first time it happens. Every entry here reflects a real number that was actually recorded, nothing is predicted or estimated.</p>
+                <p>Thresholds are scaled per platform, since a Kick paid-subscriber count and a YouTube subscriber count operate on completely different scales.</p>
               </div>
             </div>
           )}

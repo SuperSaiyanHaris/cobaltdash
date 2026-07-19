@@ -7,9 +7,13 @@ import { isMac } from '../lib/platform';
 // Feature launcher entries. `tint` is the only color each gets — a muted icon
 // tint for wayfinding, no gradient boxes (precision system).
 // Compare and Dashboard live in the header's center pill nav instead of here.
+// Keep `description` to ~25 characters (match the existing entries). The card
+// grid is a fixed 400px, 2-column layout with a `line-clamp-2` description —
+// anything much longer wraps into a mid-word ellipsis cutoff instead of a
+// clean 2-line wrap. This has broken before; don't reintroduce it.
 const moreLinks = [
   { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
-  { path: '/milestones', label: 'Milestones', description: 'Real threshold crossings, as they happen', icon: Milestone, tint: 'text-indigo-500' },
+  { path: '/milestones', label: 'Milestones', description: 'Real threshold crossings', icon: Milestone, tint: 'text-indigo-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
   { path: '/reports', label: 'Reports', description: 'Bulk exports and analytics', icon: FileSpreadsheet, tint: 'text-sky-500' },
   { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },

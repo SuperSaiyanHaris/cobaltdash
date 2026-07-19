@@ -344,10 +344,6 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-bold text-neutral-900">Top YouTubers</h3>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-[10px] font-semibold text-emerald-700">
-                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                  LIVE
-                </span>
               </div>
               {updatedAt && (
                 <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">
