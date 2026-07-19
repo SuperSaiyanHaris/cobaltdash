@@ -314,16 +314,21 @@ function ChampionsGrid({ tops, sparklines }) {
  * Product preview carousel — owns its rotation state. Auto-advance stops
  * permanently on manual tab selection and never runs under reduced motion.
  * ------------------------------------------------------------------------- */
-const PreviewCarousel = memo(function PreviewCarousel({ topCreators, sparklines, topHistory }) {
+const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory }) {
   const reduceMotion = useReducedMotion();
   const [idx, setIdx] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
 
   const mr = topCreators[0];
   const tseries = topCreators[1];
-  const mrSpark = mr ? sparklines[mr.id] : null;
+  const maxSubs = mr?.subscribers;
   const updatedAt = mr?.computedAt;
   const dailyViews = useMemo(() => deriveDailyViews(topHistory), [topHistory]);
+  // YouTube subscriber counts barely move day to day for large channels (see
+  // CLAUDE.md), so "30-day growth" is shown via total views instead — it's
+  // the metric that actually moves, and growth30d is already views delta for
+  // this platform (see refresh_rankings_cache_platform).
+  const viewsStart = mr?.totalViews != null && mr?.growth30d != null ? mr.totalViews - mr.growth30d : null;
 
   const previews = useMemo(() => {
     const list = [
@@ -357,7 +362,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, sparklines,
                   rank={i + 1}
                   creator={creator}
                   fallbackName={FALLBACK_NAMES[i]}
-                  spark={creator?.id ? sparklines[creator.id] : null}
+                  maxValue={maxSubs}
                 />
               ))}
             </div>
@@ -402,10 +407,27 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, sparklines,
                 <p className="text-base sm:text-xl font-extrabold text-neutral-900 tabular-nums">{mr?.totalPosts ? formatNumber(mr.totalPosts) : '—'}</p>
               </div>
             </div>
-            {mrSpark && mrSpark.length >= 2 && (
+            {viewsStart != null && (
               <div className="p-3 sm:p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
-                <p className="text-[10px] text-neutral-500 uppercase tracking-[0.14em] font-medium mb-2">30-day subscriber growth</p>
-                <Sparkline data={mrSpark} width={500} height={48} fluid />
+                <p className="text-[10px] text-neutral-500 uppercase tracking-[0.14em] font-medium mb-3">30-day view momentum</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-0.5">30 days ago</p>
+                    <p className="text-lg sm:text-xl font-extrabold text-neutral-400 tabular-nums">{formatNumber(viewsStart)}</p>
+                  </div>
+                  <div className="flex flex-col items-center px-2 flex-shrink-0">
+                    <ArrowRight className="w-4 h-4 text-neutral-300" />
+                    {mr.growth30d !== 0 && (
+                      <span className={`mt-1 text-[10px] font-semibold tabular-nums whitespace-nowrap ${mr.growth30d > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {mr.growth30d > 0 ? '+' : ''}{formatNumber(mr.growth30d)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-0.5">Today</p>
+                    <p className="text-lg sm:text-xl font-extrabold text-neutral-900 tabular-nums">{formatNumber(mr.totalViews)}</p>
+                  </div>
+                </div>
               </div>
             )}
           </>
@@ -514,7 +536,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, sparklines,
     }
 
     return list;
-  }, [mr, tseries, topCreators, sparklines, mrSpark, updatedAt, dailyViews]);
+  }, [mr, tseries, topCreators, maxSubs, viewsStart, updatedAt, dailyViews]);
 
   // Auto-advance. Rankings (index 0) holds longer; stops for good once the
   // user picks a tab, and never runs under reduced motion.
@@ -534,7 +556,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, sparklines,
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-10%' }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative rounded-2xl bg-white border border-neutral-200 shadow-xl shadow-neutral-200/60 overflow-hidden"
+        className="relative rounded-2xl bg-white border border-neutral-200/80 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.22)] overflow-hidden"
       >
         {/* Browser chrome — URL updates per preview */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-200 bg-neutral-50">
@@ -778,9 +800,8 @@ export default function Home() {
 
   // Marquee = YouTube top 20 + Twitch top 20, shuffled. (User: only these two platforms in ticker.)
   // The #1-per-platform cards come from a single rankings_cache query, then we
-  // batch-fetch real 30-day sparkline series for everything shown in the hero
-  // and product preview, plus the top YouTuber's stats history for the
-  // earnings estimate.
+  // batch-fetch real 30-day sparkline series for the Champions carousel, plus
+  // the top YouTuber's stats history for the earnings estimate.
   useEffect(() => {
     Promise.all([
       getRankedCreators('youtube', 'subscribers', 20),
@@ -807,7 +828,7 @@ export default function Home() {
       const top5 = yt.slice(0, 5);
       setTopCreators(top5);
 
-      const ids = [...new Set([...top5, ...tops].map(c => c.id))];
+      const ids = [...new Set(tops.map(c => c.id))];
       if (ids.length > 0) getSparklineData(ids).then(setSparklines).catch(() => {});
       if (top5[0]) getCreatorStats(top5[0].id, 30).then(setTopHistory).catch(() => {});
     }).catch(() => {});
@@ -973,7 +994,7 @@ export default function Home() {
               </h2>
             </motion.div>
 
-            <PreviewCarousel topCreators={topCreators} sparklines={sparklines} topHistory={topHistory} />
+            <PreviewCarousel topCreators={topCreators} topHistory={topHistory} />
 
             <LiveStatsStrip creators={liveStats.creators} dataPoints={liveStats.dataPoints} />
           </div>
