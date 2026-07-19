@@ -11,6 +11,7 @@ import StructuredData from '../components/StructuredData';
 import NotFound from './NotFound';
 import { getHubCreators, getSparklineData } from '../services/creatorService';
 import { HUBS, getHub, getHubsByPlatform } from '../lib/hubs';
+import { HUB_INTROS } from '../lib/hubIntros';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
 
@@ -169,6 +170,11 @@ function Hub({ hub }) {
                 <p className="mt-2 text-sm text-neutral-500">
                   Ranked by {meta.metric.toLowerCase()}. Updated daily.
                 </p>
+                {HUB_INTROS[hub.slug] && (
+                  <p className="mt-4 text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl">
+                    {HUB_INTROS[hub.slug]}
+                  </p>
+                )}
               </div>
               <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

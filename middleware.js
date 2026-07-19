@@ -26,6 +26,7 @@
 // The hub taxonomy is shared with the app and the sitemap builder. It is plain
 // ESM with no dependencies specifically so it can be bundled into the edge runtime.
 import { getHub, HUBS } from './src/lib/hubs.js';
+import { HUB_INTROS } from './src/lib/hubIntros.js';
 
 export const config = {
   matcher: [
@@ -64,6 +65,22 @@ const METRIC_LABELS = {
   mastodon: 'followers',
   rumble:   'followers',
   substack: 'subscribers',
+};
+
+// Real, platform-specific context for rankings pages (mirrors Rankings.jsx's
+// getPlatformIntro — kept as a separate literal here, same pattern as
+// PLATFORM_NAMES/METRIC_LABELS above, since this file can't import from the
+// React app).
+const PLATFORM_INTROS = {
+  youtube: "YouTube is the biggest platform tracked here by total watch time and advertiser spend, and subscriber counts for the largest channels are rounded to three significant figures under YouTube's own display policy. Because of that rounding, day-to-day subscriber changes for huge channels often show as zero even when the real number is moving, so total views tend to be the more accurate signal of a channel's actual growth.",
+  tiktok: "TikTok rankings move faster than almost any other platform tracked here, since a single video can add millions of followers in days through the recommendation feed rather than a following a creator already had. That speed cuts both ways, and accounts can fall out of the top ranks quickly too once their reach cools off.",
+  twitch: "Twitch dropped its public view-count metric in 2022, so these rankings lean on Hours Watched, the number the industry actually uses to compare channel size. Follower counts here are accurate, but they measure who clicked follow at some point, not who's actually watching right now.",
+  kick: "Kick's public number is paid subscribers, not total followers, so this ranking reflects who pays to support a channel rather than its total reach, which tends to run much higher. That makes Kick's numbers look smaller than other platforms at a glance, but they're a more direct measure of a channel's paying, engaged audience.",
+  bluesky: "Bluesky is one of the newest platforms tracked here, and its follower numbers are still growing fast as people migrate over from older social apps. Growth tends to come in waves tied to those migrations rather than a steady daily climb.",
+  music: "This ranking uses monthly listeners, the standard way the music industry measures an artist's active audience rather than lifetime plays. It rewards artists who are getting played right now, so a big playlist placement can move an artist up the list fast, even without a new release.",
+  mastodon: "Mastodon is federated, meaning accounts live on independent servers instead of one central platform, so a follower count here reflects an account's full reach across the network, not just its home server. Growth tends to be steadier and less viral than on centralized platforms.",
+  rumble: "Rumble rankings track follower counts and video output for one of YouTube's biggest video alternatives. Growth here often tracks political and independent media news cycles more than entertainment trends, since a large share of Rumble's biggest channels sit in that space.",
+  substack: "Substack publishes subscriber counts as approximate ranges for most newsletters rather than exact numbers, so this ranking uses the most precise figure available for each publication and falls back to that range as a floor when it isn't. Growth here tends to be slower and steadier than on video or social platforms, built on people opting into recurring email rather than a single viral moment.",
 };
 
 // Optional second metric per platform: [column, label].
@@ -181,6 +198,7 @@ async function getHubContent(hub) {
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
   html += `<h1 style="font-size:1.5rem;font-weight:600">Best ${esc(hub.title)} ${esc(nounTitle)}</h1>`;
   html += `<p>The biggest ${esc(hub.title)} ${esc(hub.noun)}, ranked by ${metric} and updated daily.</p>`;
+  if (HUB_INTROS[hub.slug]) html += `<p>${esc(HUB_INTROS[hub.slug])}</p>`;
   html += `<ol>`;
   for (const r of rows) {
     const nm = r.display_name || r.username;
@@ -404,6 +422,7 @@ async function getRankingsContent(platform) {
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
   html += `<h1 style="font-size:1.5rem;font-weight:600">Top ${platformName} Creators</h1>`;
   html += `<p>The most-${metric.includes('subscriber') ? 'subscribed' : 'followed'} ${platformName} creators, ranked by ${metric} and updated daily.</p>`;
+  if (PLATFORM_INTROS[platform]) html += `<p>${esc(PLATFORM_INTROS[platform])}</p>`;
   html += `<ol>`;
   for (const r of rows) {
     const nm = r.display_name || r.username;

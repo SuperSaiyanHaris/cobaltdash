@@ -149,6 +149,24 @@ function getSubheading(platform) {
   return subs[pid] || 'Ranked by stats and growth. Updated daily.';
 }
 
+// Real, platform-specific context, not a templated one-liner. Grounded in how
+// each platform's public numbers actually behave, not in how we collect them.
+export function getPlatformIntro(platform) {
+  const pid = platform?.id || 'youtube';
+  const intros = {
+    youtube: "YouTube is the biggest platform tracked here by total watch time and advertiser spend, and subscriber counts for the largest channels are rounded to three significant figures under YouTube's own display policy. Because of that rounding, day-to-day subscriber changes for huge channels often show as zero even when the real number is moving, so total views tend to be the more accurate signal of a channel's actual growth.",
+    tiktok: "TikTok rankings move faster than almost any other platform tracked here, since a single video can add millions of followers in days through the recommendation feed rather than a following a creator already had. That speed cuts both ways, and accounts can fall out of the top ranks quickly too once their reach cools off.",
+    twitch: "Twitch dropped its public view-count metric in 2022, so these rankings lean on Hours Watched, the number the industry actually uses to compare channel size. Follower counts here are accurate, but they measure who clicked follow at some point, not who's actually watching right now.",
+    kick: "Kick's public number is paid subscribers, not total followers, so this ranking reflects who pays to support a channel rather than its total reach, which tends to run much higher. That makes Kick's numbers look smaller than other platforms at a glance, but they're a more direct measure of a channel's paying, engaged audience.",
+    bluesky: "Bluesky is one of the newest platforms tracked here, and its follower numbers are still growing fast as people migrate over from older social apps. Growth tends to come in waves tied to those migrations rather than a steady daily climb.",
+    music: "This ranking uses monthly listeners, the standard way the music industry measures an artist's active audience rather than lifetime plays. It rewards artists who are getting played right now, so a big playlist placement can move an artist up the list fast, even without a new release.",
+    mastodon: "Mastodon is federated, meaning accounts live on independent servers instead of one central platform, so a follower count here reflects an account's full reach across the network, not just its home server. Growth tends to be steadier and less viral than on centralized platforms.",
+    rumble: "Rumble rankings track follower counts and video output for one of YouTube's biggest video alternatives. Growth here often tracks political and independent media news cycles more than entertainment trends, since a large share of Rumble's biggest channels sit in that space.",
+    substack: "Substack publishes subscriber counts as approximate ranges for most newsletters rather than exact numbers, so this ranking uses the most precise figure available for each publication and falls back to that range as a floor when it isn't. Growth here tends to be slower and steadier than on video or social platforms, built on people opting into recurring email rather than a single viral moment.",
+  };
+  return intros[pid] || null;
+}
+
 // Build ItemList structured data for SEO
 function createRankingListSchema(rankings, platform, topCount) {
   if (!rankings.length) return null;
@@ -688,6 +706,11 @@ function PlatformRankings({ urlPlatform }) {
             <p className={`${MICRO} mb-3`}>Rankings</p>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
             <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
+            {getPlatformIntro(currentPlatform) && (
+              <p className="mt-4 text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl">
+                {getPlatformIntro(currentPlatform)}
+              </p>
+            )}
           </div>
         </div>
 
