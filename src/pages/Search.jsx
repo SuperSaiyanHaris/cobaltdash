@@ -377,12 +377,23 @@ export default function Search() {
     }
   };
 
+  // Live API search results are fuzzy text matches, not relevance-ranked by
+  // size — a search for one real channel routinely returns 20+ unrelated fan
+  // pages, rebroadcast accounts, and near-duplicates that happen to contain
+  // the same words. Persisting every raw result (as this used to do) silently
+  // flooded the creators table with junk on every search. Only channels big
+  // enough to plausibly be worth tracking get written; the rest still show up
+  // in the on-screen results, they just don't become permanent DB rows.
+  const MIN_SEARCH_PERSIST_SUBS = 10000;
+
   const persistSearchResults = async (channels) => {
     for (const channel of channels) {
+      const size = channel.subscribers || channel.followers || 0;
+      if (size < MIN_SEARCH_PERSIST_SUBS) continue;
       try {
         const dbCreator = await upsertCreator(channel);
         await saveCreatorStats(dbCreator.id, {
-          subscribers: channel.subscribers || channel.followers,
+          subscribers: size,
           totalViews: channel.totalViews,
           totalPosts: channel.totalPosts,
         });

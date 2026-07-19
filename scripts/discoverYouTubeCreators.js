@@ -56,9 +56,21 @@ const SEARCH_QUERIES = [
   // Beauty & Fashion
   'makeup tutorial', 'beauty channel', 'fashion haul', 'skincare routine',
 
-  // Sports
-  'sports highlights', 'basketball youtube', 'football channel', 'soccer highlights',
-  'fitness workout', 'gym motivation',
+  // Sports — creator/genre content
+  'sports highlights', 'basketball youtube', 'fitness workout', 'gym motivation',
+
+  // Sports — official team & league channels. Generic genre terms like
+  // "football channel" or "soccer highlights" reliably surface commentary
+  // and highlight-reel creators, but NOT official team/league channels —
+  // those need to be searched by name to show up at all. This is why teams
+  // as big as Real Madrid or FC Barcelona went unnoticed by discovery for
+  // months despite tens of millions of subscribers each.
+  'Real Madrid', 'FC Barcelona', 'Manchester United', 'Manchester City',
+  'Liverpool FC', 'Chelsea FC', 'Arsenal', 'Bayern Munich',
+  'Paris Saint-Germain', 'Juventus', 'Inter Milan', 'Borussia Dortmund',
+  'NBA', 'Los Angeles Lakers', 'Golden State Warriors', 'Boston Celtics',
+  'NFL', 'Dallas Cowboys', 'Kansas City Chiefs',
+  'MLB', 'New York Yankees', 'NHL',
 
   // Other popular
   'asmr channel', 'car review', 'diy projects', 'crafts channel',
