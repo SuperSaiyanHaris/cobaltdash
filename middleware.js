@@ -449,6 +449,55 @@ async function getRankingsContent(platform) {
 }
 
 // ---------------------------------------------------------------------------
+// Milestones content — real threshold-crossing events, refreshed daily by
+// refresh_creator_milestones(). This is the freshest page on the site content-
+// wise, so it's worth its own server-rendered content rather than meta-only.
+// ---------------------------------------------------------------------------
+
+async function getMilestonesContent() {
+  const rows = await supabaseGet(
+    `creator_milestones?select=platform,threshold,metric_value,crossed_at,creators(username,display_name)` +
+    `&order=crossed_at.desc&order=metric_value.desc&limit=40`
+  );
+  if (!rows || !rows.length) return { status: 'error' };
+
+  const title = `Creator Milestones (${new Date().getFullYear()}) - ShinyPull`;
+  const description = `Real subscriber, follower, and listener thresholds crossed across ${ALL_PLATFORM_LIST}, updated daily as they happen.`;
+
+  let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
+  html += `<h1 style="font-size:1.5rem;font-weight:600">Creator Milestones</h1>`;
+  html += `<p>Real subscriber, follower, and listener thresholds crossed, detected straight from daily snapshots. Nothing here is written by hand.</p>`;
+  html += `<ol>`;
+  for (const r of rows) {
+    const nm = r.creators?.display_name || r.creators?.username;
+    const username = r.creators?.username;
+    if (!nm || !username) continue;
+    const metric = METRIC_LABELS[r.platform] || 'followers';
+    html += `<li><a href="/${r.platform}/${encodeURIComponent(username)}" style="color:#171717">${esc(nm)}</a>` +
+      ` crossed ${formatNumber(r.threshold)} ${metric} on ${r.crossed_at}` +
+      (r.metric_value !== null && r.metric_value !== undefined ? ` (${formatNumber(r.metric_value)} at the time)` : '') + `</li>`;
+  }
+  html += `</ol>`;
+  html += `<p><a href="/rankings" style="color:#171717">All rankings</a> · <a href="/trending" style="color:#171717">Trending creators</a></p>`;
+  html += `</div>`;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Creator Milestones',
+    description,
+    itemListElement: rows.slice(0, 25).map((r, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: r.creators?.display_name || r.creators?.username,
+      url: `${SITE_URL}/${r.platform}/${encodeURIComponent(r.creators?.username || '')}`,
+    })),
+  };
+
+  return { status: 'ok', title, description, html, jsonLd };
+}
+
+// ---------------------------------------------------------------------------
 // Blog post content
 // ---------------------------------------------------------------------------
 
@@ -665,6 +714,15 @@ function getMeta(pathname, searchParams) {
     };
   }
 
+  // /milestones — fallback meta if the content fetch fails; getMilestonesContent
+  // normally overrides this with real, live numbers.
+  if (pathname === '/milestones') {
+    return {
+      title: 'Creator Milestones - ShinyPull',
+      description: `Real subscriber, follower, and listener thresholds crossed across ${ALL_PLATFORM_LIST}, updated daily as they happen.`,
+    };
+  }
+
   // /compare (with or without ?creators=...)
   if (pathname === '/compare') {
     const creatorsParam = searchParams.get('creators');
@@ -790,6 +848,8 @@ export default async function middleware(request) {
       if (hub) content = await getHubContent(hub);
     } else if (rankingsMatch && PLATFORM_NAMES[rankingsMatch[1]]) {
       content = await getRankingsContent(rankingsMatch[1]);
+    } else if (url.pathname === '/milestones') {
+      content = await getMilestonesContent();
     } else if (blogMatch && blogMatch[1] !== 'admin') {
       content = await getBlogContent(decodeURIComponent(blogMatch[1]));
     } else if (

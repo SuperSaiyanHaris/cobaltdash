@@ -589,3 +589,55 @@ export const getSparklineData = withErrorHandling(
   },
   'creatorService.getSparklineData'
 );
+
+// --- Milestones: real threshold-crossing events, detected daily by refresh_creator_milestones() ---
+// Module-level cache — same SWR pattern as rankings. Milestones only change once
+// a day (the cron refresh), so a longer TTL is safe.
+const _milestonesCache = new Map(); // key (platform||'all') → { data, ts }
+const MILESTONES_TTL = 10 * 60 * 1000;
+
+async function _fetchMilestones(platform, limit) {
+  let query = supabase
+    .from('creator_milestones')
+    .select('id, platform, threshold, metric_value, crossed_at, creators(username, display_name, profile_image)')
+    .order('crossed_at', { ascending: false })
+    .order('metric_value', { ascending: false })
+    .limit(limit);
+  if (platform) query = query.eq('platform', platform);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map((m) => ({
+    id: m.id,
+    platform: m.platform,
+    threshold: m.threshold,
+    metricValue: m.metric_value,
+    crossedAt: m.crossed_at,
+    username: m.creators?.username,
+    displayName: m.creators?.display_name,
+    profileImage: m.creators?.profile_image,
+  })).filter((m) => m.username); // drop rows whose creator was somehow removed
+}
+
+/**
+ * Get the most recent real subscriber/follower threshold crossings, optionally
+ * filtered by platform. Cached with stale-while-revalidate, same pattern as
+ * getRankedCreators.
+ */
+export async function getRecentMilestones(platform = null, limit = 50) {
+  const key = `${platform || 'all'}:${limit}`;
+  const hit = _milestonesCache.get(key);
+  const now = Date.now();
+
+  if (hit) {
+    if (now - hit.ts > MILESTONES_TTL) {
+      _fetchMilestones(platform, limit)
+        .then((data) => _milestonesCache.set(key, { data, ts: Date.now() }))
+        .catch(() => {});
+    }
+    return hit.data;
+  }
+
+  const data = await _fetchMilestones(platform, limit);
+  _milestonesCache.set(key, { data, ts: now });
+  return data;
+}

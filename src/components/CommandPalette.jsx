@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Command } from 'cmdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Trophy, Scale, BarChart3, BookOpen, Calculator, TrendingUp,
+  Search, Trophy, Scale, BarChart3, BookOpen, Calculator, TrendingUp, Milestone,
   LayoutDashboard, FileSpreadsheet, Settings, Youtube, Twitch, Music, ArrowRight,
 } from 'lucide-react';
 import KickIcon from './KickIcon';
@@ -32,6 +32,7 @@ const QUICK_LINKS = [
   { label: 'Search Creators',  to: '/search',                    Icon: Search,          color: 'text-indigo-400'  },
   { label: 'Top Rankings',     to: '/rankings',                  Icon: Trophy,          color: 'text-amber-400'   },
   { label: 'Trending Creators',to: '/trending',                  Icon: TrendingUp,      color: 'text-emerald-400' },
+  { label: 'Milestones',       to: '/milestones',                Icon: Milestone,       color: 'text-indigo-400'  },
   { label: 'Compare Creators', to: '/compare',                   Icon: Scale,           color: 'text-violet-400'  },
   { label: 'YouTube Earnings', to: '/youtube/money-calculator',  Icon: Calculator,      color: 'text-emerald-400' },
   { label: 'Reports',          to: '/reports',                   Icon: FileSpreadsheet, color: 'text-amber-400'   },

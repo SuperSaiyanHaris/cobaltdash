@@ -12,6 +12,7 @@ const FEATURE_LINKS = [
   ['/rankings',                  'Top Rankings'],
   ['/best',                      'Best by Category'],
   ['/trending',                  'Trending Creators'],
+  ['/milestones',                'Milestones'],
   ['/compare',                   'Compare Creators'],
   ['/youtube/money-calculator',  'Money Calculator'],
   ['/blog',                      'Blog'],

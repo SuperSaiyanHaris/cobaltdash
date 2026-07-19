@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Search, Trophy, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, FileSpreadsheet, ChevronDown, LayoutGrid, TrendingUp, Megaphone } from 'lucide-react';
+import { BarChart3, Search, Trophy, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, FileSpreadsheet, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
 
@@ -9,6 +9,7 @@ import { isMac } from '../lib/platform';
 // Compare and Dashboard live in the header's center pill nav instead of here.
 const moreLinks = [
   { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
+  { path: '/milestones', label: 'Milestones', description: 'Real threshold crossings, as they happen', icon: Milestone, tint: 'text-indigo-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
   { path: '/reports', label: 'Reports', description: 'Bulk exports and analytics', icon: FileSpreadsheet, tint: 'text-sky-500' },
   { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },
