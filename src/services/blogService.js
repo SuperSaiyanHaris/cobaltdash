@@ -10,7 +10,8 @@ export const getAllPosts = withErrorHandling(
       .from('blog_posts')
       .select('slug, title, description, category, author, image, read_time, published_at')
       .eq('is_published', true)
-      .order('published_at', { ascending: false });
+      .order('published_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
@@ -48,7 +49,8 @@ export const getPostsByCategory = withErrorHandling(
       .select('slug, title, description, category, author, image, read_time, published_at')
       .eq('is_published', true)
       .eq('category', category)
-      .order('published_at', { ascending: false });
+      .order('published_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
