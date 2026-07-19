@@ -396,7 +396,7 @@ async function getProfileContent(platform, username) {
     statsHistory: stats,
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData };
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, image: c.profile_image || null };
 }
 
 // ---------------------------------------------------------------------------
@@ -561,7 +561,7 @@ function markdownToHtml(md) {
 async function getBlogContent(slug) {
   const rows = await supabaseGet(
     `blog_posts?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true` +
-    `&select=slug,title,description,content,author,published_at,updated_at&limit=1`
+    `&select=slug,title,description,content,author,published_at,updated_at,image&limit=1`
   );
   if (rows === null) return { status: 'error' };
   if (!rows.length) return { status: 'notfound' };
@@ -588,9 +588,10 @@ async function getBlogContent(slug) {
     author: { '@type': 'Organization', name: p.author || 'ShinyPull' },
     publisher: { '@type': 'Organization', name: 'ShinyPull', url: SITE_URL },
     mainEntityOfPage: `${SITE_URL}/blog/${p.slug}`,
+    ...(p.image ? { image: p.image } : {}),
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath: `/blog/${p.slug}` };
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath: `/blog/${p.slug}`, image: p.image || null };
 }
 
 // ---------------------------------------------------------------------------
@@ -877,6 +878,7 @@ export default async function middleware(request) {
   const title = content?.status === 'ok' ? content.title : meta.title;
   const description = content?.status === 'ok' ? content.description : meta.description;
   const canonicalUrl = `${SITE_URL}${content?.status === 'ok' && content.canonicalPath ? content.canonicalPath : url.pathname}`;
+  const image = content?.status === 'ok' ? content.image : null;
 
   // Inject page-specific values via string replacement
   html = html
@@ -888,6 +890,13 @@ export default async function middleware(request) {
     .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${esc(description)}$2`)
     .replace(/(<meta name="description" content=")[^"]*(")/,         `$1${esc(description)}$2`)
     .replace(/(<link rel="canonical" href=")[^"]*(")/,               `$1${canonicalUrl}$2`);
+
+  // Real post/profile image wins over the generic /api/og fallback when one exists.
+  if (image) {
+    html = html
+      .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${esc(image)}$2`)
+      .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${esc(image)}$2`);
+  }
 
   // Server-rendered content block into the SPA mount point. React 18's
   // createRoot().render() replaces these children on hydration.

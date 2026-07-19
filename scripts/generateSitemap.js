@@ -82,9 +82,9 @@ function escapeXml(unsafe) {
 
 function generateSitemapXML(urls) {
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 
-  urls.forEach(({ url, lastmod, changefreq, priority }) => {
+  urls.forEach(({ url, lastmod, changefreq, priority, image }) => {
     xml += '  <url>\n';
     xml += `    <loc>${SITE_URL}${escapeXml(url)}</loc>\n`;
     if (lastmod) {
@@ -95,6 +95,11 @@ function generateSitemapXML(urls) {
     }
     if (priority) {
       xml += `    <priority>${priority}</priority>\n`;
+    }
+    if (image) {
+      xml += '    <image:image>\n';
+      xml += `      <image:loc>${escapeXml(image)}</image:loc>\n`;
+      xml += '    </image:image>\n';
     }
     xml += '  </url>\n';
   });
@@ -125,7 +130,7 @@ async function generateSitemap() {
   console.log('📝 Fetching blog posts...');
   const { data: posts, error: postsError } = await supabase
     .from('blog_posts')
-    .select('slug, updated_at, published_at')
+    .select('slug, updated_at, published_at, image')
     .eq('is_published', true)
     .order('published_at', { ascending: false });
 
@@ -139,6 +144,7 @@ async function generateSitemap() {
         lastmod: post.updated_at || post.published_at,
         changefreq: 'weekly',
         priority: 0.8,
+        ...(post.image ? { image: post.image } : {}),
       });
     });
   }

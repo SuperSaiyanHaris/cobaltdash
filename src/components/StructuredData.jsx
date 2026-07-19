@@ -10,12 +10,18 @@ export default function StructuredData({ schema }) {
   useEffect(() => {
     if (!schema) return;
 
-    // Create or find the script tag
-    let scriptTag = document.querySelector('script[type="application/ld+json"]');
-    
+    // Keyed by @type so a page rendering multiple <StructuredData> instances
+    // (e.g. BlogPosting + BreadcrumbList on a blog post) gets one script tag
+    // each, instead of every instance sharing the first untyped
+    // script[type="application/ld+json"] it finds and overwriting it.
+    const schemaType = schema['@type'] || 'default';
+    const selector = `script[type="application/ld+json"][data-schema-type="${schemaType}"]`;
+    let scriptTag = document.querySelector(selector);
+
     if (!scriptTag) {
       scriptTag = document.createElement('script');
       scriptTag.type = 'application/ld+json';
+      scriptTag.setAttribute('data-schema-type', schemaType);
       document.head.appendChild(scriptTag);
     }
 
