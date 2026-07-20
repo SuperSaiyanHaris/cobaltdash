@@ -15,7 +15,7 @@ import { searchChannels as searchKick } from '../services/kickService';
 import { searchBluesky } from '../services/blueskyService';
 import { searchArtists as searchMusic } from '../services/musicService';
 import { Music } from 'lucide-react';
-import { upsertCreator, saveCreatorStats, searchCreators } from '../services/creatorService';
+import { searchCreators } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -276,9 +276,6 @@ export default function Search() {
       let channels = [];
       if (platform === 'youtube') {
         channels = await searchYouTube(searchQuery, 25);
-        if (channels.length > 0) {
-          void persistSearchResults(channels);
-        }
       } else if (platform === 'tiktok') {
         // Search TikTok creators from database
         channels = await searchTikTok(searchQuery, 25);
@@ -299,24 +296,12 @@ export default function Search() {
             channels.push(c);
           }
         }
-        if (channels.length > 0) {
-          void persistSearchResults(channels);
-        }
       } else if (platform === 'kick') {
         channels = await searchKick(searchQuery, 25);
-        if (channels.length > 0) {
-          void persistSearchResults(channels);
-        }
       } else if (platform === 'bluesky') {
         channels = await searchBluesky(searchQuery, 25);
-        if (channels.length > 0) {
-          void persistSearchResults(channels);
-        }
       } else if (platform === 'music') {
         channels = await searchMusic(searchQuery, 25);
-        if (channels.length > 0) {
-          void persistSearchResults(channels);
-        }
       } else if (platform === 'mastodon' || platform === 'rumble' || platform === 'substack') {
         // All DB-first (live Mastodon federated search requires auth,
         // Rumble is Cloudflare-blocked from our IPs). The fuzzy search RPC
@@ -380,28 +365,14 @@ export default function Search() {
   // Live API search results are fuzzy text matches, not relevance-ranked by
   // size — a search for one real channel routinely returns 20+ unrelated fan
   // pages, rebroadcast accounts, and near-duplicates that happen to contain
-  // the same words. Persisting every raw result (as this used to do) silently
-  // flooded the creators table with junk on every search. Only channels big
-  // enough to plausibly be worth tracking get written; the rest still show up
-  // in the on-screen results, they just don't become permanent DB rows.
-  const MIN_SEARCH_PERSIST_SUBS = 10000;
-
-  const persistSearchResults = async (channels) => {
-    for (const channel of channels) {
-      const size = channel.subscribers || channel.followers || 0;
-      if (size < MIN_SEARCH_PERSIST_SUBS) continue;
-      try {
-        const dbCreator = await upsertCreator(channel);
-        await saveCreatorStats(dbCreator.id, {
-          subscribers: size,
-          totalViews: channel.totalViews,
-          totalPosts: channel.totalPosts,
-        });
-      } catch (dbErr) {
-        logger.warn('Failed to persist creator:', dbErr);
-      }
-    }
-  };
+  // the same words. This page used to eagerly persist every raw result to
+  // the database on every search, which is what silently flooded the
+  // creators table with junk (22 near-duplicate "FC Barcelona" rows from one
+  // search). Results here are shown on screen only. A creator only becomes a
+  // real DB row when someone actually clicks through to their profile —
+  // CreatorProfile.jsx does that persist itself (via the platformId passed
+  // through navigation state below), with no size floor, so a small creator
+  // searching and clicking their own profile still gets tracked correctly.
 
   const handleRequestCreator = async (usernameOverride) => {
     const username = usernameOverride || normalizedUsername;
