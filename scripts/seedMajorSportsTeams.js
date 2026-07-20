@@ -191,6 +191,13 @@ async function run() {
         continue;
       }
 
+      // search_alias covers the case where a channel's real display_name
+      // (e.g. "Man City") doesn't contain the full name people actually
+      // search for (e.g. "Manchester City") — the fuzzy search RPC matches
+      // against it too. Only set when it isn't already a substring of the
+      // real display_name, so we're not duplicating a match that already works.
+      const alias = best.snippet.title.toLowerCase().includes(team.query.toLowerCase()) ? null : team.query;
+
       const { data: creator, error: insertErr } = await supabase.from('creators').insert({
         platform: 'youtube',
         platform_id: best.id,
@@ -199,6 +206,7 @@ async function run() {
         profile_image: best.snippet.thumbnails?.high?.url || best.snippet.thumbnails?.default?.url,
         description: best.snippet.description?.substring(0, 500) || null,
         category: 'Sports',
+        search_alias: alias,
       }).select().single();
 
       if (insertErr) {
