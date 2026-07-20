@@ -64,6 +64,7 @@ export default function CommandPalette() {
   const [searching, setSearching] = useState(false);
   const navigate = useNavigate();
   const searchTimer = useRef(null);
+  const searchSeq = useRef(0);
 
   // Global keyboard listener — Cmd/Ctrl+K to open, / to open (when not typing),
   // Escape to close. Escape is a plain setOpen(false) rather than a toggle, so
@@ -106,22 +107,30 @@ export default function CommandPalette() {
     }
   }, [open]);
 
-  // Debounced creator search as the user types
+  // Debounced creator search as the user types. Cancelling the pending
+  // *timer* on each keystroke isn't enough on its own — if an earlier
+  // keystroke's timer already fired (e.g. a brief pause mid-word) and its
+  // fetch is still in flight, it can resolve after a later, faster fetch and
+  // clobber the freshest results with stale ones. Guard with a sequence
+  // number so only the response matching the most recently fired request is
+  // ever applied to state.
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!query.trim() || query.trim().length < 2) {
+      searchSeq.current += 1;
       setResults([]);
       return;
     }
     setSearching(true);
+    const mySeq = ++searchSeq.current;
     searchTimer.current = setTimeout(async () => {
       try {
         const r = await searchCreators(query.trim());
-        setResults(r);
+        if (searchSeq.current === mySeq) setResults(r);
       } catch {
-        setResults([]);
+        if (searchSeq.current === mySeq) setResults([]);
       } finally {
-        setSearching(false);
+        if (searchSeq.current === mySeq) setSearching(false);
       }
     }, 200);
     return () => clearTimeout(searchTimer.current);
