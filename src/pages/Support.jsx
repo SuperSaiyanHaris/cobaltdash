@@ -70,7 +70,7 @@ export default function Support() {
               Support ShinyPull
             </h1>
             <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-xl mx-auto mb-7">
-              We pull live data from five platforms so you don't have to argue from memory. Turns out APIs aren't free. If ShinyPull has ever settled a Discord argument, you know what to do.
+              We track live data across all {PLATFORM_COUNT} platforms so you don't have to argue from memory. Turns out none of this is free. If ShinyPull has ever settled a Discord argument, you know what to do.
             </p>
 
             <BMCButton size="lg" />

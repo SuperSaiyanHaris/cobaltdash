@@ -533,7 +533,7 @@ export default function Account() {
                       {listingPlatform === 'tiktok' && listingQuery.trim().length >= 2 && !listingSearching && listingResults.length === 0 && !selectedCreator && (
                         <div className="flex items-center gap-3 px-1">
                           <p className="text-xs text-neutral-400 flex-1 min-w-0">
-                            Not in our database. Add <span className="text-neutral-700 font-medium">@{listingQuery.trim()}</span> directly.
+                            We don't have this creator yet. Add <span className="text-neutral-700 font-medium">@{listingQuery.trim()}</span> directly.
                           </p>
                           <button
                             onClick={handleTikTokInstantAdd}

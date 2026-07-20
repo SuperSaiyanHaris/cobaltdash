@@ -427,7 +427,7 @@ async function getRankingsContent(platform) {
   for (const r of rows) {
     const nm = r.display_name || r.username;
     html += `<li><a href="/${platform}/${encodeURIComponent(r.username)}" style="color:#171717">${esc(nm)}</a>` +
-      (r.subscribers !== null && r.subscribers !== undefined ? ` — ${formatNumber(r.subscribers)} ${metric}` : '') + `</li>`;
+      (r.subscribers !== null && r.subscribers !== undefined ? `, ${formatNumber(r.subscribers)} ${metric}` : '') + `</li>`;
   }
   html += `</ol>`;
   html += `<p><a href="/rankings" style="color:#171717">All rankings</a> · <a href="/trending" style="color:#171717">Trending creators</a></p>`;
@@ -613,7 +613,7 @@ function badgeSvg({ name, count, metric, platform }) {
   const displayName = name.length > 22 ? name.slice(0, 21) + '…' : name;
   const countText = count !== null ? `${formatNumber(count)} ${metric}` : 'creator stats';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="64" viewBox="0 0 240 64" role="img" aria-label="${esc(name)}: ${esc(countText)}">
-  <title>${esc(name)} — ${esc(countText)} — ShinyPull</title>
+  <title>${esc(name)}: ${esc(countText)} - ShinyPull</title>
   <rect x="0.5" y="0.5" width="239" height="63" rx="9.5" fill="#ffffff" stroke="#e5e5e5"/>
   <circle cx="18" cy="22" r="4" fill="${tint}"/>
   <text x="30" y="26" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif" font-size="13" font-weight="600" fill="#171717">${esc(displayName)}</text>

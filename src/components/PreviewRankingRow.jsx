@@ -73,7 +73,7 @@ export default function PreviewRankingRow({ rank, creator, fallbackName, maxValu
       </div>
       <div className="text-right">
         <p className="text-[15px] font-bold text-neutral-900 tabular-nums leading-tight">
-          {creator?.subscribers ? formatNumber(creator.subscribers) : '—'}
+          {creator?.subscribers ? formatNumber(creator.subscribers) : '-'}
         </p>
         {growth > 0 && (
           <p className="hidden sm:flex items-center justify-end gap-0.5 text-[10px] font-medium text-emerald-600 tabular-nums">

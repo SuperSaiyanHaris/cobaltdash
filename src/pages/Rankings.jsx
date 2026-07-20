@@ -1151,7 +1151,7 @@ function PlatformRankings({ urlPlatform }) {
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">What do the listener counts mean?</h3>
-                      <p>Monthly listeners count the number of unique people who played an artist's music in the last 30 days. Total plays count every stream ever recorded. Both metrics come from Last.fm's global tracking data.</p>
+                      <p>Monthly listeners count the number of unique people who played an artist's music in the last 30 days. Total plays count every stream ever recorded. Both metrics come from publicly available listening data.</p>
                     </div>
                   </>
                 )}

@@ -139,9 +139,9 @@ export default function Terms() {
                 </ul>
                 <p className="mb-4">
                   <strong>Important:</strong> The live counter does NOT display the actual real-time count from
-                  YouTube or Twitch. Platform APIs only provide rounded/cached subscriber counts (e.g., "465M"
-                  instead of "465,523,243"). The additional digits shown are algorithmic estimates for
-                  entertainment purposes.
+                  YouTube or Twitch. The platforms themselves only provide rounded or cached subscriber counts
+                  (e.g., "465M" instead of "465,523,243"). The additional digits shown are algorithmic estimates
+                  for entertainment purposes.
                 </p>
                 <p>
                   For the most accurate counts, please refer to the official platform (YouTube Studio, Twitch Dashboard).

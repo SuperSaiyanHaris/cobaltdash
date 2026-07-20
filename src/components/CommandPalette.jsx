@@ -191,7 +191,7 @@ export default function CommandPalette() {
                       <ArrowRight className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" />
                     </Command.Item>
                     {!searching && results.length === 0 && (
-                      <p className="px-3 pt-1 pb-1.5 text-xs text-neutral-400">No exact matches in our database yet — try the full search above.</p>
+                      <p className="px-3 pt-1 pb-1.5 text-xs text-neutral-400">No exact matches yet. Try the full search above.</p>
                     )}
                   </Command.Group>
                 )}

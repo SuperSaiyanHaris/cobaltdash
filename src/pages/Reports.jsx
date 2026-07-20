@@ -895,17 +895,17 @@ export default function Reports() {
                         )}
                         {selectedMetrics.has('hours_watched_day') && (
                           <td className="py-3 px-3 text-right text-neutral-800 tabular-nums">
-                            {s.hours_watched_day ? formatNumber(s.hours_watched_day) : '—'}
+                            {s.hours_watched_day ? formatNumber(s.hours_watched_day) : '–'}
                           </td>
                         )}
                         {selectedMetrics.has('peak_viewers_day') && (
                           <td className="py-3 px-3 text-right text-neutral-800 tabular-nums">
-                            {s.peak_viewers_day ? formatNumber(s.peak_viewers_day) : '—'}
+                            {s.peak_viewers_day ? formatNumber(s.peak_viewers_day) : '–'}
                           </td>
                         )}
                         {selectedMetrics.has('avg_viewers_day') && (
                           <td className="py-3 px-3 text-right text-neutral-800 tabular-nums">
-                            {s.avg_viewers_day ? formatNumber(s.avg_viewers_day) : '—'}
+                            {s.avg_viewers_day ? formatNumber(s.avg_viewers_day) : '–'}
                           </td>
                         )}
                       </tr>

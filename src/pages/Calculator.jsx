@@ -409,7 +409,7 @@ export default function Calculator() {
                       <p className="font-bold text-neutral-900">
                         {selectedCreator.totalPosts > 0
                           ? formatNumber(Math.round(selectedCreator.totalViews / selectedCreator.totalPosts))
-                          : '—'}
+                          : '–'}
                       </p>
                     </div>
                   </div>
@@ -666,7 +666,7 @@ export default function Calculator() {
                     </p>
                     <p className="text-xs text-neutral-500 leading-relaxed">
                       {mode === 'creator'
-                        ? 'Daily views come from 14 days of view deltas in our database, not a naive total-divided-by-videos guess.'
+                        ? "Daily views come from the channel's real view history, not a rough total-divided-by-videos guess."
                         : 'Set your expected daily views and RPM range. Actual earnings vary by watch time, ad engagement, and geography.'}
                     </p>
                   </div>
