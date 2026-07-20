@@ -14,7 +14,7 @@ export default function Privacy() {
           <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center">
             <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Legal</p>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Privacy Policy</h1>
-            <p className="mt-2 text-sm text-neutral-500">Last updated: July 16, 2026</p>
+            <p className="mt-2 text-sm text-neutral-500">Last updated: July 20, 2026</p>
           </div>
         </div>
 
@@ -158,6 +158,30 @@ export default function Privacy() {
                   ShinyPull only gathers publicly available information from the platforms we track, the same
                   statistics anyone can already see on a creator's public profile or page. We never collect
                   anything private about your account.
+                </p>
+              </Section>
+
+              <Section title="YouTube API Services">
+                <p className="mb-4">
+                  ShinyPull uses YouTube API Services to display publicly available statistics for YouTube
+                  channels, such as subscriber counts, view counts, and video counts. We do not access your
+                  personal YouTube account, and using ShinyPull never requires you to sign in with a Google
+                  account. By using the parts of ShinyPull that show YouTube data, you are also agreeing to be
+                  bound by the{' '}
+                  <a href="https://www.youtube.com/t/terms" className="text-indigo-600 hover:text-indigo-700" target="_blank" rel="noopener noreferrer">
+                    YouTube Terms of Service
+                  </a>.
+                </p>
+                <p>
+                  For more information on how Google handles data across its services, see the{' '}
+                  <a href="https://policies.google.com/privacy" className="text-indigo-600 hover:text-indigo-700" target="_blank" rel="noopener noreferrer">
+                    Google Privacy Policy
+                  </a>. Since we don't collect any personal Google or YouTube account data, there's nothing tied
+                  to your Google account for us to delete. You can revoke any access you may have granted to a
+                  third-party app, including ours, at any time from your{' '}
+                  <a href="https://myaccount.google.com/permissions" className="text-indigo-600 hover:text-indigo-700" target="_blank" rel="noopener noreferrer">
+                    Google account permissions page
+                  </a>.
                 </p>
               </Section>
 
