@@ -12,8 +12,12 @@
  * same indiscriminate-bulk-add mistake that used to live in Search.jsx's
  * persistSearchResults).
  *
- * Usage: node scripts/seedMajorSportsTeams.js
- * One-time / occasional run, not part of the daily discovery cron.
+ * Usage: node scripts/seedMajorSportsTeams.js [--force]
+ * Runs weekly via .github/workflows/major-names-seed.yml. Safe to run repeatedly:
+ * a query already resolved (added, already-tracked, or confirmed no match) in the
+ * resolved_creator_queries table is skipped entirely on later runs, no API cost, so
+ * the weekly job only ever spends quota on teams newly added to TEAMS below. Pass
+ * --force to re-check every entry regardless of cache.
  */
 
 import 'dotenv/config';
@@ -26,6 +30,8 @@ const YOUTUBE_API_KEY = process.env.VITE_YOUTUBE_API_KEY || process.env.YOUTUBE_
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
 const MIN_SUBSCRIBERS = 5000; // Lower than general discovery's 10K floor — precision here
                                // comes from the curated list + keyword match, not the size filter.
+const SCRIPT_NAME = 'sports_teams';
+const FORCE = process.argv.includes('--force');
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
@@ -147,16 +153,46 @@ async function getExistingChannelIds() {
   return allIds;
 }
 
+async function getResolvedQueries() {
+  if (FORCE) return new Set();
+  const resolved = new Set();
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase
+      .from('resolved_creator_queries').select('query').eq('script', SCRIPT_NAME)
+      .order('query').range(from, from + pageSize - 1);
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    data.forEach((r) => resolved.add(r.query));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return resolved;
+}
+
+async function markResolved(query, added, platformId) {
+  const { error } = await supabase
+    .from('resolved_creator_queries')
+    .upsert({ script: SCRIPT_NAME, query, added, platform_id: platformId, checked_at: new Date().toISOString() }, { onConflict: 'script,query' });
+  if (error) console.error(`   ! Failed to cache resolution for ${query}: ${error.message}`);
+}
+
 async function run() {
-  console.log(`\n🏟️  Major Sports Teams Seed - ${getTodayLocal()}\n`);
+  console.log(`\n🏟️  Major Sports Teams Seed - ${getTodayLocal()}${FORCE ? ' (--force, ignoring cache)' : ''}\n`);
   if (!YOUTUBE_API_KEY) throw new Error('YouTube API key not configured');
 
   const existingIds = await getExistingChannelIds();
-  console.log(`Found ${existingIds.size} existing YouTube creators\n`);
+  const resolvedQueries = await getResolvedQueries();
+  console.log(`Found ${existingIds.size} existing YouTube creators, ${resolvedQueries.size} already-resolved queries cached\n`);
 
-  let added = 0, skippedExisting = 0, noMatch = 0, failed = 0;
+  let added = 0, skippedExisting = 0, noMatch = 0, failed = 0, cached = 0;
 
   for (const team of TEAMS) {
+    if (resolvedQueries.has(team.query)) {
+      cached++;
+      continue;
+    }
+
     try {
       const ids = await searchChannels(team.query);
       const details = await getChannelDetails(ids);
@@ -168,12 +204,14 @@ async function run() {
       if (!best) {
         console.log(`   ❓ ${team.query} — no result matched keywords [${team.keywords.join(', ')}], skipped`);
         noMatch++;
+        await markResolved(team.query, false, null);
         continue;
       }
 
       if (existingIds.has(best.id)) {
         console.log(`   ⏭️  ${team.query} — already tracked (${best.snippet.title})`);
         skippedExisting++;
+        await markResolved(team.query, false, best.id);
         continue;
       }
 
@@ -181,6 +219,7 @@ async function run() {
       if (subs < MIN_SUBSCRIBERS) {
         console.log(`   ❓ ${team.query} — best match "${best.snippet.title}" only has ${subs} subs, skipped`);
         noMatch++;
+        await markResolved(team.query, false, null);
         continue;
       }
 
@@ -188,6 +227,7 @@ async function run() {
       if (!customUrl) {
         console.log(`   ❓ ${team.query} — best match "${best.snippet.title}" has no public handle, skipped`);
         noMatch++;
+        await markResolved(team.query, false, null);
         continue;
       }
 
@@ -210,7 +250,12 @@ async function run() {
       }).select().single();
 
       if (insertErr) {
-        if (insertErr.code === '23505') { console.log(`   ⏭️  ${team.query} — race condition, already added`); skippedExisting++; continue; }
+        if (insertErr.code === '23505') {
+          console.log(`   ⏭️  ${team.query} — race condition, already added`);
+          skippedExisting++;
+          await markResolved(team.query, false, best.id);
+          continue;
+        }
         throw insertErr;
       }
 
@@ -225,6 +270,7 @@ async function run() {
       console.log(`   ✅ ${team.query} → ${best.snippet.title} (@${customUrl.replace('@', '')}, ${subs.toLocaleString()} subs)`);
       existingIds.add(best.id);
       added++;
+      await markResolved(team.query, true, best.id);
     } catch (err) {
       console.error(`   ❌ ${team.query}: ${err.message}`);
       failed++;
@@ -232,7 +278,7 @@ async function run() {
     await new Promise((r) => setTimeout(r, 100));
   }
 
-  console.log(`\n✨ Done. Added ${added}, already tracked ${skippedExisting}, no confident match ${noMatch}, failed ${failed}.\n`);
+  console.log(`\n✨ Done. Added ${added}, already tracked ${skippedExisting}, no confident match ${noMatch}, failed ${failed}, skipped via cache ${cached}.\n`);
 }
 
 run().then(() => process.exit(0)).catch((err) => { console.error('❌ Seed failed:', err.message); process.exit(1); });

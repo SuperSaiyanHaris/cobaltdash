@@ -1,0 +1,74 @@
+name: Major Names Seed (sports teams + individual creators)
+
+on:
+  schedule:
+    # Weekly, Sunday 03:00 UTC — deliberately off the hours the other YouTube
+    # jobs run (0/6/12/14/18/22 UTC) so this gets first crack at the shared
+    # daily quota. Both scripts cache resolved queries in resolved_creator_queries
+    # and skip anything already checked, so most weeks this costs near-zero
+    # quota — it only spends anything on names newly added to the curated
+    # lists in scripts/seedMajorSportsTeams.js and scripts/seedMajorIndividualCreators.js.
+    # If a run hits the daily quota wall partway through, unresolved names are
+    # NOT cached as failed, so they're retried automatically next week.
+    - cron: '0 3 * * 0'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  seed-major-names:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed major sports teams
+        id: teams
+        continue-on-error: true
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
+        run: node scripts/seedMajorSportsTeams.js
+
+      - name: Seed major individual creators
+        id: individuals
+        continue-on-error: true
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
+        run: node scripts/seedMajorIndividualCreators.js
+
+      - name: Summarize results
+        if: always()
+        run: |
+          declare -A results=(
+            [SportsTeams]="${{ steps.teams.outcome }}"
+            [IndividualCreators]="${{ steps.individuals.outcome }}"
+          )
+          failed=0
+          for job in "${!results[@]}"; do
+            if [ "${results[$job]}" = "success" ]; then
+              echo "✅ $job"
+            else
+              echo "❌ $job"
+              failed=1
+            fi
+          done
+          if [ "$failed" = "1" ]; then
+            echo ""
+            echo "One or more scripts failed this run (quota exhaustion is expected"
+            echo "and non-fatal — unresolved names retry automatically next week)."
+            exit 1
+          fi
+          echo ""
+          echo "✅ Both scripts completed successfully"
