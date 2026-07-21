@@ -248,6 +248,12 @@ async function searchTwitchFromDB(query) {
 // API hitting its daily quota — doesn't take the other down with it. Without
 // this, a quota error surfaces as a raw API error on the page instead of
 // just quietly falling back to creators we already track.
+//
+// Also returns whether the live side failed. A real, existing creator who
+// simply isn't in our database yet and can't be verified live right now is a
+// different situation from "this doesn't exist" — the caller uses this to
+// avoid asserting a false negative ("check your spelling") when we genuinely
+// couldn't check.
 async function mergeSearchSources(apiPromise, dbPromise, platformLabel) {
   const [apiResult, dbResult] = await Promise.allSettled([apiPromise, dbPromise]);
   const apiResults = apiResult.status === 'fulfilled' ? apiResult.value : [];
@@ -264,7 +270,7 @@ async function mergeSearchSources(apiPromise, dbPromise, platformLabel) {
       merged.push(c);
     }
   }
-  return merged;
+  return { results: merged, liveUnavailable: apiResult.status === 'rejected' };
 }
 
 export default function Search() {
@@ -277,6 +283,7 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
+  const [liveSearchUnavailable, setLiveSearchUnavailable] = useState(false);
   const [requestStatus, setRequestStatus] = useState(null); // null, 'requesting', 'success', 'error'
   const [requestMessage, setRequestMessage] = useState('');
   const [normalizedUsername, setNormalizedUsername] = useState('');
@@ -307,6 +314,7 @@ export default function Search() {
     setSelectedPlatform(platformId);
     setResults([]);
     setSearched(false);
+    setLiveSearchUnavailable(false);
     // Clear request status when switching platforms
     setRequestStatus(null);
     setRequestMessage('');
@@ -330,6 +338,7 @@ export default function Search() {
     setLoading(true);
     setError(null);
     setSearched(true);
+    setLiveSearchUnavailable(false);
     // Clear request status when searching for a new creator
     setRequestStatus(null);
     setRequestMessage('');
@@ -342,7 +351,9 @@ export default function Search() {
         // run out — when it does, this still returns real results for any of
         // the 6,900+ YouTube creators already in our database instead of
         // surfacing the quota error to the user.
-        channels = await mergeSearchSources(searchYouTube(searchQuery, 25), searchYouTubeFromDB(searchQuery), 'YouTube');
+        const merged = await mergeSearchSources(searchYouTube(searchQuery, 25), searchYouTubeFromDB(searchQuery), 'YouTube');
+        channels = merged.results;
+        setLiveSearchUnavailable(merged.liveUnavailable);
       } else if (platform === 'tiktok') {
         // Search TikTok creators from database
         channels = await searchTikTok(searchQuery, 25);
@@ -350,7 +361,9 @@ export default function Search() {
         // Fetch Twitch API results and our DB in parallel, then merge.
         // The Twitch API sorts by recent activity — big channels that haven't
         // streamed lately can be missing from the first 25 results entirely.
-        channels = await mergeSearchSources(searchTwitch(searchQuery, 25), searchTwitchFromDB(searchQuery), 'Twitch');
+        const merged = await mergeSearchSources(searchTwitch(searchQuery, 25), searchTwitchFromDB(searchQuery), 'Twitch');
+        channels = merged.results;
+        setLiveSearchUnavailable(merged.liveUnavailable);
       } else if (platform === 'kick') {
         channels = await searchKick(searchQuery, 25);
       } else if (platform === 'bluesky') {
@@ -588,10 +601,21 @@ export default function Search() {
           {!loading && searched && !error && results.length === 0 && (
             <div className={`text-center py-14 ${CARD}`}>
               <User className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
-              <h3 className="text-base font-medium text-neutral-900 mb-1">No creators found</h3>
-              <p className="text-sm text-neutral-500 mb-4">
-                We couldn't find any {currentPlatform?.name} creators matching "{query}"
-              </p>
+              {liveSearchUnavailable ? (
+                <>
+                  <h3 className="text-base font-medium text-neutral-900 mb-1">Couldn't check just now</h3>
+                  <p className="text-sm text-neutral-500 mb-4">
+                    "{query}" isn't in our database yet, and we couldn't verify it against live {currentPlatform?.name} data this time. If you're sure this creator is real, try again in a few minutes.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-base font-medium text-neutral-900 mb-1">No creators found</h3>
+                  <p className="text-sm text-neutral-500 mb-4">
+                    We couldn't find any {currentPlatform?.name} creators matching "{query}"
+                  </p>
+                </>
+              )}
 
               {/* TikTok: Request Creator Button */}
               {selectedPlatform === 'tiktok' && (
@@ -724,8 +748,10 @@ export default function Search() {
                 );
               })()}
 
-              {/* Standard platforms: Standard message */}
-              {!['tiktok', 'rumble', 'mastodon', 'substack'].includes(selectedPlatform) && (
+              {/* Standard platforms: Standard message. Skipped when live search
+                  was the thing that failed — "check your spelling" is wrong
+                  advice when we never actually got to check. */}
+              {!['tiktok', 'rumble', 'mastodon', 'substack'].includes(selectedPlatform) && !liveSearchUnavailable && (
                 <p className="text-sm text-neutral-400">
                   Try searching for a different name or check the spelling
                 </p>
