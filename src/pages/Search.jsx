@@ -173,6 +173,42 @@ async function searchTikTok(query, limit = 25) {
   return withStats.slice(0, limit);
 }
 
+// YouTube DB search — supplements the live YouTube API results with creators
+// we already track. The live search is also the first thing to break when the
+// shared daily YouTube API quota runs out (see mergeSearchSources below), so
+// this is what keeps YouTube search usable when that happens: we already
+// track 6,900+ YouTube creators, so DB-only results are still real results,
+// not an error page.
+async function searchYouTubeFromDB(query, limit = 25) {
+  const results = await searchCreators(query, 'youtube');
+
+  const withStats = await Promise.all(
+    results.map(async (creator) => {
+      const { data: stats } = await supabase
+        .from('creator_stats')
+        .select('subscribers, total_views, total_posts')
+        .eq('creator_id', creator.id)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return {
+        platform: 'youtube',
+        platformId: creator.platform_id,
+        username: creator.username,
+        displayName: creator.display_name || creator.username,
+        profileImage: creator.profile_image,
+        description: creator.description,
+        subscribers: stats?.subscribers || 0,
+        totalViews: stats?.total_views || 0,
+        totalPosts: stats?.total_posts || 0,
+      };
+    })
+  );
+
+  return withStats.slice(0, limit);
+}
+
 // Twitch DB search - supplements the live Twitch API results with creators we
 // already track. Twitch's own search ranks by recent activity, so a big channel
 // that hasn't streamed in a while (e.g. TheBurntPeanut) can be missing from the
@@ -203,6 +239,32 @@ async function searchTwitchFromDB(query) {
   );
 
   return withStats;
+}
+
+// Runs a live-API search and a database search in parallel and merges them,
+// deduped by username (API results first, so a fresher live match wins over
+// a possibly-stale DB row of the same creator). Uses allSettled rather than
+// Promise.all specifically so one source failing — most commonly the live
+// API hitting its daily quota — doesn't take the other down with it. Without
+// this, a quota error surfaces as a raw API error on the page instead of
+// just quietly falling back to creators we already track.
+async function mergeSearchSources(apiPromise, dbPromise, platformLabel) {
+  const [apiResult, dbResult] = await Promise.allSettled([apiPromise, dbPromise]);
+  const apiResults = apiResult.status === 'fulfilled' ? apiResult.value : [];
+  const dbResults = dbResult.status === 'fulfilled' ? dbResult.value : [];
+  if (apiResult.status === 'rejected') {
+    logger.error(`Live ${platformLabel} search unavailable, showing database results only:`, apiResult.reason);
+  }
+  const seen = new Set();
+  const merged = [];
+  for (const c of [...apiResults, ...dbResults]) {
+    const key = (c.username || '').toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(c);
+    }
+  }
+  return merged;
 }
 
 export default function Search() {
@@ -275,7 +337,12 @@ export default function Search() {
     try {
       let channels = [];
       if (platform === 'youtube') {
-        channels = await searchYouTube(searchQuery, 25);
+        // Live search + our own database, merged. The live API shares a daily
+        // quota with every other YouTube-dependent job on the site, so it can
+        // run out — when it does, this still returns real results for any of
+        // the 6,900+ YouTube creators already in our database instead of
+        // surfacing the quota error to the user.
+        channels = await mergeSearchSources(searchYouTube(searchQuery, 25), searchYouTubeFromDB(searchQuery), 'YouTube');
       } else if (platform === 'tiktok') {
         // Search TikTok creators from database
         channels = await searchTikTok(searchQuery, 25);
@@ -283,19 +350,7 @@ export default function Search() {
         // Fetch Twitch API results and our DB in parallel, then merge.
         // The Twitch API sorts by recent activity — big channels that haven't
         // streamed lately can be missing from the first 25 results entirely.
-        const [apiResults, dbResults] = await Promise.all([
-          searchTwitch(searchQuery, 25),
-          searchTwitchFromDB(searchQuery),
-        ]);
-        const seen = new Set();
-        channels = [];
-        for (const c of [...apiResults, ...dbResults]) {
-          const key = (c.username || '').toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
-            channels.push(c);
-          }
-        }
+        channels = await mergeSearchSources(searchTwitch(searchQuery, 25), searchTwitchFromDB(searchQuery), 'Twitch');
       } else if (platform === 'kick') {
         channels = await searchKick(searchQuery, 25);
       } else if (platform === 'bluesky') {

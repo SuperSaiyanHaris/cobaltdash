@@ -5,6 +5,37 @@ import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
+// Thrown specifically for quota/rate-limit exhaustion so the handler can
+// respond with a clean, generic message instead of Google's raw error body
+// (which is a large JSON blob of internal project/quota details — never
+// something to show a user). Callers on the frontend degrade gracefully
+// (fall back to database search) rather than surfacing this as an error.
+class YouTubeUnavailableError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'YouTubeUnavailableError';
+    this.quotaExceeded = true;
+  }
+}
+
+// Converts a failed YouTube API response into a clean error safe to return
+// to the client. The raw response body is attached as `.rawDetails` for
+// server-side logging only — it must never reach `res.json()`.
+function toCleanYouTubeError(status, rawBody) {
+  let reason = '';
+  try {
+    reason = JSON.parse(rawBody)?.error?.errors?.[0]?.reason || '';
+  } catch {
+    // rawBody wasn't JSON — fall through with reason left blank
+  }
+  const isQuota = status === 429 || status === 403 || reason === 'rateLimitExceeded' || reason === 'quotaExceeded';
+  const err = isQuota
+    ? new YouTubeUnavailableError('YouTube search is temporarily unavailable.')
+    : new Error('YouTube API request failed.');
+  err.rawDetails = `${status} - ${rawBody}`;
+  return err;
+}
+
 /**
  * Search for YouTube channels (includes statistics)
  */
@@ -23,8 +54,7 @@ async function searchChannels(query, maxResults = 25) {
   );
 
   if (!searchResponse.ok) {
-    const errorText = await searchResponse.text();
-    throw new Error(`YouTube API error: ${searchResponse.status} - ${errorText}`);
+    throw toCleanYouTubeError(searchResponse.status, await searchResponse.text());
   }
 
   const searchData = await searchResponse.json();
@@ -99,8 +129,7 @@ async function getChannel(channelId) {
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`YouTube API error: ${response.status} - ${errorText}`);
+    throw toCleanYouTubeError(response.status, await response.text());
   }
 
   const data = await response.json();
@@ -329,14 +358,20 @@ export default async function handler(req, res) {
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error('YouTube API error:', error);
-    
+    // Log full detail server-side (rawDetails carries Google's actual error
+    // body when present); the client only ever sees the sanitized message.
+    console.error('YouTube API error:', error.rawDetails || error);
+
     // Return 404 for "not found" errors instead of 500
     if (error.message && error.message.toLowerCase().includes('not found')) {
       return res.status(404).json({ error: error.message });
     }
-    
-    return res.status(500).json({ 
+
+    if (error.quotaExceeded) {
+      return res.status(503).json({ error: error.message, quotaExceeded: true });
+    }
+
+    return res.status(500).json({
       error: error.message || 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
