@@ -1517,7 +1517,16 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
     const max = Math.max(...values, 0.001);
     const entry = { metric: label };
     creators.forEach((c, i) => {
-      entry[creatorLabel(c)] = Math.round((values[i] / max) * 100);
+      const v = values[i];
+      // Log scale, not linear. A straight value/max*100 makes a creator with
+      // "only" 19M followers next to one with 508M round to ~4/100 — a sliver
+      // that reads as "basically nothing" when 19M is actually huge. Log10
+      // keeps the ordering intact (bigger still looks bigger) while giving
+      // every creator with a real, substantial number a visible presence on
+      // the chart. Exact figures are already shown in the stat cards above;
+      // this chart's job is relative shape, not precise ratio.
+      const scaled = v > 0 ? (Math.log10(v + 1) / Math.log10(max + 1)) * 100 : 0;
+      entry[creatorLabel(c)] = Math.round(scaled);
     });
     return entry;
   });
