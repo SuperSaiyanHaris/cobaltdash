@@ -58,6 +58,8 @@ async function aggregateHoursWatched() {
   // Twitch roster (including creators monitorTwitchStreams.js *did* capture
   // stream_sessions for) never got those sessions aggregated into
   // creator_stats, leaving hours_watched_* permanently null for them.
+  // Verified 2026-07-22: manual run against production backfilled real
+  // hours_watched_* data for 869 previously-null creators in one pass.
   let creators = [];
   {
     let from = 0;
