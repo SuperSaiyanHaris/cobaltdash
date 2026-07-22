@@ -274,23 +274,34 @@ function RankingsOverview() {
 
             {/* Live stat strip — the same real, honest counts the home page
                 shows, giving first-time visitors something concrete before
-                they've scanned a single row. */}
-            {liveStats.creators && liveStats.dataPoints && (
-              <div className="mt-8 grid grid-cols-3 max-w-xl bg-white border border-neutral-200 rounded-xl divide-x divide-neutral-200 overflow-hidden">
-                {[
-                  { label: 'Creators tracked', value: liveStats.creators },
-                  { label: 'Daily data points', value: liveStats.dataPoints },
-                  { label: 'Platforms', value: PLATFORM_COUNT },
-                ].map((s) => (
-                  <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
+                they've scanned a single row. The box itself is always
+                mounted (fixed height, same border) so the two async counts
+                resolving ~1-3s late never shifts the page — only the number
+                inside each cell swaps from a skeleton pulse to the real
+                value. Previously the whole block only mounted once both
+                counts existed, which meant it popped in and pushed the
+                loading skeletons down (reported as a mobile "blip" after
+                landing on Rankings from the header). CountUp itself still
+                only renders once a value is truthy, matching the documented
+                safe pattern in CLAUDE.md (never animates from a fake 0). */}
+            <div className="mt-8 grid grid-cols-3 max-w-xl bg-white border border-neutral-200 rounded-xl divide-x divide-neutral-200 overflow-hidden">
+              {[
+                { label: 'Creators tracked', value: liveStats.creators },
+                { label: 'Daily data points', value: liveStats.dataPoints },
+                { label: 'Platforms', value: PLATFORM_COUNT },
+              ].map((s) => (
+                <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
+                  {s.value ? (
                     <p className="text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
                       <CountUp value={s.value} />
                     </p>
-                    <p className={`${MICRO} mt-1.5`}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ) : (
+                    <div className="h-[1.125rem] sm:h-[1.25rem] w-10 bg-neutral-100 rounded animate-pulse" />
+                  )}
+                  <p className={`${MICRO} mt-1.5`}>{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

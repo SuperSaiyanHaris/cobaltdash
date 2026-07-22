@@ -1482,6 +1482,10 @@ function MobileComparisonTable({ creators, growthData, getGrowthColor, formatEar
   );
 }
 
+// Axis ticks stay terse ("7d", "30d") so they don't clip against the chart
+// edge at narrow widths — the tooltip spells them back out on hover.
+const AXIS_LABEL_EXPANSIONS = { '7d': '7-Day Growth', '30d': '30-Day Growth' };
+
 function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
   const CREATOR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#e11d48', '#0ea5e9', '#8b5cf6', '#0d9488', '#f97316'];
 
@@ -1494,12 +1498,35 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
       ? `${c.displayName} (${c.platform.charAt(0).toUpperCase() + c.platform.slice(1)})`
       : c.displayName;
 
+  // Views and Avg/Video only mean anything for YouTube/TikTok (everyone else
+  // is either structurally 0 — Twitch/Kick's view_count has been deprecated
+  // since 2022 — or explicitly null, see the DB-first hydration above). The
+  // old fixed 5-metric list plotted those two axes for every matchup
+  // regardless, so a Twitch-vs-Twitch or Mastodon-vs-Bluesky comparison
+  // pinned 2 of 5 spokes to zero for both creators — a dart-shaped chart with
+  // 40% of it conveying nothing, which is what actually made "the
+  // performance chart hard to read" for anything outside YouTube/TikTok, not
+  // just the value-scale issue the log10 normalization below already
+  // handles. Candidates fill those slots only when EVERY compared creator
+  // has a real, comparable number for them; otherwise the radar just runs
+  // shorter (down to the 3 metrics that are always universal) instead of
+  // padding out with misleading zeros.
+  const CANDIDATE_METRICS = [
+    { label: 'Views',      appliesTo: (c) => ['youtube', 'tiktok', 'music'].includes(c.platform), getValue: (c) => c.totalViews || 0 },
+    { label: 'Avg/Video',  appliesTo: (c) => ['youtube', 'tiktok'].includes(c.platform) && c.totalPosts > 0, getValue: (c) => c.totalViews / c.totalPosts },
+    { label: 'Watch Hrs',  appliesTo: (c) => ['twitch', 'kick'].includes(c.platform), getValue: (c) => growthData[c.platformId]?.hoursWatched || 0 },
+    { label: 'Posts',      appliesTo: (c) => ['bluesky', 'mastodon', 'rumble', 'substack'].includes(c.platform), getValue: (c) => c.totalPosts || 0 },
+  ];
+  const qualifyingExtras = CANDIDATE_METRICS
+    .filter((m) => creators.every((c) => m.appliesTo(c)))
+    .slice(0, 2)
+    .map(({ label, getValue }) => ({ label, getValue }));
+
   const metrics = [
-    { label: 'Followers',    getValue: (c) => c.subscribers || c.followers || 0 },
-    { label: 'Views',        getValue: (c) => (c.platform === 'bluesky') ? 0 : (c.totalViews || 0) },
-    { label: 'Avg/Video',    getValue: (c) => (c.platform !== 'twitch' && c.platform !== 'bluesky' && c.platform !== 'mastodon' && c.platform !== 'rumble' && c.platform !== 'substack' && c.platform !== 'music' && c.totalPosts > 0) ? c.totalViews / c.totalPosts : 0 },
-    { label: '7-Day Growth', getValue: (c) => Math.max(0, growthData[c.platformId]?.growth7Day || 0) },
-    { label: '30-Day Growth',getValue: (c) => Math.max(0, growthData[c.platformId]?.growth30Day || 0) },
+    { label: 'Followers', getValue: (c) => c.subscribers || c.followers || 0 },
+    ...qualifyingExtras,
+    { label: '7d',        getValue: (c) => Math.max(0, growthData[c.platformId]?.growth7Day || 0) },
+    { label: '30d',       getValue: (c) => Math.max(0, growthData[c.platformId]?.growth30Day || 0) },
   ];
 
   // Skip chart if any creator has all-zero values (new creator or no data) — lopsided radar is misleading
@@ -1538,9 +1565,9 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
         <span className="text-xs text-neutral-400">100 = top among compared</span>
       </div>
       <ResponsiveContainer width="100%" height={320}>
-        <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+        <RadarChart data={radarData} margin={{ top: 16, right: 34, bottom: 16, left: 34 }}>
           <PolarGrid stroke="#e5e5e5" />
-          <PolarAngleAxis dataKey="metric" tick={{ fill: '#737373', fontSize: 11, fontWeight: 500 }} />
+          <PolarAngleAxis dataKey="metric" tick={{ fill: '#525252', fontSize: 11, fontWeight: 600 }} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
           {creators.map((c, i) => (
             <Radar
@@ -1551,11 +1578,13 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
               fill={CREATOR_COLORS[i % CREATOR_COLORS.length]}
               fillOpacity={0.12}
               strokeWidth={2.5}
+              dot={{ r: 3, strokeWidth: 0 }}
             />
           ))}
           <Tooltip
             contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e5e5e5', borderRadius: '8px', padding: '8px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
             formatter={(value, name) => [`${value}/100`, name]}
+            labelFormatter={(label) => AXIS_LABEL_EXPANSIONS[label] || label}
             labelStyle={{ color: '#737373', fontSize: '11px', marginBottom: '4px' }}
             itemStyle={{ color: '#404040', fontSize: '12px' }}
           />
