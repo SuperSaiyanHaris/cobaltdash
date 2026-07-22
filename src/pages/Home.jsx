@@ -14,13 +14,12 @@ import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { getAllPosts } from '../services/blogService';
 import {
-  getRankedCreators, getTopCreatorsByPlatform, getSparklineData, getCreatorStats,
+  getRankedCreators, getTopCreatorsByPlatform, getCreatorStats,
 } from '../services/creatorService';
 import { supabase } from '../lib/supabase';
 import { formatNumber, formatRelativeTimeShort } from '../lib/utils';
 import CreatorAvatar from '../components/CreatorAvatar';
 import CountUp from '../components/CountUp';
-import Sparkline from '../components/Sparkline';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import PreviewRankingRow from '../components/PreviewRankingRow';
 import { PLATFORM_COUNT } from '../lib/constants';
@@ -42,15 +41,15 @@ const HEADLINE_ROTATIONS = ['YouTuber', 'TikToker', 'Streamer', 'Artist', 'Creat
 
 // Display order + labels for the rotating #1-per-platform hero card.
 const TOP_CARD_META = [
-  { platform: 'youtube',  label: '#1 YouTuber',        metric: 'subscribers' },
-  { platform: 'tiktok',   label: '#1 TikToker',        metric: 'followers' },
-  { platform: 'twitch',   label: '#1 Twitch Streamer', metric: 'followers' },
-  { platform: 'kick',     label: '#1 Kick Streamer',   metric: 'paid subscribers' },
-  { platform: 'bluesky',  label: '#1 on Bluesky',      metric: 'followers' },
-  { platform: 'music',    label: '#1 Artist',          metric: 'monthly listeners' },
-  { platform: 'mastodon', label: '#1 on Mastodon',     metric: 'followers' },
-  { platform: 'rumble',   label: '#1 on Rumble',       metric: 'followers' },
-  { platform: 'substack', label: '#1 on Substack',     metric: 'subscribers' },
+  { platform: 'youtube',  label: 'YouTuber',        metric: 'subscribers' },
+  { platform: 'tiktok',   label: 'TikToker',        metric: 'followers' },
+  { platform: 'twitch',   label: 'Twitch Streamer', metric: 'followers' },
+  { platform: 'kick',     label: 'Kick Streamer',   metric: 'paid subscribers' },
+  { platform: 'bluesky',  label: 'Bluesky',         metric: 'followers' },
+  { platform: 'music',    label: 'Artist',          metric: 'monthly listeners' },
+  { platform: 'mastodon', label: 'Mastodon',        metric: 'followers' },
+  { platform: 'rumble',   label: 'Rumble',          metric: 'followers' },
+  { platform: 'substack', label: 'Substack',        metric: 'subscribers' },
 ];
 
 const FALLBACK_NAMES = ['MrBeast', 'T-Series', 'Cocomelon', 'SET India', 'Vlad and Niki'];
@@ -172,16 +171,26 @@ const PLATFORM_LOOKUP = Object.fromEntries(PLATFORMS.map((p) => [p.id, p]));
 // (Ripit.co's homepage card-fan carousel is the reference) instead of a plain
 // grid — a static "line after line of #1s" grid read as flat, and the user
 // specifically wanted the fanned/rotated card motion instead. One card is
-// centered and full detail (avatar, count, real sparkline); the rest recede
-// to the sides at increasing rotation/scale/fade, like a hand of cards.
-// Auto-advances (paused on hover, and under prefers-reduced-motion the fan
-// just holds on the first card — no forced motion). Arrows + dots for manual
-// control; clicking either doesn't permanently stop auto-advance, this is a
-// decorative showcase, not a tabbed interface the user is expected to "land"
-// on. Deliberately NOT CountUp on the follower number: same reasoning as
-// everywhere else on this page — a below-the-fold CountUp shows a literal
-// "0" until scrolled into view, which reads as broken data.
-function ChampionsGrid({ tops, sparklines }) {
+// centered and full detail (avatar, name, a large platform-appropriate stat);
+// the rest recede to the sides at increasing rotation/scale/fade, like a
+// hand of cards. Auto-advances (paused on hover, and under
+// prefers-reduced-motion the fan just holds on the first card — no forced
+// motion). Arrows + dots for manual control; clicking either doesn't
+// permanently stop auto-advance, this is a decorative showcase, not a tabbed
+// interface the user is expected to "land" on.
+// The card used to close with a 30-day sparkline; the user found the chart
+// cluttered and asked for the count itself to carry the card instead. It
+// then went through a second pass ("data is not centered... extreme genius
+// level UI/UX") into the current "trophy card" treatment: a thin platform-
+// accent hairline across the top (the one place platform color shows beyond
+// the tiny icon), then everything else — icon+label, ringed avatar with a
+// black rank badge, name, a hairline divider, and the big tabular-nums stat
+// with its label — stacked and text-centered, not left-aligned. Stat block
+// is always shown, not just on the active card, so the fan doesn't reflow
+// height as cards recede. Deliberately NOT CountUp on that number: same
+// reasoning as everywhere else on this page — a below-the-fold CountUp shows
+// a literal "0" until scrolled into view, which reads as broken data.
+function ChampionsGrid({ tops }) {
   const reduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -215,7 +224,7 @@ function ChampionsGrid({ tops, sparklines }) {
       </motion.div>
 
       <div
-        className="relative h-[300px] sm:h-[340px] flex items-center justify-center"
+        className="relative h-[340px] sm:h-[380px] flex items-center justify-center"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
@@ -229,12 +238,11 @@ function ChampionsGrid({ tops, sparklines }) {
           const isActive = offset === 0;
           const meta = PLATFORM_LOOKUP[top.platform];
           const Icon = meta?.Icon;
-          const spark = sparklines[top.id];
 
           return (
             <motion.div
               key={top.platform}
-              className="absolute w-[210px] sm:w-[250px]"
+              className="absolute w-[230px] sm:w-[270px]"
               animate={{
                 x: offset * (reduceMotion ? 0 : 120),
                 y: abs * 12,
@@ -249,28 +257,40 @@ function ChampionsGrid({ tops, sparklines }) {
               <Link
                 to={`/${top.platform}/${top.username}`}
                 tabIndex={isActive ? 0 : -1}
-                className={`group block bg-white border rounded-2xl p-5 shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-colors ${
+                className={`group flex flex-col items-center overflow-hidden bg-white border rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-colors ${
                   isActive ? 'border-neutral-300 hover:border-neutral-400' : 'border-neutral-200'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-3.5">
-                  {Icon && <Icon className="w-4 h-4 flex-shrink-0" style={{ color: meta.accent }} />}
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">{top._platformLabel}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CreatorAvatar src={top.profile_image} name={top.display_name} rounded="rounded-xl" className="!w-11 !h-11 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="font-bold text-neutral-900 truncate text-sm">{top.display_name}</p>
-                    <p className="text-xs text-neutral-500 tabular-nums">
-                      {formatNumber(top.subscribers || 0)} {top._metricLabel}
-                    </p>
+                <div className="h-[3px] w-full flex-shrink-0" style={{ backgroundColor: meta?.accent }} />
+
+                <div className="flex flex-col items-center w-full px-5 sm:px-6 pt-5 pb-6">
+                  <div className="flex items-center gap-1.5 mb-5">
+                    {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
+                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">{top._platformLabel}</span>
                   </div>
-                </div>
-                {isActive && (
-                  <div className="h-7 mt-3">
-                    {spark && spark.length >= 2 && <Sparkline data={spark} width={210} height={28} fluid />}
+
+                  <div className="relative mb-4">
+                    <CreatorAvatar
+                      src={top.profile_image}
+                      name={top.display_name}
+                      size="xl"
+                      rounded="rounded-2xl"
+                      className="ring-1 ring-neutral-200"
+                    />
+                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-900 text-white text-[10px] font-bold ring-2 ring-white">
+                      1
+                    </span>
                   </div>
-                )}
+
+                  <p className="font-bold text-neutral-900 text-sm text-center truncate max-w-full">{top.display_name}</p>
+
+                  <div className="w-8 h-px bg-neutral-200 my-4 flex-shrink-0" />
+
+                  <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums leading-none text-center">
+                    {formatNumber(top.subscribers || 0)}
+                  </p>
+                  <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 text-center">{top._metricLabel}</p>
+                </div>
               </Link>
             </motion.div>
           );
@@ -777,7 +797,6 @@ export default function Home() {
   const [liveStats, setLiveStats] = useState({ creators: null, dataPoints: null });
   const [marqueeCreators, setMarqueeCreators] = useState([]);
   const [topByPlatform, setTopByPlatform] = useState([]);
-  const [sparklines, setSparklines] = useState({});
   const [topHistory, setTopHistory] = useState(null);
   const navigate = useNavigate();
 
@@ -795,9 +814,8 @@ export default function Home() {
   }, []);
 
   // Marquee = YouTube top 20 + Twitch top 20, shuffled. (User: only these two platforms in ticker.)
-  // The #1-per-platform cards come from a single rankings_cache query, then we
-  // batch-fetch real 30-day sparkline series for the Champions carousel, plus
-  // the top YouTuber's stats history for the earnings estimate.
+  // The #1-per-platform cards come from a single rankings_cache query. We
+  // also fetch the top YouTuber's stats history for the earnings estimate.
   useEffect(() => {
     Promise.all([
       getRankedCreators('youtube', 'subscribers', 20),
@@ -824,8 +842,6 @@ export default function Home() {
       const top5 = yt.slice(0, 5);
       setTopCreators(top5);
 
-      const ids = [...new Set(tops.map(c => c.id))];
-      if (ids.length > 0) getSparklineData(ids).then(setSparklines).catch(() => {});
       if (top5[0]) getCreatorStats(top5[0].id, 30).then(setTopHistory).catch(() => {});
     }).catch(() => {});
   }, []);
@@ -997,7 +1013,7 @@ export default function Home() {
         </section>
 
         {/* ============== CHAMPIONS ============== */}
-        <ChampionsGrid tops={topByPlatform} sparklines={sparklines} />
+        <ChampionsGrid tops={topByPlatform} />
 
         {/* ============== FEATURES ============== */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
