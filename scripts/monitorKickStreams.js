@@ -122,15 +122,29 @@ async function monitorStreams() {
     return;
   }
 
-  // Get all Kick creators from database
-  const { data: creators, error: fetchError } = await supabase
-    .from('creators')
-    .select('id, platform_id, username, display_name')
-    .eq('platform', 'kick');
-
-  if (fetchError) {
-    console.error('❌ Error fetching creators:', fetchError.message);
-    return;
+  // Get all Kick creators from database. Same paginated pattern as
+  // collectDailyStats.js / monitorTwitchStreams.js — Supabase's default
+  // PostgREST response cap is 1000 rows, and Kick has 3K+ creators, so an
+  // un-paginated .select() silently dropped ~70% of the roster from polling.
+  let creators = [];
+  {
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error: fetchError } = await supabase
+        .from('creators')
+        .select('id, platform_id, username, display_name')
+        .eq('platform', 'kick')
+        .order('id')
+        .range(from, from + pageSize - 1);
+      if (fetchError) {
+        console.error('❌ Error fetching creators:', fetchError.message);
+        return;
+      }
+      creators = creators.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
   }
 
   console.log(`📊 Monitoring ${creators.length} Kick creators\n`);

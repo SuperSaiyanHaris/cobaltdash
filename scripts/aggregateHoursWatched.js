@@ -52,13 +52,57 @@ async function aggregateHoursWatched() {
   const monthAgo = new Date(today);
   monthAgo.setDate(monthAgo.getDate() - 30);
 
-  // Get all Twitch creators
-  const { data: creators } = await supabase
-    .from('creators')
-    .select('id, username, display_name')
-    .eq('platform', 'twitch');
+  // Get all Twitch creators. Same paginated pattern as collectDailyStats.js /
+  // monitorTwitchStreams.js — an un-paginated .select() silently truncates to
+  // Supabase's default 1000-row PostgREST cap, which meant most of the 20K+
+  // Twitch roster (including creators monitorTwitchStreams.js *did* capture
+  // stream_sessions for) never got those sessions aggregated into
+  // creator_stats, leaving hours_watched_* permanently null for them.
+  let creators = [];
+  {
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data } = await supabase
+        .from('creators')
+        .select('id, username, display_name')
+        .eq('platform', 'twitch')
+        .order('id')
+        .range(from, from + pageSize - 1);
+      creators = creators.concat(data || []);
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+  }
 
-  console.log(`Processing ${creators.length} Twitch creators...\n`);
+  // Narrow to creators who actually have at least one stream_sessions row
+  // ever. The vast majority of the 20K+ Twitch roster has none (they're
+  // rarely-if-ever caught live by the 5-minute poll) and would always
+  // aggregate to all-zero anyway — running 4 rolling-window queries per
+  // creator against the full roster would multiply this script's runtime by
+  // ~20x for work that's guaranteed to produce nothing. A creator who
+  // streamed before but hasn't recently still has session rows (even if
+  // none fall in the current windows), so this intersection still lets
+  // their stale hours_watched_* correctly decay to 0 as time passes — it
+  // only skips creators who have truly never had a session recorded.
+  const sessionCreatorIds = new Set();
+  {
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data } = await supabase
+        .from('stream_sessions')
+        .select('creator_id')
+        .order('creator_id')
+        .range(from, from + pageSize - 1);
+      (data || []).forEach((row) => sessionCreatorIds.add(row.creator_id));
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+  }
+  creators = creators.filter((c) => sessionCreatorIds.has(c.id));
+
+  console.log(`Processing ${creators.length} Twitch creators with session history...\n`);
 
   let updatedCount = 0;
 

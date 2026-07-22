@@ -139,15 +139,31 @@ async function monitorStreams() {
     return;
   }
 
-  // Get all Twitch creators from database
-  const { data: creators, error: fetchError } = await supabase
-    .from('creators')
-    .select('id, platform_id, username, display_name')
-    .eq('platform', 'twitch');
-
-  if (fetchError) {
-    console.error('❌ Error fetching creators:', fetchError.message);
-    return;
+  // Get all Twitch creators from database. Supabase's default PostgREST
+  // response cap is 1000 rows — with 20K+ Twitch creators in the table, an
+  // un-paginated .select() silently truncated to whichever 1000 happened to
+  // come back first, so most of the roster (including huge streamers like
+  // KaiCenat) never got polled for live status and their "hours watched"
+  // stayed permanently empty. Same paginated pattern as collectDailyStats.js.
+  let creators = [];
+  {
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error: fetchError } = await supabase
+        .from('creators')
+        .select('id, platform_id, username, display_name')
+        .eq('platform', 'twitch')
+        .order('id')
+        .range(from, from + pageSize - 1);
+      if (fetchError) {
+        console.error('❌ Error fetching creators:', fetchError.message);
+        return;
+      }
+      creators = creators.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
   }
 
   console.log(`📊 Monitoring ${creators.length} Twitch creators\n`);
