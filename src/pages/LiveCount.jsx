@@ -17,45 +17,40 @@ import { analytics } from '../lib/analytics';
 import logger from '../lib/logger';
 import { toast } from 'sonner';
 
-// Neon streaming-overlay theme — per-platform glow/text-shadow values
+// Per-platform accent used for the counter digits + the white identity badge.
+// Badge follows the same white-pill-with-brand-border convention as CreatorProfile
+// (bg-white + colored border/text) so the platform's own icon color never has to
+// sit on a matching-hue background — that's what made the YouTube badge unreadable.
 const platformConfig = {
   youtube: {
     icon: YouTubeIcon,
-    color: 'text-red-400',
-    bgGradient: 'from-red-500 to-rose-600',
-    glowColor: 'shadow-red-500/30',
-    neonGlow: '0 0 24px rgba(248,113,113,0.6), 0 0 60px rgba(248,113,113,0.35), 0 0 120px rgba(248,113,113,0.18)',
-    neonAccent: '#f87171',
+    accent: 'text-red-500',
+    badgeText: 'text-red-700',
+    badgeBorder: 'border-red-200',
     label: 'subscribers',
     avgGrowthPerSecond: 2.5,
   },
   twitch: {
     icon: TwitchIcon,
-    color: 'text-purple-400',
-    bgGradient: 'from-purple-500 to-fuchsia-600',
-    glowColor: 'shadow-purple-500/30',
-    neonGlow: '0 0 24px rgba(192,132,252,0.6), 0 0 60px rgba(192,132,252,0.35), 0 0 120px rgba(192,132,252,0.18)',
-    neonAccent: '#c084fc',
+    accent: 'text-purple-500',
+    badgeText: 'text-purple-700',
+    badgeBorder: 'border-purple-200',
     label: 'followers',
     avgGrowthPerSecond: 0.8,
   },
   kick: {
     icon: KickIcon,
-    color: 'text-green-400',
-    bgGradient: 'from-green-500 to-emerald-600',
-    glowColor: 'shadow-green-500/30',
-    neonGlow: '0 0 24px rgba(74,222,128,0.6), 0 0 60px rgba(74,222,128,0.35), 0 0 120px rgba(74,222,128,0.18)',
-    neonAccent: '#4ade80',
+    accent: 'text-green-500',
+    badgeText: 'text-green-700',
+    badgeBorder: 'border-green-200',
     label: 'paid subscribers',
     avgGrowthPerSecond: 0.3,
   },
   music: {
     icon: Music,
-    color: 'text-amber-400',
-    bgGradient: 'from-amber-500 to-orange-600',
-    glowColor: 'shadow-amber-500/30',
-    neonGlow: '0 0 24px rgba(251,191,36,0.6), 0 0 60px rgba(251,191,36,0.35), 0 0 120px rgba(251,191,36,0.18)',
-    neonAccent: '#fbbf24',
+    accent: 'text-amber-500',
+    badgeText: 'text-amber-700',
+    badgeBorder: 'border-amber-200',
     label: 'monthly listeners',
     avgGrowthPerSecond: 1.0,
   },
@@ -265,11 +260,11 @@ export default function LiveCount() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <SEO title="Loading..." />
         <div className="text-center">
-          <div className="w-20 h-20 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          <p className="text-gray-300 text-lg">Loading live count...</p>
+          <div className="w-20 h-20 border-4 border-neutral-700 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
+          <p className="text-gray-400 text-lg">Loading live count...</p>
         </div>
       </div>
     );
@@ -277,15 +272,15 @@ export default function LiveCount() {
 
   if (error || !creator) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
         <SEO title="Creator Not Found" noindex />
         <div className="text-center">
           <AlertCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-white mb-3">Creator Not Found</h2>
-          <p className="text-gray-300 mb-6 text-lg">{error || `Could not find @${username} on ${platform}`}</p>
+          <p className="text-gray-400 mb-6 text-lg">{error || `Could not find @${username} on ${platform}`}</p>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-2xl transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-neutral-900 font-semibold rounded-2xl hover:bg-neutral-100 transition-colors"
           >
             Go Home
           </Link>
@@ -301,60 +296,42 @@ export default function LiveCount() {
         description={`Watch ${creator.displayName}'s ${platform} ${config.label} count update in real-time. Estimated live counter.`}
       />
 
-      <div className="relative min-h-screen bg-black flex flex-col overflow-hidden">
-        {/* Background neon glow blobs — drift slowly behind everything */}
-        <div
-          className="absolute -top-32 -left-32 w-[40rem] h-[40rem] rounded-full blur-[120px] opacity-40 animate-pulse"
-          style={{ backgroundColor: config.neonAccent }}
-        />
-        <div
-          className="absolute -bottom-40 -right-32 w-[36rem] h-[36rem] rounded-full blur-[120px] opacity-25"
-          style={{ backgroundColor: config.neonAccent, animationDelay: '1.5s' }}
-        />
-        {/* Subtle scan lines for that broadcast-overlay feel */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: 'repeating-linear-gradient(0deg, white 0px, white 1px, transparent 1px, transparent 3px)' }}
-        />
-        {/* Vignette */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />
+      <div className="relative isolate min-h-screen grain-dark bg-[#0a0a0f] flex flex-col overflow-hidden">
+        {/* Bespoke background — flat dark base + a faint engineering dot-grid,
+            same texture used on the home hero. No glow blobs, no radial washes. */}
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
 
         {/* Main Content */}
         <div className="relative flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
           <div className="text-center w-full max-w-4xl">
 
-            {/* Live Indicator — bigger, glowing */}
-            <div className="inline-flex items-center gap-3 mb-6 sm:mb-8 px-4 py-1.5 rounded-full border-2 border-red-500/50 bg-red-500/10 backdrop-blur-sm" style={{ boxShadow: '0 0 24px rgba(239,68,68,0.4)' }}>
-              <span className="relative flex h-3 w-3">
+            {/* Live Indicator — small dot + micro text, the sitewide LIVE convention */}
+            <div className="inline-flex items-center gap-2.5 mb-6 sm:mb-8 px-3.5 py-1.5 rounded-full border border-red-500/30 bg-red-500/10">
+              <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
               </span>
-              <span className="text-red-300 font-black text-sm sm:text-base uppercase tracking-[0.3em]">On Air</span>
+              <span className="text-red-400 font-semibold text-xs sm:text-sm uppercase tracking-[0.25em]">On Air</span>
             </div>
 
             {/* Creator Info */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-10 sm:mb-12">
-              <div
-                className="rounded-2xl sm:rounded-3xl"
-                style={{ boxShadow: config.neonGlow }}
-              >
-                <CreatorAvatar
-                  src={creator.profileImage}
-                  name={creator.displayName}
-                  size="3xl"
-                  rounded="rounded-2xl sm:rounded-3xl"
-                  loading="eager"
-                  className="!w-24 !h-24 sm:!w-28 sm:!h-28 md:!w-32 md:!h-32 border-4"
-                />
-              </div>
+              <CreatorAvatar
+                src={creator.profileImage}
+                name={creator.displayName}
+                size="3xl"
+                rounded="rounded-2xl sm:rounded-3xl"
+                loading="eager"
+                className="!w-24 !h-24 sm:!w-28 sm:!h-28 md:!w-32 md:!h-32 border-4 border-white/10"
+              />
               <div className="text-center sm:text-left">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">{creator.displayName}</h1>
-                <p className="text-gray-300 text-base sm:text-lg mb-3">@{creator.username || username}</p>
+                <p className="text-gray-400 text-base sm:text-lg mb-3">@{creator.username || username}</p>
                 <a
                   href={platformUrls[platform]?.(creator.username || username)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r ${config.bgGradient} text-white shadow-lg ${config.glowColor} hover:opacity-90 transition-opacity`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-white border ${config.badgeBorder} ${config.badgeText} hover:opacity-90 transition-opacity`}
                 >
                   <Icon className="w-4 h-4" />
                   {platform.charAt(0).toUpperCase() + platform.slice(1)}
@@ -362,20 +339,17 @@ export default function LiveCount() {
               </div>
             </div>
 
-            {/* The Big Counter — heavy neon text-shadow */}
+            {/* The Big Counter — bold solid color, no glow shadow */}
             <div className="mb-10 sm:mb-14">
               <div
-                className={`text-5xl sm:text-6xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black ${config.color} tracking-tighter leading-none`}
-                style={{ textShadow: config.neonGlow, fontVariantNumeric: 'tabular-nums' }}
+                className={`text-5xl sm:text-6xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black ${config.accent} tracking-tighter leading-none`}
+                style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {estimatedCount !== null && (
                   <Odometer value={estimatedCount} duration={300} />
                 )}
               </div>
-              <p
-                className="text-lg sm:text-xl md:text-2xl text-gray-400 mt-5 font-bold uppercase tracking-[0.3em]"
-                style={{ textShadow: `0 0 12px ${config.neonAccent}40` }}
-              >
+              <p className="text-base sm:text-lg md:text-xl text-neutral-500 mt-5 font-semibold uppercase tracking-[0.3em]">
                 {config.label}
               </p>
             </div>
@@ -384,14 +358,14 @@ export default function LiveCount() {
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <button
                 onClick={handleShare}
-                className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 bg-gray-900/80 hover:bg-gray-800 backdrop-blur-sm text-white font-medium rounded-xl transition-colors border border-gray-700"
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors border border-white/10"
               >
                 <Share2 className="w-5 h-5" />
                 Share
               </button>
               <Link
                 to={`/${platform}/${username}`}
-                className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 bg-gray-900/80 hover:bg-gray-800 backdrop-blur-sm text-white font-medium rounded-xl transition-colors border border-gray-700"
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors border border-white/10"
               >
                 <ExternalLink className="w-5 h-5" />
                 Full Profile
