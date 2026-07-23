@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, Plus, Twitch, Users, Eye, Video, TrendingUp, ArrowRight, Scale, Loader2, DollarSign, TrendingDown, Minus, Info, Bookmark, Check, Sparkles, Swords, ChevronDown } from 'lucide-react';
+import { Search, X, Plus, Users, Eye, Video, TrendingUp, ArrowRight, Scale, Loader2, DollarSign, TrendingDown, Minus, Info, Bookmark, Check, Sparkles, Swords, ChevronDown } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import KickIcon from '../components/KickIcon';
@@ -47,7 +48,7 @@ const POPULAR_MATCHUPS = [
 const platformConfig = {
   youtube: { icon: YouTubeIcon, color: '', label: 'YouTube' },
   tiktok: { icon: TikTokIcon, color: 'text-pink-500', label: 'TikTok' },
-  twitch: { icon: Twitch, color: 'text-purple-500', label: 'Twitch' },
+  twitch: { icon: TwitchIcon, color: '', label: 'Twitch' },
   kick: { icon: KickIcon, color: 'text-green-600', label: 'Kick' },
   bluesky: { icon: BlueskyIcon, color: 'text-sky-500', label: 'Bluesky' },
   music: { icon: Music, color: 'text-amber-500', label: 'Music' },

@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Twitch, TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight } from 'lucide-react';
+import { TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -32,7 +33,7 @@ import logger from '../lib/logger';
 const platforms = [
   { id: 'youtube', name: 'YouTube', icon: YouTubeIcon,  tint: '',                 bar: 'bg-red-500',    heroBg: 'bg-red-50/70',     available: true },
   { id: 'tiktok',  name: 'TikTok',  icon: TikTokIcon,   tint: 'text-pink-500',    bar: 'bg-pink-500',   heroBg: 'bg-pink-50/70',    available: true },
-  { id: 'twitch',  name: 'Twitch',  icon: Twitch,       tint: 'text-purple-500',  bar: 'bg-purple-500', heroBg: 'bg-purple-50/70',  available: true },
+  { id: 'twitch',  name: 'Twitch',  icon: TwitchIcon,   tint: '',                 bar: 'bg-purple-500', heroBg: 'bg-purple-50/70',  available: true },
   { id: 'kick',    name: 'Kick',    icon: KickIcon,     tint: 'text-green-600',   bar: 'bg-green-600',  heroBg: 'bg-green-50/70',   available: true },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon,  tint: 'text-sky-500',     bar: 'bg-sky-500',    heroBg: 'bg-sky-50/70',     available: true },
   { id: 'music',   name: 'Music',   icon: Music,        tint: 'text-amber-500',   bar: 'bg-amber-500',  heroBg: 'bg-amber-50/70',   available: true },

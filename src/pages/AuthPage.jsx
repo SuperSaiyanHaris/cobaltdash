@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Twitch, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
 import CreatorAvatar from '../components/CreatorAvatar';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -14,11 +15,11 @@ import { getShowcaseCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
 
 const PLATFORM_ICONS = {
-  youtube: YouTubeIcon, twitch: Twitch, kick: KickIcon, tiktok: TikTokIcon,
+  youtube: YouTubeIcon, twitch: TwitchIcon, kick: KickIcon, tiktok: TikTokIcon,
   bluesky: BlueskyIcon, rumble: RumbleIcon, music: Music,
 };
 const PLATFORM_TINT = {
-  youtube: '', twitch: 'text-purple-500', kick: 'text-green-600',
+  youtube: '', twitch: '', kick: 'text-green-600',
   tiktok: 'text-pink-500', bluesky: 'text-sky-500', rumble: 'text-lime-600', music: 'text-amber-500',
 };
 const METRIC = {

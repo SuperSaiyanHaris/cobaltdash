@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, Loader2, Music } from 'lucide-react';
-import { Twitch } from 'lucide-react';
 import SEO from '../components/SEO';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -20,7 +20,7 @@ const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px
 const PLATFORMS = [
   { id: 'youtube', name: 'YouTube', icon: YouTubeIcon, tint: '', followerLabel: 'subscribers', growthLabel: 'views gained', growthNote: 'YouTube rounds subscriber counts by policy, so views are used as the growth metric.' },
   { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, tint: 'text-pink-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
-  { id: 'twitch', name: 'Twitch', icon: Twitch, tint: 'text-purple-500', followerLabel: 'followers', growthLabel: 'watch hours gained', growthNote: 'Twitch growth is measured by hours watched per month, the standard streaming metric.' },
+  { id: 'twitch', name: 'Twitch', icon: TwitchIcon, tint: '', followerLabel: 'followers', growthLabel: 'watch hours gained', growthNote: 'Twitch growth is measured by hours watched per month, the standard streaming metric.' },
   { id: 'kick', name: 'Kick', icon: KickIcon, tint: 'text-green-600', followerLabel: 'paid subs', growthLabel: 'paid subs gained', growthNote: 'On Kick, the publicly available number is paid subscribers rather than free followers.' },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, tint: 'text-sky-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
   { id: 'music', name: 'Music', icon: Music, tint: 'text-amber-500', followerLabel: 'listeners', growthLabel: 'listeners gained', growthNote: 'Monthly listener growth. Reflects how many more unique listeners an artist reached this month vs. last.' },

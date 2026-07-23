@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Twitch, Clock, Database, RefreshCw, ShieldCheck, Music } from 'lucide-react';
+import { Clock, Database, RefreshCw, ShieldCheck, Music } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -35,9 +36,9 @@ const platforms = [
     notes: [],
   },
   {
-    icon: Twitch,
+    icon: TwitchIcon,
     name: 'Twitch',
-    tint: 'text-purple-500',
+    tint: '',
     metrics: ['Follower count', 'Hours watched (daily, weekly, monthly)', 'Peak and average viewers'],
     notes: [
       'Twitch retired total view counts in 2022, so we track hours watched, the engagement metric streamers and sponsors rely on.',

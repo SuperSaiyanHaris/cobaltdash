@@ -1,24 +1,31 @@
 /**
- * TikTok Icon Component
- * Adapts to text color like other Lucide icons
- * Use text-pink-600 or similar for colored version
- * Use text-white for white version on colored backgrounds
+ * Official TikTok icon (the note "glitch" mark), fixed colors.
+ *
+ * TikTok's brand guidelines explicitly prohibit recoloring, stretching, or
+ * adding effects to the logo ("You cannot... recolor the logo" — applies to
+ * every published asset). The previous version of this component was a
+ * generic outline music-note glyph tinted via `currentColor`, not TikTok's
+ * actual logo at all. This hardcodes the real three-layer mark (cyan shadow
+ * #00F2EA, magenta shadow #FF004F, black foreground note) sourced from
+ * TikTok's own logo asset, and ignores any inherited text color so it can't
+ * get retinted by the site's "icon tint alone" convention used for every
+ * other platform. className/style only control size, never color.
  */
-export default function TikTokIcon({ className = 'w-5 h-5', style, ...rest }) {
+export default function TikTokIcon({ className, style, ...rest }) {
   return (
-    <svg
-      className={className}
-      style={style}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...rest}
-    >
-      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+    <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 291.379" {...rest}>
+      <path
+        fill="#00F2EA"
+        d="M243.838 77.189V66.999c-12.529.019-24.812-3.488-35.442-10.12C217.806 67.176 230.197 74.276 243.838 77.189zM177.817 11.655c-.319-1.822-.564-3.656-.734-5.497V0h-48.182v191.228c-.077 22.29-18.177 40.341-40.501 40.341-6.554 0-12.742-1.555-18.222-4.318 7.401 9.707 19.087 15.973 32.241 15.973 22.32 0 40.424-18.049 40.502-40.342V11.655H177.817zM100.694 114.408V103.56c-4.026-.55-8.085-.826-12.149-.824C39.642 102.735 0 142.356 0 191.228c0 30.64 15.58 57.643 39.255 73.527C23.64 248.802 14.019 226.966 14.019 202.881 14.019 154.632 52.653 115.4 100.694 114.408z"
+      />
+      <path
+        fill="#FF004F"
+        d="M191.102 105.182c18.814 13.442 41.862 21.351 66.755 21.351V78.656c-4.711.001-9.41-.49-14.019-1.466v37.686c-24.891 0-47.936-7.909-66.755-21.35v97.703c0 48.876-39.642 88.495-88.54 88.495-18.245 0-35.203-5.513-49.29-14.968 16.078 16.431 38.5 26.624 63.306 26.624 48.901 0 88.545-39.619 88.545-88.497v-97.701H191.102zM208.396 56.88c-9.615-10.499-15.928-24.067-17.294-39.067v-6.158h-13.285C181.161 30.72 192.567 47.008 208.396 56.88L208.396 56.88zM70.181 227.25c-5.372-7.04-8.275-15.652-8.262-24.507 0-22.354 18.132-40.479 40.502-40.479 4.169-.001 8.313.637 12.286 1.897v-48.947c-4.643-.636-9.329-.906-14.013-.807v38.098c-3.976-1.26-8.122-1.9-12.292-1.896C66.032 150.609 47.901 168.732 47.901 191.089 47.901 206.897 56.964 220.583 70.181 227.25z"
+      />
+      <path
+        fill="#000000"
+        d="M177.083 93.525c18.819 13.441 41.864 21.35 66.755 21.35V77.189c-13.894-2.958-26.194-10.215-35.442-20.309-15.83-9.873-27.235-26.161-30.579-45.225h-34.896v191.226c-.079 22.293-18.18 40.344-40.502 40.344-13.154 0-24.84-6.267-32.241-15.975-13.216-6.667-22.279-20.354-22.279-36.16 0-22.355 18.131-40.48 40.501-40.48 4.286 0 8.417.667 12.292 1.896v-38.098C92.752.992 54.117 40.224 54.117 88.474 54.117 112.56 63.738 134.395 79.353 150.349c14.087 9.454 31.045 14.968 49.29 14.968 48.899 0 88.54-39.621 88.54-88.496V93.525L177.083 93.525z"
+      />
     </svg>
   );
 }

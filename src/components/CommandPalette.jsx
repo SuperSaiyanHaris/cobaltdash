@@ -4,9 +4,10 @@ import { Command } from 'cmdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Trophy, Scale, BarChart3, BookOpen, Calculator, TrendingUp, Milestone,
-  LayoutDashboard, FileSpreadsheet, Settings, Twitch, Music, ArrowRight,
+  LayoutDashboard, FileSpreadsheet, Settings, Music, ArrowRight,
 } from 'lucide-react';
 import YouTubeIcon from './YouTubeIcon';
+import TwitchIcon from './TwitchIcon';
 import KickIcon from './KickIcon';
 import TikTokIcon from './TikTokIcon';
 import BlueskyIcon from './BlueskyIcon';
@@ -20,7 +21,7 @@ import { isMac } from '../lib/platform';
 const PLATFORM_ICONS = {
   youtube: { Icon: YouTubeIcon, color: '' },
   tiktok: { Icon: TikTokIcon, color: 'text-pink-400' },
-  twitch: { Icon: Twitch, color: 'text-purple-400' },
+  twitch: { Icon: TwitchIcon, color: '' },
   kick: { Icon: KickIcon, color: 'text-green-400' },
   bluesky: { Icon: BlueskyIcon, color: 'text-sky-400' },
   music: { Icon: Music, color: 'text-amber-400' },
@@ -45,7 +46,7 @@ const QUICK_LINKS = [
 const PLATFORM_LINKS = [
   { label: 'YouTube rankings',  to: '/rankings/youtube',  Icon: YouTubeIcon, color: ''    },
   { label: 'TikTok rankings',   to: '/rankings/tiktok',   Icon: TikTokIcon,  color: 'text-pink-400'   },
-  { label: 'Twitch rankings',   to: '/rankings/twitch',   Icon: Twitch,      color: 'text-purple-400' },
+  { label: 'Twitch rankings',   to: '/rankings/twitch',   Icon: TwitchIcon,  color: ''    },
   { label: 'Kick rankings',     to: '/rankings/kick',     Icon: KickIcon,    color: 'text-green-400'  },
   { label: 'Bluesky rankings',  to: '/rankings/bluesky',  Icon: BlueskyIcon, color: 'text-sky-400'    },
   { label: 'Music rankings',    to: '/rankings/music',    Icon: Music,        color: 'text-amber-400'  },

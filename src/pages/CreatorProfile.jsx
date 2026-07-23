@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Twitch, Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
+import { Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -35,7 +36,7 @@ import { supabase } from '../lib/supabase';
 
 const platformIcons = {
   youtube: YouTubeIcon,
-  twitch: Twitch,
+  twitch: TwitchIcon,
   kick: KickIcon,
   tiktok: TikTokIcon,
   bluesky: BlueskyIcon,
@@ -1038,7 +1039,7 @@ export default function CreatorProfile() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm hover:opacity-90 transition-opacity ${
-                      platform === 'youtube'
+                      platform === 'youtube' || platform === 'twitch'
                         ? `bg-white border ${colors.border} ${colors.text}`
                         : `${colors.bg} text-white`
                     }`}
@@ -1342,7 +1343,7 @@ export default function CreatorProfile() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm hover:opacity-90 transition-opacity ${
-                        platform === 'youtube'
+                        platform === 'youtube' || platform === 'twitch'
                           ? `bg-white border ${colors.border} ${colors.text}`
                           : `${colors.bg} text-white`
                       }`}

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Twitch, Star, Users, Loader2,
+  Star, Users, Loader2,
   Scale, Clock, ChevronRight, ChevronLeft, Check, X, Trash2,
   Download, Lock, Settings,
 } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -28,7 +29,7 @@ import logger from '../lib/logger';
 const platformIcons = {
   youtube: YouTubeIcon,
   tiktok: TikTokIcon,
-  twitch: Twitch,
+  twitch: TwitchIcon,
   kick: KickIcon,
   bluesky: BlueskyIcon,
   mastodon: MastodonIcon,

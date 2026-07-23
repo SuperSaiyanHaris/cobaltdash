@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search as SearchIcon, Twitch, User, AlertCircle, ArrowRight, Clock, CheckCircle, X, ChevronDown } from 'lucide-react';
+import { Search as SearchIcon, User, AlertCircle, ArrowRight, Clock, CheckCircle, X, ChevronDown } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -28,7 +29,7 @@ import logger from '../lib/logger';
 const platformIcons = {
   youtube: YouTubeIcon,
   tiktok: TikTokIcon,
-  twitch: Twitch,
+  twitch: TwitchIcon,
   kick: KickIcon,
   bluesky: BlueskyIcon,
   music: Music,
@@ -58,7 +59,7 @@ const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px
 const platforms = [
   { id: 'youtube', name: 'YouTube', icon: YouTubeIcon, available: true },
   { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, available: true },
-  { id: 'twitch', name: 'Twitch', icon: Twitch, available: true },
+  { id: 'twitch', name: 'Twitch', icon: TwitchIcon, available: true },
   { id: 'kick', name: 'Kick', icon: KickIcon, available: true },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, available: true },
   { id: 'music', name: 'Music', icon: Music, available: true },

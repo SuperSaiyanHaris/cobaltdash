@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Twitch, ExternalLink, Share2, AlertCircle } from 'lucide-react';
+import { ExternalLink, Share2, AlertCircle } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import { Music } from 'lucide-react';
 import { getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
@@ -29,7 +30,7 @@ const platformConfig = {
     avgGrowthPerSecond: 2.5,
   },
   twitch: {
-    icon: Twitch,
+    icon: TwitchIcon,
     color: 'text-purple-400',
     bgGradient: 'from-purple-500 to-fuchsia-600',
     glowColor: 'shadow-purple-500/30',

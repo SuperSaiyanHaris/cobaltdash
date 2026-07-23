@@ -4,11 +4,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 import {
-  Twitch, Newspaper, Sparkles, TrendingUp, Star, Lightbulb,
+  Newspaper, Sparkles, TrendingUp, Star, Lightbulb,
   Rocket, Eye, Mic, BookOpen, BarChart3, Trophy, Quote, Zap, Info,
   AlertTriangle, ArrowRight,
 } from 'lucide-react';
 import YouTubeIcon from './YouTubeIcon';
+import TwitchIcon from './TwitchIcon';
 import KickIcon from './KickIcon';
 import TikTokIcon from './TikTokIcon';
 import BlueskyIcon from './BlueskyIcon';
@@ -19,13 +20,13 @@ import { getCategoryTheme } from '../lib/blogTheme';
 
 // Map category iconName -> lucide component
 const ICON_MAP = {
-  Newspaper, Sparkles, Twitch, Youtube: YouTubeIcon, TrendingUp, Star, Lightbulb,
+  Newspaper, Sparkles, Twitch: TwitchIcon, Youtube: YouTubeIcon, TrendingUp, Star, Lightbulb,
   Rocket, Eye, Mic, BookOpen, BarChart3, Trophy,
 };
 
 const PLATFORM_META = {
-  youtube: { Icon: YouTubeIcon, color: '',                bg: 'bg-red-50',    border: 'border-red-200'    },
-  twitch:  { Icon: Twitch,     color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+  youtube: { Icon: YouTubeIcon, color: '', bg: 'bg-red-50',    border: 'border-red-200'    },
+  twitch:  { Icon: TwitchIcon,  color: '', bg: 'bg-purple-50', border: 'border-purple-200' },
   tiktok:  { Icon: TikTokIcon, color: 'text-pink-600',   bg: 'bg-pink-50',   border: 'border-pink-200'   },
   kick:    { Icon: KickIcon,   color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-200'  },
   bluesky: { Icon: BlueskyIcon,color: 'text-sky-600',    bg: 'bg-sky-50',    border: 'border-sky-200'    },

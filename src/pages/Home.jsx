@@ -2,10 +2,11 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
-  Twitch, LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight, Sparkles,
+  LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import YouTubeIcon from '../components/YouTubeIcon';
+import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -29,7 +30,7 @@ import { isMac as IS_MAC } from '../lib/platform';
 const PLATFORMS = [
   { id: 'youtube',  name: 'YouTube',  Icon: YouTubeIcon,  accent: '#ef4444' },
   { id: 'tiktok',   name: 'TikTok',   Icon: TikTokIcon,   accent: '#ec4899' },
-  { id: 'twitch',   name: 'Twitch',   Icon: Twitch,       accent: '#a855f7' },
+  { id: 'twitch',   name: 'Twitch',   Icon: TwitchIcon,   accent: '#a855f7' },
   { id: 'kick',     name: 'Kick',     Icon: KickIcon,     accent: '#22c55e' },
   { id: 'bluesky',  name: 'Bluesky',  Icon: BlueskyIcon,  accent: '#0ea5e9' },
   { id: 'music',    name: 'Music',    Icon: Music,        accent: '#f59e0b' },
@@ -115,7 +116,7 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
   );
 });
 
-const SHOWCASE_ICONS = { youtube: YouTubeIcon, twitch: Twitch };
+const SHOWCASE_ICONS = { youtube: YouTubeIcon, twitch: TwitchIcon };
 const SHOWCASE_TINT = { youtube: 'text-red-400', twitch: 'text-purple-400' };
 const SHOWCASE_METRIC = { youtube: 'subscribers', twitch: 'followers' };
 
