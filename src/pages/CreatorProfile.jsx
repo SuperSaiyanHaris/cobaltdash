@@ -33,6 +33,7 @@ import { formatNumber, formatRelativeTime } from '../lib/utils';
 import { addRecentlyViewed } from '../lib/recentlyViewed';
 import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
+import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 
 const platformIcons = {
   youtube: YouTubeIcon,
@@ -85,17 +86,9 @@ const platformUrls = {
   substack: (username) => `https://${username}.substack.com`,
 };
 
-const platformDisplayNames = {
-  youtube: 'YouTube',
-  twitch: 'Twitch',
-  kick: 'Kick',
-  tiktok: 'TikTok',
-  bluesky: 'Bluesky',
-  music: 'Music',
-  mastodon: 'Mastodon',
-  rumble: 'Rumble',
-  substack: 'Substack',
-};
+// Correctly-cased brand names live in lib/constants.js (single source of
+// truth) — kept as a local alias here since this file's usages predate it.
+const platformDisplayNames = PLATFORM_DISPLAY_NAMES;
 
 // middleware.js embeds a <script id="__CREATOR_DATA__"> alongside the visible
 // server-rendered content so this component's very first render already has
@@ -729,7 +722,7 @@ export default function CreatorProfile() {
   const embedCode = `<iframe src="${shareUrl}" width="520" height="400" frameborder="0" style="border-radius:16px;border:1px solid #e5e5e5" allowfullscreen></iframe>`;
   // Live SVG badge served by the edge — the anchor makes every embed a backlink.
   const badgeUrl = `https://shinypull.com/badge/${platform}/${encodeURIComponent(creator?.username || username)}`;
-  const badgeEmbed = `<a href="${profileUrl}?utm_source=badge"><img src="${badgeUrl}" width="240" height="64" alt="${(creator?.display_name || username)} ${platform} stats on ShinyPull"></a>`;
+  const badgeEmbed = `<a href="${profileUrl}?utm_source=badge"><img src="${badgeUrl}" width="240" height="64" alt="${(creator?.display_name || username)} ${platformDisplayNames[platform] || platform} stats on ShinyPull"></a>`;
   // Share + embed are free for everyone — kept variable for minimal blast radius.
   const isMod = true;
 
@@ -1056,7 +1049,7 @@ export default function CreatorProfile() {
                   className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Check on {platform}
+                  Check on {platformDisplayNames[platform] || platform}
                 </a>
               </div>
             </div>
@@ -1110,10 +1103,10 @@ export default function CreatorProfile() {
     if (platform === 'substack') {
       return `${name} has ${count} subscribers on Substack. See where this newsletter ranks across every Substack category on ShinyPull.`;
     }
-    return `Track ${name}'s ${platform} statistics including followers, growth, and analytics on ShinyPull.`;
+    return `Track ${name}'s ${platformName} statistics including followers, growth, and analytics on ShinyPull.`;
   })();
 
-  const seoKeywords = `${creator.displayName} ${platform} stats, ${creator.displayName} ${primaryLabel}, ${creator.displayName} analytics, ${platform} statistics, ${creator.displayName} growth`;
+  const seoKeywords = `${creator.displayName} ${platformName} stats, ${creator.displayName} ${primaryLabel}, ${creator.displayName} analytics, ${platformName} statistics, ${creator.displayName} growth`;
 
   const profileSchema = {
     '@context': 'https://schema.org',

@@ -136,6 +136,22 @@ export const PLATFORM_IDS = [
 
 export const PLATFORM_COUNT = PLATFORM_IDS.length;
 
+// Correctly-cased brand names — single source of truth. Never derive a
+// platform's display name by capitalizing the id string (`platform.charAt(0)
+// .toUpperCase() + platform.slice(1)`); that mangles YouTube -> "Youtube" and
+// TikTok -> "Tiktok". Always look it up here instead.
+export const PLATFORM_DISPLAY_NAMES = {
+  youtube: 'YouTube',
+  tiktok: 'TikTok',
+  twitch: 'Twitch',
+  kick: 'Kick',
+  bluesky: 'Bluesky',
+  music: 'Music',
+  mastodon: 'Mastodon',
+  rumble: 'Rumble',
+  substack: 'Substack',
+};
+
 // Legacy enum (kept for backward compat — prefer PLATFORM_IDS for iteration)
 export const PLATFORMS = {
   YOUTUBE: 'youtube',

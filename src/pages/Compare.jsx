@@ -13,6 +13,7 @@ import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import { Music } from 'lucide-react';
+import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import { CompareCardSkeleton } from '../components/Skeleton';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { searchChannels as searchYouTube, getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
@@ -1497,7 +1498,7 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
   creators.forEach(c => { nameCounts[c.displayName] = (nameCounts[c.displayName] || 0) + 1; });
   const creatorLabel = (c) =>
     nameCounts[c.displayName] > 1
-      ? `${c.displayName} (${c.platform.charAt(0).toUpperCase() + c.platform.slice(1)})`
+      ? `${c.displayName} (${PLATFORM_DISPLAY_NAMES[c.platform] || c.platform})`
       : c.displayName;
 
   // Views and Avg/Video only mean anything for YouTube/TikTok (everyone else

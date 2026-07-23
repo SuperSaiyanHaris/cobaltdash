@@ -14,6 +14,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import CreatorAvatar from '../components/CreatorAvatar';
 import { getCreatorByUsername, getCreatorStats } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
+import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 
 const platformIcons = {
   youtube: YouTubeIcon,
@@ -122,8 +123,8 @@ export default function ShareProfile() {
   return (
     <>
       <SEO
-        title={`${creator.display_name} - ${platform} Stats`}
-        description={`${creator.display_name}'s ${platform} stats. ${formatNumber(latestCount)} ${config.primary.toLowerCase()}${growth30d !== null ? `, ${growth30d >= 0 ? '+' : ''}${formatNumber(growth30d)} in the last 30 days` : ''}.`}
+        title={`${creator.display_name} - ${PLATFORM_DISPLAY_NAMES[platform] || platform} Stats`}
+        description={`${creator.display_name}'s ${PLATFORM_DISPLAY_NAMES[platform] || platform} stats. ${formatNumber(latestCount)} ${config.primary.toLowerCase()}${growth30d !== null ? `, ${growth30d >= 0 ? '+' : ''}${formatNumber(growth30d)} in the last 30 days` : ''}.`}
       />
 
       <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center p-4">
@@ -146,9 +147,9 @@ export default function ShareProfile() {
                   <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 truncate">{creator.display_name}</h1>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-sm text-neutral-500">@{creator.username}</span>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${colors.bg} text-white`}>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-white border border-neutral-200">
                       {Icon && <Icon className="w-3 h-3" />}
-                      {platform}
+                      {PLATFORM_DISPLAY_NAMES[platform] || platform}
                     </span>
                   </div>
                 </div>

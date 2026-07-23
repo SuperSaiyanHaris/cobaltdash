@@ -16,6 +16,7 @@ import CreatorAvatar from '../components/CreatorAvatar';
 import { analytics } from '../lib/analytics';
 import logger from '../lib/logger';
 import { toast } from 'sonner';
+import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 
 // Per-platform accent used for the counter digits + the white identity badge.
 // Badge follows the same white-pill-with-brand-border convention as CreatorProfile
@@ -92,6 +93,7 @@ export default function LiveCount() {
 
   const config = platformConfig[platform] || platformConfig.youtube;
   const Icon = config.icon;
+  const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
   const intervalRef = useRef(null);
 
   // Fetch creator data
@@ -277,7 +279,7 @@ export default function LiveCount() {
         <div className="text-center">
           <AlertCircle className="w-20 h-20 text-red-500 mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-white mb-3">Creator Not Found</h2>
-          <p className="text-gray-400 mb-6 text-lg">{error || `Could not find @${username} on ${platform}`}</p>
+          <p className="text-gray-400 mb-6 text-lg">{error || `Could not find @${username} on ${platformName}`}</p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-8 py-4 bg-white text-neutral-900 font-semibold rounded-2xl hover:bg-neutral-100 transition-colors"
@@ -293,7 +295,7 @@ export default function LiveCount() {
     <>
       <SEO
         title={`${creator.displayName} Live ${config.label.charAt(0).toUpperCase() + config.label.slice(1)} Count`}
-        description={`Watch ${creator.displayName}'s ${platform} ${config.label} count update in real-time. Estimated live counter.`}
+        description={`Watch ${creator.displayName}'s ${platformName} ${config.label} count update in real-time. Estimated live counter.`}
       />
 
       <div className="relative isolate min-h-screen grain-dark bg-[#0a0a0f] flex flex-col overflow-hidden">
@@ -334,7 +336,7 @@ export default function LiveCount() {
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-white border ${config.badgeBorder} ${config.badgeText} hover:opacity-90 transition-opacity`}
                 >
                   <Icon className="w-4 h-4" />
-                  {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                  {platformName}
                 </a>
               </div>
             </div>
