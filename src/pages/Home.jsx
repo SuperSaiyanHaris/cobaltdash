@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
@@ -196,6 +196,8 @@ function ChampionsGrid({ tops }) {
   const reduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const holdTimeoutRef = useRef(null);
+  const holdIntervalRef = useRef(null);
 
   useEffect(() => {
     if (reduceMotion || paused || tops.length < 2) return;
@@ -203,9 +205,27 @@ function ChampionsGrid({ tops }) {
     return () => clearInterval(id);
   }, [reduceMotion, paused, tops.length]);
 
+  // Press-and-hold on either arrow: one immediate step, then after a short
+  // delay a fast repeat kicks in so holding the button spins through cards
+  // instead of requiring a click per card.
+  const stopHold = () => {
+    clearTimeout(holdTimeoutRef.current);
+    clearInterval(holdIntervalRef.current);
+    setPaused(false);
+  };
+  useEffect(() => () => stopHold(), []);
+
   if (tops.length === 0) return null;
 
   const go = (dir) => setActiveIndex((i) => (i + dir + tops.length) % tops.length);
+
+  const startHold = (dir) => {
+    setPaused(true);
+    go(dir);
+    holdTimeoutRef.current = setTimeout(() => {
+      holdIntervalRef.current = setInterval(() => go(dir), 150);
+    }, 350);
+  };
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 overflow-hidden">
@@ -302,7 +322,7 @@ function ChampionsGrid({ tops }) {
                 opacity: abs > 2 ? 0 : 1 - abs * 0.3,
                 zIndex: 10 - abs,
               }}
-              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
               style={{ pointerEvents: abs > 2 ? 'none' : 'auto' }}
             >
               {isActive ? (
@@ -327,9 +347,12 @@ function ChampionsGrid({ tops }) {
       <div className="flex items-center justify-center gap-4 mt-6">
         <button
           type="button"
-          onClick={() => go(-1)}
-          aria-label="Previous"
-          className="p-2 rounded-full border border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+          onPointerDown={() => startHold(-1)}
+          onPointerUp={stopHold}
+          onPointerLeave={stopHold}
+          onPointerCancel={stopHold}
+          aria-label="Previous (hold to rewind)"
+          className="p-2 rounded-full border border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors select-none"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -346,9 +369,12 @@ function ChampionsGrid({ tops }) {
         </div>
         <button
           type="button"
-          onClick={() => go(1)}
-          aria-label="Next"
-          className="p-2 rounded-full border border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+          onPointerDown={() => startHold(1)}
+          onPointerUp={stopHold}
+          onPointerLeave={stopHold}
+          onPointerCancel={stopHold}
+          aria-label="Next (hold to fast-forward)"
+          className="p-2 rounded-full border border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors select-none"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
