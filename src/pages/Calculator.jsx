@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigationType, useNavigate, useSearchParams } from 'react-router-dom';
-import { Calculator as CalcIcon, DollarSign, Youtube, Search, Loader2, Info, ArrowRight, ExternalLink, Pencil, X, Check, Link2, Database, TrendingUp } from 'lucide-react';
+import { Calculator as CalcIcon, DollarSign, Search, Loader2, Info, ArrowRight, ExternalLink, Pencil, X, Check, Link2, Database, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { searchChannels } from '../services/youtubeService';
 import { supabase } from '../lib/supabase';
 import SEO from '../components/SEO';
+import YouTubeIcon from '../components/YouTubeIcon';
 import { formatNumber } from '../lib/utils';
 
 const currencies = [
@@ -388,7 +389,7 @@ export default function Calculator() {
               {selectedCreator && (
                 <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                   <h4 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                    <Youtube className="w-4 h-4 text-red-500" />
+                    <YouTubeIcon className="w-4 h-4" />
                     {selectedCreator.displayName}'s Stats
                   </h4>
                   <div className="grid grid-cols-2 gap-3">

@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Music, Youtube, ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
+import { Music, ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -38,8 +39,8 @@ const PLATFORM_META = {
   },
   youtube: {
     name: 'YouTube',
-    icon: Youtube,
-    tint: 'text-red-500',
+    icon: YouTubeIcon,
+    tint: '',
     bar: 'bg-red-500',
     metric: 'Subscribers',
     metricShort: 'subscribers',

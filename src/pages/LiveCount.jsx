@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Youtube, Twitch, ExternalLink, Share2, AlertCircle } from 'lucide-react';
+import { Twitch, ExternalLink, Share2, AlertCircle } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import { Music } from 'lucide-react';
 import { getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
@@ -18,7 +19,7 @@ import { toast } from 'sonner';
 // Neon streaming-overlay theme — per-platform glow/text-shadow values
 const platformConfig = {
   youtube: {
-    icon: Youtube,
+    icon: YouTubeIcon,
     color: 'text-red-400',
     bgGradient: 'from-red-500 to-rose-600',
     glowColor: 'shadow-red-500/30',

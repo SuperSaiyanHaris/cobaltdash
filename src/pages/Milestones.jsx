@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Milestone, Loader2, Music } from 'lucide-react';
-import { Youtube, Twitch } from 'lucide-react';
+import { Twitch } from 'lucide-react';
 import SEO from '../components/SEO';
 import CreatorAvatar from '../components/CreatorAvatar';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -17,7 +18,7 @@ const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
 const PLATFORMS = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube, tint: 'text-red-500', metric: 'subscribers' },
+  { id: 'youtube', name: 'YouTube', icon: YouTubeIcon, tint: '', metric: 'subscribers' },
   { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, tint: 'text-pink-500', metric: 'followers' },
   { id: 'twitch', name: 'Twitch', icon: Twitch, tint: 'text-purple-500', metric: 'followers' },
   { id: 'kick', name: 'Kick', icon: KickIcon, tint: 'text-green-600', metric: 'paid subs' },

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Youtube, Twitch, TrendingUp, TrendingDown } from 'lucide-react';
+import { Twitch, TrendingUp, TrendingDown } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -14,7 +15,7 @@ import { getCreatorByUsername, getCreatorStats } from '../services/creatorServic
 import { formatNumber } from '../lib/utils';
 
 const platformIcons = {
-  youtube: Youtube,
+  youtube: YouTubeIcon,
   twitch: Twitch,
   kick: KickIcon,
   tiktok: TikTokIcon,

@@ -2,9 +2,10 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
-  Youtube, Twitch, LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight, Sparkles,
+  Twitch, LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -26,7 +27,7 @@ import { PLATFORM_COUNT } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
 
 const PLATFORMS = [
-  { id: 'youtube',  name: 'YouTube',  Icon: Youtube,      accent: '#ef4444' },
+  { id: 'youtube',  name: 'YouTube',  Icon: YouTubeIcon,  accent: '#ef4444' },
   { id: 'tiktok',   name: 'TikTok',   Icon: TikTokIcon,   accent: '#ec4899' },
   { id: 'twitch',   name: 'Twitch',   Icon: Twitch,       accent: '#a855f7' },
   { id: 'kick',     name: 'Kick',     Icon: KickIcon,     accent: '#22c55e' },
@@ -114,7 +115,7 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
   );
 });
 
-const SHOWCASE_ICONS = { youtube: Youtube, twitch: Twitch };
+const SHOWCASE_ICONS = { youtube: YouTubeIcon, twitch: Twitch };
 const SHOWCASE_TINT = { youtube: 'text-red-400', twitch: 'text-purple-400' };
 const SHOWCASE_METRIC = { youtube: 'subscribers', twitch: 'followers' };
 
@@ -129,7 +130,7 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
   const strip = (hidden) => (
     <div className="flex gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
       {creators.map((c, i) => {
-        const Icon = SHOWCASE_ICONS[c.platform] || Youtube;
+        const Icon = SHOWCASE_ICONS[c.platform] || YouTubeIcon;
         return (
           <Link
             key={`${c.id}-${i}`}
@@ -398,7 +399,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <h3 className="text-base sm:text-lg font-bold text-neutral-900 truncate">{mr?.display_name || 'MrBeast'}</h3>
-                  <Youtube className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <YouTubeIcon className="w-4 h-4 flex-shrink-0" />
                 </div>
                 <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
               </div>

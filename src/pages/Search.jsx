@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search as SearchIcon, Youtube, Twitch, User, AlertCircle, ArrowRight, Clock, CheckCircle, X, ChevronDown } from 'lucide-react';
+import { Search as SearchIcon, Twitch, User, AlertCircle, ArrowRight, Clock, CheckCircle, X, ChevronDown } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -25,7 +26,7 @@ import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
 
 const platformIcons = {
-  youtube: Youtube,
+  youtube: YouTubeIcon,
   tiktok: TikTokIcon,
   twitch: Twitch,
   kick: KickIcon,
@@ -55,7 +56,7 @@ const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
 const platforms = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube, available: true },
+  { id: 'youtube', name: 'YouTube', icon: YouTubeIcon, available: true },
   { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, available: true },
   { id: 'twitch', name: 'Twitch', icon: Twitch, available: true },
   { id: 'kick', name: 'Kick', icon: KickIcon, available: true },

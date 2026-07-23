@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Youtube, Twitch, TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight } from 'lucide-react';
+import { Twitch, TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -29,7 +30,7 @@ import logger from '../lib/logger';
 // the #1 row on the rankings overview is a genuine achievement (top of an
 // entire platform), so it earns the platform's own color as a trophy tint.
 const platforms = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube,      tint: 'text-red-500',     bar: 'bg-red-500',    heroBg: 'bg-red-50/70',     available: true },
+  { id: 'youtube', name: 'YouTube', icon: YouTubeIcon,  tint: '',                 bar: 'bg-red-500',    heroBg: 'bg-red-50/70',     available: true },
   { id: 'tiktok',  name: 'TikTok',  icon: TikTokIcon,   tint: 'text-pink-500',    bar: 'bg-pink-500',   heroBg: 'bg-pink-50/70',    available: true },
   { id: 'twitch',  name: 'Twitch',  icon: Twitch,       tint: 'text-purple-500',  bar: 'bg-purple-500', heroBg: 'bg-purple-50/70',  available: true },
   { id: 'kick',    name: 'Kick',    icon: KickIcon,     tint: 'text-green-600',   bar: 'bg-green-600',  heroBg: 'bg-green-50/70',   available: true },

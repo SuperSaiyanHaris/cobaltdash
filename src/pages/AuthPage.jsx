@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Youtube, Twitch, Music } from 'lucide-react';
+import { Twitch, Music } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
 import CreatorAvatar from '../components/CreatorAvatar';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -13,11 +14,11 @@ import { getShowcaseCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
 
 const PLATFORM_ICONS = {
-  youtube: Youtube, twitch: Twitch, kick: KickIcon, tiktok: TikTokIcon,
+  youtube: YouTubeIcon, twitch: Twitch, kick: KickIcon, tiktok: TikTokIcon,
   bluesky: BlueskyIcon, rumble: RumbleIcon, music: Music,
 };
 const PLATFORM_TINT = {
-  youtube: 'text-red-500', twitch: 'text-purple-500', kick: 'text-green-600',
+  youtube: '', twitch: 'text-purple-500', kick: 'text-green-600',
   tiktok: 'text-pink-500', bluesky: 'text-sky-500', rumble: 'text-lime-600', music: 'text-amber-500',
 };
 const METRIC = {
@@ -26,7 +27,7 @@ const METRIC = {
 };
 
 function ShowcaseCard({ c }) {
-  const Icon = PLATFORM_ICONS[c.platform] || Youtube;
+  const Icon = PLATFORM_ICONS[c.platform] || YouTubeIcon;
   return (
     <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 flex items-center gap-3 w-full">
       <CreatorAvatar

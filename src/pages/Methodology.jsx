@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Youtube, Twitch, Clock, Database, RefreshCw, ShieldCheck, Music } from 'lucide-react';
+import { Twitch, Clock, Database, RefreshCw, ShieldCheck, Music } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -18,9 +19,9 @@ const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px
 // Platform identity is the icon tint alone.
 const platforms = [
   {
-    icon: Youtube,
+    icon: YouTubeIcon,
     name: 'YouTube',
-    tint: 'text-red-500',
+    tint: '',
     metrics: ['Subscriber count', 'Total video views', 'Video count'],
     notes: [
       'YouTube rounds subscriber counts to 3 significant figures for all channels, a policy in place since 2019. A channel at 4,237,591 and one at 4,230,000 both display as 4,230,000. Because of this we default to showing view growth, which is always precise.',

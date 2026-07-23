@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Youtube, Twitch, Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
+import { Twitch, Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
+import YouTubeIcon from '../components/YouTubeIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
@@ -33,7 +34,7 @@ import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
 
 const platformIcons = {
-  youtube: Youtube,
+  youtube: YouTubeIcon,
   twitch: Twitch,
   kick: KickIcon,
   tiktok: TikTokIcon,
@@ -1036,7 +1037,11 @@ export default function CreatorProfile() {
                     href={platformUrls[platform]?.(username, creator?.platformId)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${colors.bg} text-white hover:opacity-90 transition-opacity`}
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm hover:opacity-90 transition-opacity ${
+                      platform === 'youtube'
+                        ? `bg-white border ${colors.border} ${colors.text}`
+                        : `${colors.bg} text-white`
+                    }`}
                   >
                     {Icon && <Icon className="w-3.5 h-3.5" />}
                     {platformDisplayNames[platform] || platform}
@@ -1336,7 +1341,11 @@ export default function CreatorProfile() {
                       href={platformUrls[platform]?.(creator.username || username, creator?.platformId)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${colors.bg} text-white hover:opacity-90 transition-opacity`}
+                      className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm hover:opacity-90 transition-opacity ${
+                        platform === 'youtube'
+                          ? `bg-white border ${colors.border} ${colors.text}`
+                          : `${colors.bg} text-white`
+                      }`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       {Icon && <Icon className="w-3 h-3 sm:w-4 sm:h-4" />}
@@ -1919,15 +1928,15 @@ export default function CreatorProfile() {
                     <div className="flex items-center gap-5 mt-3 text-sm text-neutral-700">
                       <span className="flex items-center gap-1.5">
                         <Eye className="w-4 h-4 text-neutral-700" />
-                        {formatNumber(latestVideo.views)}
+                        {formatNumber(latestVideo.views)} <span className="text-neutral-500">views</span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <ThumbsUp className="w-4 h-4 text-neutral-700" />
-                        {formatNumber(latestVideo.likes)}
+                        {formatNumber(latestVideo.likes)} <span className="text-neutral-500">likes</span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <MessageCircle className="w-4 h-4 text-neutral-700" />
-                        {formatNumber(latestVideo.comments)}
+                        {formatNumber(latestVideo.comments)} <span className="text-neutral-500">comments</span>
                       </span>
                     </div>
                   </div>
