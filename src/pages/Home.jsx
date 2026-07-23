@@ -225,10 +225,20 @@ function ChampionsGrid({ tops }) {
         </p>
       </motion.div>
 
-      <div
-        className="relative h-[340px] sm:h-[380px] flex items-center justify-center"
+      <motion.div
+        className="relative h-[340px] sm:h-[380px] flex items-center justify-center touch-pan-y cursor-grab active:cursor-grabbing"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.15}
+        onDragStart={() => setPaused(true)}
+        onDragEnd={(e, info) => {
+          const SWIPE_THRESHOLD = 50;
+          if (info.offset.x < -SWIPE_THRESHOLD || info.velocity.x < -400) go(1);
+          else if (info.offset.x > SWIPE_THRESHOLD || info.velocity.x > 400) go(-1);
+          setPaused(false);
+        }}
       >
         {tops.map((top, i) => {
           let offset = i - activeIndex;
@@ -240,6 +250,45 @@ function ChampionsGrid({ tops }) {
           const isActive = offset === 0;
           const meta = PLATFORM_LOOKUP[top.platform];
           const Icon = meta?.Icon;
+
+          const cardClassName = `group flex flex-col items-center w-full overflow-hidden bg-white border rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-colors cursor-pointer ${
+            isActive ? 'border-neutral-300 hover:border-neutral-400' : 'border-neutral-200 hover:border-neutral-300'
+          }`;
+
+          const cardInner = (
+            <>
+              <div className="h-[3px] w-full flex-shrink-0" style={{ backgroundColor: meta?.accent }} />
+
+              <div className="flex flex-col items-center w-full px-5 sm:px-6 pt-5 pb-6">
+                <div className="flex items-center gap-1.5 mb-5">
+                  {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">{top._platformLabel}</span>
+                </div>
+
+                <div className="relative mb-4">
+                  <CreatorAvatar
+                    src={top.profile_image}
+                    name={top.display_name}
+                    size="xl"
+                    rounded="rounded-2xl"
+                    className="ring-1 ring-neutral-200"
+                  />
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-900 text-white text-[10px] font-bold ring-2 ring-white">
+                    1
+                  </span>
+                </div>
+
+                <p className="font-bold text-neutral-900 text-sm text-center truncate max-w-full">{top.display_name}</p>
+
+                <div className="w-8 h-px bg-neutral-200 my-4 flex-shrink-0" />
+
+                <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums leading-none text-center">
+                  {formatNumber(top.subscribers || 0)}
+                </p>
+                <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 text-center">{top._metricLabel}</p>
+              </div>
+            </>
+          );
 
           return (
             <motion.div
@@ -254,50 +303,26 @@ function ChampionsGrid({ tops }) {
                 zIndex: 10 - abs,
               }}
               transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-              style={{ pointerEvents: isActive ? 'auto' : 'none' }}
+              style={{ pointerEvents: abs > 2 ? 'none' : 'auto' }}
             >
-              <Link
-                to={`/${top.platform}/${top.username}`}
-                tabIndex={isActive ? 0 : -1}
-                className={`group flex flex-col items-center overflow-hidden bg-white border rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-colors ${
-                  isActive ? 'border-neutral-300 hover:border-neutral-400' : 'border-neutral-200'
-                }`}
-              >
-                <div className="h-[3px] w-full flex-shrink-0" style={{ backgroundColor: meta?.accent }} />
-
-                <div className="flex flex-col items-center w-full px-5 sm:px-6 pt-5 pb-6">
-                  <div className="flex items-center gap-1.5 mb-5">
-                    {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
-                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">{top._platformLabel}</span>
-                  </div>
-
-                  <div className="relative mb-4">
-                    <CreatorAvatar
-                      src={top.profile_image}
-                      name={top.display_name}
-                      size="xl"
-                      rounded="rounded-2xl"
-                      className="ring-1 ring-neutral-200"
-                    />
-                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-900 text-white text-[10px] font-bold ring-2 ring-white">
-                      1
-                    </span>
-                  </div>
-
-                  <p className="font-bold text-neutral-900 text-sm text-center truncate max-w-full">{top.display_name}</p>
-
-                  <div className="w-8 h-px bg-neutral-200 my-4 flex-shrink-0" />
-
-                  <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums leading-none text-center">
-                    {formatNumber(top.subscribers || 0)}
-                  </p>
-                  <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 text-center">{top._metricLabel}</p>
-                </div>
-              </Link>
+              {isActive ? (
+                <Link to={`/${top.platform}/${top.username}`} className={cardClassName}>
+                  {cardInner}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Show ${top.display_name}, #1 on ${top._platformLabel}`}
+                  className={cardClassName}
+                >
+                  {cardInner}
+                </button>
+              )}
             </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       <div className="flex items-center justify-center gap-4 mt-6">
         <button
