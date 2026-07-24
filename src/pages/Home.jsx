@@ -280,8 +280,16 @@ function ChampionsGrid({ tops }) {
               <div className="h-[3px] w-full flex-shrink-0" style={{ backgroundColor: meta?.accent }} />
 
               <div className="flex flex-col items-center w-full px-5 sm:px-6 pt-5 pb-6">
+                {/* Brand mark only on the centered card. Every other card in
+                    the fan is rotated (up to 14deg), scaled down to 0.74, and
+                    faded to 0.4 — YouTube's brand guidelines allow none of
+                    those on their logo, and the scale alone drops the mark
+                    under the required 20dp height. The centered card is the
+                    only one at rotate 0 / scale 1 / opacity 1. Receded cards
+                    still name the platform in the label beside it, so nothing
+                    is lost. Don't move this icon back onto every card. */}
                 <div className="flex items-center gap-1.5 mb-5">
-                  {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
+                  {Icon && isActive && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
                   <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">{top._platformLabel}</span>
                 </div>
 
@@ -995,7 +1003,11 @@ export default function Home() {
                   to={`/rankings/${id}`}
                   aria-label={name}
                   title={name}
-                  className="opacity-70 hover:opacity-100 transition-opacity"
+                  // YouTube's brand guidelines don't allow altering the mark's
+                  // appearance, and dimming it to 70% is an alteration. Every
+                  // other platform keeps the quiet resting state; YouTube alone
+                  // renders at full opacity.
+                  className={id === 'youtube' ? '' : 'opacity-70 hover:opacity-100 transition-opacity'}
                 >
                   <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
                 </Link>
