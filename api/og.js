@@ -271,7 +271,7 @@ function DefaultCard() {
       padding: 60,
     },
   },
-    h('div', { style: { marginBottom: 32 } }, h(BrandLogo, { scale: 1.5 })),
+    h('div', { style: { display: 'flex', marginBottom: 32 } }, h(BrandLogo, { scale: 1.5 })),
     h('div', {
       style: {
         color: '#94a3b8',
