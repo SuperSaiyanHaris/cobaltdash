@@ -152,6 +152,26 @@ export const PLATFORM_DISPLAY_NAMES = {
   substack: 'Substack',
 };
 
+// Each platform's primary brand color, as supplied by the user. Use these
+// anywhere a platform needs to be identified by color (the home hero's
+// rotating headline word, the Champions card hairline, platform icon tints).
+// These are the brand's own values, not Tailwind palette approximations, so
+// they can't be expressed as utility classes — apply via inline style.
+//
+// This does NOT change how the real brand mark SVGs paint. Those hardcode
+// their official colors internally and deliberately ignore currentColor.
+export const PLATFORM_ACCENTS = {
+  youtube: '#f20000',
+  tiktok: '#24e8e4',
+  twitch: '#8c43f1',
+  kick: '#52ef19',
+  bluesky: '#1180f4',
+  music: '#ed9b0b',
+  mastodon: '#6263f7',
+  rumble: '#82bf41',
+  substack: '#f96819',
+};
+
 // Legacy enum (kept for backward compat — prefer PLATFORM_IDS for iteration)
 export const PLATFORMS = {
   YOUTUBE: 'youtube',

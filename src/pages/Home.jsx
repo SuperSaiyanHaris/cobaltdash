@@ -25,22 +25,36 @@ import CreatorAvatar from '../components/CreatorAvatar';
 import CountUp from '../components/CountUp';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import PreviewRankingRow from '../components/PreviewRankingRow';
-import { PLATFORM_COUNT } from '../lib/constants';
+import { PLATFORM_COUNT, PLATFORM_ACCENTS } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
 
 const PLATFORMS = [
-  { id: 'youtube',  name: 'YouTube',  Icon: YouTubeIcon,  accent: '#ef4444' },
-  { id: 'tiktok',   name: 'TikTok',   Icon: TikTokIcon,   accent: '#ec4899' },
-  { id: 'twitch',   name: 'Twitch',   Icon: TwitchIcon,   accent: '#a855f7' },
-  { id: 'kick',     name: 'Kick',     Icon: KickIcon,     accent: '#22c55e' },
-  { id: 'bluesky',  name: 'Bluesky',  Icon: BlueskyIcon,  accent: '#0ea5e9' },
-  { id: 'music',    name: 'Music',    Icon: MusicIcon,    accent: '#f59e0b' },
-  { id: 'mastodon', name: 'Mastodon', Icon: MastodonIcon, accent: '#7c3aed' },
-  { id: 'rumble',   name: 'Rumble',   Icon: RumbleIcon,   accent: '#65a30d' },
-  { id: 'substack', name: 'Substack', Icon: SubstackIcon, accent: '#ea580c' },
+  { id: 'youtube',  name: 'YouTube',  Icon: YouTubeIcon,  accent: PLATFORM_ACCENTS.youtube },
+  { id: 'tiktok',   name: 'TikTok',   Icon: TikTokIcon,   accent: PLATFORM_ACCENTS.tiktok },
+  { id: 'twitch',   name: 'Twitch',   Icon: TwitchIcon,   accent: PLATFORM_ACCENTS.twitch },
+  { id: 'kick',     name: 'Kick',     Icon: KickIcon,     accent: PLATFORM_ACCENTS.kick },
+  { id: 'bluesky',  name: 'Bluesky',  Icon: BlueskyIcon,  accent: PLATFORM_ACCENTS.bluesky },
+  { id: 'music',    name: 'Music',    Icon: MusicIcon,    accent: PLATFORM_ACCENTS.music },
+  { id: 'mastodon', name: 'Mastodon', Icon: MastodonIcon, accent: PLATFORM_ACCENTS.mastodon },
+  { id: 'rumble',   name: 'Rumble',   Icon: RumbleIcon,   accent: PLATFORM_ACCENTS.rumble },
+  { id: 'substack', name: 'Substack', Icon: SubstackIcon, accent: PLATFORM_ACCENTS.substack },
 ];
 
-const HEADLINE_ROTATIONS = ['YouTuber', 'TikToker', 'Streamer', 'Artist', 'Creator'];
+// The rotating hero word. Each entry names one platform's creator and paints
+// itself in that platform's own brand color, so the headline cycles through
+// the full lineup rather than a generic gradient. Word and color are one unit
+// — never let them drift apart, the color IS the platform label here.
+const HEADLINE_ROTATIONS = [
+  { word: 'YouTuber',         color: PLATFORM_ACCENTS.youtube },
+  { word: 'TikToker',         color: PLATFORM_ACCENTS.tiktok },
+  { word: 'Twitch streamer',  color: PLATFORM_ACCENTS.twitch },
+  { word: 'Kick streamer',    color: PLATFORM_ACCENTS.kick },
+  { word: 'Bluesky poster',   color: PLATFORM_ACCENTS.bluesky },
+  { word: 'Musician',         color: PLATFORM_ACCENTS.music },
+  { word: 'Mastodon poster',  color: PLATFORM_ACCENTS.mastodon },
+  { word: 'Rumble creator',   color: PLATFORM_ACCENTS.rumble },
+  { word: 'Substack writer',  color: PLATFORM_ACCENTS.substack },
+];
 
 // Display order + labels for the rotating #1-per-platform hero card.
 const TOP_CARD_META = [
@@ -96,8 +110,11 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
     return () => clearInterval(id);
   }, [reduceMotion]);
 
-  // Static fallback word when the user prefers reduced motion
-  const word = reduceMotion ? 'Creator' : HEADLINE_ROTATIONS[idx];
+  // Static fallback word when the user prefers reduced motion. No single
+  // platform gets to own the headline in that state, so it stays neutral.
+  const { word, color } = reduceMotion
+    ? { word: 'Creator', color: '#ffffff' }
+    : HEADLINE_ROTATIONS[idx];
 
   return (
     <span className="relative block overflow-hidden mt-1">
@@ -108,7 +125,8 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
           animate={{ opacity: 1, y: '0%' }}
           exit={{ opacity: 0, y: '-30%' }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="inline-block bg-gradient-to-br from-indigo-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent"
+          className="inline-block"
+          style={{ color }}
         >
           {word}
         </motion.span>
