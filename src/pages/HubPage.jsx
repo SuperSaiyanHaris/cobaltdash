@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Music, ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import YouTubeIcon from '../components/YouTubeIcon';
 import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
@@ -26,7 +27,7 @@ const MotionLink = motion(Link);
 const PLATFORM_META = {
   music: {
     name: 'Music',
-    icon: Music,
+    icon: MusicIcon,
     tint: 'text-amber-500',
     bar: 'bg-amber-500',
     metric: 'Monthly Listeners',

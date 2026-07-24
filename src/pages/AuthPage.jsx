@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Music } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -16,7 +16,7 @@ import { formatNumber } from '../lib/utils';
 
 const PLATFORM_ICONS = {
   youtube: YouTubeIcon, twitch: TwitchIcon, kick: KickIcon, tiktok: TikTokIcon,
-  bluesky: BlueskyIcon, rumble: RumbleIcon, music: Music,
+  bluesky: BlueskyIcon, rumble: RumbleIcon, music: MusicIcon,
 };
 const PLATFORM_TINT = {
   youtube: '', twitch: '', kick: 'text-green-600',

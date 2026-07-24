@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Milestone, Loader2, Music } from 'lucide-react';
+import { Milestone, Loader2 } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import SEO from '../components/SEO';
 import CreatorAvatar from '../components/CreatorAvatar';
 import YouTubeIcon from '../components/YouTubeIcon';
@@ -23,7 +24,7 @@ const PLATFORMS = [
   { id: 'twitch', name: 'Twitch', icon: TwitchIcon, tint: '', metric: 'followers' },
   { id: 'kick', name: 'Kick', icon: KickIcon, tint: 'text-green-600', metric: 'paid subs' },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, tint: 'text-sky-500', metric: 'followers' },
-  { id: 'music', name: 'Music', icon: Music, tint: 'text-amber-500', metric: 'listeners' },
+  { id: 'music', name: 'Music', icon: MusicIcon, tint: 'text-amber-500', metric: 'listeners' },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, tint: 'text-violet-500', metric: 'followers' },
   { id: 'rumble', name: 'Rumble', icon: RumbleIcon, tint: 'text-lime-600', metric: 'followers' },
   { id: 'substack', name: 'Substack', icon: SubstackIcon, tint: 'text-orange-600', metric: 'subscribers' },
@@ -128,7 +129,7 @@ export default function Milestones() {
                     to={`/${m.platform}/${m.username}`}
                     className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-neutral-50 transition-colors"
                   >
-                    <div className="relative flex-shrink-0">
+                    <div className="flex-shrink-0">
                       <CreatorAvatar
                         src={m.profileImage}
                         name={m.displayName}
@@ -136,16 +137,25 @@ export default function Milestones() {
                         rounded="rounded-lg"
                         className="!w-10 !h-10"
                       />
-                      {PIcon && (
-                        <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border border-neutral-200 flex items-center justify-center">
-                          <PIcon className={`w-2.5 h-2.5 ${meta.tint}`} />
-                        </span>
-                      )}
                     </div>
+                    {/* Platform mark sits inline beside the sub-label rather
+                        than as a badge overlapping the avatar corner. A round
+                        micro-badge cannot hold a brand mark at its required
+                        minimum size — YouTube's is 32x22 at the floor, which
+                        bursts out of the old 16px circle. This is the same
+                        icon-beside-the-secondary-line pattern the search
+                        results use. */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-neutral-900 truncate text-sm">{m.displayName}</p>
-                      <p className="text-xs text-neutral-400 truncate">
-                        Crossed {formatNumber(m.threshold)} {meta?.metric || 'followers'}
+                      <p className="text-xs text-neutral-400 truncate flex items-center gap-1.5">
+                        {/* Always pass an explicit size class. brandMarkSize's
+                            floor only raises a mark that is too small; it does
+                            not cap one, and an SVG with no width/height
+                            stretches to fill its flex line. */}
+                        {PIcon && <PIcon className={`w-4 h-4 flex-shrink-0 ${meta.tint}`} />}
+                        <span className="truncate">
+                          Crossed {formatNumber(m.threshold)} {meta?.metric || 'followers'}
+                        </span>
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">

@@ -4,8 +4,9 @@ import { Command } from 'cmdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Trophy, Scale, BarChart3, BookOpen, Calculator, TrendingUp, Milestone,
-  LayoutDashboard, FileSpreadsheet, Settings, Music, ArrowRight,
+  LayoutDashboard, FileSpreadsheet, Settings, ArrowRight,
 } from 'lucide-react';
+import MusicIcon from './MusicIcon';
 import YouTubeIcon from './YouTubeIcon';
 import TwitchIcon from './TwitchIcon';
 import KickIcon from './KickIcon';
@@ -24,7 +25,7 @@ const PLATFORM_ICONS = {
   twitch: { Icon: TwitchIcon, color: '' },
   kick: { Icon: KickIcon, color: 'text-green-400' },
   bluesky: { Icon: BlueskyIcon, color: 'text-sky-400' },
-  music: { Icon: Music, color: 'text-amber-400' },
+  music: { Icon: MusicIcon, color: 'text-amber-400' },
   mastodon: { Icon: MastodonIcon, color: 'text-violet-500' },
   rumble: { Icon: RumbleIcon, color: 'text-lime-600' },
   substack: { Icon: SubstackIcon, color: 'text-orange-600' },
@@ -49,7 +50,7 @@ const PLATFORM_LINKS = [
   { label: 'Twitch rankings',   to: '/rankings/twitch',   Icon: TwitchIcon,  color: ''    },
   { label: 'Kick rankings',     to: '/rankings/kick',     Icon: KickIcon,    color: 'text-green-400'  },
   { label: 'Bluesky rankings',  to: '/rankings/bluesky',  Icon: BlueskyIcon, color: 'text-sky-400'    },
-  { label: 'Music rankings',    to: '/rankings/music',    Icon: Music,        color: 'text-amber-400'  },
+  { label: 'Music rankings',    to: '/rankings/music',    Icon: MusicIcon,    color: 'text-amber-400'  },
   { label: 'Mastodon rankings', to: '/rankings/mastodon', Icon: MastodonIcon, color: 'text-violet-500' },
   { label: 'Rumble rankings',   to: '/rankings/rumble',   Icon: RumbleIcon,    color: 'text-lime-600' },
   { label: 'Substack rankings', to: '/rankings/substack', Icon: SubstackIcon,  color: 'text-orange-600' },

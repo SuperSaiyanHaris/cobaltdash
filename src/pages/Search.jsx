@@ -16,7 +16,7 @@ import { searchChannels as searchTwitch } from '../services/twitchService';
 import { searchChannels as searchKick } from '../services/kickService';
 import { searchBluesky } from '../services/blueskyService';
 import { searchArtists as searchMusic } from '../services/musicService';
-import { Music } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { searchCreators } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { supabase } from '../lib/supabase';
@@ -32,7 +32,7 @@ const platformIcons = {
   twitch: TwitchIcon,
   kick: KickIcon,
   bluesky: BlueskyIcon,
-  music: Music,
+  music: MusicIcon,
   mastodon: MastodonIcon,
   rumble: RumbleIcon,
   substack: SubstackIcon,
@@ -62,7 +62,7 @@ const platforms = [
   { id: 'twitch', name: 'Twitch', icon: TwitchIcon, available: true },
   { id: 'kick', name: 'Kick', icon: KickIcon, available: true },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, available: true },
-  { id: 'music', name: 'Music', icon: Music, available: true },
+  { id: 'music', name: 'Music', icon: MusicIcon, available: true },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, available: true },
   { id: 'rumble', name: 'Rumble', icon: RumbleIcon, available: true },
   { id: 'substack', name: 'Substack', icon: SubstackIcon, available: true },

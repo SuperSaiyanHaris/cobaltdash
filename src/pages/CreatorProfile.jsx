@@ -20,6 +20,7 @@ import { getSubstackPublication } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getNearbyRankedCreators } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { ProfileSkeleton } from '../components/Skeleton';
@@ -41,7 +42,7 @@ const platformIcons = {
   kick: KickIcon,
   tiktok: TikTokIcon,
   bluesky: BlueskyIcon,
-  music: Music,
+  music: MusicIcon,
   mastodon: MastodonIcon,
   rumble: RumbleIcon,
   substack: SubstackIcon,
@@ -1184,7 +1185,12 @@ export default function CreatorProfile() {
                   title="Compare this creator"
                 >
                   <Scale className="w-4 h-4" />
-                  <span className="hidden sm:inline">Compare</span>
+                  {/* Label only from lg up. Between md and lg the header puts
+                      the avatar and name side by side while this cluster is
+                      absolutely positioned over the same band, and a labelled
+                      cluster (349px) leaves too little room for a long display
+                      name beside the platform badge. */}
+                  <span className="hidden lg:inline">Compare</span>
                 </button>
 
                 {/* Share button + panel */}
@@ -1198,7 +1204,7 @@ export default function CreatorProfile() {
                     }`}
                   >
                     <Share2 className="w-4 h-4" />
-                    <span className="hidden sm:inline">Share</span>
+                    <span className="hidden lg:inline">Share</span>
                   </button>
                 </div>
 
@@ -1329,7 +1335,12 @@ export default function CreatorProfile() {
                   />
                 )}
                 <div className="flex-1 w-full">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                  {/* Reserve room for the absolutely-positioned action cluster
+                      above. Only needed from md up: below that the header
+                      stacks (flex-col) and this row sits under the buttons
+                      rather than beside them. Without it a long display name
+                      plus the platform badge runs underneath the buttons. */}
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap md:pr-64 lg:pr-96">
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">{creator.displayName}</h1>
                     <a
                       href={platformUrls[platform]?.(creator.username || username, creator?.platformId)}

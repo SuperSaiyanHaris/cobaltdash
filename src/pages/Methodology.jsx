@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Clock, Database, RefreshCw, ShieldCheck, Music } from 'lucide-react';
+import { Clock, Database, RefreshCw, ShieldCheck } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -90,7 +91,7 @@ const platforms = [
     ],
   },
   {
-    icon: Music,
+    icon: MusicIcon,
     name: 'Music',
     tint: 'text-amber-500',
     metrics: ['Monthly listeners', 'Total play count', 'Genre tags'],

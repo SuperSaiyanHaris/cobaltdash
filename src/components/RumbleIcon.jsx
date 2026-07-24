@@ -4,11 +4,15 @@
  * `currentColor` — the site's previous `lime-600` Tailwind tint was an
  * approximation, not the real brand hex. className/style only control size.
  */
+import { brandMarkFloor } from './brandMarkSize';
+
+const FLOOR = brandMarkFloor(24 / 24);
+
 export default function RumbleIcon({ className, style, ...rest }) {
   return (
     <svg
       className={className}
-      style={style}
+      style={{ ...style, ...FLOOR }}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill="#85C742"

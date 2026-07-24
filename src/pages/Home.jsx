@@ -2,8 +2,9 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
-  LineChart, DollarSign, Users, Music, ChevronLeft, ChevronRight, Sparkles,
+  LineChart, DollarSign, Users, ChevronLeft, ChevronRight, Sparkles,
 } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
@@ -33,7 +34,7 @@ const PLATFORMS = [
   { id: 'twitch',   name: 'Twitch',   Icon: TwitchIcon,   accent: '#a855f7' },
   { id: 'kick',     name: 'Kick',     Icon: KickIcon,     accent: '#22c55e' },
   { id: 'bluesky',  name: 'Bluesky',  Icon: BlueskyIcon,  accent: '#0ea5e9' },
-  { id: 'music',    name: 'Music',    Icon: Music,        accent: '#f59e0b' },
+  { id: 'music',    name: 'Music',    Icon: MusicIcon,    accent: '#f59e0b' },
   { id: 'mastodon', name: 'Mastodon', Icon: MastodonIcon, accent: '#7c3aed' },
   { id: 'rumble',   name: 'Rumble',   Icon: RumbleIcon,   accent: '#65a30d' },
   { id: 'substack', name: 'Substack', Icon: SubstackIcon, accent: '#ea580c' },

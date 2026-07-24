@@ -10,7 +10,7 @@ import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
-import { Music } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -36,7 +36,7 @@ const platforms = [
   { id: 'twitch',  name: 'Twitch',  icon: TwitchIcon,   tint: '',                 bar: 'bg-purple-500', heroBg: 'bg-purple-50/70',  available: true },
   { id: 'kick',    name: 'Kick',    icon: KickIcon,     tint: 'text-green-600',   bar: 'bg-green-600',  heroBg: 'bg-green-50/70',   available: true },
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon,  tint: 'text-sky-500',     bar: 'bg-sky-500',    heroBg: 'bg-sky-50/70',     available: true },
-  { id: 'music',   name: 'Music',   icon: Music,        tint: 'text-amber-500',   bar: 'bg-amber-500',  heroBg: 'bg-amber-50/70',   available: true },
+  { id: 'music',   name: 'Music',   icon: MusicIcon,        tint: 'text-amber-500',   bar: 'bg-amber-500',  heroBg: 'bg-amber-50/70',   available: true },
   { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, tint: 'text-violet-500',  bar: 'bg-violet-500', heroBg: 'bg-violet-50/70',  available: true },
   { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   tint: 'text-lime-600',    bar: 'bg-lime-600',   heroBg: 'bg-lime-50/70',    available: true },
   { id: 'substack',name: 'Substack',icon: SubstackIcon, tint: 'text-orange-500',  bar: 'bg-orange-500', heroBg: 'bg-orange-50/70',  available: true },

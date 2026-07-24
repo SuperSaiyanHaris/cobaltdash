@@ -34,27 +34,23 @@
  * siblings up instead if a row looks unbalanced.
  */
 
+import { brandMarkFloor } from './brandMarkSize';
+
 // Natural viewBox of the official mark.
 const VB_WIDTH = 28.5701;
 const VB_HEIGHT = 20;
 
 // YouTube branding guidelines: "our icon should never be smaller than 20dp in
-// height." dp maps to CSS px at 1x.
-//
-// Deliberately set ABOVE 20, not exactly 20. With the mins at the mark's exact
-// natural box (28.5701 x 20) the browser rounds the width down to 28.56px,
-// which then constrains the painted mark to 28.56 / (28.5701/20) = 19.99px tall
-// — measurably under the floor in devtools, which is exactly how a reviewer
-// checks. 22px tall (and a width with enough slack that height stays the
-// limiting axis) leaves headroom for subpixel rounding at any zoom level.
-const MIN_HEIGHT_PX = 22;
-const MIN_WIDTH_PX = 32; // 32 / (28.5701/20) = 22.4, so height governs, not width
+// height." The shared floor sits above that bare minimum on purpose — see
+// brandMarkSize.js for why 20 exactly rounds down to 19.99 here, and for how
+// every other platform mark is aligned to the same height.
+const FLOOR = brandMarkFloor(VB_WIDTH / VB_HEIGHT);
 
 export default function YouTubeIcon({ className, style, ...rest }) {
   return (
     <svg
       className={className}
-      style={{ ...style, minWidth: `${MIN_WIDTH_PX}px`, minHeight: `${MIN_HEIGHT_PX}px` }}
+      style={{ ...style, ...FLOOR }}
       xmlns="http://www.w3.org/2000/svg"
       viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`}
       {...rest}

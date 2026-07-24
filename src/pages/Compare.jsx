@@ -12,7 +12,7 @@ import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
-import { Music } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import { CompareCardSkeleton } from '../components/Skeleton';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -52,7 +52,7 @@ const platformConfig = {
   twitch: { icon: TwitchIcon, color: '', label: 'Twitch' },
   kick: { icon: KickIcon, color: 'text-green-600', label: 'Kick' },
   bluesky: { icon: BlueskyIcon, color: 'text-sky-500', label: 'Bluesky' },
-  music: { icon: Music, color: 'text-amber-500', label: 'Music' },
+  music: { icon: MusicIcon, color: 'text-amber-500', label: 'Music' },
   mastodon: { icon: MastodonIcon, color: 'text-violet-500', label: 'Mastodon' },
   rumble: { icon: RumbleIcon, color: 'text-lime-600', label: 'Rumble' },
   substack: { icon: SubstackIcon, color: 'text-orange-500', label: 'Substack' },

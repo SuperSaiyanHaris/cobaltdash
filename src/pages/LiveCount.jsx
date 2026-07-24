@@ -4,7 +4,7 @@ import { ExternalLink, Share2, AlertCircle } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
-import { Music } from 'lucide-react';
+import MusicIcon from '../components/MusicIcon';
 import { getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
 import { getChannelByUsername as getTwitchChannel } from '../services/twitchService';
 import { getChannelByUsername as getKickChannel } from '../services/kickService';
@@ -48,7 +48,7 @@ const platformConfig = {
     avgGrowthPerSecond: 0.3,
   },
   music: {
-    icon: Music,
+    icon: MusicIcon,
     accent: 'text-amber-500',
     badgeText: 'text-amber-700',
     badgeBorder: 'border-amber-200',

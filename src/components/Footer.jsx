@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { BarChart3, Music } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
+import MusicIcon from './MusicIcon';
 import YouTubeIcon from './YouTubeIcon';
 import TwitchIcon from './TwitchIcon';
 import KickIcon from './KickIcon';
@@ -26,7 +27,7 @@ const PLATFORM_LINKS = [
   ['/rankings/twitch',   'Twitch',   TwitchIcon],
   ['/rankings/kick',     'Kick',     KickIcon],
   ['/rankings/bluesky',  'Bluesky',  BlueskyIcon],
-  ['/rankings/music',    'Music',    Music],
+  ['/rankings/music',    'Music',    MusicIcon],
   ['/rankings/mastodon', 'Mastodon', MastodonIcon],
   ['/rankings/rumble',   'Rumble',   RumbleIcon],
   ['/rankings/substack', 'Substack', SubstackIcon],
