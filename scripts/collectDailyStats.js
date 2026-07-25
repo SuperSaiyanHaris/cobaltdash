@@ -434,6 +434,9 @@ async function getKickAccessToken() {
     }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Kick token request failed: ${response.status} ${response.statusText}`);
+  }
   const data = await response.json();
   kickAccessToken = data.access_token;
   return kickAccessToken;
@@ -450,9 +453,22 @@ async function fetchKickChannelsBatch(slugs) {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
+  // Never silently treat a failed request as "0 channels found" — that
+  // misclassifies every real channel in the batch as not-found instead of
+  // letting the caller's try/catch retry it next run. Throwing here is what
+  // makes that retry path actually fire.
+  if (!response.ok) {
+    throw new Error(`Kick channels request failed: ${response.status} ${response.statusText}`);
+  }
+
   const data = await response.json();
   const channelMap = new Map();
   (data.data || []).forEach(channel => {
+    // active_subscribers_count is a real, common, legitimate 0 for the vast
+    // majority of small Kick streamers (paid subs, not followers) — it is
+    // NOT the same "0 means the API call failed" signal that applies to
+    // YouTube/Twitch subscriber counts. Only `|| 0` to cover a genuinely
+    // missing field, never to paper over a failed request (handled above).
     channelMap.set(channel.slug.toLowerCase(), {
       subscribers: channel.active_subscribers_count || 0,
     });
@@ -703,7 +719,15 @@ async function collectDailyStats() {
 
         for (const creator of batch) {
           const channelData = channelMap.get(creator.username.toLowerCase());
-          if (channelData && channelData.subscribers > 0) {
+          // channelData is undefined only when Kick's API genuinely did not
+          // return this slug (deleted/banned/renamed) — that's the real
+          // failure case to skip. A present channelData with subscribers=0
+          // is a real, common reading (most small streamers have zero paid
+          // subs) and must be written, not discarded, or the channel can
+          // never get a fresh row again once it first reads 0. This was the
+          // single largest cause of stale Kick coverage (~1,000 creators
+          // stuck for a week+) found and fixed 2026-07-25.
+          if (channelData) {
             statsToUpsert.push({
               creator_id: creator.id,
               recorded_at: today,

@@ -7,9 +7,11 @@
  *
  * Uses the TikTok scraper (tiktokScraper.js) to fetch profile data
  * from TikTok's embedded JSON. Processes ALL creators by default to
- * ensure daily stats coverage. Orders by updated_at ascending so
- * stale profiles are refreshed first.
- * Rate limited to 2 seconds between requests (~4 min for 114 creators).
+ * ensure daily stats coverage. Orders by updated_at ascending (paginated,
+ * see below) so stale profiles are refreshed first.
+ * Rate limited to 2 seconds between requests (~2s per creator, so full
+ * "all" runs take roughly total-creators * 2s — check the console's own
+ * estimate line, which is always accurate against the current count).
  */
 import { config } from 'dotenv';
 config();
@@ -51,20 +53,41 @@ async function refreshTikTokProfiles() {
   console.log(`🎥 TikTok Refresh — ${target} of ${totalCreators} creators, date: ${today}`);
   console.log(`   Estimated time: ~${estimatedMinutes} minutes\n`);
 
-  // Fetch the N least-recently-updated TikTok creators
-  const { data: creators, error } = await supabase
-    .from('creators')
-    .select('*')
-    .eq('platform', 'tiktok')
-    .order('updated_at', { ascending: true })
-    .limit(count);
+  // Fetch the N least-recently-updated TikTok creators, paginated.
+  // Supabase/PostgREST caps any single response at 1000 rows regardless of
+  // what .limit() is requested here — a plain .limit(count) silently
+  // truncated "all creators" to 1000 even once the TikTok list grew past
+  // that, so 4 scheduled runs/day were only ever touching the same top-1000
+  // stalest creators and the remainder never got refreshed. Found and fixed
+  // 2026-07-25 (~244 creators had gone a full week+ without a fresh row).
+  // A secondary .order('id') tiebreaker is required alongside updated_at:
+  // rows sharing an identical updated_at timestamp have no stable order
+  // across pages without one, which can skip or repeat rows at a page
+  // boundary under .range() pagination (see CLAUDE.md's pagination note).
+  const PAGE_SIZE = 1000;
+  let creators = [];
+  let from = 0;
+  while (creators.length < count) {
+    const pageLimit = Math.min(PAGE_SIZE, count - creators.length);
+    const { data: page, error } = await supabase
+      .from('creators')
+      .select('*')
+      .eq('platform', 'tiktok')
+      .order('updated_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + pageLimit - 1);
 
-  if (error) {
-    console.error('❌ Error fetching creators:', error.message);
-    return;
+    if (error) {
+      console.error('❌ Error fetching creators:', error.message);
+      return;
+    }
+    if (!page || page.length === 0) break;
+    creators = creators.concat(page);
+    if (page.length < pageLimit) break;
+    from += pageLimit;
   }
 
-  if (!creators || creators.length === 0) {
+  if (creators.length === 0) {
     console.log('No TikTok creators found');
     return;
   }
