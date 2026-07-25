@@ -13,13 +13,37 @@
 // picked up a .jsx file under /api. Every social share of a shinypull.com
 // link (X, Discord, iMessage, Slack) got a blank/broken preview image as a
 // result. Plain .js with createElement sidesteps the extension issue entirely.
+//
+// RUNS ON THE NODE RUNTIME, DELIBERATELY. DO NOT PUT IT BACK ON EDGE.
+// @vercel/og's edge build ends with:
+//
+//   var fallbackFont = fetch(new URL("./noto-sans-v27-latin-regular.ttf",
+//                                    import.meta.url)).then(r => r.arrayBuffer());
+//   ...
+//   const [fontData] = await Promise.all([fallbackFont, initializedResvg]);
+//
+// That font fetch is awaited unconditionally inside `new ReadableStream({start})`,
+// even if you pass your own `fonts` option — there is no way to opt out. Vercel's
+// edge builder only co-locates that .ttf (and resolves the `./resvg.wasm?module`
+// import) for Next.js projects; this is a Vite project, so the fetch rejects,
+// start() throws, and the Response ships with its headers already sent and a
+// ZERO-BYTE body. The symptom is a 200 + `content-type: image/png` +
+// `content-length: 0`, which every social scraper renders as a blank preview.
+// It is silent: no 5xx, nothing obviously wrong in the response line.
+//
+// The node build instead does `fs.readFileSync` for both the font and the wasm,
+// which Vercel's Node bundler traces correctly, and `unstable_createNodejsStream`
+// awaits the render in OUR call frame so a failure is a catchable error rather
+// than an empty stream. Moving to Node cost a serverless function slot (Hobby
+// caps Node functions at 12 and we were exactly at 12), which is why
+// api/image-proxy.js was converted to the edge runtime in the same change.
 
-import { ImageResponse } from '@vercel/og';
+import { unstable_createNodejsStream } from '@vercel/og';
 import React from 'react';
 
 const h = React.createElement;
 
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'nodejs' };
 
 const PLATFORM_LABELS = {
   youtube:  'YouTube',
@@ -311,24 +335,54 @@ function DefaultCard() {
   );
 }
 
-export default async function handler(req) {
-  const url = new URL(req.url);
-  const platform = url.searchParams.get('platform');
-  const username = url.searchParams.get('username');
+const SIZE = { width: 1200, height: 630 };
 
-  let body;
+export default async function handler(req, res) {
+  const { platform, username } = req.query || {};
+
+  let creator = null;
   if (platform && username && PLATFORM_LABELS[platform]) {
-    const creator = await fetchCreator(platform, username);
-    body = creator ? h(CreatorCard, { creator, platform }) : h(DefaultCard);
-  } else {
-    body = h(DefaultCard);
+    creator = await fetchCreator(platform, username);
   }
 
-  return new ImageResponse(body, {
-    width: 1200,
-    height: 630,
-    headers: {
-      'Cache-Control': 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
-    },
-  });
+  // Ordered fallbacks. satori fetches `creator.profile_image` over the network
+  // while rendering, so a dead or slow avatar CDN would otherwise take the whole
+  // card down. Dropping the avatar still produces a correct, on-brand card with
+  // the real stats on it, which beats no preview image at all. A returned
+  // preview is the entire point of this endpoint, so it degrades rather than
+  // fails.
+  const attempts = [];
+  if (creator) {
+    attempts.push(['creator card', () => h(CreatorCard, { creator, platform })]);
+    if (creator.profile_image) {
+      attempts.push(['creator card (no avatar)', () =>
+        h(CreatorCard, { creator: { ...creator, profile_image: null }, platform })]);
+    }
+  }
+  attempts.push(['default card', () => h(DefaultCard)]);
+
+  for (const [label, build] of attempts) {
+    try {
+      const stream = await unstable_createNodejsStream(build(), SIZE);
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400'
+      );
+      stream.pipe(res);
+      return;
+    } catch (err) {
+      // Loud on purpose. The whole reason this endpoint was broken for so long
+      // is that the previous failure mode was a silent 200 with an empty body.
+      console.error(`[og] ${label} failed:`, err?.stack || err?.message || err);
+    }
+  }
+
+  // Every card failed to render, which means the renderer itself is broken
+  // rather than the data. Return a real error so it shows up as a 500 instead
+  // of masquerading as a valid but empty image.
+  res.statusCode = 500;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('OG image render failed');
 }
