@@ -119,7 +119,14 @@ function formatNumber(num) {
 }
 
 function formatDate(iso) {
-  const d = new Date(iso);
+  // Both call sites pass bare DATE values (creator_stats.recorded_at,
+  // blog_posts.published_at), which JS parses as UTC midnight. This function
+  // runs on Vercel's edge, whose local timezone is not guaranteed to be UTC,
+  // so toLocaleDateString could roll the display back a day depending on
+  // where the edge region lands relative to UTC. Force local noon so no
+  // timezone offset can ever cross a day boundary — same fix as
+  // toISODateTime below and the equivalent fix in Blog.jsx/BlogPost.jsx.
+  const d = new Date(String(iso).includes('T') ? iso : `${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }

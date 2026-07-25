@@ -495,7 +495,7 @@ export default function BlogAdmin() {
                           </div>
                         </div>
                         <div className="flex items-center gap-4 mt-2 text-xs text-neutral-700">
-                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{post.published_at ? new Date(post.published_at).toLocaleDateString() : 'No date'}</span>
+                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{post.published_at ? new Date(post.published_at.includes('T') ? post.published_at : `${post.published_at}T12:00:00`).toLocaleDateString() : 'No date'}</span>
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{post.read_time}</span>
                         </div>
                       </div>

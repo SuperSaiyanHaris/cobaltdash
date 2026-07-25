@@ -31,7 +31,13 @@ function isNewPost(publishedAt) {
 }
 
 function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // published_at is a bare DATE ("2026-07-25"), which JS parses as UTC
+  // midnight. Displaying that via toLocaleDateString in a timezone behind
+  // UTC (e.g. America/New_York) rolls it back to the previous day. Forcing
+  // local noon avoids crossing any day boundary. Same fix as middleware.js's
+  // toISODateTime and CreatorProfile.jsx's recorded_at+'T12:00:00' pattern.
+  const d = dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`;
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default function Blog() {
