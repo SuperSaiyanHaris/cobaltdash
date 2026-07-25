@@ -124,6 +124,23 @@ function formatDate(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/**
+ * JSON-LD datePublished/dateModified need a full ISO 8601 datetime, not a
+ * bare date. Several source columns (creator_stats.recorded_at,
+ * blog_posts.published_at) are Postgres DATE, not TIMESTAMPTZ, so PostgREST
+ * serializes them as "2026-07-25" with no time or timezone component.
+ * Google's structured data parser flags that as "invalid date format" even
+ * though it's valid schema.org Date syntax on its own — Search Console
+ * reported this on two creator profile pages in July 2026, but the bug is
+ * sitewide: every profile page's dateModified and every blog post's
+ * datePublished used the same bare-date columns. Pass through untouched if
+ * it's already a full timestamp (e.g. blog_posts.updated_at).
+ */
+function toISODateTime(dateStr) {
+  if (!dateStr) return dateStr;
+  return dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00Z`;
+}
+
 /** Fetch JSON from Supabase PostgREST with the anon key (read-only via RLS). */
 async function supabaseGet(path, timeoutMs = 2500) {
   const base = process.env.VITE_SUPABASE_URL;
@@ -333,7 +350,7 @@ async function getProfileContent(platform, username) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    ...(latest ? { dateModified: latest.recorded_at } : {}),
+    ...(latest ? { dateModified: toISODateTime(latest.recorded_at) } : {}),
     mainEntity: {
       '@type': 'Person',
       name,
@@ -583,8 +600,8 @@ async function getBlogContent(slug) {
     '@type': 'Article',
     headline: p.title,
     ...(p.description ? { description: p.description } : {}),
-    ...(p.published_at ? { datePublished: p.published_at } : {}),
-    ...(p.updated_at ? { dateModified: p.updated_at } : {}),
+    ...(p.published_at ? { datePublished: toISODateTime(p.published_at) } : {}),
+    ...(p.updated_at ? { dateModified: toISODateTime(p.updated_at) } : {}),
     author: { '@type': 'Organization', name: p.author || 'ShinyPull' },
     publisher: { '@type': 'Organization', name: 'ShinyPull', url: SITE_URL },
     mainEntityOfPage: `${SITE_URL}/blog/${p.slug}`,
