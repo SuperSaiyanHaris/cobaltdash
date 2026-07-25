@@ -1138,7 +1138,7 @@ export default function CreatorProfile() {
         title={seoTitle}
         description={seoDescription}
         keywords={seoKeywords}
-        image={`https://shinypull.com/api/og?platform=${platform}&username=${encodeURIComponent(creator.username || username)}`}
+        image={`https://shinypull.com/og-image/${platform}/${encodeURIComponent(creator.username || username)}`}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileSchema).replace(/<\/script>/gi, '<\\/script>') }} />
       <StructuredData schema={breadcrumbSchema} />

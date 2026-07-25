@@ -65,6 +65,14 @@
   ],
   "rewrites": [
     {
+      "source": "/og-image",
+      "destination": "/api/og"
+    },
+    {
+      "source": "/og-image/:platform/:username",
+      "destination": "/api/og?platform=:platform&username=:username"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
