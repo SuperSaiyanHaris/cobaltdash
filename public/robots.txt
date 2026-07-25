@@ -1,5 +1,20 @@
 User-agent: *
 Allow: /
+# /api/og and /api/image-proxy are public image endpoints referenced from
+# og:image/twitter:image meta tags and creator avatar fallbacks — they must
+# stay crawlable or every social link preview that falls back to them (any
+# page without its own distinct image: the homepage, rankings pages, hub
+# pages) gets silently blocked. X's own Card Validator flagged this exact
+# problem 2026-07-25: "https://shinypull.com/api/og ... may be restricted by
+# the site's robots.txt file, which will prevent Twitter from fetching it."
+# The blanket Disallow: /api/ below was blocking it the whole time, even
+# after the endpoint itself was fixed to return a real image — robots.txt
+# blocks the fetch before the fix ever gets a chance to matter. Everything
+# else under /api/ is a data/admin endpoint with no reason to be crawled, so
+# stays blocked. Allow rules must stay above the Disallow: /api/ line —
+# most crawlers match the most specific rule, but keep this order regardless.
+Allow: /api/og
+Allow: /api/image-proxy
 Disallow: /api/
 Disallow: /blog/admin
 Disallow: /dashboard
