@@ -27,7 +27,10 @@
 
     <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://ziiqqbfcncjdewjkbvyq.supabase.co" crossorigin>
-    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
+    <!-- AdSense preconnect removed with the script itself (see the disabled
+         AdSense block further down). Restore this line when re-enabling ads,
+         or the handshake waits until the script is parsed. -->
+    <!-- <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin> -->
 
     <!-- Avatar CDNs. These two serve 73% of every avatar we render (Twitch
          24.3K creators, YouTube 7.1K) and appear on the home marquee plus every
@@ -85,8 +88,28 @@
     }
     </script>
 
-    <!-- Google AdSense (async - non-blocking) -->
+    <!-- ===================================================================
+         Google AdSense — DISABLED until the account is approved.
+         RE-ENABLE BY UNCOMMENTING THE SCRIPT TAG BELOW. Also restore the
+         `pagead2.googlesyndication.com` preconnect near the top of this file.
+         Nothing else needs changing; the CSP in vercel.json already allows
+         every AdSense/DoubleClick origin.
+
+         Why it's off: the AdSense application was declined twice and won't be
+         resubmitted until the site hits its 1-year mark. An unapproved account
+         cannot serve an ad, so this script was pure cost on every page view:
+         239 KB across 8 requests (more than this app's entire 188 KB critical
+         path) plus its main-thread execution, returning only 0x0 iframes.
+
+         Keep it `async` in <head> when you re-enable it. Deferring it to
+         window.load was tried on 2026-07-25 and measured WORSE on Lighthouse
+         (90% -> 78/80%, LCP 1.2s -> 1.6/2.0s, TBT 147ms -> 230/291ms) because
+         it moved the ad execution into the FCP-to-TTI window. See CLAUDE.md.
+         =================================================================== -->
+    <!--
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3528314730732963" crossorigin="anonymous"></script>
+    -->
+    <!-- ADSENSE-DISABLED-MARKER: re-enable the tag above when reapplying -->
 
     <!-- Google Analytics (deferred - non-blocking) -->
     <script>
