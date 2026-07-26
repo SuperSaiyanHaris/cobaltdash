@@ -27,13 +27,7 @@
 
     <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://ziiqqbfcncjdewjkbvyq.supabase.co" crossorigin>
-
-    <!-- AdSense gets dns-prefetch, NOT preconnect. Its script is deliberately
-         deferred to window.load (see below), so a preconnect would hold a
-         connection open right through the critical window for something we
-         have chosen not to fetch yet. Warming DNS is free; the connection is
-         established when the script actually loads. -->
-    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
 
     <!-- Avatar CDNs. These two serve 73% of every avatar we render (Twitch
          24.3K creators, YouTube 7.1K) and appear on the home marquee plus every
@@ -91,24 +85,8 @@
     }
     </script>
 
-    <!-- Google AdSense (deferred to window.load, same as Analytics below).
-         Measured 2026-07-25: AdSense pulls 239 KB across 8 requests, which is
-         more than this app's entire 188 KB critical path. Loaded from <head>
-         it began fetching at 168ms, the exact instant every render-critical
-         chunk did, so it competed for bandwidth during first paint and its
-         execution dominated the 147ms TBT.
-         Deferring does NOT reduce ads: the script still loads on every page
-         view and Auto Ads still places them, it just happens after the app
-         has rendered instead of racing it. -->
-    <script>
-      window.addEventListener('load', function () {
-        var s = document.createElement('script');
-        s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3528314730732963';
-        s.async = true;
-        s.crossOrigin = 'anonymous';
-        document.head.appendChild(s);
-      });
-    </script>
+    <!-- Google AdSense (async - non-blocking) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3528314730732963" crossorigin="anonymous"></script>
 
     <!-- Google Analytics (deferred - non-blocking) -->
     <script>
