@@ -29,6 +29,17 @@
     <link rel="preconnect" href="https://ziiqqbfcncjdewjkbvyq.supabase.co" crossorigin>
     <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
 
+    <!-- Avatar CDNs. These two serve 73% of every avatar we render (Twitch
+         24.3K creators, YouTube 7.1K) and appear on the home marquee plus every
+         rankings, search, and profile page. Without this the handshake can't
+         start until React has rendered and created the <img> elements, which on
+         mobile is several hundred ms of DNS+TCP+TLS on the critical path.
+         Deliberately not preconnecting the other six avatar hosts — each one
+         holds a connection open, and past ~6 the hints start costing more than
+         they save. -->
+    <link rel="preconnect" href="https://static-cdn.jtvnw.net" crossorigin>
+    <link rel="preconnect" href="https://yt3.ggpht.com" crossorigin>
+
     <!-- Google Fonts (non-blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

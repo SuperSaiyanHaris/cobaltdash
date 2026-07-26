@@ -1,13 +1,17 @@
 import { useState, useMemo } from 'react';
+import { resizedAvatarUrl, AVATAR_TARGET_PX } from '../lib/avatarUrl';
 
 /**
  * CreatorAvatar — robust avatar with fallback chain:
- *   1. Try the provided image URL
- *   2. On error, try the Supabase image proxy (sometimes YouTube blocks hotlinks)
- *   3. Final fallback: render colored initials based on the display name
+ *   1. The image URL resized by the platform CDN to roughly the painted size
+ *   2. On error, the original untouched URL
+ *   3. On error, the image proxy (sometimes YouTube blocks hotlinks)
+ *   4. Final fallback: render colored initials based on the display name
  *
- * Fixes the "gray circle" problem on rankings where YouTube thumbnails fail to load
- * for big channels (MrBeast, Cocomelon, etc.) due to referrer-based blocking.
+ * Step 3 fixes the "gray circle" problem on rankings where YouTube thumbnails
+ * fail to load for big channels (MrBeast, Cocomelon, etc.) due to referrer-based
+ * blocking. Step 1 is the bandwidth win: sources are 300-1080px for a 32-48px
+ * circle, so this cuts 80-95% off avatar bytes. See src/lib/avatarUrl.js.
  */
 
 const GRADIENTS = [
@@ -71,8 +75,9 @@ export default function CreatorAvatar({
   rounded = 'rounded-full',
   className = '',
   loading = 'lazy',
+  targetPx,
 }) {
-  // 0 = original src, 1 = proxied src, 2 = give up and show initials
+  // Index into `candidates` below. Advances one rung per onError.
   const [errorStage, setErrorStage] = useState(0);
   const sizeClasses = SIZES[size] || SIZES.md;
 
@@ -83,13 +88,23 @@ export default function CreatorAvatar({
 
   const initials = useMemo(() => getInitials(name || alt), [name, alt]);
 
-  // Pick which URL to render based on current stage
-  let currentSrc = null;
-  if (src && errorStage === 0) {
-    currentSrc = src;
-  } else if (src && errorStage === 1 && shouldRetryViaProxy(src)) {
-    currentSrc = `/api/image-proxy?url=${encodeURIComponent(src)}`;
-  }
+  // URLs to try, in order. Running past the end renders initials.
+  //
+  // The CDN-resized URL goes first: platforms hand us 300-1080px sources for a
+  // 32-48px circle (see src/lib/avatarUrl.js for measurements). The untouched
+  // original is kept as the next rung so that if a CDN ever changes its URL
+  // scheme, avatars degrade to the full-size image the site used to render
+  // rather than to blank initials.
+  const candidates = useMemo(() => {
+    if (!src) return [];
+    const px = targetPx || AVATAR_TARGET_PX[size] || AVATAR_TARGET_PX.md;
+    const resized = resizedAvatarUrl(src, px);
+    const list = resized === src ? [src] : [resized, src];
+    if (shouldRetryViaProxy(src)) list.push(`/api/image-proxy?url=${encodeURIComponent(src)}`);
+    return list;
+  }, [src, size, targetPx]);
+
+  const currentSrc = candidates[errorStage] || null;
 
   // No src, gave up, or initial src wasn't proxyable
   if (!currentSrc) {

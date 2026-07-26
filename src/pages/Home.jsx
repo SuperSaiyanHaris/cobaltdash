@@ -881,12 +881,15 @@ export default function Home() {
   const navigate = useNavigate();
 
   // Live counts from DB.
-  // `count: 'exact'` is exact-but-slow and times out on multi-million row tables;
-  // `count: 'estimated'` uses Postgres reltuples for an instant approximation.
+  // Both use `count: 'estimated'`, which reads Postgres `reltuples` instead of
+  // walking the table. `creators` used to ask for `exact`, which is a full seq
+  // scan over 43K+ rows on every single home page view (~12ms of DB time for a
+  // decorative stat, growing with the table). Checked 2026-07-25: reltuples and
+  // the exact count agreed to the row, and autoanalyze keeps it current.
   // Only positive counts are shown — a failed fetch must not render zeros.
   useEffect(() => {
     Promise.all([
-      supabase.from('creators').select('*', { count: 'exact', head: true }).then(r => r.count),
+      supabase.from('creators').select('*', { count: 'estimated', head: true }).then(r => r.count),
       supabase.from('creator_stats').select('*', { count: 'estimated', head: true }).then(r => r.count),
     ]).then(([creators, dataPoints]) => {
       if (creators > 0 && dataPoints > 0) setLiveStats({ creators, dataPoints });

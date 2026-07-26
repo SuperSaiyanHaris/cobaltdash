@@ -21,7 +21,7 @@ import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
-import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getNearbyRankedCreators } from '../services/creatorService';
+import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
@@ -184,8 +184,9 @@ export default function CreatorProfile() {
   }, [platform, username]);
 
   // Record/rank context is purely supplementary — fetched separately so a
-  // failure here never blocks the main profile load. Nearby creators only
-  // fetched once we know the rank, since it's a range read keyed off it.
+  // failure here never blocks the main profile load. Rank and the neighbouring
+  // creators arrive together from one RPC; fetching nearby creators separately
+  // used to add a third sequential stage to the page's request waterfall.
   useEffect(() => {
     if (!dbCreatorId) return;
     let cancelled = false;
@@ -198,10 +199,7 @@ export default function CreatorProfile() {
         if (cancelled) return;
         setPeakStats(peak);
         setRankContext(rank);
-        if (rank?.rank) {
-          const nearby = await getNearbyRankedCreators(platform, rank.rank);
-          if (!cancelled) setNearbyCreators(nearby);
-        }
+        setNearbyCreators(rank?.nearby || []);
       } catch (err) {
         logger.warn('Failed to load record/rank context:', err);
       }

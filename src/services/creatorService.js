@@ -186,54 +186,66 @@ export const getCreatorPeakStats = withErrorHandling(
   'creatorService.getCreatorPeakStats'
 );
 
-/**
- * Where a creator sits in their platform's ranking. rank is null when the
- * creator doesn't clear the rankings_cache top-500 threshold — callers must
- * hide the stat then, not estimate a rank we don't actually have.
- */
-export const getCreatorRankContext = withErrorHandling(
-  async (creatorId, platform) => {
-    const [{ data: rankRow }, { count }] = await Promise.all([
-      supabase
-        .from('rankings_cache')
-        .select('rank_position')
-        .eq('platform', platform)
-        .eq('rank_type', 'subscribers')
-        .eq('creator_id', creatorId)
-        .maybeSingle(),
-      supabase
-        .from('creators')
-        .select('id', { count: 'exact', head: true })
-        .eq('platform', platform),
-    ]);
-    return { rank: rankRow?.rank_position ?? null, total: count ?? 0 };
-  },
-  'creatorService.getCreatorRankContext'
-);
+// How many creators we track on each platform. Measured 2026-07-25: the exact
+// count for youtube is a 199ms index scan with ~6.2K heap fetches, and it ran
+// once per creator-profile view, which is the site's highest-traffic page type.
+// The number only moves when discovery adds creators (a few times a day), so a
+// per-platform TTL cache collapses a whole browsing session down to one query.
+const _platformTotalCache = new Map();
+const PLATFORM_TOTAL_TTL = 30 * 60 * 1000; // 30 minutes
+
+async function _getPlatformCreatorTotal(platform) {
+  const hit = _platformTotalCache.get(platform);
+  if (hit && Date.now() - hit.ts < PLATFORM_TOTAL_TTL) return hit.total;
+
+  const { count } = await supabase
+    .from('creators')
+    .select('id', { count: 'exact', head: true })
+    .eq('platform', platform);
+
+  // Don't cache a failed count as though it were real — a 0 here would render
+  // "rank 12 of 0". Fall back to the previous value if we have one.
+  if (!count) return hit?.total ?? 0;
+
+  _platformTotalCache.set(platform, { total: count, ts: Date.now() });
+  return count;
+}
 
 /**
- * Creators ranked just above/below this one on the same platform, straight
- * off rankings_cache's (platform, rank_type, rank_position) primary key, so
- * it's a cheap indexed range read, not a new table scan. Only meaningful for
- * creators who clear the top-500 cache; callers must hide the module when
- * rank is null rather than fall back to a weaker signal.
+ * Where a creator sits in their platform's ranking, PLUS the creators ranked
+ * just above and below them, in a single round trip.
+ *
+ * These used to be two sequential calls: read the rank, then range-read the
+ * rows around it. The second could not start until the first came back, which
+ * is what made CreatorProfile a three-stage request waterfall. The
+ * `get_creator_rank_neighbors` RPC does both server-side off rankings_cache's
+ * (platform, rank_type, rank_position) primary key.
+ *
+ * rank is null when the creator doesn't clear the platform's top-500 cache
+ * (the RPC returns no rows at all in that case). Callers must hide the stat
+ * then, not estimate a rank we don't actually have.
  */
-export const getNearbyRankedCreators = withErrorHandling(
-  async (platform, rank, span = 3) => {
-    if (!rank) return [];
-    const { data, error } = await supabase
-      .from('rankings_cache')
-      .select('creator_id, username, display_name, profile_image, subscribers, rank_position')
-      .eq('platform', platform)
-      .eq('rank_type', 'subscribers')
-      .gte('rank_position', Math.max(1, rank - span))
-      .lte('rank_position', rank + span)
-      .neq('rank_position', rank)
-      .order('rank_position', { ascending: true });
+export const getCreatorRankContext = withErrorHandling(
+  async (creatorId, platform, span = 3) => {
+    const [{ data, error }, total] = await Promise.all([
+      supabase.rpc('get_creator_rank_neighbors', {
+        p_platform: platform,
+        p_creator_id: creatorId,
+        p_span: span,
+      }),
+      _getPlatformCreatorTotal(platform),
+    ]);
     if (error) throw error;
-    return (data || []).map((c) => ({ ...c, id: c.creator_id }));
+
+    const rows = data || [];
+    const self = rows.find((r) => r.is_self);
+    const nearby = rows
+      .filter((r) => !r.is_self)
+      .map((c) => ({ ...c, id: c.creator_id }));
+
+    return { rank: self?.rank_position ?? null, total, nearby };
   },
-  'creatorService.getNearbyRankedCreators'
+  'creatorService.getCreatorRankContext'
 );
 
 /**

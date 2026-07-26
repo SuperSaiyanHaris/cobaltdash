@@ -60,8 +60,11 @@ const PLATFORM_LINKS = [
  * CommandPalette — global Cmd+K (or Ctrl+K) search and navigation.
  * Mount once near the app root.
  */
-export default function CommandPalette() {
-  const [open, setOpen] = useState(false);
+// `startOpen` exists for App.jsx's DeferredOverlays: this component is mounted
+// lazily, so when the user hits Cmd+K before the chunk has loaded, the wrapper
+// swallows that keypress and replays it here as the initial open state.
+export default function CommandPalette({ startOpen = false }) {
+  const [open, setOpen] = useState(startOpen);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);

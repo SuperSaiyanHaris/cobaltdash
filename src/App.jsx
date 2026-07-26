@@ -1,15 +1,14 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
-import { Toaster } from 'sonner';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import BackToTop from './components/BackToTop';
 import ErrorBoundary from './components/ErrorBoundary';
-import CommandPalette from './components/CommandPalette';
 import AuthPanel from './components/AuthPanel';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { isMac } from './lib/platform';
 
 // Eagerly load the homepage (critical path)
 import Home from './pages/Home';
@@ -67,6 +66,89 @@ const Milestones = lazyWithRetry(() => import('./pages/Milestones'));
 const HubPage = lazyWithRetry(() => import('./pages/HubPage'));
 const HubIndex = lazyWithRetry(() => import('./pages/HubPage').then((m) => ({ default: m.HubIndex })));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
+
+// cmdk (command palette) and sonner (toasts) are 23 KB gzip between them, and
+// neither is needed to paint anything. Both are pulled out of the critical
+// bundle and mounted once the browser goes idle instead.
+const CommandPalette = lazyWithRetry(() => import('./components/CommandPalette'));
+const Toaster = lazyWithRetry(() => import('sonner').then((m) => ({ default: m.Toaster })));
+
+/**
+ * Mounts the command palette and the toast host after first idle.
+ *
+ * While waiting, this holds the palette's own trigger listeners (Cmd/Ctrl+K,
+ * `/`, and the `openCommandPalette` event that Header and Home dispatch) so an
+ * early trigger isn't dropped on the floor — it mounts immediately and passes
+ * `startOpen` through. Idle normally fires within ~100ms of load, and the only
+ * toast that fires without user input is Account's post-Stripe one behind a
+ * 2000ms timer, so the toast host is always listening before it's needed.
+ */
+function DeferredOverlays() {
+  const [mounted, setMounted] = useState(false);
+  const [startOpen, setStartOpen] = useState(false);
+
+  useEffect(() => {
+    if (mounted) return undefined;
+
+    let idleId;
+    let timerId;
+    const mount = (openPalette) => {
+      if (openPalette) setStartOpen(true);
+      setMounted(true);
+    };
+
+    const onKey = (e) => {
+      const modPressed = isMac ? e.metaKey : e.ctrlKey;
+      const isSlashOpen =
+        e.key === '/' &&
+        !['INPUT', 'TEXTAREA'].includes(e.target.tagName) &&
+        !e.target.isContentEditable;
+      if ((modPressed && e.key.toLowerCase() === 'k') || isSlashOpen) {
+        e.preventDefault();
+        mount(true);
+      }
+    };
+    const onOpenEvent = () => mount(true);
+
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('openCommandPalette', onOpenEvent);
+
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(() => mount(false), { timeout: 3000 });
+    } else {
+      timerId = setTimeout(() => mount(false), 1500);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('openCommandPalette', onOpenEvent);
+      if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [mounted]);
+
+  if (!mounted) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <CommandPalette startOpen={startOpen} />
+      <Toaster
+        position="bottom-right"
+        theme="light"
+        richColors
+        closeButton
+        toastOptions={{
+          style: {
+            background: '#ffffff',
+            border: '1px solid #e5e5e5',
+            color: '#0a0a0a',
+            boxShadow: '0 12px 24px -6px rgb(0 0 0 / 0.10), 0 6px 12px -6px rgb(0 0 0 / 0.06)',
+          },
+        }}
+      />
+    </Suspense>
+  );
+}
 
 // Minimal loading fallback
 function PageLoader() {
@@ -199,21 +281,7 @@ function App() {
     <AuthProvider>
       <LayoutWrapper />
       <AuthPanelHost />
-      <CommandPalette />
-      <Toaster
-        position="bottom-right"
-        theme="light"
-        richColors
-        closeButton
-        toastOptions={{
-          style: {
-            background: '#ffffff',
-            border: '1px solid #e5e5e5',
-            color: '#0a0a0a',
-            boxShadow: '0 12px 24px -6px rgb(0 0 0 / 0.10), 0 6px 12px -6px rgb(0 0 0 / 0.06)',
-          },
-        }}
-      />
+      <DeferredOverlays />
     </AuthProvider>
     </MotionConfig>
   );
