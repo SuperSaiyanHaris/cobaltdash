@@ -9,13 +9,13 @@
 // Functions and Vercel don't share an env store.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { emailShell, ctaButton, categoryPill, escapeHtml, SITE_URL } from "../_shared/emailTheme.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const ADMIN_EMAILS = (Deno.env.get("ADMIN_EMAILS") || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 const FROM_EMAIL = "ShinyPull <newsletter@shinypull.com>";
-const SITE_URL = "https://shinypull.com";
 
 const ALLOWED_ORIGINS = new Set([
   "https://shinypull.com",
@@ -35,29 +35,19 @@ function corsHeaders(origin: string | null) {
   return headers;
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]!));
-}
-
-function buildEmailHtml(post: { title: string; description: string; image: string | null; slug: string }, unsubscribeUrl: string) {
+function buildEmailHtml(
+  post: { title: string; description: string; image: string | null; slug: string; category?: string | null; read_time?: string | null },
+  unsubscribeUrl: string,
+) {
   const postUrl = `${SITE_URL}/blog/${post.slug}`;
-  return `
-  <div style="background:#fafaf9;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-    <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;overflow:hidden;">
-      ${post.image ? `<img src="${escapeHtml(post.image)}" alt="" style="width:100%;height:220px;object-fit:cover;display:block;" />` : ""}
-      <div style="padding:32px;">
-        <p style="margin:0 0 16px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#a8a29e;">New on ShinyPull</p>
-        <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;font-weight:700;color:#1c1917;letter-spacing:-0.01em;">${escapeHtml(post.title)}</h1>
-        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#44403c;">${escapeHtml(post.description)}</p>
-        <a href="${postUrl}" style="display:inline-block;background:#1c1917;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 22px;border-radius:8px;">
-          Read the full post
-        </a>
-        <p style="margin:32px 0 0;font-size:12px;color:#a8a29e;">
-          You're getting this because you subscribed to ShinyPull updates. <a href="${unsubscribeUrl}" style="color:#a8a29e;">Unsubscribe</a>.
-        </p>
-      </div>
-    </div>
-  </div>`;
+  const content = `
+    <div style="margin:0 0 16px;">${categoryPill(post.category)}</div>
+    <h1 style="margin:0 0 12px;font-size:25px;line-height:1.3;font-weight:800;color:#1c1917;letter-spacing:-0.015em;">${escapeHtml(post.title)}</h1>
+    ${post.read_time ? `<p style="margin:0 0 16px;font-size:12px;color:#a8a29e;">${escapeHtml(post.read_time)}</p>` : ""}
+    <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#57534e;">${escapeHtml(post.description)}</p>
+    ${ctaButton(postUrl, "Read the full post")}
+  `;
+  return emailShell({ contentHtml: content, imageUrl: post.image, unsubscribeUrl });
 }
 
 async function verifyAdmin(req: Request): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
@@ -104,7 +94,7 @@ Deno.serve(async (req) => {
 
   const { data: post, error: postError } = await sb
     .from("blog_posts")
-    .select("id, title, description, image, slug, is_published, newsletter_sent_at")
+    .select("id, title, description, image, slug, category, read_time, is_published, newsletter_sent_at")
     .eq("id", postId)
     .maybeSingle();
 

@@ -11,12 +11,12 @@
 // subscribed, so the response never leaks whether an address is on the list.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { emailShell, ctaButton, SITE_URL } from "../_shared/emailTheme.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = "ShinyPull <newsletter@shinypull.com>";
-const SITE_URL = "https://shinypull.com";
 
 const ALLOWED_ORIGINS = new Set([
   "https://shinypull.com",
@@ -48,24 +48,37 @@ function corsHeaders(origin: string | null) {
   return headers;
 }
 
+function buildWelcomeHtml(unsubscribeUrl: string): string {
+  const bullet = (label: string, copy: string) => `
+    <tr>
+      <td style="padding:0 0 16px;vertical-align:top;width:20px;">
+        <span style="display:inline-block;width:6px;height:6px;margin-top:7px;border-radius:999px;background:#1c1917;"></span>
+      </td>
+      <td style="padding:0 0 16px;vertical-align:top;">
+        <p style="margin:0;font-size:14px;line-height:1.5;color:#44403c;"><strong style="color:#1c1917;">${label}.</strong> ${copy}</p>
+      </td>
+    </tr>`;
+
+  const content = `
+    <p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#a8a29e;">Welcome</p>
+    <h1 style="margin:0 0 14px;font-size:28px;line-height:1.25;font-weight:800;color:#1c1917;letter-spacing:-0.02em;">You're on the list</h1>
+    <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#57534e;">
+      From now on, we'll email you whenever there's something worth reading.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 30px;">
+      ${bullet("Creator milestones", "The moments that matter: a channel crossing a big number, a record-setting stream.")}
+      ${bullet("Platform data", "What's actually changing on YouTube, Twitch, TikTok, and the rest, backed by real numbers.")}
+      ${bullet("Growth breakdowns", "Head-to-heads and trend lines pulled straight from the data we track every day.")}
+    </table>
+    ${ctaButton(`${SITE_URL}/blog`, "Read the blog")}
+  `;
+
+  return emailShell({ contentHtml: content, unsubscribeUrl });
+}
+
 async function sendWelcomeEmail(email: string, unsubscribeToken: string) {
   const unsubscribeUrl = `${SITE_URL}/newsletter/unsubscribe?token=${unsubscribeToken}`;
-  const html = `
-  <div style="background:#fafaf9;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-    <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;padding:32px;">
-      <p style="margin:0 0 20px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#a8a29e;">ShinyPull</p>
-      <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#1c1917;letter-spacing:-0.01em;">You're subscribed</h1>
-      <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#44403c;">
-        You'll get an email whenever we publish something new: creator milestones, platform data, growth breakdowns.
-      </p>
-      <a href="${SITE_URL}/blog" style="display:inline-block;background:#1c1917;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:8px;">
-        Read the blog
-      </a>
-      <p style="margin:32px 0 0;font-size:12px;color:#a8a29e;">
-        Didn't sign up for this? <a href="${unsubscribeUrl}" style="color:#a8a29e;">Unsubscribe</a>.
-      </p>
-    </div>
-  </div>`;
+  const html = buildWelcomeHtml(unsubscribeUrl);
 
   await fetch("https://api.resend.com/emails", {
     method: "POST",

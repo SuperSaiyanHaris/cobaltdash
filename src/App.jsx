@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -49,7 +49,7 @@ const Privacy = lazyWithRetry(() => import('./pages/Privacy'));
 const Terms = lazyWithRetry(() => import('./pages/Terms'));
 const Blog = lazyWithRetry(() => import('./pages/Blog'));
 const BlogPost = lazyWithRetry(() => import('./pages/BlogPost'));
-const BlogAdmin = lazyWithRetry(() => import('./pages/BlogAdmin'));
+const Admin = lazyWithRetry(() => import('./pages/Admin'));
 const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'));
 const AuthPage = lazyWithRetry(() => import('./pages/AuthPage'));
 const Calculator = lazyWithRetry(() => import('./pages/Calculator'));
@@ -261,7 +261,8 @@ function LayoutWrapper() {
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
-          <Route path="/blog/admin" element={<BlogAdmin />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/blog/admin" element={<Navigate to="/admin" replace />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
