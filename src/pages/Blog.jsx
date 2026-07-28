@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, Loader2, BookOpen, Filter, X, Search } from 'lucide-react';
 import SEO from '../components/SEO';
+import NewsletterSignup from '../components/NewsletterSignup';
 import { getAllPosts, getAllCategories } from '../services/blogService';
 
 const PAGE_SIZE = 9;
@@ -365,8 +366,11 @@ export default function Blog() {
                   </div>
                 )}
 
+                {/* Newsletter */}
+                <NewsletterSignup className="mt-16" />
+
                 {/* CTA */}
-                <div className="mt-16 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-8 md:p-12 text-center">
+                <div className="mt-8 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-8 md:p-12 text-center">
                   <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-neutral-900 mb-3">
                     Track Your Channel's Growth
                   </h2>

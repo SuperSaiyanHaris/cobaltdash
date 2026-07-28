@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BarChart3 } from 'lucide-react';
+import NewsletterSignup from './NewsletterSignup';
 import MusicIcon from './MusicIcon';
 import YouTubeIcon from './YouTubeIcon';
 import TwitchIcon from './TwitchIcon';
@@ -52,6 +53,11 @@ export default function Footer() {
 
   return (
     <footer className="bg-white border-t border-neutral-200 mt-auto">
+      <div className="border-b border-neutral-200 bg-neutral-50">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <NewsletterSignup variant="bar" />
+        </div>
+      </div>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-10">
 

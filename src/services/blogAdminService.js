@@ -113,6 +113,38 @@ export const togglePublish = withErrorHandling(
 );
 
 /**
+ * Send the launch newsletter for a published post to all active subscribers.
+ * Calls the newsletter-send Supabase Edge Function directly (not the Vercel
+ * /api/blog-admin route -- see CLAUDE.md's Vercel function cap note, new
+ * endpoints go to Edge Functions).
+ */
+export const sendNewsletter = withErrorHandling(
+  async (postId) => {
+    const token = await getAuthToken();
+    const { data, error } = await supabase.functions.invoke('newsletter-send', {
+      body: { postId },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (error) {
+      // supabase-js surfaces non-2xx responses as a generic FunctionsHttpError
+      // without the JSON body attached in a stable way across versions, so
+      // pull our own error message back out of the response when present.
+      const context = error.context;
+      let message = error.message;
+      try {
+        const body = await context?.json?.();
+        if (body?.error) message = body.error;
+      } catch {
+        // ignore -- fall back to the generic message
+      }
+      throw new Error(message);
+    }
+    return data;
+  },
+  'blogAdminService.sendNewsletter'
+);
+
+/**
  * Generate slug from title
  */
 export function generateSlug(title) {

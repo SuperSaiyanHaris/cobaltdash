@@ -16,6 +16,8 @@ import {
   ExternalLink,
   ShieldAlert,
   FileText,
+  Mail,
+  Send,
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import BlogContent from '../components/BlogContent';
@@ -29,6 +31,7 @@ import {
   deletePost,
   togglePublish,
   generateSlug,
+  sendNewsletter,
 } from '../services/blogAdminService';
 
 const emptyPost = {
@@ -64,6 +67,10 @@ export default function BlogAdmin() {
 
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState({ id: null });
+
+  // Newsletter send confirmation + in-flight state
+  const [sendConfirm, setSendConfirm] = useState({ id: null });
+  const [sendingId, setSendingId] = useState(null);
 
   // Form validation errors
   const [postErrors, setPostErrors] = useState({});
@@ -228,6 +235,26 @@ export default function BlogAdmin() {
       showSuccess(post.is_published ? 'Post unpublished' : 'Post published!');
     } catch (err) {
       showError('Failed to update publish status');
+    }
+  }
+
+  async function handleSendNewsletter(post) {
+    try {
+      setSendingId(post.id);
+      const result = await sendNewsletter(post.id);
+      await fetchData();
+      setSendConfirm({ id: null });
+      if (result.sent === 0) {
+        showSuccess('No active subscribers yet — marked as sent.');
+      } else if (result.complete) {
+        showSuccess(`Sent to ${result.sent} subscriber${result.sent === 1 ? '' : 's'}!`);
+      } else {
+        showError(`Only sent ${result.sent} of ${result.total} — check and retry.`);
+      }
+    } catch (err) {
+      showError(err.message || 'Failed to send newsletter');
+    } finally {
+      setSendingId(null);
     }
   }
 
@@ -483,6 +510,17 @@ export default function BlogAdmin() {
                                 <ExternalLink className="w-4 h-4 text-neutral-700" />
                               </a>
                             )}
+                            {post.is_published && (
+                              post.newsletter_sent_at ? (
+                                <span className="p-2 text-emerald-600" title={`Newsletter sent ${new Date(post.newsletter_sent_at).toLocaleDateString()}`}>
+                                  <Mail className="w-4 h-4" />
+                                </span>
+                              ) : (
+                                <button onClick={() => setSendConfirm({ id: post.id })} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors" title="Send newsletter to subscribers">
+                                  <Send className="w-4 h-4 text-neutral-700" />
+                                </button>
+                              )
+                            )}
                             <button onClick={() => handleTogglePostPublish(post)} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors" title={post.is_published ? 'Unpublish' : 'Publish'}>
                               {post.is_published ? <EyeOff className="w-4 h-4 text-neutral-700" /> : <Eye className="w-4 h-4 text-neutral-700" />}
                             </button>
@@ -506,6 +544,22 @@ export default function BlogAdmin() {
                         <div className="flex gap-2">
                           <button onClick={() => handleDeletePost(post.id)} className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors">Delete</button>
                           <button onClick={() => setDeleteConfirm({ id: null })} className="px-3 py-1.5 bg-white text-neutral-700 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50 transition-colors">Cancel</button>
+                        </div>
+                      </div>
+                    )}
+                    {sendConfirm.id === post.id && (
+                      <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                        <p className="text-sm text-neutral-700 mb-3">Email "{post.title}" to everyone subscribed to the newsletter? This can't be undone.</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSendNewsletter(post)}
+                            disabled={sendingId === post.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 text-white text-sm rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                          >
+                            {sendingId === post.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                            Send Newsletter
+                          </button>
+                          <button onClick={() => setSendConfirm({ id: null })} disabled={sendingId === post.id} className="px-3 py-1.5 bg-white text-neutral-700 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50 transition-colors disabled:opacity-50">Cancel</button>
                         </div>
                       </div>
                     )}

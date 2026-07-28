@@ -65,6 +65,7 @@ const Trending = lazyWithRetry(() => import('./pages/Trending'));
 const Milestones = lazyWithRetry(() => import('./pages/Milestones'));
 const HubPage = lazyWithRetry(() => import('./pages/HubPage'));
 const HubIndex = lazyWithRetry(() => import('./pages/HubPage').then((m) => ({ default: m.HubIndex })));
+const NewsletterUnsubscribe = lazyWithRetry(() => import('./pages/NewsletterUnsubscribe'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 
 // cmdk (command palette) and sonner (toasts) are 23 KB gzip between them, and
@@ -259,6 +260,7 @@ function LayoutWrapper() {
           <Route path="/promote" element={<Promote />} />
           <Route path="/refunds" element={<Refunds />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
           <Route path="/blog/admin" element={<BlogAdmin />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/methodology" element={<Methodology />} />

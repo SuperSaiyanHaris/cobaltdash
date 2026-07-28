@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
+import NewsletterSignup from '../components/NewsletterSignup';
 import StructuredData, { createBlogPostingSchema, createBreadcrumbSchema } from '../components/StructuredData';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ShareButtons from '../components/ShareButtons';
@@ -186,6 +187,9 @@ export default function BlogPost() {
               <BlogContent content={post.content} category={post.category} />
             </div>
           </article>
+
+          {/* Newsletter */}
+          <NewsletterSignup className="mt-8" />
 
           {/* Related Posts */}
           {relatedPosts.length > 0 && (
