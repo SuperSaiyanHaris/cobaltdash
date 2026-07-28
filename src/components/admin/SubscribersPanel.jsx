@@ -96,9 +96,9 @@ export default function SubscribersPanel() {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
         <p className="text-sm text-neutral-500">{active} active &middot; {total} total</p>
-        <div className="relative w-full max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input
             type="text"
@@ -127,7 +127,7 @@ export default function SubscribersPanel() {
           {filtered.map(sub => {
             const isUnsubscribed = !!sub.unsubscribed_at;
             return (
-              <div key={sub.id} className="flex items-center justify-between gap-4 px-5 py-3.5">
+              <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-5 py-3.5">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-neutral-900 truncate">{sub.email}</p>
                   <p className="text-xs text-neutral-400 mt-0.5">
@@ -135,6 +135,7 @@ export default function SubscribersPanel() {
                     {isUnsubscribed && ` · Unsubscribed ${new Date(sub.unsubscribed_at).toLocaleDateString()}`}
                   </p>
                 </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                   isUnsubscribed ? 'bg-neutral-100 text-neutral-500' : 'bg-emerald-50 text-emerald-700'
                 }`}>
@@ -155,6 +156,7 @@ export default function SubscribersPanel() {
                   )}
                   {isUnsubscribed ? 'Resubscribe' : 'Unsubscribe'}
                 </button>
+                </div>
               </div>
             );
           })}

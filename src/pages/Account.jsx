@@ -678,7 +678,7 @@ export default function Account() {
                   <div className={`${CARD} p-6`}>
                     <h2 className="text-base font-medium text-neutral-900 mb-1">Change Password</h2>
                     <p className="text-sm text-neutral-500 mb-5">Pick a strong password, at least 8 characters.</p>
-                    <form onSubmit={handleChangePassword} className="space-y-2.5">
+                    <form onSubmit={handleChangePassword} className="space-y-2.5 max-w-sm">
                       <div className="relative">
                         <input
                           type={showNew ? 'text' : 'password'}
