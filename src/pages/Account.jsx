@@ -319,7 +319,7 @@ export default function Account() {
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Page header — big bold title, "Back" pill */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             <Link
               to="/dashboard"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 rounded-full border border-neutral-200 text-xs font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
@@ -334,7 +334,7 @@ export default function Account() {
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
           {/* Identity card — one unified card, avatar + name + email + at-a-glance stats */}
           <div className={`${CARD} p-5 sm:p-6 mb-6 flex items-center flex-wrap gap-4`}>

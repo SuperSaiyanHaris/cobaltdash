@@ -76,7 +76,7 @@ export default function Admin() {
 
       <div className="min-h-screen bg-[#fafaf9]">
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <Link to="/" className="inline-flex items-center gap-1.5 px-3 py-1 -ml-3 mb-3 rounded-full text-xs font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" />
               Back
@@ -86,7 +86,7 @@ export default function Admin() {
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-1.5 mb-6">
             {TABS.map(tab => {
               const isActive = activeTab === tab.id;

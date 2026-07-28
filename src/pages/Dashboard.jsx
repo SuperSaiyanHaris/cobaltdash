@@ -518,7 +518,7 @@ export default function Dashboard() {
 
         {/* Page header — big bold title, live badge */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 flex items-end justify-between gap-6">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
                 Welcome back{displayName ? `, ${displayName}` : ''}.
@@ -536,7 +536,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
           {/* Stat card — one unified card, hairline-divided cells */}
           <div className={`grid grid-cols-3 divide-x divide-neutral-200/80 ${CARD} mb-6`}>
@@ -938,7 +938,7 @@ export default function Dashboard() {
                           Clear all
                         </button>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                         {recentlyViewed.slice(recentlyViewedIndex, recentlyViewedIndex + 8).map((creator, idx) => {
                           const PlatformIcon = platformIcons[creator.platform] || Users;
                           const tint = platformTint[creator.platform] || 'text-neutral-400';
