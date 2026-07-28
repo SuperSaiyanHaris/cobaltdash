@@ -2240,10 +2240,19 @@ export default function CreatorProfile() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-right text-neutral-700">
-                                {stat.viewsChange > 0
-                                  ? formatEarnings(stat.viewsChange / 1000 * 2, stat.viewsChange / 1000 * 7)
-                                  : '—'
-                                }
+                                {(() => {
+                                  // YouTube's public view counter doesn't tick every single day for
+                                  // every channel (verified: Cocomelon goes flat for a day then jumps
+                                  // by 2-3 days' worth at once, while e.g. PewDiePie/T-Series update
+                                  // smoothly daily) -- it's a real per-channel API reporting artifact,
+                                  // not a missed collection. A flat day here does NOT mean zero real
+                                  // views/revenue that day, so fall back to the channel's own trailing
+                                  // 30-day daily average instead of hiding the estimate as "no data".
+                                  const viewsForEstimate = stat.viewsChange > 0 ? stat.viewsChange : metrics.dailyAverage.views;
+                                  return viewsForEstimate > 0
+                                    ? formatEarnings(viewsForEstimate / 1000 * 2, viewsForEstimate / 1000 * 7)
+                                    : '—';
+                                })()}
                               </td>
                             </>
                           )}
