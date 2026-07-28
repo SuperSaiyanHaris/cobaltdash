@@ -5,6 +5,24 @@
  * hours watched metrics for each Twitch creator.
  *
  * Should run daily after the stats collection job.
+ *
+ * SAMPLE-QUALITY GATE (added 2026-07-27). hours_watched for a session is
+ * avg_viewers * duration, and avg_viewers is only as good as how many viewer
+ * samples went into it. A session finalised from 1-2 samples isn't really an
+ * average, it's one or two point-in-time readings multiplied across the
+ * whole session, which can be wildly off if viewership moved during the gap.
+ * Checked against the current stream monitor cadence (still throttled by
+ * GitHub Actions despite the 2026-07-26 poller rewrite): over 30K sessions in
+ * the last 7 days alone had 1-2 samples.
+ *
+ * MIN_SAMPLES_FOR_AGGREGATE excludes sessions below that bar from the
+ * hours_watched_day/week/month numbers actually shown on the site. This does
+ * NOT touch stream_sessions.hours_watched itself, that stays as computed for
+ * anyone auditing raw data, and does not delete or zero out anything. It only
+ * changes what feeds the aggregate: an honest undercount from well-sampled
+ * streams only, instead of a falsely precise-looking number built partly from
+ * single-sample guesses. Same principle CLAUDE.md already applies to
+ * followers: when in doubt, don't write a shaky number as if it were solid.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -18,6 +36,30 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_S
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false },
 });
+
+// Minimum viewer_samples a finalised session needs before its hours_watched
+// counts toward the aggregate. 1 sample is a single point-in-time reading
+// multiplied across the whole session, not a real average; 2 is still thin
+// but at least reflects a start and an end reading rather than one guess.
+const MIN_SAMPLES_FOR_AGGREGATE = 2;
+
+/**
+ * Splits sessions into ones that clear MIN_SAMPLES_FOR_AGGREGATE and ones that
+ * don't. Sessions with sample_count === null are pre-backfill legacy rows;
+ * excluded rather than assumed reliable.
+ */
+function filterBySampleQuality(sessions) {
+  const included = [];
+  const excluded = [];
+  for (const s of sessions || []) {
+    if (typeof s.sample_count === 'number' && s.sample_count >= MIN_SAMPLES_FOR_AGGREGATE) {
+      included.push(s);
+    } else {
+      excluded.push(s);
+    }
+  }
+  return { included, excluded };
+}
 
 /**
  * Get today's date in America/New_York timezone (YYYY-MM-DD format)
@@ -107,44 +149,53 @@ async function aggregateHoursWatched() {
   console.log(`Processing ${creators.length} Twitch creators with session history...\n`);
 
   let updatedCount = 0;
+  let excludedLowSampleTotal = 0;
 
   for (const creator of creators) {
     // Get streams that ended TODAY (for daily snapshot)
-    const { data: todaySessions } = await supabase
+    const { data: todaySessionsRaw } = await supabase
       .from('stream_sessions')
-      .select('hours_watched, peak_viewers, avg_viewers')
+      .select('hours_watched, peak_viewers, avg_viewers, sample_count')
       .eq('creator_id', creator.id)
       .gte('ended_at', todayStart.toISOString())
       .lte('ended_at', todayEnd.toISOString())
       .not('ended_at', 'is', null);
 
     // Get completed stream sessions for different time periods (rolling windows)
-    const { data: daySessions } = await supabase
+    const { data: daySessionsRaw } = await supabase
       .from('stream_sessions')
-      .select('hours_watched, peak_viewers, avg_viewers')
+      .select('hours_watched, peak_viewers, avg_viewers, sample_count')
       .eq('creator_id', creator.id)
       .gte('ended_at', dayAgo.toISOString())
       .not('ended_at', 'is', null);
 
-    const { data: weekSessions } = await supabase
+    const { data: weekSessionsRaw } = await supabase
       .from('stream_sessions')
-      .select('hours_watched, peak_viewers, avg_viewers')
+      .select('hours_watched, peak_viewers, avg_viewers, sample_count')
       .eq('creator_id', creator.id)
       .gte('ended_at', weekAgo.toISOString())
       .not('ended_at', 'is', null);
 
-    const { data: monthSessions } = await supabase
+    const { data: monthSessionsRaw } = await supabase
       .from('stream_sessions')
-      .select('hours_watched, peak_viewers, avg_viewers')
+      .select('hours_watched, peak_viewers, avg_viewers, sample_count')
       .eq('creator_id', creator.id)
       .gte('ended_at', monthAgo.toISOString())
       .not('ended_at', 'is', null);
 
+    // Quality gate: only well-sampled sessions feed the numbers shown on the
+    // site. See MIN_SAMPLES_FOR_AGGREGATE comment at the top of this file.
+    const today = filterBySampleQuality(todaySessionsRaw);
+    const day = filterBySampleQuality(daySessionsRaw);
+    const week = filterBySampleQuality(weekSessionsRaw);
+    const month = filterBySampleQuality(monthSessionsRaw);
+    excludedLowSampleTotal += month.excluded.length;
+
     // Calculate aggregates
-    const todayStats = aggregateSessions(todaySessions || []);
-    const dayStats = aggregateSessions(daySessions || []);
-    const weekStats = aggregateSessions(weekSessions || []);
-    const monthStats = aggregateSessions(monthSessions || []);
+    const todayStats = aggregateSessions(today.included);
+    const dayStats = aggregateSessions(day.included);
+    const weekStats = aggregateSessions(week.included);
+    const monthStats = aggregateSessions(month.included);
 
     // UPDATE only — never insert. collectDailyStats.js is responsible for
     // creating the row with correct subscriber data. If we used upsert here,
@@ -172,6 +223,7 @@ async function aggregateHoursWatched() {
   }
 
   console.log(`\n📊 Updated ${updatedCount} creators with hours watched data`);
+  console.log(`   ⚠️  ${excludedLowSampleTotal} sessions (within the 30-day window) excluded for having fewer than ${MIN_SAMPLES_FOR_AGGREGATE} viewer samples`);
 }
 
 function aggregateSessions(sessions) {
