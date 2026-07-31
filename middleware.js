@@ -949,13 +949,29 @@ export default async function middleware(request) {
     html = html.replace('</head>', '  <meta name="robots" content="noindex, follow" />\n  </head>');
   }
 
+  // Blog posts get a much shorter stale-while-revalidate window than other
+  // DB-backed pages. Unlike profile/rankings pages (always regenerated from
+  // live DB data, no "wrong first draft" possible), a freshly published blog
+  // post is routinely still being tweaked (image swaps, copy fixes) in the
+  // minutes right after it goes live. The generic 86400s (24h) swr window
+  // meant an external cache-respecting client (e.g. a social platform's link
+  // unfurl bot) that fetched the page once, before an edit landed, could keep
+  // serving that stale snapshot for up to a full day before checking again,
+  // with no way for us to force a refresh (X retired its public Card
+  // Validator). Confirmed 2026-07-31: a blog post's og:image was edited 3x
+  // shortly after publish, and X's link-preview card stayed stuck on
+  // (apparently) the first, unfinished attempt for the rest of the session
+  // despite every edit being immediately correct at direct fetch. 3600s (1h)
+  // still meaningfully cuts Supabase read load while bounding the worst case.
+  const isBlogPost = content?.status === 'ok' && content.canonicalPath?.startsWith('/blog/');
+
   return new Response(html, {
     headers: {
       'content-type': 'text/html;charset=UTF-8',
       // DB-backed pages cache longer at the edge (Vercel purges on deploy);
       // meta-only pages keep the short TTL.
       'cache-control': content?.status === 'ok'
-        ? 'public, s-maxage=300, stale-while-revalidate=86400'
+        ? `public, s-maxage=300, stale-while-revalidate=${isBlogPost ? 3600 : 86400}`
         : 'public, s-maxage=60, stale-while-revalidate=3600',
     },
   });
