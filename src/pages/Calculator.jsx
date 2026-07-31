@@ -6,6 +6,7 @@ import { searchChannels } from '../services/youtubeService';
 import { supabase } from '../lib/supabase';
 import SEO from '../components/SEO';
 import YouTubeIcon from '../components/YouTubeIcon';
+import CreatorAvatar from '../components/CreatorAvatar';
 import { formatNumber } from '../lib/utils';
 
 const currencies = [
@@ -329,7 +330,7 @@ export default function Calculator() {
 
                   {selectedCreator ? (
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 border border-neutral-300 rounded-xl">
-                      <img src={selectedCreator.profileImage} alt={selectedCreator.displayName} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                      <CreatorAvatar src={selectedCreator.profileImage} name={selectedCreator.displayName} size="md" rounded="rounded-lg" className="flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-neutral-900 truncate">{selectedCreator.displayName}</p>
                         <p className="text-xs text-neutral-500">{formatNumber(selectedCreator.subscribers)} subscribers</p>
@@ -371,7 +372,7 @@ export default function Calculator() {
                         <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-neutral-300 rounded-xl shadow-xl z-10 max-h-64 overflow-y-auto">
                           {searchResults.map((result) => (
                             <button key={result.platformId} onClick={() => selectCreator(result)} className="w-full flex items-center gap-3 p-3 hover:bg-neutral-50 transition-colors text-left">
-                              <img src={result.profileImage} alt={result.displayName} className="w-10 h-10 rounded-lg object-cover" />
+                              <CreatorAvatar src={result.profileImage} name={result.displayName} size="md" rounded="rounded-lg" />
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-neutral-900 truncate">{result.displayName}</p>
                                 <p className="text-xs text-neutral-500">{formatNumber(result.subscribers)} subs</p>

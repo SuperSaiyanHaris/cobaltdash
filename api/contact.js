@@ -29,6 +29,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Server-side origin validation — reject direct curl/bot requests not from our frontend
+  if (!allowedOrigins.includes(origin)) {
+    return res.status(403).end();
+  }
+
   // Rate limiting: 3 requests per minute per IP
   const clientId = getClientIdentifier(req);
   const rateLimit = checkRateLimit(`contact:${clientId}`, 3, 60000);

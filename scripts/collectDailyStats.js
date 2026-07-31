@@ -4,7 +4,8 @@ config();
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_KEY) { console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY is not set. Refusing to run without it.'); process.exit(1); }
 const YOUTUBE_API_KEY = process.env.VITE_YOUTUBE_API_KEY;
 const TWITCH_CLIENT_ID = process.env.VITE_TWITCH_CLIENT_ID;
 const TWITCH_CLIENT_SECRET = process.env.VITE_TWITCH_CLIENT_SECRET;

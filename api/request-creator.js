@@ -7,9 +7,30 @@ import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
 
 export default async function handler(req, res) {
-  // Only allow POST requests
+  const allowedOrigins = [
+    'https://shinypull.com',
+    'https://www.shinypull.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Server-side origin validation — reject direct curl/bot requests not from our frontend
+  if (!allowedOrigins.includes(origin)) {
+    return res.status(403).end();
   }
 
   // Rate limit: max 5 requests per minute per IP
