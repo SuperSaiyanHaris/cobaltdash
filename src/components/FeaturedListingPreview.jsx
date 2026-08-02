@@ -9,7 +9,7 @@
  *
  * Pass `topCreators` to render real names + avatars. If empty, falls back
  * to canonical YouTube top-5 so the preview never looks blank. Each row's
- * share bar and growth chip and the "Updated" timestamp come from real data
+ * growth chip and the "Updated" timestamp come from real data
  * (rankings_cache.growth_30d / computed_at) — nothing in the table is
  * fabricated except the clearly-labeled sponsored demo row.
  */
@@ -26,7 +26,6 @@ const SPONSORED_INDEX = 3; // After rank #3, before #4 — mirrors /rankings inj
 export default function FeaturedListingPreview({ topCreators = [], showCtas = true }) {
   const rows = (topCreators.length > 0 ? topCreators : Array(5).fill(null)).slice(0, 5);
   const updatedAt = topCreators[0]?.computedAt;
-  const maxValue = rows[0]?.subscribers;
 
   return (
     <motion.div
@@ -75,7 +74,6 @@ export default function FeaturedListingPreview({ topCreators = [], showCtas = tr
                 rank={i + 1}
                 creator={creator}
                 fallbackName={FALLBACK_NAMES[i]}
-                maxValue={maxValue}
               />,
             ];
             if (i === SPONSORED_INDEX - 1) {

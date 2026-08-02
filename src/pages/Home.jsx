@@ -410,6 +410,52 @@ function ChampionsGrid({ tops }) {
   );
 }
 
+// Display order for the top-3 podium: 2nd (left), 1st (center, raised), 3rd
+// (right) — real hierarchy via size and position instead of a colored bar.
+const PODIUM_ORDER = [2, 1, 3];
+const PODIUM_TIER = {
+  1: { stripe: 'border-t-amber-400', rank: 'text-amber-600' },
+  2: { stripe: 'border-t-neutral-300', rank: 'text-neutral-500' },
+  3: { stripe: 'border-t-orange-300', rank: 'text-orange-600' },
+};
+
+function RankingPodium({ creators, fallbackNames }) {
+  return (
+    <div className="flex items-end gap-2 sm:gap-3">
+      {PODIUM_ORDER.map((rank) => {
+        const creator = creators[rank - 1];
+        const displayName = creator?.display_name || fallbackNames[rank - 1];
+        const isFirst = rank === 1;
+        const tier = PODIUM_TIER[rank];
+        const growth = creator?.growth30d;
+        return (
+          <div
+            key={rank}
+            className={`flex-1 min-w-0 bg-white border border-neutral-200/80 border-t-[3px] ${tier.stripe} rounded-xl text-center ${
+              isFirst ? '-mt-3 pt-5 pb-4 px-2 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.18)]' : 'pt-4 pb-3 px-2'
+            }`}
+          >
+            <p className={`text-[11px] font-extrabold mb-2 ${tier.rank}`}>#{rank}</p>
+            <div className="flex justify-center mb-2">
+              <CreatorAvatar src={creator?.profile_image} name={displayName} size={isFirst ? 'lg' : 'md'} />
+            </div>
+            <p className={`font-bold text-neutral-900 truncate ${isFirst ? 'text-[13px]' : 'text-[11px]'}`}>{displayName}</p>
+            <p className={`font-extrabold text-neutral-900 tabular-nums leading-tight mt-1 ${isFirst ? 'text-xl' : 'text-base'}`}>
+              {creator?.subscribers ? formatNumber(creator.subscribers) : '—'}
+            </p>
+            {growth > 0 && (
+              <p className="flex items-center justify-center gap-0.5 text-[10px] font-medium text-emerald-600 tabular-nums mt-0.5">
+                <TrendingUp className="w-2.5 h-2.5" />
+                {formatNumber(growth)}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------------------
  * Product preview carousel — owns its rotation state. Auto-advance stops
  * permanently on manual tab selection and never runs under reduced motion.
@@ -421,7 +467,6 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
 
   const mr = topCreators[0];
   const tseries = topCreators[1];
-  const maxSubs = mr?.subscribers;
   const updatedAt = mr?.computedAt;
   const dailyViews = useMemo(() => deriveDailyViews(topHistory), [topHistory]);
   // YouTube subscriber counts barely move day to day for large channels (see
@@ -451,14 +496,17 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                 </span>
               )}
             </div>
-            <div className="space-y-1">
-              {(topCreators.length > 0 ? topCreators : Array(5).fill(null)).slice(0, 5).map((creator, i) => (
+            <RankingPodium
+              creators={topCreators.length > 0 ? topCreators : Array(3).fill(null)}
+              fallbackNames={FALLBACK_NAMES}
+            />
+            <div className="mt-4">
+              {(topCreators.length > 0 ? topCreators : Array(5).fill(null)).slice(3, 5).map((creator, i) => (
                 <PreviewRankingRow
-                  key={creator?.id || i}
-                  rank={i + 1}
+                  key={creator?.id || i + 3}
+                  rank={i + 4}
                   creator={creator}
-                  fallbackName={FALLBACK_NAMES[i]}
-                  maxValue={maxSubs}
+                  fallbackName={FALLBACK_NAMES[i + 3]}
                 />
               ))}
             </div>
@@ -473,7 +521,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
         ctaLink: `/youtube/${mr?.username || 'mrbeast'}`,
         content: (
           <>
-            <div className="flex items-center gap-3 sm:gap-4 mb-5">
+            <div className="flex items-center gap-3 sm:gap-4 mb-4">
               <CreatorAvatar src={mr?.profile_image} name={mr?.display_name || 'MrBeast'} size="lg" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
@@ -482,25 +530,27 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                 </div>
                 <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
               </div>
+            </div>
+            <div className="flex flex-wrap items-baseline gap-2.5">
+              <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums tracking-tight leading-none">
+                {mr?.subscribers ? formatNumber(mr.subscribers) : '—'}
+              </p>
               {mr?.growth30d > 0 && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 rounded-md text-[10px] font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 rounded-md text-[10px] font-semibold text-emerald-700 flex-shrink-0">
                   <TrendingUp className="w-3 h-3" />
                   +{formatNumber(mr.growth30d)} / 30d
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
-              <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
-                <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Subscribers</p>
-                <p className="text-base sm:text-xl font-extrabold text-neutral-900 tabular-nums">{mr?.subscribers ? formatNumber(mr.subscribers) : '—'}</p>
-              </div>
+            <p className="text-[11px] text-neutral-500 uppercase tracking-wider font-medium mb-4">Subscribers</p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
               <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
                 <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Total Views</p>
-                <p className="text-base sm:text-xl font-extrabold text-neutral-900 tabular-nums">{mr?.totalViews ? formatNumber(mr.totalViews) : '—'}</p>
+                <p className="text-base sm:text-lg font-extrabold text-neutral-900 tabular-nums">{mr?.totalViews ? formatNumber(mr.totalViews) : '—'}</p>
               </div>
               <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
                 <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Videos</p>
-                <p className="text-base sm:text-xl font-extrabold text-neutral-900 tabular-nums">{mr?.totalPosts ? formatNumber(mr.totalPosts) : '—'}</p>
+                <p className="text-base sm:text-lg font-extrabold text-neutral-900 tabular-nums">{mr?.totalPosts ? formatNumber(mr.totalPosts) : '—'}</p>
               </div>
             </div>
             {viewsStart != null && (
@@ -544,20 +594,20 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
               </div>
               <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Live</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="relative grid grid-cols-2 gap-3 sm:gap-4 pt-2">
               {[mr, tseries].map((c, i) => {
                 const name = c?.display_name || FALLBACK_NAMES[i];
                 return (
-                  <div key={i} className={`p-3 sm:p-4 rounded-xl border ${i === 0 ? 'bg-indigo-50/60 border-indigo-200' : 'bg-amber-50/60 border-amber-200'}`}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <CreatorAvatar src={c?.profile_image} name={name} size="sm" />
-                      <p className="text-sm font-bold text-neutral-900 truncate">{name}</p>
+                  <div key={i} className="p-3 sm:p-4 rounded-xl border border-neutral-200/80 bg-white text-center">
+                    <div className="flex flex-col items-center gap-2 mb-2">
+                      <CreatorAvatar src={c?.profile_image} name={name} size="md" />
+                      <p className="text-sm font-bold text-neutral-900 truncate max-w-full">{name}</p>
                     </div>
                     <p className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums leading-none">
                       {c?.subscribers ? formatNumber(c.subscribers) : '—'}
                     </p>
                     <p className="text-[10px] text-neutral-500 uppercase tracking-wider mt-1">Subscribers</p>
-                    <div className="mt-3 pt-3 border-t border-neutral-200/60 space-y-1.5">
+                    <div className="mt-3 pt-3 border-t border-neutral-200/80 space-y-1.5 text-left">
                       <div className="flex justify-between text-xs">
                         <span className="text-neutral-500">Views</span>
                         <span className="font-semibold text-neutral-900 tabular-nums">{c?.totalViews ? formatNumber(c.totalViews) : '—'}</span>
@@ -574,6 +624,9 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                   </div>
                 );
               })}
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-neutral-900 text-white text-[10px] font-extrabold flex items-center justify-center ring-4 ring-white">
+                VS
+              </span>
             </div>
             <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-neutral-500">
               <Users className="w-3 h-3" />
@@ -587,9 +640,9 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
     // 4. EARNINGS — only shown when we can compute it from real view history.
     if (mr && dailyViews) {
       const rows = [
-        { label: 'Per day',   low: dailyViews * CPM_LOW / 1000,         high: dailyViews * CPM_HIGH / 1000,         classes: 'bg-emerald-50/60 border-emerald-200' },
-        { label: 'Per month', low: dailyViews * 30 * CPM_LOW / 1000,    high: dailyViews * 30 * CPM_HIGH / 1000,    classes: 'bg-green-50/60 border-green-200' },
-        { label: 'Per year',  low: dailyViews * 365 * CPM_LOW / 1000,   high: dailyViews * 365 * CPM_HIGH / 1000,   classes: 'bg-teal-50/60 border-teal-200' },
+        { label: 'Per day',   low: dailyViews * CPM_LOW / 1000,         high: dailyViews * CPM_HIGH / 1000,         pad: 'py-3 sm:py-4' },
+        { label: 'Per month', low: dailyViews * 30 * CPM_LOW / 1000,    high: dailyViews * 30 * CPM_HIGH / 1000,    pad: 'py-4 sm:py-5' },
+        { label: 'Per year',  low: dailyViews * 365 * CPM_LOW / 1000,   high: dailyViews * 365 * CPM_HIGH / 1000,   pad: 'py-5 sm:py-6' },
       ];
       list.push({
         url: 'shinypull.com/youtube/money-calculator',
@@ -612,13 +665,16 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                 <p className="text-[11px] text-neutral-500 tabular-nums">{formatNumber(dailyViews)} views per day</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 items-start">
               {rows.map((row) => (
-                <div key={row.label} className={`p-3 border rounded-lg ${row.classes}`}>
-                  <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold mb-1.5">{row.label}</p>
-                  <p className="text-sm sm:text-base font-extrabold text-neutral-900 tabular-nums leading-tight">{fmtUSD(row.low)}</p>
-                  <p className="text-[10px] text-neutral-500">to</p>
-                  <p className="text-sm sm:text-base font-extrabold text-neutral-900 tabular-nums leading-tight">{fmtUSD(row.high)}</p>
+                <div
+                  key={row.label}
+                  className={`bg-white border border-neutral-200/80 border-t-[3px] border-t-emerald-400 rounded-xl text-center px-2 ${row.pad}`}
+                >
+                  <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mb-2">{row.label}</p>
+                  <p className="text-xs sm:text-sm font-extrabold text-neutral-900 tabular-nums leading-tight">{fmtUSD(row.low)}</p>
+                  <p className="text-[9px] text-neutral-400">to</p>
+                  <p className="text-xs sm:text-sm font-extrabold text-neutral-900 tabular-nums leading-tight">{fmtUSD(row.high)}</p>
                 </div>
               ))}
             </div>
@@ -632,7 +688,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
     }
 
     return list;
-  }, [mr, tseries, topCreators, maxSubs, viewsStart, updatedAt, dailyViews]);
+  }, [mr, tseries, topCreators, viewsStart, updatedAt, dailyViews]);
 
   // Auto-advance. Rankings (index 0) holds longer; stops for good once the
   // user picks a tab, and never runs under reduced motion.
@@ -654,18 +710,12 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         className="relative rounded-2xl bg-white border border-neutral-200/80 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.22)] overflow-hidden"
       >
-        {/* Browser chrome — URL updates per preview */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-200 bg-neutral-50">
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-          </div>
+        {/* Chrome — quiet label bar, no fake browser window */}
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-neutral-200/80">
           <Link
             to={active.ctaLink}
-            className="flex-1 max-w-md mx-auto bg-white border border-neutral-200 rounded-md px-3 py-1 text-[11px] text-neutral-500 flex items-center gap-1.5 hover:border-neutral-300 transition-colors"
+            className="min-w-0 text-[11px] font-semibold text-neutral-400 hover:text-neutral-600 transition-colors"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <AnimatePresence mode="wait">
               <motion.span
                 key={active.label}
@@ -673,13 +723,16 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.25 }}
-                className="truncate"
+                className="block truncate"
               >
                 {active.url}
               </motion.span>
             </AnimatePresence>
           </Link>
-          <div className="w-12" />
+          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex-shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live
+          </span>
         </div>
 
         {/* Content area — fixed min-height set to the tallest preview (Rankings) so swaps don't reflow the page */}
