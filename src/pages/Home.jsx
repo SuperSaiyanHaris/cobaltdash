@@ -137,18 +137,34 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
 
 const SHOWCASE_ICONS = { youtube: YouTubeIcon, twitch: TwitchIcon };
 const SHOWCASE_TINT = { youtube: 'text-red-400', twitch: 'text-purple-400' };
-const SHOWCASE_METRIC = { youtube: 'subscribers', twitch: 'followers' };
 
-// Real-creator showcase band — bigger card treatment borrowed from the auth
-// page's showcase columns, so this reads as a considered section rather than
-// a cramped ticker. Kept out of the tab order entirely (cards remain
-// clickable) so keyboard users reach the search input immediately; the
-// duplicated copy is hidden from assistive tech.
-const HeroMarquee = memo(function HeroMarquee({ creators }) {
+// Real-creator showcase band — a literal data skyline instead of a card
+// ticker: each creator is a "building," height driven by their real
+// subscriber/follower count (sqrt-scaled against the pool's max so one
+// mega-channel doesn't flatten everyone else to a sliver), avatar sitting
+// near the top like a lit window. The hero's existing dot-grid doubles as
+// the night sky above it, no extra background work needed. Bars stay flat
+// neutral (no per-building color) — the height variation alone carries the
+// "wow," per the site's usual preference for restraint over decoration.
+// Same infinite-drift mechanic as the old card marquee (proven at any pool
+// size), same off-tab-order/aria-hidden-duplicate treatment.
+//
+// Brand marks: reuses the exact same Icon usage (component + `w-3.5 h-3.5`
+// className) as the marquee card this replaced, don't invent a smaller
+// treatment — BRAND_MARK_MIN_HEIGHT_PX (brandMarkSize.js) silently floors
+// any YouTube/Twitch icon to 22px tall regardless of the className passed,
+// so a "smaller for a narrow column" size never actually renders smaller,
+// it only breaks whatever layout assumed it would. Column width (`w-24
+// sm:w-28`) is sized to comfortably fit that real floor (YouTube's mark is
+// 32px wide at the 22px-tall floor) plus a short truncated name.
+const HeroSkyline = memo(function HeroSkyline({ creators }) {
   if (creators.length === 0) return null;
 
+  const maxSubs = Math.max(...creators.map((c) => c.subscribers || 0), 1);
+  const barHeight = (subs) => 56 + Math.sqrt((subs || 0) / maxSubs) * 164;
+
   const strip = (hidden) => (
-    <div className="flex gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
+    <div className="flex items-end gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
       {creators.map((c, i) => {
         const Icon = SHOWCASE_ICONS[c.platform] || YouTubeIcon;
         return (
@@ -156,18 +172,23 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
             key={`${c.id}-${i}`}
             to={`/${c.platform}/${c.username}`}
             tabIndex={-1}
-            className="inline-flex items-center gap-3 px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl hover:bg-white/[0.09] hover:border-white/20 transition-colors w-64 flex-shrink-0"
+            className="group flex flex-col items-center flex-shrink-0 w-24 sm:w-28"
           >
-            <CreatorAvatar src={c.profile_image} name={c.display_name} rounded="rounded-lg" className="!w-11 !h-11 flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${SHOWCASE_TINT[c.platform] || 'text-neutral-400'}`} />
-                <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
-              </div>
-              <p className="text-xs text-white/60 tabular-nums mt-0.5">
-                {formatNumber(c.subscribers)} {SHOWCASE_METRIC[c.platform] || 'followers'}
-              </p>
+            <CreatorAvatar
+              src={c.profile_image}
+              name={c.display_name}
+              rounded="rounded-lg"
+              className="!w-8 !h-8 sm:!w-9 sm:!h-9 mb-2 ring-1 ring-white/10 group-hover:ring-white/30 transition-all flex-shrink-0"
+            />
+            <div
+              className="w-full bg-white/[0.06] border border-white/10 rounded-t-lg group-hover:bg-white/[0.1] group-hover:border-white/20 transition-colors"
+              style={{ height: `${barHeight(c.subscribers)}px` }}
+            />
+            <div className="mt-2 flex items-center gap-1 min-w-0 max-w-full">
+              <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${SHOWCASE_TINT[c.platform] || 'text-neutral-400'}`} />
+              <p className="text-[11px] font-semibold text-white truncate">{c.display_name}</p>
             </div>
+            <p className="text-[10px] text-white/50 tabular-nums">{formatNumber(c.subscribers)}</p>
           </Link>
         );
       })}
@@ -176,7 +197,7 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
 
   return (
     <div
-      className="flex gap-3 sm:gap-4 animate-marquee-slow whitespace-nowrap"
+      className="flex items-end gap-3 sm:gap-4 animate-marquee-slow whitespace-nowrap"
       style={{ width: 'max-content' }}
     >
       {strip(false)}
@@ -521,15 +542,13 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
         ctaLink: `/youtube/${mr?.username || 'mrbeast'}`,
         content: (
           <>
-            <div className="flex items-center gap-3 sm:gap-4 mb-4">
-              <CreatorAvatar src={mr?.profile_image} name={mr?.display_name || 'MrBeast'} size="lg" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 truncate">{mr?.display_name || 'MrBeast'}</h3>
-                  <YouTubeIcon className="w-4 h-4 flex-shrink-0" />
-                </div>
-                <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
+            <div className="flex flex-col items-center text-center mb-4">
+              <CreatorAvatar src={mr?.profile_image} name={mr?.display_name || 'MrBeast'} size="lg" className="mb-2" />
+              <div className="flex items-center gap-2 mb-0.5 max-w-full">
+                <h3 className="text-base sm:text-lg font-bold text-neutral-900 truncate">{mr?.display_name || 'MrBeast'}</h3>
+                <YouTubeIcon className="w-4 h-4 flex-shrink-0" />
               </div>
+              <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
             </div>
             <div className="flex flex-wrap items-baseline gap-2.5">
               <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums tracking-tight leading-none">
@@ -658,9 +677,9 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
               </div>
               <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">$0.50 - $4.00 CPM</span>
             </div>
-            <div className="flex items-center gap-3 mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+            <div className="flex flex-col items-center text-center gap-1.5 mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
               <CreatorAvatar src={mr.profile_image} name={mr.display_name} size="sm" />
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 max-w-full">
                 <p className="text-sm font-bold text-neutral-900 truncate">{mr.display_name}</p>
                 <p className="text-[11px] text-neutral-500 tabular-nums">{formatNumber(dailyViews)} views per day</p>
               </div>
@@ -1116,16 +1135,16 @@ export default function Home() {
 
           </div>
 
-          {/* CREATOR SHOWCASE — real creators, real numbers. Moved out of the
-              cramped strip that used to sit above the headline; now a proper
-              closing section of the hero with room to breathe, using the same
-              bigger-card treatment as the auth page's showcase columns. No
-              label needed — the cards speak for themselves. Slower drift
-              (220s, was riding the shared 120s .animate-marquee) since these
-              cards are bigger/richer than a plain ticker and read as rushed
+          {/* CREATOR SHOWCASE — real creators, real numbers, rendered as a
+              literal data skyline (2026-08-02 redesign): each creator is a
+              "building," height driven by their real subscriber/follower
+              count, HeroSkyline component above. Replaced the earlier bigger-
+              card marquee treatment. No label needed — the shapes speak for
+              themselves. Slower drift (220s, was riding the shared 120s
+              .animate-marquee) kept from that version, still reads as rushed
               at the faster pace. */}
           <div className="relative flex-shrink-0 pt-2 pb-10 sm:pb-14 overflow-hidden mask-gradient">
-            <HeroMarquee creators={marqueeCreators} />
+            <HeroSkyline creators={marqueeCreators} />
           </div>
         </section>
 
