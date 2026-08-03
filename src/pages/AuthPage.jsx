@@ -13,6 +13,7 @@ import RumbleIcon from '../components/RumbleIcon';
 import SEO from '../components/SEO';
 import { getShowcaseCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
+import { PLATFORM_ACCENTS } from '../lib/constants';
 
 const PLATFORM_ICONS = {
   youtube: YouTubeIcon, twitch: TwitchIcon, kick: KickIcon, tiktok: TikTokIcon,
@@ -29,8 +30,15 @@ const METRIC = {
 
 function ShowcaseCard({ c }) {
   const Icon = PLATFORM_ICONS[c.platform] || YouTubeIcon;
+  const accent = PLATFORM_ACCENTS[c.platform];
   return (
-    <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 flex items-center gap-3 w-full">
+    <div
+      className="bg-white/[0.04] border border-white/10 border-l-2 rounded-xl p-3 flex items-center gap-3 w-full"
+      style={accent ? { borderLeftColor: `${accent}B3` } : undefined}
+    >
+      {/* Left-edge accent matches the same platform-tinted treatment used on
+          the home hero's marquee cards (2026-08-02), kept consistent across
+          both showcase surfaces. B3 suffix ≈ 70% opacity, same softness. */}
       <CreatorAvatar
         src={c.profile_image}
         name={c.display_name}
