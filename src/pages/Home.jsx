@@ -137,34 +137,24 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
 
 const SHOWCASE_ICONS = { youtube: YouTubeIcon, twitch: TwitchIcon };
 const SHOWCASE_TINT = { youtube: 'text-red-400', twitch: 'text-purple-400' };
+const SHOWCASE_METRIC = { youtube: 'subscribers', twitch: 'followers' };
+// Left-edge accent per platform, same hue family as the icon tint above
+// (red/purple) so the accent reads as an extension of the existing platform
+// tint convention, not a new colored-background chip.
+const SHOWCASE_ACCENT = { youtube: 'border-l-red-500/70', twitch: 'border-l-purple-500/70' };
 
-// Real-creator showcase band — a literal data skyline instead of a card
-// ticker: each creator is a "building," height driven by their real
-// subscriber/follower count (sqrt-scaled against the pool's max so one
-// mega-channel doesn't flatten everyone else to a sliver), avatar sitting
-// near the top like a lit window. The hero's existing dot-grid doubles as
-// the night sky above it, no extra background work needed. Bars stay flat
-// neutral (no per-building color) — the height variation alone carries the
-// "wow," per the site's usual preference for restraint over decoration.
-// Same infinite-drift mechanic as the old card marquee (proven at any pool
-// size), same off-tab-order/aria-hidden-duplicate treatment.
-//
-// Brand marks: reuses the exact same Icon usage (component + `w-3.5 h-3.5`
-// className) as the marquee card this replaced, don't invent a smaller
-// treatment — BRAND_MARK_MIN_HEIGHT_PX (brandMarkSize.js) silently floors
-// any YouTube/Twitch icon to 22px tall regardless of the className passed,
-// so a "smaller for a narrow column" size never actually renders smaller,
-// it only breaks whatever layout assumed it would. Column width (`w-24
-// sm:w-28`) is sized to comfortably fit that real floor (YouTube's mark is
-// 32px wide at the 22px-tall floor) plus a short truncated name.
-const HeroSkyline = memo(function HeroSkyline({ creators }) {
+// Real-creator showcase band — bigger card treatment borrowed from the auth
+// page's showcase columns, so this reads as a considered section rather than
+// a cramped ticker. Kept out of the tab order entirely (cards remain
+// clickable) so keyboard users reach the search input immediately; the
+// duplicated copy is hidden from assistive tech. Each card carries a
+// platform-tinted left edge (2026-08-02, reverted back from a data-skyline
+// experiment per user feedback — kept the accent-edge idea from that pass).
+const HeroMarquee = memo(function HeroMarquee({ creators }) {
   if (creators.length === 0) return null;
 
-  const maxSubs = Math.max(...creators.map((c) => c.subscribers || 0), 1);
-  const barHeight = (subs) => 56 + Math.sqrt((subs || 0) / maxSubs) * 164;
-
   const strip = (hidden) => (
-    <div className="flex items-end gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
+    <div className="flex gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
       {creators.map((c, i) => {
         const Icon = SHOWCASE_ICONS[c.platform] || YouTubeIcon;
         return (
@@ -172,23 +162,18 @@ const HeroSkyline = memo(function HeroSkyline({ creators }) {
             key={`${c.id}-${i}`}
             to={`/${c.platform}/${c.username}`}
             tabIndex={-1}
-            className="group flex flex-col items-center flex-shrink-0 w-24 sm:w-28"
+            className={`inline-flex items-center gap-3 pl-3.5 pr-4 py-3 bg-white/[0.05] border border-white/10 border-l-2 ${SHOWCASE_ACCENT[c.platform] || 'border-l-neutral-400/70'} rounded-xl hover:bg-white/[0.09] hover:border-white/20 transition-colors w-64 flex-shrink-0`}
           >
-            <CreatorAvatar
-              src={c.profile_image}
-              name={c.display_name}
-              rounded="rounded-lg"
-              className="!w-8 !h-8 sm:!w-9 sm:!h-9 mb-2 ring-1 ring-white/10 group-hover:ring-white/30 transition-all flex-shrink-0"
-            />
-            <div
-              className="w-full bg-white/[0.06] border border-white/10 rounded-t-lg group-hover:bg-white/[0.1] group-hover:border-white/20 transition-colors"
-              style={{ height: `${barHeight(c.subscribers)}px` }}
-            />
-            <div className="mt-2 flex items-center gap-1 min-w-0 max-w-full">
-              <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${SHOWCASE_TINT[c.platform] || 'text-neutral-400'}`} />
-              <p className="text-[11px] font-semibold text-white truncate">{c.display_name}</p>
+            <CreatorAvatar src={c.profile_image} name={c.display_name} rounded="rounded-lg" className="!w-11 !h-11 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${SHOWCASE_TINT[c.platform] || 'text-neutral-400'}`} />
+                <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
+              </div>
+              <p className="text-xs text-white/60 tabular-nums mt-0.5">
+                {formatNumber(c.subscribers)} {SHOWCASE_METRIC[c.platform] || 'followers'}
+              </p>
             </div>
-            <p className="text-[10px] text-white/50 tabular-nums">{formatNumber(c.subscribers)}</p>
           </Link>
         );
       })}
@@ -197,7 +182,7 @@ const HeroSkyline = memo(function HeroSkyline({ creators }) {
 
   return (
     <div
-      className="flex items-end gap-3 sm:gap-4 animate-marquee-slow whitespace-nowrap"
+      className="flex gap-3 sm:gap-4 animate-marquee-slow whitespace-nowrap"
       style={{ width: 'max-content' }}
     >
       {strip(false)}
@@ -1135,16 +1120,19 @@ export default function Home() {
 
           </div>
 
-          {/* CREATOR SHOWCASE — real creators, real numbers, rendered as a
-              literal data skyline (2026-08-02 redesign): each creator is a
-              "building," height driven by their real subscriber/follower
-              count, HeroSkyline component above. Replaced the earlier bigger-
-              card marquee treatment. No label needed — the shapes speak for
-              themselves. Slower drift (220s, was riding the shared 120s
-              .animate-marquee) kept from that version, still reads as rushed
-              at the faster pace. */}
+          {/* CREATOR SHOWCASE — real creators, real numbers. Moved out of the
+              cramped strip that used to sit above the headline; now a proper
+              closing section of the hero with room to breathe, using the same
+              bigger-card treatment as the auth page's showcase columns. No
+              label needed — the cards speak for themselves. Slower drift
+              (220s, was riding the shared 120s .animate-marquee) since these
+              cards are bigger/richer than a plain ticker and read as rushed
+              at the faster pace. Briefly tried a "data skyline" bar-chart
+              treatment (2026-08-02); reverted back to cards per user
+              feedback, kept the platform-tinted left edge idea from that
+              detour. */}
           <div className="relative flex-shrink-0 pt-2 pb-10 sm:pb-14 overflow-hidden mask-gradient">
-            <HeroSkyline creators={marqueeCreators} />
+            <HeroMarquee creators={marqueeCreators} />
           </div>
         </section>
 
