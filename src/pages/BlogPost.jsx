@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
@@ -10,6 +10,26 @@ import BlogContent from '../components/BlogContent';
 import { getPostBySlug, getRelatedPosts } from '../services/blogService';
 import { getCategoryTheme } from '../lib/blogTheme';
 
+// middleware.js embeds a <script id="__BLOG_DATA__"> alongside the visible
+// server-rendered article so this component's very first render already has
+// real content instead of an empty loading spinner — same pattern and same
+// reason as readEmbeddedCreatorData in CreatorProfile.jsx (see the comment on
+// `initialData` in middleware.js's getBlogContent). Only trusted when it
+// matches the slug actually being rendered, so a client-side nav to a
+// different post (e.g. a Related Articles link) doesn't reuse stale data.
+function readEmbeddedBlogData(slug) {
+  if (typeof document === 'undefined') return null;
+  const el = document.getElementById('__BLOG_DATA__');
+  if (!el) return null;
+  try {
+    const data = JSON.parse(el.textContent);
+    if (data.slug !== slug) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export default function BlogPost() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -17,13 +37,23 @@ export default function BlogPost() {
   // ?preview=1 lets drafts render for review before publishing. Draft slugs
   // are unguessable and posts are public content anyway, so no gating needed.
   const isPreview = searchParams.get('preview') === '1';
-  const [post, setPost] = useState(null);
+  // Lazy initializer so readEmbeddedBlogData only runs once, on the very
+  // first render. Preview/draft posts never have embedded data (middleware
+  // only injects published posts), so this is always null in preview mode.
+  const [embeddedData] = useState(() => readEmbeddedBlogData(slug));
+  const [post, setPost] = useState(() => embeddedData || null);
   const [relatedPosts, setRelatedPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !embeddedData);
+  // True only for the very first fetchData() call of the very first slug
+  // this component instance renders, and only when that call already has
+  // embedded data seeded. Lets fetchData skip the loading-flash reset on
+  // that one call while behaving normally on every subsequent call (a
+  // client-side nav to a different post, a retry, etc).
+  const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
+    async function fetchData(skipLoadingFlash) {
+      if (!skipLoadingFlash) setLoading(true);
       const postData = await getPostBySlug(slug, { includeDrafts: isPreview });
       setPost(postData);
 
@@ -34,7 +64,8 @@ export default function BlogPost() {
 
       setLoading(false);
     }
-    fetchData();
+    fetchData(isFirstLoadRef.current && !!embeddedData);
+    isFirstLoadRef.current = false;
   }, [slug, isPreview]);
 
   if (loading) {

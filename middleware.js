@@ -420,7 +420,7 @@ async function getProfileContent(platform, username) {
     statsHistory: stats,
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, image: c.profile_image || null };
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, dataId: '__CREATOR_DATA__', image: c.profile_image || null };
 }
 
 // ---------------------------------------------------------------------------
@@ -585,7 +585,7 @@ function markdownToHtml(md) {
 async function getBlogContent(slug) {
   const rows = await supabaseGet(
     `blog_posts?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true` +
-    `&select=slug,title,description,content,author,published_at,updated_at,image&limit=1`
+    `&select=slug,title,description,content,author,category,read_time,published_at,updated_at,image&limit=1`
   );
   if (rows === null) return { status: 'error' };
   if (!rows.length) return { status: 'notfound' };
@@ -615,7 +615,28 @@ async function getBlogContent(slug) {
     ...(p.image ? { image: p.image } : {}),
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath: `/blog/${p.slug}`, image: p.image || null };
+  // Same reasoning as getProfileContent's initialData: without this,
+  // BlogPost.jsx mounts into a blank loading state and React's
+  // createRoot().render() wipes the server-rendered article above, so both
+  // crawlers and real visitors briefly see an empty "Loading..." shell before
+  // the client-side fetch re-delivers the same content a moment later. Raw DB
+  // column names (not camelCase) since BlogPost.jsx's `post` state is just
+  // the unmodified row from blogService.getPostBySlug()'s `select('*')`.
+  const initialData = {
+    slug: p.slug,
+    title: p.title,
+    description: p.description,
+    content: p.content,
+    author: p.author,
+    category: p.category,
+    read_time: p.read_time,
+    published_at: p.published_at,
+    updated_at: p.updated_at,
+    image: p.image,
+    is_published: true,
+  };
+
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath: `/blog/${p.slug}`, initialData, dataId: '__BLOG_DATA__', image: p.image || null };
 }
 
 // ---------------------------------------------------------------------------
@@ -932,13 +953,16 @@ export default async function middleware(request) {
         `  <script type="application/ld+json">${JSON.stringify(content.jsonLd).replace(/</g, '\\u003c')}</script>\n  </head>`
       );
     }
-    // Initial data payload (creator profiles only) — see the comment on
-    // `initialData` in getProfileContent for why this exists. Escaped the
+    // Initial data payload (creator profiles + blog posts) — see the comment
+    // on `initialData` in getProfileContent/getBlogContent for why this
+    // exists. `dataId` picks the script tag id each page's component reads
+    // (CreatorProfile.jsx reads __CREATOR_DATA__, BlogPost.jsx reads
+    // __BLOG_DATA__) so the two payload shapes never collide. Escaped the
     // same way as the JSON-LD block above to prevent a </script> breakout.
-    if (content.initialData) {
+    if (content.initialData && content.dataId) {
       html = html.replace(
         '</head>',
-        `  <script type="application/json" id="__CREATOR_DATA__">${JSON.stringify(content.initialData).replace(/</g, '\\u003c')}</script>\n  </head>`
+        `  <script type="application/json" id="${content.dataId}">${JSON.stringify(content.initialData).replace(/</g, '\\u003c')}</script>\n  </head>`
       );
     }
   }
