@@ -753,20 +753,6 @@ function PlatformRankings({ urlPlatform }) {
                 </button>
               );
             })}
-
-            {/* Opens the global command palette, not a page-scoped filter —
-                it searches every creator across all platforms via the same
-                searchCreators() call the /search page uses, so switching
-                platform tabs here never limits what this can find. */}
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
-              className="ml-auto flex items-center gap-2 h-9 px-3.5 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 transition-colors min-w-[220px]"
-              aria-label="Search any creator"
-            >
-              <Search className="w-4 h-4 flex-shrink-0" />
-              Search any creator&hellip;
-            </button>
           </div>
 
           {/* Rank Type Tabs + Top Count + Category dropdowns — one compact row */}
@@ -821,6 +807,22 @@ function PlatformRankings({ urlPlatform }) {
                 </>
               )}
             </div>
+
+            {/* Opens the global command palette, not a page-scoped filter —
+                it searches every creator across all platforms via the same
+                searchCreators() call the /search page uses, so it isn't
+                limited by whichever platform tab is selected. Icon-only
+                since it's a trigger, not a live-filtering text field —
+                pairs with the other sort/filter controls in this row
+                rather than living in the platform-picker row above. */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
+              className="flex items-center justify-center h-9 w-9 rounded-lg border border-neutral-200 bg-white text-neutral-400 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+              aria-label="Search any creator"
+            >
+              <Search className="w-4 h-4" />
+            </button>
 
             {/* Category dropdown — collapses what used to be a wall of up to 16
                 chips (the biggest source of pre-table clutter, especially on
