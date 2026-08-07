@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight } from 'lucide-react';
+import { TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -753,6 +753,20 @@ function PlatformRankings({ urlPlatform }) {
                 </button>
               );
             })}
+
+            {/* Opens the global command palette, not a page-scoped filter —
+                it searches every creator across all platforms via the same
+                searchCreators() call the /search page uses, so switching
+                platform tabs here never limits what this can find. */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
+              className="ml-auto flex items-center gap-2 h-9 px-3.5 rounded-lg border border-neutral-200 bg-white text-sm text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 transition-colors min-w-[220px]"
+              aria-label="Search any creator"
+            >
+              <Search className="w-4 h-4 flex-shrink-0" />
+              Search any creator&hellip;
+            </button>
           </div>
 
           {/* Rank Type Tabs + Top Count + Category dropdowns — one compact row */}
