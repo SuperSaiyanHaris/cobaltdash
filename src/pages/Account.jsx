@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   User, Mail, Lock, Calendar, Star,
   Eye, EyeOff, ArrowLeft, ExternalLink, Megaphone,
-  X, Search, Loader, LogOut, Shield, ChevronRight,
+  X, Search, Loader, LogOut, Shield, ChevronRight, Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
@@ -11,6 +11,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { getFollowedCreators } from '../services/followService';
 import SEO from '../components/SEO';
 import CreatorAvatar from '../components/CreatorAvatar';
+import YouTubeIcon from '../components/YouTubeIcon';
+import TikTokIcon from '../components/TikTokIcon';
+import TwitchIcon from '../components/TwitchIcon';
+import KickIcon from '../components/KickIcon';
+import BlueskyIcon from '../components/BlueskyIcon';
+import MusicIcon from '../components/MusicIcon';
+import MastodonIcon from '../components/MastodonIcon';
+import RumbleIcon from '../components/RumbleIcon';
+import SubstackIcon from '../components/SubstackIcon';
 
 const TABS = [
   { id: 'listings', label: 'Listings', icon: Megaphone },
@@ -20,6 +29,10 @@ const TABS = [
 
 const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
 const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
+const PLATFORM_ICONS = {
+  youtube: YouTubeIcon, tiktok: TikTokIcon, twitch: TwitchIcon, kick: KickIcon, bluesky: BlueskyIcon,
+  music: MusicIcon, mastodon: MastodonIcon, rumble: RumbleIcon, substack: SubstackIcon,
+};
 
 // Typographic backbone shared with the dashboard
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
@@ -51,6 +64,7 @@ export default function Account() {
 
   // Featured listings
   const [featuredListings, setFeaturedListings] = useState([]);
+  const [showListingDialog, setShowListingDialog] = useState(false);
   const [listingPlatform, setListingPlatform] = useState('youtube');
   const [listingQuery, setListingQuery] = useState('');
   const [listingResults, setListingResults] = useState([]);
@@ -120,6 +134,36 @@ export default function Account() {
     }, 300);
     return () => clearTimeout(timer);
   }, [listingQuery, listingPlatform, selectedCreator]);
+
+  // Close the "Add a listing" dialog on Escape, and lock page scroll while it's open
+  useEffect(() => {
+    if (!showListingDialog) return;
+    const onKey = (e) => { if (e.key === 'Escape') setShowListingDialog(false); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [showListingDialog]);
+
+  const resetListingSearch = () => {
+    setSelectedCreator(null);
+    setListingQuery('');
+    setListingResults([]);
+    setAlreadyListed(false);
+    setTikTokAddError('');
+  };
+
+  const openListingDialog = () => {
+    resetListingSearch();
+    setShowListingDialog(true);
+  };
+
+  const selectListingPlatform = (p) => {
+    setListingPlatform(p);
+    resetListingSearch();
+  };
 
   const handleSelectCreator = async (creator) => {
     setSelectedCreator(creator);
@@ -394,6 +438,7 @@ export default function Account() {
 
               {/* ── Listings tab ── */}
               {activeTab === 'listings' && (
+                <>
                 <div className="space-y-4">
                   <div className={`${CARD} p-6`}>
                     <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
@@ -453,173 +498,220 @@ export default function Account() {
                       </div>
                     )}
 
-                    {/* Add new listing */}
-                    <div className="space-y-3">
-                      <p className={MICRO}>Add a listing</p>
+                    {/* Add new listing — opens a dialog rather than living inline */}
+                    <button
+                      onClick={openListingDialog}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add a listing
+                    </button>
+                  </div>
+                </div>
 
-                      {/* Platform selector */}
-                      <div className="flex flex-wrap gap-1.5">
-                        {LISTING_PLATFORMS.map(p => (
-                          <button
-                            key={p}
-                            onClick={() => {
-                              setListingPlatform(p);
-                              setSelectedCreator(null);
-                              setListingQuery('');
-                              setListingResults([]);
-                              setAlreadyListed(false);
-                              setTikTokAddError('');
-                            }}
-                            className={`px-2.5 h-7 rounded-md text-xs font-medium transition-colors border ${
-                              listingPlatform === p
-                                ? 'bg-neutral-900 border-neutral-900 text-white'
-                                : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
-                            }`}
-                          >
-                            {PLATFORM_LABELS[p]}
-                          </button>
-                        ))}
+                {/* Add-a-listing dialog: platform nav rail on the left, search/tiers on the right */}
+                {showListingDialog && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowListingDialog(false); }}
+                  >
+                    <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex max-h-[85vh]">
+                      {/* Platform nav rail */}
+                      <div className="hidden sm:block w-48 flex-shrink-0 border-r border-neutral-200/80 p-3 overflow-y-auto">
+                        <p className={`${MICRO} px-2.5 mb-2`}>Platform</p>
+                        <div className="space-y-1">
+                          {LISTING_PLATFORMS.map(p => {
+                            const Icon = PLATFORM_ICONS[p];
+                            const isActive = listingPlatform === p;
+                            return (
+                              <button
+                                key={p}
+                                onClick={() => selectListingPlatform(p)}
+                                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  isActive ? 'bg-neutral-900 text-white' : 'text-neutral-600 hover:bg-neutral-50'
+                                }`}
+                              >
+                                <Icon className="w-4 h-4 flex-shrink-0" />
+                                <span className="truncate">{PLATFORM_LABELS[p]}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
-                      {/* Search input with dropdown */}
-                      <div className="relative">
-                        <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT} focus-within:border-neutral-400`}>
-                          {listingSearching
-                            ? <Loader className="w-3.5 h-3.5 text-neutral-400 animate-spin flex-shrink-0" />
-                            : <Search className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
-                          }
-                          <input
-                            type="text"
-                            value={listingQuery}
-                            onChange={e => {
-                              setListingQuery(e.target.value);
-                              setSelectedCreator(null);
-                              setAlreadyListed(false);
-                            }}
-                            placeholder={`Search ${PLATFORM_LABELS[listingPlatform]} creators...`}
-                            className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-[16px] sm:text-sm focus:outline-none"
-                          />
-                          {listingQuery && (
-                            <button
-                              onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); }}
-                              className="text-neutral-400 hover:text-neutral-900"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                      {/* Main pane */}
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200/80 flex-shrink-0">
+                          <h3 className="text-sm font-semibold text-neutral-900">Add a listing</h3>
+                          <button
+                            onClick={() => setShowListingDialog(false)}
+                            className="text-neutral-400 hover:text-neutral-900 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
 
-                        {/* Dropdown results */}
-                        {listingResults.length > 0 && !selectedCreator && (
-                          <div className="absolute top-full mt-1.5 left-0 right-0 z-10 bg-white border border-neutral-200 rounded-lg shadow-xl overflow-hidden">
-                            {listingResults.map(c => (
+                        <div className="p-5 overflow-y-auto flex-1 space-y-3">
+                          {/* Platform selector — mobile only, nav rail covers desktop */}
+                          <div className="flex flex-wrap gap-1.5 sm:hidden">
+                            {LISTING_PLATFORMS.map(p => (
                               <button
-                                key={c.id}
-                                onClick={() => handleSelectCreator(c)}
-                                className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-neutral-50 transition-colors text-left"
+                                key={p}
+                                onClick={() => selectListingPlatform(p)}
+                                className={`px-2.5 h-7 rounded-md text-xs font-medium transition-colors border ${
+                                  listingPlatform === p
+                                    ? 'bg-neutral-900 border-neutral-900 text-white'
+                                    : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+                                }`}
                               >
-                                <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-md" />
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
-                                  <p className="text-xs text-neutral-400">@{c.username}</p>
-                                </div>
+                                {PLATFORM_LABELS[p]}
                               </button>
                             ))}
                           </div>
-                        )}
-                      </div>
 
-                      {/* TikTok: not in DB — offer instant lookup */}
-                      {listingPlatform === 'tiktok' && listingQuery.trim().length >= 2 && !listingSearching && listingResults.length === 0 && !selectedCreator && (
-                        <div className="flex items-center gap-3 px-1">
-                          <p className="text-xs text-neutral-400 flex-1 min-w-0">
-                            We don't have this creator yet. Add <span className="text-neutral-700 font-medium">@{listingQuery.trim()}</span> directly.
-                          </p>
-                          <button
-                            onClick={handleTikTokInstantAdd}
-                            disabled={tikTokAdding}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 h-7 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors"
-                          >
-                            {tikTokAdding && <Loader className="w-3 h-3 animate-spin" />}
-                            {tikTokAdding ? 'Looking up...' : 'Add'}
-                          </button>
-                        </div>
-                      )}
-                      {tikTokAddError && <p className="text-xs text-red-600 px-1">{tikTokAddError}</p>}
-
-                      {/* Selected creator + purchase options */}
-                      {selectedCreator && (
-                        <div className="space-y-3">
-                          {/* Creator info */}
-                          <div className="flex items-center gap-3 px-3.5 py-3 border border-neutral-200/80 rounded-lg">
-                            <CreatorAvatar src={selectedCreator.profile_image} name={selectedCreator.display_name} size="md" rounded="rounded-lg" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-neutral-900 truncate">{selectedCreator.display_name}</p>
-                              <p className="text-xs text-neutral-400 mt-0.5">@{selectedCreator.username} · {selectedCreator.platform}</p>
+                          {/* Search input with dropdown */}
+                          <div className="relative">
+                            <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT} focus-within:border-neutral-400`}>
+                              {listingSearching
+                                ? <Loader className="w-3.5 h-3.5 text-neutral-400 animate-spin flex-shrink-0" />
+                                : <Search className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
+                              }
+                              <input
+                                type="text"
+                                value={listingQuery}
+                                onChange={e => {
+                                  setListingQuery(e.target.value);
+                                  setSelectedCreator(null);
+                                  setAlreadyListed(false);
+                                }}
+                                placeholder={`Search ${PLATFORM_LABELS[listingPlatform]} creators...`}
+                                className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-[16px] sm:text-sm focus:outline-none"
+                                autoFocus
+                              />
+                              {listingQuery && (
+                                <button
+                                  onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); }}
+                                  className="text-neutral-400 hover:text-neutral-900"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
-                            {alreadyListed && (
-                              <span className={`${MICRO} flex-shrink-0`}>Already listed</span>
+
+                            {/* Dropdown results */}
+                            {listingResults.length > 0 && !selectedCreator && (
+                              <div className="absolute top-full mt-1.5 left-0 right-0 z-10 bg-white border border-neutral-200 rounded-lg shadow-xl overflow-hidden">
+                                {listingResults.map(c => (
+                                  <button
+                                    key={c.id}
+                                    onClick={() => handleSelectCreator(c)}
+                                    className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-neutral-50 transition-colors text-left"
+                                  >
+                                    <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-md" />
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
+                                      <p className="text-xs text-neutral-400">@{c.username}</p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
                             )}
                           </div>
 
-                          {/* Tier selection */}
-                          {!alreadyListed && (
-                            <div className="space-y-2.5">
-                              <p className={`${MICRO} pt-1`}>Choose your slot</p>
-                              <div className="grid sm:grid-cols-2 gap-2.5">
-                                {/* Basic */}
-                                <button
-                                  onClick={handlePurchaseListing}
-                                  disabled={purchasingListing}
-                                  className="group text-left bg-white border border-neutral-200 hover:border-neutral-400 disabled:opacity-50 rounded-xl p-4 transition-colors"
-                                >
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Basic</span>
-                                    <span className="text-[10px] text-neutral-400">Cancel anytime</span>
-                                  </div>
-                                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">$49<span className="text-sm font-normal text-neutral-400">/mo</span></p>
-                                  <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Placed at rank 15, 20, 25... on the {PLATFORM_LABELS[listingPlatform]} rankings.</p>
-                                  <span className="inline-flex items-center gap-1 mt-3.5 text-xs font-medium text-neutral-600 group-hover:text-neutral-900 transition-colors">
-                                    {purchasingListing ? 'Redirecting...' : <>Get this slot <ChevronRight className="w-3 h-3" /></>}
-                                  </span>
-                                </button>
+                          {/* TikTok: not in DB — offer instant lookup */}
+                          {listingPlatform === 'tiktok' && listingQuery.trim().length >= 2 && !listingSearching && listingResults.length === 0 && !selectedCreator && (
+                            <div className="flex items-center gap-3 px-1">
+                              <p className="text-xs text-neutral-400 flex-1 min-w-0">
+                                We don't have this creator yet. Add <span className="text-neutral-700 font-medium">@{listingQuery.trim()}</span> directly.
+                              </p>
+                              <button
+                                onClick={handleTikTokInstantAdd}
+                                disabled={tikTokAdding}
+                                className="flex-shrink-0 flex items-center gap-1.5 px-3 h-7 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors"
+                              >
+                                {tikTokAdding && <Loader className="w-3 h-3 animate-spin" />}
+                                {tikTokAdding ? 'Looking up...' : 'Add'}
+                              </button>
+                            </div>
+                          )}
+                          {tikTokAddError && <p className="text-xs text-red-600 px-1">{tikTokAddError}</p>}
 
-                                {/* Premium — one thin amber rule is the entire differentiation */}
-                                <button
-                                  onClick={premiumSlotsLeft > 0 ? handlePurchasePremiumListing : undefined}
-                                  disabled={premiumSlotsLeft === 0 || purchasingPremiumListing}
-                                  className={`group text-left rounded-xl p-4 border transition-colors ${
-                                    premiumSlotsLeft > 0
-                                      ? 'bg-white border-neutral-200 border-t-2 border-t-amber-400 hover:border-neutral-400 hover:border-t-amber-500'
-                                      : 'bg-neutral-50 border-neutral-200 opacity-50 cursor-not-allowed'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">Premium</span>
-                                    <span className={`text-[10px] tabular-nums ${premiumSlotsLeft > 0 ? 'text-amber-600' : 'text-neutral-400'}`}>
-                                      {premiumSlotsLeft > 0 ? `${premiumSlotsLeft} of 2 left` : 'Sold out'}
-                                    </span>
-                                  </div>
-                                  <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                                    $149<span className="text-sm font-normal text-neutral-400">/mo</span>
-                                  </p>
-                                  <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Top-10 placement between rank 4-5 and 9-10. Maximum visibility.</p>
-                                  <span className={`inline-flex items-center gap-1 mt-3.5 text-xs font-medium transition-colors ${
-                                    premiumSlotsLeft > 0 ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-400'
-                                  }`}>
-                                    {purchasingPremiumListing ? 'Redirecting...' : premiumSlotsLeft > 0
-                                      ? <>Get this slot <ChevronRight className="w-3 h-3" /></>
-                                      : 'Waitlist coming soon'}
-                                  </span>
-                                </button>
+                          {/* Selected creator + purchase options */}
+                          {selectedCreator && (
+                            <div className="space-y-3">
+                              {/* Creator info */}
+                              <div className="flex items-center gap-3 px-3.5 py-3 border border-neutral-200/80 rounded-lg">
+                                <CreatorAvatar src={selectedCreator.profile_image} name={selectedCreator.display_name} size="md" rounded="rounded-lg" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-neutral-900 truncate">{selectedCreator.display_name}</p>
+                                  <p className="text-xs text-neutral-400 mt-0.5">@{selectedCreator.username} · {selectedCreator.platform}</p>
+                                </div>
+                                {alreadyListed && (
+                                  <span className={`${MICRO} flex-shrink-0`}>Already listed</span>
+                                )}
                               </div>
+
+                              {/* Tier selection */}
+                              {!alreadyListed && (
+                                <div className="space-y-2.5">
+                                  <p className={`${MICRO} pt-1`}>Choose your slot</p>
+                                  <div className="grid sm:grid-cols-2 gap-2.5">
+                                    {/* Basic */}
+                                    <button
+                                      onClick={handlePurchaseListing}
+                                      disabled={purchasingListing}
+                                      className="group text-left bg-white border border-neutral-200 hover:border-neutral-400 disabled:opacity-50 rounded-xl p-4 transition-colors"
+                                    >
+                                      <div className="flex items-center justify-between mb-3">
+                                        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Basic</span>
+                                        <span className="text-[10px] text-neutral-400">Cancel anytime</span>
+                                      </div>
+                                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">$49<span className="text-sm font-normal text-neutral-400">/mo</span></p>
+                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Placed at rank 15, 20, 25... on the {PLATFORM_LABELS[listingPlatform]} rankings.</p>
+                                      <span className="inline-flex items-center gap-1 mt-3.5 text-xs font-medium text-neutral-600 group-hover:text-neutral-900 transition-colors">
+                                        {purchasingListing ? 'Redirecting...' : <>Get this slot <ChevronRight className="w-3 h-3" /></>}
+                                      </span>
+                                    </button>
+
+                                    {/* Premium — one thin amber rule is the entire differentiation */}
+                                    <button
+                                      onClick={premiumSlotsLeft > 0 ? handlePurchasePremiumListing : undefined}
+                                      disabled={premiumSlotsLeft === 0 || purchasingPremiumListing}
+                                      className={`group text-left rounded-xl p-4 border transition-colors ${
+                                        premiumSlotsLeft > 0
+                                          ? 'bg-white border-neutral-200 border-t-2 border-t-amber-400 hover:border-neutral-400 hover:border-t-amber-500'
+                                          : 'bg-neutral-50 border-neutral-200 opacity-50 cursor-not-allowed'
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between mb-3">
+                                        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">Premium</span>
+                                        <span className={`text-[10px] tabular-nums ${premiumSlotsLeft > 0 ? 'text-amber-600' : 'text-neutral-400'}`}>
+                                          {premiumSlotsLeft > 0 ? `${premiumSlotsLeft} of 2 left` : 'Sold out'}
+                                        </span>
+                                      </div>
+                                      <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
+                                        $149<span className="text-sm font-normal text-neutral-400">/mo</span>
+                                      </p>
+                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Top-10 placement between rank 4-5 and 9-10. Maximum visibility.</p>
+                                      <span className={`inline-flex items-center gap-1 mt-3.5 text-xs font-medium transition-colors ${
+                                        premiumSlotsLeft > 0 ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-400'
+                                      }`}>
+                                        {purchasingPremiumListing ? 'Redirecting...' : premiumSlotsLeft > 0
+                                          ? <>Get this slot <ChevronRight className="w-3 h-3" /></>
+                                          : 'Waitlist coming soon'}
+                                      </span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+              </>
               )}
 
               {/* ── Profile tab ── */}
