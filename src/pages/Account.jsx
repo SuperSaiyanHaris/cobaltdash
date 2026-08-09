@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   User, Mail, Lock, Calendar, Star,
   Eye, EyeOff, ArrowLeft, ExternalLink, Megaphone,
-  X, Search, Loader, LogOut, Shield, ChevronRight, Plus,
+  X, Search, Loader, LogOut, Shield, ChevronRight, Plus, MoreVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
@@ -41,6 +41,7 @@ const INPUT = 'bg-white border border-neutral-200 rounded-lg text-neutral-900 pl
 
 export default function Account() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
     const tab = searchParams.get('tab');
@@ -64,6 +65,7 @@ export default function Account() {
 
   // Featured listings
   const [featuredListings, setFeaturedListings] = useState([]);
+  const [openListingActionsId, setOpenListingActionsId] = useState(null);
   const [showListingDialog, setShowListingDialog] = useState(false);
   const [listingPlatform, setListingPlatform] = useState('youtube');
   const [listingQuery, setListingQuery] = useState('');
@@ -251,6 +253,15 @@ export default function Account() {
       showToast(err.message || 'Could not start checkout.', 'error');
       setPurchasingPremiumListing(false);
     }
+  };
+
+  // Jumps to the exact row on the rankings page. Featured slots aren't at a
+  // fixed rank (Basic lands at 15/20/25... depending on how many other Basic
+  // buyers there are; Premium can land in either the 4-5 or 9-10 band), so a
+  // plain link to the rankings page wouldn't reliably show the user their own
+  // listing. Rankings.jsx reads this hash and scrolls/highlights the match.
+  const goToRankingsListing = (listing) => {
+    navigate(`/rankings/${listing.platform}#listing-${listing.id}`);
   };
 
   const handleCancelListing = async (listingId) => {
@@ -461,8 +472,18 @@ export default function Account() {
                             const until = listing.active_until
                               ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                               : null;
+                            const isMenuOpen = openListingActionsId === listing.id;
                             return (
-                              <div key={listing.id} className="flex items-center gap-3 px-3.5 py-3">
+                              <div
+                                key={listing.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => goToRankingsListing(listing)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToRankingsListing(listing); }
+                                }}
+                                className="group flex items-center gap-3 px-3.5 py-3 cursor-pointer hover:bg-neutral-50 transition-colors"
+                              >
                                 <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="md" rounded="rounded-lg" />
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
@@ -482,15 +503,43 @@ export default function Account() {
                                     {listing.status}
                                   </span>
                                 </span>
-                                {isActive && !isPending && (
+                                <ChevronRight className="w-3.5 h-3.5 text-neutral-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+
+                                {/* Actions menu — same two actions as clicking the row / the old
+                                    inline cancel button, just also reachable for anyone who doesn't
+                                    notice the row itself is clickable. */}
+                                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                  {isMenuOpen && (
+                                    <div className="fixed inset-0 z-30" onClick={() => setOpenListingActionsId(null)} />
+                                  )}
                                   <button
-                                    onClick={() => handleCancelListing(listing.id)}
-                                    className="p-1.5 text-neutral-300 hover:text-red-600 transition-colors flex-shrink-0"
-                                    title="Cancel listing"
+                                    onClick={() => setOpenListingActionsId(isMenuOpen ? null : listing.id)}
+                                    className="p-1.5 text-neutral-300 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
+                                    title="Listing actions"
                                   >
-                                    <X className="w-3.5 h-3.5" />
+                                    <MoreVertical className="w-3.5 h-3.5" />
                                   </button>
-                                )}
+                                  {isMenuOpen && (
+                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-40">
+                                      <button
+                                        onClick={() => { setOpenListingActionsId(null); goToRankingsListing(listing); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
+                                      >
+                                        <Eye className="w-3.5 h-3.5" />
+                                        View in rankings
+                                      </button>
+                                      {isActive && !isPending && (
+                                        <button
+                                          onClick={() => { setOpenListingActionsId(null); handleCancelListing(listing.id); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                          Cancel listing
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}

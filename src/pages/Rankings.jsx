@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
@@ -478,6 +478,7 @@ function RankingsOverview() {
 
 function PlatformRankings({ urlPlatform }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedPlatform, setSelectedPlatform] = useState(urlPlatform || 'youtube');
   const [selectedRankType, setSelectedRankType] = useState('subscribers');
   const [topCount, setTopCount] = useState(50);
@@ -489,6 +490,10 @@ function PlatformRankings({ urlPlatform }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('desc');
   const [sponsoredListings, setSponsoredListings] = useState([]);
+  // Set when arriving via a #listing-<id> deep link from Account settings —
+  // scrolls that row into view and gives it a brief ring so a buyer can find
+  // their own featured slot instead of hunting a page of otherwise-identical rows.
+  const [highlightListingId, setHighlightListingId] = useState(null);
   // creator_id → number[] (30-day subscriber series). Loaded lazily after rankings render.
   const [sparklines, setSparklines] = useState({});
 
@@ -661,6 +666,18 @@ function PlatformRankings({ urlPlatform }) {
     }
     return result;
   }, [sortedRankings, sponsoredListings, selectedPlatform]);
+
+  // Deep link from Account settings: /rankings/:platform#listing-<id>
+  useEffect(() => {
+    if (loading || !location.hash.startsWith('#listing-')) return;
+    const targetId = location.hash.slice(1);
+    const el = document.getElementById(targetId);
+    if (!el) return; // e.g. the slot's rank fell outside the current Top X view
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightListingId(targetId);
+    const timer = setTimeout(() => setHighlightListingId(null), 2200);
+    return () => clearTimeout(timer);
+  }, [loading, displayList, location.hash]);
 
   const SortIcon = ({ column }) => {
     if (sortColumn !== column) return <ArrowUpDown className="w-3 h-3 text-neutral-300" />;
@@ -943,12 +960,15 @@ function PlatformRankings({ urlPlatform }) {
                 // available-slot read clearly without breaking the row layout.
                 const RowComponent = isGhost ? Link : Link;
                 const rowHref = isGhost ? '/promote' : `/${creator.platform}/${creator.username}`;
-                const rowClass = isGhost
+                const isHighlighted = highlightListingId === `listing-${creator.listingId}`;
+                const rowClass = `${isGhost
                   ? 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-dashed border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-colors group'
-                  : 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 bg-amber-50/60 hover:bg-amber-50 transition-colors group';
+                  : 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 bg-amber-50/60 hover:bg-amber-50 transition-colors group'
+                } transition-shadow duration-700 ${isHighlighted ? 'ring-2 ring-inset ring-amber-500' : ''}`;
                 return (
                   <RowComponent
                     key={`sponsored-${creator.listingId}`}
+                    id={`listing-${creator.listingId}`}
                     to={rowHref}
                     className={rowClass}
                   >
