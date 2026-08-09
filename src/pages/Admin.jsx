@@ -93,7 +93,7 @@ export default function Admin() {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-1.5 mb-6">
+          <div className="flex items-center gap-1.5 mb-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {TABS.map(tab => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;

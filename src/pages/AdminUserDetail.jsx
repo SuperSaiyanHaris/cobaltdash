@@ -253,23 +253,23 @@ export default function AdminUserDetail() {
           {/* Identity card */}
           <div className={`${CARD} p-5 sm:p-6 flex items-center flex-wrap gap-4`}>
             <CreatorAvatar src={u.avatarUrl} name={u.displayName || u.email} size="lg" rounded="rounded-full" className="!w-14 !h-14" />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-full sm:basis-auto">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-neutral-900 text-base">{u.displayName || 'No name set'}</p>
+                <p className="font-semibold text-neutral-900 text-base truncate">{u.displayName || 'No name set'}</p>
                 {u.isSuspended && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide bg-red-50 text-red-600">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide bg-red-50 text-red-600 flex-shrink-0">
                     <ShieldAlert className="w-3 h-3" />
                     Suspended
                   </span>
                 )}
               </div>
-              <p className="text-sm text-neutral-400 mt-0.5 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" />
-                {u.email}
+              <p className="text-sm text-neutral-400 mt-0.5 flex items-center gap-1.5 min-w-0">
+                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate min-w-0 flex-1">{u.email}</span>
                 {u.emailConfirmedAt ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" title="Email verified" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" title="Email verified" />
                 ) : (
-                  <Circle className="w-3.5 h-3.5 text-neutral-300" title="Email not verified" />
+                  <Circle className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" title="Email not verified" />
                 )}
               </p>
             </div>
@@ -408,8 +408,8 @@ export default function AdminUserDetail() {
               ) : (
                 <div className="space-y-2.5">
                   {detail.savedReports.map(r => (
-                    <div key={r.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-neutral-900 truncate">{r.name}</span>
+                    <div key={r.id} className="flex items-center gap-2 text-sm">
+                      <span className="text-neutral-900 truncate min-w-0 flex-1">{r.name}</span>
                       <span className="text-xs text-neutral-400 flex-shrink-0">{formatRelativeTime(r.created_at)}</span>
                     </div>
                   ))}
@@ -422,8 +422,8 @@ export default function AdminUserDetail() {
               ) : (
                 <div className="space-y-2.5">
                   {detail.savedCompares.map(c => (
-                    <div key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-neutral-900 truncate">{c.name}</span>
+                    <div key={c.id} className="flex items-center gap-2 text-sm">
+                      <span className="text-neutral-900 truncate min-w-0 flex-1">{c.name}</span>
                       <span className="text-xs text-neutral-400 flex-shrink-0">{formatRelativeTime(c.created_at)}</span>
                     </div>
                   ))}
