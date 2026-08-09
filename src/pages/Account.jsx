@@ -512,10 +512,10 @@ export default function Account() {
                 {/* Add-a-listing dialog: platform nav rail on the left, search/tiers on the right */}
                 {showListingDialog && (
                   <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
+                    className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/40 backdrop-blur-[2px] sm:p-4"
                     onClick={(e) => { if (e.target === e.currentTarget) setShowListingDialog(false); }}
                   >
-                    <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex max-h-[85vh]">
+                    <div className="w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[85vh] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex">
                       {/* Platform nav rail */}
                       <div className="hidden sm:block w-48 flex-shrink-0 border-r border-neutral-200/80 p-3 overflow-y-auto">
                         <p className={`${MICRO} px-2.5 mb-2`}>Platform</p>
@@ -569,54 +569,54 @@ export default function Account() {
                             ))}
                           </div>
 
-                          {/* Search input with dropdown */}
-                          <div className="relative">
-                            <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT} focus-within:border-neutral-400`}>
-                              {listingSearching
-                                ? <Loader className="w-3.5 h-3.5 text-neutral-400 animate-spin flex-shrink-0" />
-                                : <Search className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
-                              }
-                              <input
-                                type="text"
-                                value={listingQuery}
-                                onChange={e => {
-                                  setListingQuery(e.target.value);
-                                  setSelectedCreator(null);
-                                  setAlreadyListed(false);
-                                }}
-                                placeholder={`Search ${PLATFORM_LABELS[listingPlatform]} creators...`}
-                                className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-[16px] sm:text-sm focus:outline-none"
-                                autoFocus
-                              />
-                              {listingQuery && (
-                                <button
-                                  onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); }}
-                                  className="text-neutral-400 hover:text-neutral-900"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Dropdown results */}
-                            {listingResults.length > 0 && !selectedCreator && (
-                              <div className="absolute top-full mt-1.5 left-0 right-0 z-10 bg-white border border-neutral-200 rounded-lg shadow-xl overflow-hidden">
-                                {listingResults.map(c => (
-                                  <button
-                                    key={c.id}
-                                    onClick={() => handleSelectCreator(c)}
-                                    className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-neutral-50 transition-colors text-left"
-                                  >
-                                    <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-md" />
-                                    <div className="min-w-0">
-                                      <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
-                                      <p className="text-xs text-neutral-400">@{c.username}</p>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
+                          {/* Search input */}
+                          <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT} focus-within:border-neutral-400`}>
+                            {listingSearching
+                              ? <Loader className="w-3.5 h-3.5 text-neutral-400 animate-spin flex-shrink-0" />
+                              : <Search className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
+                            }
+                            <input
+                              type="text"
+                              value={listingQuery}
+                              onChange={e => {
+                                setListingQuery(e.target.value);
+                                setSelectedCreator(null);
+                                setAlreadyListed(false);
+                              }}
+                              placeholder={`Search ${PLATFORM_LABELS[listingPlatform]} creators...`}
+                              className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-[16px] sm:text-sm focus:outline-none"
+                              autoFocus
+                            />
+                            {listingQuery && (
+                              <button
+                                onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); }}
+                                className="text-neutral-400 hover:text-neutral-900"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
                             )}
                           </div>
+
+                          {/* Results — flow inline (not an absolute overlay) so they're always visibly
+                              part of the same scroll area instead of getting clipped off-screen once
+                              the on-screen keyboard shrinks the viewport on mobile. */}
+                          {listingResults.length > 0 && !selectedCreator && (
+                            <div className="border border-neutral-200 rounded-lg overflow-hidden divide-y divide-neutral-100">
+                              {listingResults.map(c => (
+                                <button
+                                  key={c.id}
+                                  onClick={() => handleSelectCreator(c)}
+                                  className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-neutral-50 transition-colors text-left"
+                                >
+                                  <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-md" />
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
+                                    <p className="text-xs text-neutral-400">@{c.username}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
 
                           {/* TikTok: not in DB — offer instant lookup */}
                           {listingPlatform === 'tiktok' && listingQuery.trim().length >= 2 && !listingSearching && listingResults.length === 0 && !selectedCreator && (
