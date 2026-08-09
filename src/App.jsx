@@ -50,6 +50,7 @@ const Terms = lazyWithRetry(() => import('./pages/Terms'));
 const Blog = lazyWithRetry(() => import('./pages/Blog'));
 const BlogPost = lazyWithRetry(() => import('./pages/BlogPost'));
 const Admin = lazyWithRetry(() => import('./pages/Admin'));
+const AdminUserDetail = lazyWithRetry(() => import('./pages/AdminUserDetail'));
 const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'));
 const AuthPage = lazyWithRetry(() => import('./pages/AuthPage'));
 const Calculator = lazyWithRetry(() => import('./pages/Calculator'));
@@ -262,6 +263,7 @@ function LayoutWrapper() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribe />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/users/:id" element={<AdminUserDetail />} />
           <Route path="/blog/admin" element={<Navigate to="/admin" replace />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/methodology" element={<Methodology />} />

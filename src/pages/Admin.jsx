@@ -1,19 +1,25 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, ShieldAlert, FileText, Mail } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Loader2, ShieldAlert, FileText, Mail, Users } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import BlogPostsPanel from '../components/admin/BlogPostsPanel';
 import SubscribersPanel from '../components/admin/SubscribersPanel';
+import UsersPanel from '../components/admin/UsersPanel';
 
 const TABS = [
   { id: 'blog', label: 'Blog Posts', icon: FileText },
   { id: 'subscribers', label: 'Subscribers', icon: Mail },
+  { id: 'users', label: 'Users', icon: Users },
 ];
 
 export default function Admin() {
   const { user, authLoading, isAdmin, adminChecked } = useAdminAuth();
-  const [activeTab, setActiveTab] = useState('blog');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get('tab');
+    return TABS.some(t => t.id === tab) ? tab : 'blog';
+  });
 
   if (authLoading || (!user && !adminChecked)) {
     return (
@@ -110,6 +116,7 @@ export default function Admin() {
 
           {activeTab === 'blog' && <BlogPostsPanel />}
           {activeTab === 'subscribers' && <SubscribersPanel />}
+          {activeTab === 'users' && <UsersPanel />}
         </div>
       </div>
     </>

@@ -10,8 +10,13 @@
  * Featured listing — Premium ($149/mo, top-10 placement, 2 slots/platform):
  *   Body: { priceKey: 'featured-premium', creatorId: string, platform: string, returnUrl: string }
  *
- * Cancel a listing:
+ * Cancel a listing (owner):
  *   Body: { priceKey: 'cancel-listing', listingId: string }
+ *
+ * Cancel a listing (admin, on behalf of any user — see the /admin/users/:id page):
+ *   Body: { priceKey: 'cancel-listing', listingId: string, adminOverride: true }
+ *   Caller's own JWT must belong to an address in ADMIN_EMAILS; the ownership
+ *   check against purchased_by_user_id is skipped in this case.
  *
  * Featured Listings is the only paid product — subscription tiers (Lurker/Sub/Mod) are deprecated.
  * The webhook creates the listing row only after payment succeeds; no orphan rows from abandoned checkouts.
@@ -25,6 +30,11 @@ const PRICE_IDS = {
   featured: process.env.STRIPE_FEATURED_BASIC_PRICE_ID,
   'featured-premium': process.env.STRIPE_FEATURED_PREMIUM_PRICE_ID,
 };
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
 
 const VALID_PLATFORMS = new Set(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack']);
 const SAFE_ORIGINS = new Set(['https://shinypull.com', 'http://localhost:3000']);
@@ -75,18 +85,21 @@ export default async function handler(req, res) {
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { priceKey, returnUrl, creatorId, platform, listingId } = req.body;
+    const { priceKey, returnUrl, creatorId, platform, listingId, adminOverride } = req.body;
 
     // Cancel a featured listing
     if (priceKey === 'cancel-listing') {
       if (!listingId) return res.status(400).json({ error: 'Missing listingId' });
 
-      const { data: listing } = await supabase
+      const isAdmin = !!adminOverride && ADMIN_EMAILS.includes(user.email.trim().toLowerCase());
+      if (adminOverride && !isAdmin) return res.status(403).json({ error: 'Forbidden: admin access required' });
+
+      let listingQuery = supabase
         .from('featured_listings')
         .select('id, stripe_subscription_id, status, purchased_by_user_id')
-        .eq('id', listingId)
-        .eq('purchased_by_user_id', user.id)
-        .maybeSingle();
+        .eq('id', listingId);
+      if (!isAdmin) listingQuery = listingQuery.eq('purchased_by_user_id', user.id);
+      const { data: listing } = await listingQuery.maybeSingle();
 
       if (!listing) return res.status(404).json({ error: 'Listing not found' });
       if (listing.status !== 'active') return res.status(400).json({ error: 'Listing is not active' });
