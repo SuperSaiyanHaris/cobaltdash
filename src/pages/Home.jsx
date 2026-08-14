@@ -915,7 +915,7 @@ const FEATURES = [
   { Icon: Scale,      title: 'Head-to-Head Compare',body: 'Stack any two creators',                to: '/compare',                  accent: 'violet' },
   { Icon: TrendingUp, title: 'Trending This Month',  body: 'Catch growth before it peaks',          to: '/trending',                 accent: 'emerald' },
   { Icon: Calculator, title: 'Earnings Estimator',   body: 'Estimate YouTube ad revenue',           to: '/youtube/money-calculator', accent: 'green' },
-  { Icon: LineChart,  title: 'Daily Growth History', body: 'Charts, deltas, milestones',            to: '/youtube/mrbeast',          accent: 'sky' },
+  { Icon: LineChart,  title: 'Daily Growth History', body: 'Charts, deltas, milestones',            to: '/milestones',               accent: 'sky' },
 ];
 
 const FEATURE_COLORS = {
