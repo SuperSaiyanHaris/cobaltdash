@@ -27,8 +27,6 @@ const JSON_HEADERS = {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -44,97 +42,6 @@ function getTodayLocal() {
   const month = String(nyDate.getMonth() + 1).padStart(2, '0');
   const day = String(nyDate.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-/**
- * Use Gemini AI to resolve a display name / guess to an actual handle
- * Returns the resolved username or null if it can't determine one
- */
-async function resolveHandleWithAI(query, platform) {
-  if (!GEMINI_API_KEY) {
-    console.log(`[${query}] ⏭️  No GEMINI_API_KEY set, skipping AI handle resolution`);
-    return null;
-  }
-
-  try {
-    console.log(`[${query}] 🤖 Asking AI to resolve ${platform} handle...`);
-    const platformName = 'TikTok';
-    const prompt = `I tried to look up the ${platformName} profile "${query}" but it was not found. The input may be a display name, a misspelled handle, or missing special characters like underscores or dots. What is the correct, official ${platformName} username for this person? Reply with ONLY the exact username (no @ symbol, no explanation, no punctuation). If you cannot determine who this is or they don't have a ${platformName} account, reply with exactly "UNKNOWN".`;
-
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 50 }
-        })
-      }
-    );
-
-    if (!res.ok) {
-      // Retry once after 10s on rate limit
-      if (res.status === 429) {
-        console.log(`[${query}] 🤖 Rate limited, retrying in 10s...`);
-        await new Promise(r => setTimeout(r, 10000));
-        const retry = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0, maxOutputTokens: 50 }
-            })
-          }
-        );
-        if (!retry.ok) {
-          console.warn(`[${query}] AI API still returned ${retry.status} after retry`);
-          return null;
-        }
-        const retryData = await retry.json();
-        const retryAnswer = retryData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (retryAnswer && retryAnswer !== 'UNKNOWN') {
-          const cleaned = retryAnswer.replace(/^@/, '').replace(/["'`.]/g, '').trim().toLowerCase();
-          if (cleaned && /^[a-zA-Z0-9._]{1,30}$/.test(cleaned) && cleaned !== query.toLowerCase().replace(/[^a-z0-9._]/g, '')) {
-            console.log(`[${query}] 🤖 AI resolved handle → @${cleaned}`);
-            return cleaned;
-          }
-        }
-        return null;
-      }
-      console.warn(`[${query}] AI API returned ${res.status}`);
-      return null;
-    }
-
-    const data = await res.json();
-    const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    if (!answer || answer === 'UNKNOWN' || answer.length > 30) {
-      console.log(`[${query}] 🤖 AI could not determine the handle`);
-      return null;
-    }
-
-    // Clean the response — strip @, quotes, period at end
-    const cleaned = answer.replace(/^@/, '').replace(/["'`.]/g, '').trim().toLowerCase();
-    if (!cleaned || !/^[a-zA-Z0-9._]{1,30}$/.test(cleaned)) {
-      console.log(`[${query}] 🤖 AI response wasn't a valid username: "${answer}"`);
-      return null;
-    }
-
-    // Don't bother if AI returned the same thing we already tried
-    if (cleaned === query.toLowerCase().replace(/[^a-z0-9._]/g, '')) {
-      console.log(`[${query}] 🤖 AI returned same username we already tried`);
-      return null;
-    }
-
-    console.log(`[${query}] 🤖 AI resolved handle → @${cleaned}`);
-    return cleaned;
-  } catch (err) {
-    console.warn(`[${query}] AI resolution failed:`, err.message);
-    return null;
-  }
 }
 
 /**
@@ -441,79 +348,6 @@ async function processRequest(request) {
         .eq('id', request.id);
       console.log(`[${request.username}] ↩️  Reverted to pending (rate limited, will retry next run)`);
       return { success: false, username: request.username, error: error.message, rateLimited: true, scrapeBlocked: false };
-    }
-
-    // --- AI Fallback: try to resolve the correct handle ---
-    // This runs for scrape blocks (wrong username?) and other errors
-    const aiHandle = await resolveHandleWithAI(request.username, request.platform);
-
-    if (aiHandle) {
-      try {
-        console.log(`[${request.username}] 🔄 Retrying with AI-resolved handle: @${aiHandle}`);
-        const profileData = await scrapeTikTokProfile(aiHandle);
-        console.log(`[${aiHandle}] ✓ Scraped: ${profileData.displayName} (${profileData.followers.toLocaleString()} followers)`);
-
-        // Check if this creator already exists under the corrected handle
-        const { data: existingCreator } = await supabase
-          .from('creators')
-          .select('id')
-          .eq('platform', request.platform)
-          .ilike('username', aiHandle)
-          .single();
-
-        let creatorId;
-        if (existingCreator) {
-          creatorId = existingCreator.id;
-          console.log(`[${aiHandle}] Creator already exists, using existing ID`);
-        } else {
-          const { data: newCreator, error: creatorError } = await supabase
-            .from('creators')
-            .insert({
-              platform: profileData.platform,
-              platform_id: profileData.platformId,
-              username: profileData.username,
-              display_name: profileData.displayName,
-              profile_image: profileData.profileImage,
-              description: profileData.description,
-              category: profileData.category,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (creatorError) throw new Error(`Failed to insert creator: ${creatorError.message}`);
-          creatorId = newCreator.id;
-          console.log(`[${aiHandle}] ✓ Creator inserted into database`);
-        }
-
-        // Create initial stats entry
-        const today = getTodayLocal();
-        const statsInsert = {
-          creator_id: creatorId,
-          recorded_at: today,
-          followers: profileData.followers,
-          total_posts: profileData.totalPosts,
-          created_at: new Date().toISOString()
-        };
-        if (request.platform === 'tiktok' && profileData.totalLikes) {
-          statsInsert.total_views = profileData.totalLikes;
-        }
-        const { error: statsError } = await supabase
-          .from('creator_stats')
-          .insert(statsInsert);
-
-        if (statsError && !statsError.message.includes('duplicate key')) {
-          console.warn(`[${aiHandle}] Warning: Failed to create stats entry: ${statsError.message}`);
-        }
-
-        // Success via AI — delete the request
-        await supabase.from('creator_requests').delete().eq('id', request.id);
-        console.log(`[${request.username}] ✅ Completed via AI resolve → @${aiHandle} (record deleted)`);
-        return { success: true, username: aiHandle };
-      } catch (aiRetryError) {
-        console.error(`[${request.username}] 🤖 AI-resolved handle @${aiHandle} also failed:`, aiRetryError.message);
-      }
     }
 
     // All attempts exhausted — mark as failed (keeps row as tombstone so discovery

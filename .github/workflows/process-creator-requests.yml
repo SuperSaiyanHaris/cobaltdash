@@ -29,8 +29,6 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # GEMINI_API_KEY intentionally not passed — Gemini retired 2026-07-14
-          # (script skips AI handle resolution gracefully when the key is absent)
         run: node scripts/processCreatorRequests.js
 
       - name: Report completion
