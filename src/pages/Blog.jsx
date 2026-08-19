@@ -147,7 +147,7 @@ export default function Blog() {
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${colors.dot} ${isActive ? 'opacity-100' : 'opacity-35'}`} />
               <span>{category}</span>
             </div>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-50 text-neutral-400 font-semibold tabular-nums">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-50 text-neutral-600 font-semibold tabular-nums">
               {count}
             </span>
           </button>
@@ -186,7 +186,7 @@ export default function Blog() {
               {/* Desktop Sidebar */}
               <aside className="hidden lg:block w-52 flex-shrink-0">
                 <div className="sticky top-24">
-                  <h3 className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest mb-3 px-3">
+                  <h3 className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-3 px-3">
                     Categories
                   </h3>
                   {renderSidebar(toggleCategory)}
@@ -254,7 +254,7 @@ export default function Blog() {
                 {filteredPosts.length === 0 && (
                   <div className="text-center py-16">
                     <BookOpen className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-                    <p className="text-neutral-400 text-lg">No posts found.</p>
+                    <p className="text-neutral-600 text-lg">No posts found.</p>
                     {searchQuery && (
                       <button onClick={() => setSearchQuery('')} className="mt-3 text-sm text-neutral-500 hover:text-neutral-800 underline transition-colors">
                         Clear search
@@ -292,7 +292,7 @@ export default function Blog() {
                           <p className="text-neutral-500 text-sm leading-relaxed mb-5 line-clamp-2">
                             {featuredPost.description}
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-neutral-400">
+                          <div className="flex items-center gap-4 text-xs text-neutral-600">
                             <span className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5" />
                               {formatDate(featuredPost.published_at)}
@@ -335,10 +335,10 @@ export default function Blog() {
                             <h3 className="text-base font-bold text-neutral-900 mb-2 group-hover:text-neutral-700 transition-colors line-clamp-2 flex-1">
                               {post.title}
                             </h3>
-                            <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 mb-3">
+                            <p className="text-neutral-600 text-xs leading-relaxed line-clamp-2 mb-3">
                               {post.description}
                             </p>
-                            <div className="flex items-center justify-between text-xs text-neutral-400 pt-3 border-t border-neutral-200">
+                            <div className="flex items-center justify-between text-xs text-neutral-600 pt-3 border-t border-neutral-200">
                               <span className="flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5" />
                                 {formatDate(post.published_at)}
