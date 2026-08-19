@@ -2016,7 +2016,7 @@ export default function CreatorProfile() {
             {platform === 'music' && musicAlbums.length > 0 && (
               <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
                 <div className="px-6 py-4 border-b border-neutral-200">
-                  <h3 className="text-lg font-semibold text-neutral-900">Top Albums</h3>
+                  <h2 className="text-lg font-semibold text-neutral-900">Top Albums</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-0">
                   {musicAlbums.slice(0, 6).map((album, i) => {
@@ -2059,7 +2059,7 @@ export default function CreatorProfile() {
             {platform === 'music' && musicTracks.length > 0 && (
               <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
                 <div className="px-6 py-4 border-b border-neutral-200">
-                  <h3 className="text-lg font-semibold text-neutral-900">Top Tracks</h3>
+                  <h2 className="text-lg font-semibold text-neutral-900">Top Tracks</h2>
                 </div>
                 <div className="divide-y divide-gray-800">
                   {musicTracks.slice(0, 10).map((track, i) => (
@@ -2092,7 +2092,7 @@ export default function CreatorProfile() {
             {metrics ? (
               <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
                 <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-neutral-900">Daily Channel Metrics</h3>
+                  <h2 className="text-lg font-semibold text-neutral-900">Daily Channel Metrics</h2>
                   <button
                     onClick={handleExportCSV}
                     title="Export as CSV"
@@ -2412,7 +2412,7 @@ export default function CreatorProfile() {
                 <p className="text-neutral-500 text-sm mb-2">
                   This creator is being tracked. We collect daily snapshots to show growth trends and metrics.
                 </p>
-                <p className="text-xs text-neutral-400 tabular-nums">
+                <p className="text-xs text-neutral-600 tabular-nums">
                   {statsHistory.length} day(s) of data collected • Check back soon for trends
                 </p>
               </div>
@@ -2466,7 +2466,7 @@ function StatCard({ icon: Icon, label, value, sublabel }) {
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 leading-tight line-clamp-2 break-words">{label}</p>
       </div>
       <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">{value}</p>
-      {sublabel && <p className="text-[10px] sm:text-xs text-neutral-400 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
+      {sublabel && <p className="text-[10px] sm:text-xs text-neutral-600 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
     </div>
   );
 }
@@ -2481,7 +2481,7 @@ function SummaryCard({ label, sublabel, value, change }) {
     <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 sm:p-5">
       <p className={`font-semibold text-neutral-900 mb-1 tabular-nums ${isLongValue ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl'}`}>{value}</p>
       <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">{label}</p>
-      {sublabel && <p className="text-xs text-neutral-400 mt-1">{sublabel}</p>}
+      {sublabel && <p className="text-xs text-neutral-600 mt-1">{sublabel}</p>}
       {change !== undefined && change !== null && (
         <p className={`text-xs mt-2 font-medium tabular-nums ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400'}`}>
           {isPositive ? '+' : ''}{formatNumber(change)}
@@ -2510,7 +2510,7 @@ function GrowthRateCard({ label, value, platform }) {
       <div className={`text-2xl font-semibold tabular-nums ${valueColor}`}>
         {isPositive ? '+' : ''}{value.toFixed(2)}%
       </div>
-      <p className="text-xs text-neutral-400 mt-1">{followerLabel} growth rate</p>
+      <p className="text-xs text-neutral-600 mt-1">{followerLabel} growth rate</p>
     </div>
   );
 }
@@ -2693,7 +2693,7 @@ function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
     <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6 mb-6">
       <div className="flex items-center gap-2 mb-4">
         <Target className="w-5 h-5 text-indigo-600" />
-        <h3 className="text-lg font-semibold text-neutral-900">Milestone Predictions</h3>
+        <h2 className="text-lg font-semibold text-neutral-900">Milestone Predictions</h2>
       </div>
       <p className="text-sm text-neutral-700 mb-4">
         Based on current {metricLabel} growth of <span className="font-semibold text-indigo-600">+{formatNumber(dailyGrowth)}/day</span>
@@ -2721,7 +2721,11 @@ function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
                 <Clock className="w-3.5 h-3.5" />
                 {formatDays(pred.daysNeeded)}
               </p>
-              <p className={`text-xs tabular-nums ${index === 0 ? 'text-neutral-500' : 'text-neutral-400'}`}>
+              {/* Light-on-dark and dark-on-light both need to move toward
+                  more contrast, not the same direction: neutral-500 on the
+                  neutral-900 card measured ~3.8:1, neutral-400 on white
+                  measured ~2.3:1, both under WCAG AA's 4.5:1. */}
+              <p className={`text-xs tabular-nums ${index === 0 ? 'text-neutral-400' : 'text-neutral-600'}`}>
                 Est. {pred.estimatedDate.toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -2732,7 +2736,7 @@ function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
           </div>
         ))}
       </div>
-      <p className="text-xs text-neutral-400 mt-4">
+      <p className="text-xs text-neutral-600 mt-4">
         * Predictions assume consistent growth. Actual results may vary based on content, algorithm changes, and other factors.
       </p>
     </div>
