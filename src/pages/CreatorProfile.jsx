@@ -1630,7 +1630,7 @@ export default function CreatorProfile() {
               )}
 
               {/* Hours Watched / Total Views */}
-              {platform === 'twitch' ? (
+              {platform === 'twitch' || platform === 'kick' ? (
                 <StatCard
                   icon={Eye}
                   label="Hours Watched"

@@ -37,7 +37,7 @@ jobs:
           LASTFM_CLIENT_ID: ${{ secrets.LASTFM_CLIENT_ID }}
         run: node scripts/collectDailyStats.js
 
-      - name: Aggregate hours watched (Twitch)
+      - name: Aggregate hours watched (Twitch + Kick)
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

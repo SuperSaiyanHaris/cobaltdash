@@ -2,7 +2,7 @@
  * Aggregate Hours Watched
  *
  * This script aggregates stream session data into daily/weekly/monthly
- * hours watched metrics for each Twitch creator.
+ * hours watched metrics for each Twitch and Kick creator.
  *
  * Should run daily after the stats collection job.
  *
@@ -95,14 +95,25 @@ async function aggregateHoursWatched() {
   const monthAgo = new Date(today);
   monthAgo.setDate(monthAgo.getDate() - 30);
 
-  // Get all Twitch creators. Same paginated pattern as collectDailyStats.js /
-  // monitorTwitchStreams.js — an un-paginated .select() silently truncates to
-  // Supabase's default 1000-row PostgREST cap, which meant most of the 20K+
-  // Twitch roster (including creators monitorTwitchStreams.js *did* capture
-  // stream_sessions for) never got those sessions aggregated into
-  // creator_stats, leaving hours_watched_* permanently null for them.
-  // Verified 2026-07-22: manual run against production backfilled real
-  // hours_watched_* data for 869 previously-null creators in one pass.
+  // Get all Twitch + Kick creators — the two platforms with stream_sessions-
+  // based hours-watched tracking. Same paginated pattern as
+  // collectDailyStats.js / monitorTwitchStreams.js — an un-paginated
+  // .select() silently truncates to Supabase's default 1000-row PostgREST
+  // cap, which meant most of the 20K+ Twitch roster (including creators
+  // monitorTwitchStreams.js *did* capture stream_sessions for) never got
+  // those sessions aggregated into creator_stats, leaving hours_watched_*
+  // permanently null for them. Verified 2026-07-22: manual run against
+  // production backfilled real hours_watched_* data for 869 previously-null
+  // creators in one pass.
+  //
+  // Kick added 2026-08-18: monitorKickStreams.js has computed real
+  // per-session hours_watched via the same finalize_stream_sessions RPC
+  // since 2026-07-26, but this script only ever looped Twitch, so every Kick
+  // creator's hours_watched_* stayed null even though the session-level math
+  // was already correct and just sitting unused (98.6% of recent Kick
+  // sessions had a real computed hours_watched at the time this was found).
+  // The aggregation logic below is keyed entirely on creator_id, not
+  // platform, so widening this one query to include Kick is the whole fix.
   let creators = [];
   {
     let from = 0;
@@ -110,8 +121,8 @@ async function aggregateHoursWatched() {
     while (true) {
       const { data } = await supabase
         .from('creators')
-        .select('id, username, display_name')
-        .eq('platform', 'twitch')
+        .select('id, username, display_name, platform')
+        .in('platform', ['twitch', 'kick'])
         .order('id')
         .range(from, from + pageSize - 1);
       creators = creators.concat(data || []);
@@ -147,7 +158,14 @@ async function aggregateHoursWatched() {
   }
   creators = creators.filter((c) => sessionCreatorIds.has(c.id));
 
-  console.log(`Processing ${creators.length} Twitch creators with session history...\n`);
+  const countsByPlatform = creators.reduce((acc, c) => {
+    acc[c.platform] = (acc[c.platform] || 0) + 1;
+    return acc;
+  }, {});
+  const platformSummary = Object.entries(countsByPlatform)
+    .map(([p, n]) => `${n} ${p}`)
+    .join(', ');
+  console.log(`Processing ${creators.length} creators with session history (${platformSummary})...\n`);
 
   let updatedCount = 0;
   let excludedLowSampleTotal = 0;
