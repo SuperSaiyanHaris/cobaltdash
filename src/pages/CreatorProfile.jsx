@@ -2410,8 +2410,12 @@ export default function CreatorProfile() {
                     YouTube) was invisible unless a user scrolled sideways --
                     easy to miss entirely. Every value here matches the
                     desktop table's own per-platform column logic exactly,
-                    just laid out vertically instead of in cells. */}
-                <div className="md:hidden divide-y divide-neutral-100">
+                    just laid out vertically instead of in cells. Each day is
+                    a real bordered/shadowed card (not a divide-y hairline)
+                    on a tinted backdrop specifically so consecutive days
+                    read as distinct units at a glance -- the flat hairline
+                    version this replaced was flagged as hard to tell apart. */}
+                <div className="md:hidden bg-neutral-50/70 p-3 space-y-3">
                   {metrics.dailyStats.map((stat) => {
                     const secondary = [];
                     if (platform === 'tiktok') {
@@ -2437,120 +2441,154 @@ export default function CreatorProfile() {
                         : '—';
                     })() : null;
 
+                    const showSubsChange = (platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'substack' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0;
+
                     return (
-                      <div key={stat.recorded_at} className="p-4">
-                        <div className="flex items-center justify-between gap-3 mb-3">
-                          <span className="text-sm font-semibold text-neutral-900">
+                      <div key={stat.recorded_at} className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
+                        {/* Header bar -- the one thing that has to be
+                            unmistakable at a glance scrolling through 14+
+                            of these, so it gets its own row and a hairline
+                            of its own rather than sharing space with data. */}
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-neutral-50/80 border-b border-neutral-100">
+                          <Calendar className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
+                          <span className="text-sm font-bold text-neutral-900 tracking-tight">
                             {new Date(stat.recorded_at + 'T12:00:00').toLocaleDateString('en-US', {
                               weekday: 'short',
                               month: 'short',
                               day: 'numeric'
                             })}
                           </span>
-                          <span className="text-right">
-                            <span className="font-semibold text-neutral-900 tabular-nums">{formatNumber(stat.subscribers || stat.followers)}</span>
-                            {(platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'substack' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0 && (
-                              <span className={`ml-1.5 text-xs tabular-nums ${stat.subsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        </div>
+
+                        <div className="p-4">
+                          {/* Primary metric -- same label-over-value pattern as
+                              the StatCard components above, so it reads as
+                              part of the same page rather than a bolted-on table. */}
+                          <div className="flex items-end justify-between gap-3 mb-1">
+                            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">
+                              {platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subs' : platform === 'music' ? 'Listeners' : 'Subscribers'}
+                            </p>
+                            {showSubsChange && (
+                              <span className={`text-xs font-semibold tabular-nums ${stat.subsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 {stat.subsChange > 0 ? '+' : ''}{formatNumber(stat.subsChange)}
                               </span>
                             )}
-                          </span>
+                          </div>
+                          <p className={`text-2xl font-bold text-neutral-900 tabular-nums leading-none ${secondary.length > 0 || earnings !== null ? 'mb-4' : ''}`}>
+                            {formatNumber(stat.subscribers || stat.followers)}
+                          </p>
+
+                          {secondary.length > 0 && (
+                            <div className={`grid gap-3 ${secondary.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'pb-4 mb-4 border-b border-neutral-100' : ''}`}>
+                              {secondary.map((s) => (
+                                <div key={s.label}>
+                                  <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400 mb-1">{s.label}</p>
+                                  <p className="text-base font-bold text-neutral-900 tabular-nums leading-tight">
+                                    {s.value}
+                                    {s.change !== 0 && (
+                                      <span className={`ml-1.5 text-xs font-semibold ${s.change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        {s.change > 0 ? '+' : ''}{s.fmtChange(s.change)}
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {earnings !== null && (
+                            <div className="flex items-center justify-between px-3.5 py-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+                              <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Est. Earnings</span>
+                              <span className="text-base font-bold text-indigo-900 tabular-nums">{earnings}</span>
+                            </div>
+                          )}
                         </div>
-                        {secondary.length > 0 && (
-                          <div className={`grid gap-3 ${secondary.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'mb-3' : ''}`}>
-                            {secondary.map((s) => (
-                              <div key={s.label}>
-                                <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400 mb-0.5">{s.label}</p>
-                                <p className="text-sm font-semibold text-neutral-900 tabular-nums">
-                                  {s.value}
-                                  {s.change !== 0 && (
-                                    <span className={`ml-1 text-xs ${s.change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                      {s.change > 0 ? '+' : ''}{s.fmtChange(s.change)}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {earnings !== null && (
-                          <div className="flex items-center justify-between px-3 py-2 bg-indigo-50 rounded-lg">
-                            <span className="text-xs font-medium text-indigo-700">Est. Earnings</span>
-                            <span className="text-sm font-bold text-indigo-900 tabular-nums">{earnings}</span>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
 
-                  {/* Summary cards -- same three rows and same per-platform
-                      column logic as the desktop table's summary rows. */}
-                  {[
-                    {
-                      label: 'Daily Average',
-                      subs: metrics.dailyAverage.subs,
-                      hideSubs: platform === 'youtube' && (creator.subscribers || 0) >= 1000,
-                      views: metrics.dailyAverage.views,
-                      videos: null,
-                    },
-                    {
-                      label: 'Weekly Average',
-                      subs: metrics.weeklyAverage.subs,
-                      hideSubs: platform === 'youtube',
-                      views: metrics.weeklyAverage.views,
-                      videos: null,
-                    },
-                    {
-                      label: 'Last 30 Days',
-                      subs: metrics.last30Days.subs,
-                      hideSubs: platform === 'youtube',
-                      views: metrics.last30Days.views,
-                      videos: platform === 'tiktok' || platform === 'youtube' ? metrics.last30Days.videos : null,
-                    },
-                  ].map((row) => {
-                    const showViews = platform === 'tiktok' || platform === 'music' || platform === 'youtube';
-                    const earnings = platform === 'youtube'
-                      ? (row.views > 0 ? formatEarnings(row.views / 1000 * 2, row.views / 1000 * 7) : '—')
-                      : null;
-                    return (
-                      <div key={row.label} className="p-4 bg-indigo-50/60">
-                        <div className="flex items-center justify-between gap-3 mb-3">
-                          <span className="text-sm font-semibold text-indigo-900">{row.label}</span>
-                          {!row.hideSubs && (
-                            <span className={`text-sm font-semibold tabular-nums ${row.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                              {row.subs >= 0 ? '+' : ''}{formatNumber(row.subs)}
-                            </span>
-                          )}
-                        </div>
-                        {showViews && (
-                          <div className={`grid gap-3 ${row.videos !== null ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'mb-3' : ''}`}>
-                            <div>
-                              <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-0.5">
-                                {platform === 'music' ? 'Plays' : 'Views'}
-                              </p>
-                              <p className={`text-sm font-semibold tabular-nums ${row.views > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
-                                {row.views > 0 ? `+${formatNumber(row.views)}` : '—'}
-                              </p>
+                  {/* Summary section -- deliberately its own visual group
+                      (eyebrow label + indigo-tinted cards, not white) so it
+                      reads as "totals across many days" and can't be
+                      mistaken for one more day in the list above it. */}
+                  <div className="pt-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500 mb-2.5 px-1">30-Day Summary</p>
+                    <div className="space-y-3">
+                      {[
+                        {
+                          label: 'Daily Average',
+                          subs: metrics.dailyAverage.subs,
+                          hideSubs: platform === 'youtube' && (creator.subscribers || 0) >= 1000,
+                          views: metrics.dailyAverage.views,
+                          videos: null,
+                        },
+                        {
+                          label: 'Weekly Average',
+                          subs: metrics.weeklyAverage.subs,
+                          hideSubs: platform === 'youtube',
+                          views: metrics.weeklyAverage.views,
+                          videos: null,
+                        },
+                        {
+                          label: 'Last 30 Days',
+                          subs: metrics.last30Days.subs,
+                          hideSubs: platform === 'youtube',
+                          views: metrics.last30Days.views,
+                          videos: platform === 'tiktok' || platform === 'youtube' ? metrics.last30Days.videos : null,
+                        },
+                      ].map((row) => {
+                        const showViews = platform === 'tiktok' || platform === 'music' || platform === 'youtube';
+                        const earnings = platform === 'youtube'
+                          ? (row.views > 0 ? formatEarnings(row.views / 1000 * 2, row.views / 1000 * 7) : '—')
+                          : null;
+                        return (
+                          <div key={row.label} className="bg-indigo-50 rounded-xl border border-indigo-100 overflow-hidden">
+                            <div className="px-4 py-2.5 bg-indigo-100/40 border-b border-indigo-100">
+                              <span className="text-sm font-bold text-indigo-900">{row.label}</span>
                             </div>
-                            {row.videos !== null && (
-                              <div>
-                                <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-0.5">Videos</p>
-                                <p className={`text-sm font-semibold tabular-nums ${row.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                  {row.videos >= 0 ? '+' : ''}{row.videos}
-                                </p>
-                              </div>
-                            )}
+                            <div className="p-4">
+                              {!row.hideSubs && (
+                                <div className={showViews || earnings !== null ? 'mb-4' : ''}>
+                                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-indigo-400 mb-1">
+                                    {platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subs' : platform === 'music' ? 'Listeners' : 'Subscribers'}
+                                  </p>
+                                  <p className={`text-xl font-bold tabular-nums leading-none ${row.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {row.subs >= 0 ? '+' : ''}{formatNumber(row.subs)}
+                                  </p>
+                                </div>
+                              )}
+                              {showViews && (
+                                <div className={`grid gap-3 ${row.videos !== null ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'pb-4 mb-4 border-b border-indigo-100' : ''}`}>
+                                  <div>
+                                    <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-1">
+                                      {platform === 'music' ? 'Plays' : 'Views'}
+                                    </p>
+                                    <p className={`text-base font-bold tabular-nums leading-tight ${row.views > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
+                                      {row.views > 0 ? `+${formatNumber(row.views)}` : '—'}
+                                    </p>
+                                  </div>
+                                  {row.videos !== null && (
+                                    <div>
+                                      <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-1">Videos</p>
+                                      <p className={`text-base font-bold tabular-nums leading-tight ${row.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        {row.videos >= 0 ? '+' : ''}{row.videos}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {earnings !== null && (
+                                <div className="flex items-center justify-between px-3.5 py-3 bg-white border border-indigo-100 rounded-lg">
+                                  <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Est. Earnings</span>
+                                  <span className="text-base font-bold text-indigo-900 tabular-nums">{earnings}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {earnings !== null && (
-                          <div className="flex items-center justify-between px-3 py-2 bg-white rounded-lg">
-                            <span className="text-xs font-medium text-indigo-700">Est. Earnings</span>
-                            <span className="text-sm font-bold text-indigo-900 tabular-nums">{earnings}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
