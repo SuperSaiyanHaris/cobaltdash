@@ -386,7 +386,11 @@ function RankingsOverview() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-neutral-900 truncate">Your Creator Here</p>
-                                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-600">Premium slot available</p>
+                                  {/* amber-800, not amber-600: measured ~3:1 on
+                                      the amber-50/40 row background, well under
+                                      WCAG AA. amber-800 clears it (~6.8:1)
+                                      without changing anything but the color. */}
+                                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-800">Premium slot available</p>
                                 </div>
                                 <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
                                   Claim <ArrowRight className="w-3 h-3" />
@@ -779,6 +783,12 @@ function PlatformRankings({ urlPlatform }) {
                 <button
                   key={type.id}
                   onClick={() => setSelectedRankType(type.id)}
+                  // aria-label: the text span is display:none on mobile for
+                  // every non-active tab (hidden sm:inline), which leaves the
+                  // button with no accessible name at all below the sm
+                  // breakpoint -- flagged by PageSpeed. The label mirrors the
+                  // hidden text exactly, so this changes nothing visually.
+                  aria-label={type.name}
                   className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     selectedRankType === type.id
                       ? 'bg-neutral-900 text-white'
@@ -993,7 +1003,10 @@ function PlatformRankings({ urlPlatform }) {
                             <p className="font-medium text-neutral-900">
                               Your Creator Here
                             </p>
-                            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-600 mt-0.5">
+                            {/* amber-800, not amber-600: see the matching
+                                comment on the other ghost-slot instance above
+                                -- same contrast fix, same reasoning. */}
+                            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-800 mt-0.5">
                               {isPremium ? 'Premium slot' : 'Basic slot'} available · {creator.slotPrice}
                             </p>
                           </div>
@@ -1112,7 +1125,7 @@ function PlatformRankings({ urlPlatform }) {
                     <span className="text-xs text-neutral-500">
                       <span className="font-semibold text-neutral-800">{formatNumber(creator.subscribers)}</span> {followerLabel.toLowerCase()}
                       {secondaryCol && (
-                        <span className="ml-2 text-neutral-400">· <span className="font-semibold text-neutral-700">{formatNumber(creator[secondaryCol.key])}</span> {secondaryCol.label.toLowerCase()}</span>
+                        <span className="ml-2 text-neutral-600">· <span className="font-semibold text-neutral-700">{formatNumber(creator[secondaryCol.key])}</span> {secondaryCol.label.toLowerCase()}</span>
                       )}
                     </span>
                   </div>

@@ -95,7 +95,9 @@ export default function FeaturedListingPreview({ topCreators = [], showCtas = tr
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-neutral-900 truncate">Your Creator Here</p>
-                      <p className="text-[10px] text-amber-600 font-medium uppercase tracking-[0.1em]">Sponsored</p>
+                      {/* amber-800, not amber-600: ~3:1 on this amber-50/60
+                          background, under WCAG AA. amber-800 clears it. */}
+                      <p className="text-[10px] text-amber-800 font-medium uppercase tracking-[0.1em]">Sponsored</p>
                     </div>
                   </div>
                   <div className="hidden sm:flex items-center justify-end text-[11px] text-amber-700 font-medium tabular-nums">
