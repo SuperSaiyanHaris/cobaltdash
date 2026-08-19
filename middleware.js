@@ -289,6 +289,17 @@ async function getProfileContent(platform, username) {
   const count = latest ? latest.subscribers : null;
   const growth = latest && oldest ? latest.subscribers - oldest.subscribers : null;
 
+  // Thin-content gate (added 2026-08-19, see the AdSense content audit): a
+  // profile with no bio and under 1,000 subscribers/followers is close to
+  // content-free (e.g. a name and a table of the digit "1"). The page still
+  // renders normally for real visitors below; this only tells Google not to
+  // index it until the creator has a bio or clears the bar. Same threshold
+  // as get_sitemap_eligible_creators (generateSitemap.js), kept in sync
+  // deliberately so a page can't be in the sitemap yet noindexed, or vice
+  // versa. Never based on existence or activity alone, only content thinness.
+  const hasBio = typeof c.description === 'string' && c.description.trim().length > 0;
+  const thin = !hasBio && (count === null || count < 1000);
+
   // Title/description with real numbers — this is what shows in the SERP.
   const title = count !== null
     ? `${name} ${platformName} Stats: ${formatNumber(count)} ${metric.replace(/^./, ch => ch.toUpperCase())} - ShinyPull`
@@ -420,7 +431,7 @@ async function getProfileContent(platform, username) {
     statsHistory: stats,
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, dataId: '__CREATOR_DATA__', image: c.profile_image || null };
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, dataId: '__CREATOR_DATA__', image: c.profile_image || null, thin };
 }
 
 // ---------------------------------------------------------------------------
@@ -967,9 +978,11 @@ export default async function middleware(request) {
     }
   }
 
-  // noindex: private/transient pages, and profile/blog URLs that definitively
-  // don't exist in the DB (otherwise Google indexes empty soft-404 shells).
-  if (meta.noindex || content?.status === 'notfound') {
+  // noindex: private/transient pages, profile/blog URLs that definitively
+  // don't exist in the DB (otherwise Google indexes empty soft-404 shells),
+  // and thin creator profiles (no bio, under 1,000 subscribers/followers —
+  // see getProfileContent's `thin` computation and the AdSense content audit).
+  if (meta.noindex || content?.status === 'notfound' || content?.thin) {
     html = html.replace('</head>', '  <meta name="robots" content="noindex, follow" />\n  </head>');
   }
 

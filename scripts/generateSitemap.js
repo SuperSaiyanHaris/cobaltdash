@@ -188,23 +188,33 @@ async function generateSitemap() {
   }
 
   // ---- Tail: every other creator, chunked ----------------------------------
-  console.log('👤 Fetching all creator profiles...');
+  // Thin-content gate (added 2026-08-19, see the AdSense content audit): a
+  // creator with no bio and under 1,000 subscribers/followers renders as a
+  // near-empty page (e.g. a name and a table of the digit "1"). We don't stop
+  // tracking or hide these creators anywhere else on the site, we just stop
+  // actively submitting them to Google until they clear the bar. Sourced from
+  // get_sitemap_eligible_creators (SQL, same LATERAL-latest-stats pattern as
+  // get_hub_creators) instead of a plain .select() so the filter runs
+  // server-side against real subscriber data, not just what's on this table.
+  // middleware.js applies the identical rule as a noindex tag on the page
+  // itself, so a stale/cached copy of this sitemap fails safe.
+  console.log('👤 Fetching indexable creator profiles...');
   let allCreators = [];
-  let creatorPage = 0;
+  let afterId = null;
   const creatorPageSize = 1000;
   let hasMoreCreators = true;
 
+  // Keyset pagination (id > afterId), not OFFSET: OFFSET forces Postgres to
+  // evaluate the LATERAL join in get_sitemap_eligible_creators for every
+  // skipped row just to count past it, which hit the REST 60s statement
+  // timeout around row 20000 in testing. Seeking off the last-seen id via
+  // the primary key index keeps every page equally fast regardless of depth.
   while (hasMoreCreators) {
     const { data: creators, error: creatorsError } = await supabase
-      .from('creators')
-      .select('platform, username, updated_at')
-      .not('username', 'is', null)
-      // updated_at is not unique, so it alone is not a stable sort for range
-      // pagination: rows sharing a timestamp can repeat and skip across pages.
-      // The 'id' tiebreaker makes the ordering total so no creator is dropped.
-      .order('updated_at', { ascending: false })
-      .order('id', { ascending: true })
-      .range(creatorPage * creatorPageSize, (creatorPage + 1) * creatorPageSize - 1);
+      .rpc('get_sitemap_eligible_creators', {
+        p_limit: creatorPageSize,
+        p_after_id: afterId,
+      });
 
     if (creatorsError) {
       console.error('❌ Error fetching creators:', creatorsError);
@@ -213,7 +223,7 @@ async function generateSitemap() {
 
     if (creators && creators.length > 0) {
       allCreators = allCreators.concat(creators);
-      creatorPage++;
+      afterId = creators[creators.length - 1].id;
       hasMoreCreators = creators.length === creatorPageSize;
     } else {
       hasMoreCreators = false;
@@ -235,7 +245,7 @@ async function generateSitemap() {
       });
     });
   }
-  console.log(`   ${allCreators.length} creators total, ${tailUrls.length} in long tail`);
+  console.log(`   ${allCreators.length} creators cleared the thin-content gate, ${tailUrls.length} in long tail`);
 
   // ---- Write files ----------------------------------------------------------
   const files = [];
