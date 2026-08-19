@@ -457,10 +457,15 @@ function RankingPodium({ creators, fallbackNames }) {
         const isFirst = rank === 1;
         const tier = PODIUM_TIER[rank];
         const growth = creator?.growth30d;
+        // Real creator, real destination -> the whole tile is a link. A
+        // loading placeholder has nowhere to go, so it stays a plain div.
+        const href = creator?.platform && creator?.username ? `/${creator.platform}/${creator.username}` : null;
+        const Tag = href ? Link : 'div';
         return (
-          <div
+          <Tag
             key={rank}
-            className={`flex-1 min-w-0 bg-white border border-neutral-200/80 border-t-[3px] ${tier.stripe} rounded-xl text-center ${
+            {...(href ? { to: href } : {})}
+            className={`flex-1 min-w-0 bg-white border border-neutral-200/80 border-t-[3px] ${tier.stripe} rounded-xl text-center block ${href ? 'hover:border-neutral-300 transition-colors' : ''} ${
               isFirst ? '-mt-3 pt-5 pb-4 px-2 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.18)]' : 'pt-4 pb-3 px-2'
             }`}
           >
@@ -478,7 +483,7 @@ function RankingPodium({ creators, fallbackNames }) {
                 {formatNumber(growth)}
               </p>
             )}
-          </div>
+          </Tag>
         );
       })}
     </div>
@@ -550,14 +555,19 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
         ctaLink: `/youtube/${mr?.username || 'mrbeast'}`,
         content: (
           <>
-            <div className="flex flex-col items-center text-center mb-4">
-              <CreatorAvatar src={mr?.profile_image} name={mr?.display_name || 'MrBeast'} size="lg" className="mb-2" />
-              <div className="flex items-center gap-2 mb-0.5 max-w-full">
-                <h3 className="text-base sm:text-lg font-bold text-neutral-900 truncate">{mr?.display_name || 'MrBeast'}</h3>
-                <YouTubeIcon className="w-4 h-4 flex-shrink-0" />
-              </div>
-              <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
-            </div>
+            {(() => {
+              const Tag = mr?.username ? Link : 'div';
+              return (
+                <Tag {...(mr?.username ? { to: `/youtube/${mr.username}` } : {})} className="flex flex-col items-center text-center mb-4 group">
+                  <CreatorAvatar src={mr?.profile_image} name={mr?.display_name || 'MrBeast'} size="lg" className="mb-2" />
+                  <div className="flex items-center gap-2 mb-0.5 max-w-full">
+                    <h3 className="text-base sm:text-lg font-bold text-neutral-900 truncate group-hover:underline">{mr?.display_name || 'MrBeast'}</h3>
+                    <YouTubeIcon className="w-4 h-4 flex-shrink-0" />
+                  </div>
+                  <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
+                </Tag>
+              );
+            })()}
             <div className="flex flex-wrap items-baseline gap-2.5">
               <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums tracking-tight leading-none">
                 {mr?.subscribers ? formatNumber(mr.subscribers) : '—'}
@@ -624,8 +634,16 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
             <div className="relative grid grid-cols-2 gap-3 sm:gap-4 pt-2">
               {[mr, tseries].map((c, i) => {
                 const name = c?.display_name || FALLBACK_NAMES[i];
+                // Real creator, real destination -> the whole card links to
+                // their profile. A loading placeholder has nowhere to go.
+                const href = c?.platform && c?.username ? `/${c.platform}/${c.username}` : null;
+                const Tag = href ? Link : 'div';
                 return (
-                  <div key={i} className="p-3 sm:p-4 rounded-xl border border-neutral-200/80 bg-white text-center">
+                  <Tag
+                    key={i}
+                    {...(href ? { to: href } : {})}
+                    className={`block p-3 sm:p-4 rounded-xl border border-neutral-200/80 bg-white text-center ${href ? 'hover:border-neutral-300 transition-colors' : ''}`}
+                  >
                     <div className="flex flex-col items-center gap-2 mb-2">
                       <CreatorAvatar src={c?.profile_image} name={name} size="md" />
                       <p className="text-sm font-bold text-neutral-900 truncate max-w-full">{name}</p>
@@ -648,7 +666,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                         <span className="font-semibold text-emerald-600 tabular-nums">{c?.growth30d > 0 ? `+${formatNumber(c.growth30d)}` : '—'}</span>
                       </div>
                     </div>
-                  </div>
+                  </Tag>
                 );
               })}
               <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-neutral-900 text-white text-[10px] font-extrabold flex items-center justify-center ring-4 ring-white">
@@ -685,13 +703,16 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
               </div>
               <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">$0.50 - $4.00 CPM</span>
             </div>
-            <div className="flex flex-col items-center text-center gap-1.5 mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+            <Link
+              to={`/youtube/${mr.username}`}
+              className="flex flex-col items-center text-center gap-1.5 mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg hover:border-neutral-300 transition-colors group"
+            >
               <CreatorAvatar src={mr.profile_image} name={mr.display_name} size="sm" />
               <div className="min-w-0 max-w-full">
-                <p className="text-sm font-bold text-neutral-900 truncate">{mr.display_name}</p>
+                <p className="text-sm font-bold text-neutral-900 truncate group-hover:underline">{mr.display_name}</p>
                 <p className="text-[11px] text-neutral-500 tabular-nums">{formatNumber(dailyViews)} views per day</p>
               </div>
-            </div>
+            </Link>
             <div className="grid grid-cols-3 gap-2 sm:gap-3 items-start">
               {rows.map((row) => (
                 <div

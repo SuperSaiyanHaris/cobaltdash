@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import CreatorAvatar from './CreatorAvatar';
 import { formatNumber } from '../lib/utils';
@@ -27,9 +28,13 @@ const TIER_BADGE = {
 export default function PreviewRankingRow({ rank, creator, fallbackName }) {
   const displayName = creator?.display_name || fallbackName;
   const growth = creator?.growth30d;
+  // Real creator, real destination -> the whole row is a link. A loading
+  // placeholder (creator is null, fallbackName only) has nowhere to go, so
+  // it stays a plain row instead of a Link to nowhere.
+  const href = creator?.platform && creator?.username ? `/${creator.platform}/${creator.username}` : null;
 
-  return (
-    <div className="flex items-center gap-3 px-3 py-3 border-b border-neutral-100 last:border-b-0">
+  const content = (
+    <>
       <span className={`w-6 h-6 inline-flex items-center justify-center rounded-lg text-xs font-bold tabular-nums flex-shrink-0 ${TIER_BADGE[rank] || 'bg-neutral-100 text-neutral-400'}`}>
         {rank}
       </span>
@@ -48,6 +53,19 @@ export default function PreviewRankingRow({ rank, creator, fallbackName }) {
           </p>
         )}
       </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link to={href} className="flex items-center gap-3 px-3 py-3 border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50 transition-colors">
+        {content}
+      </Link>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3 px-3 py-3 border-b border-neutral-100 last:border-b-0">
+      {content}
     </div>
   );
 }
