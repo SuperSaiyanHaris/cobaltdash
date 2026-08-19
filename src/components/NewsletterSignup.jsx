@@ -111,7 +111,7 @@ export default function NewsletterSignup({ variant = 'card', className = '' }) {
 
   return (
     <div className={`bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 sm:p-10 text-center ${className}`}>
-      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Newsletter</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">Newsletter</p>
       {status === 'success' ? (
         <>
           <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-3" />

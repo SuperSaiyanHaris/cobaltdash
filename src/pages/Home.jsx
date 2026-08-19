@@ -349,7 +349,7 @@ function ChampionsGrid({ tops }) {
                 <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums leading-none text-center">
                   {formatNumber(top.subscribers || 0)}
                 </p>
-                <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 text-center">{top._metricLabel}</p>
+                <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 text-center">{top._metricLabel}</p>
               </div>
             </>
           );
@@ -407,8 +407,20 @@ function ChampionsGrid({ tops }) {
               type="button"
               onClick={() => setActiveIndex(i)}
               aria-label={`Show ${t._platformLabel}`}
-              className={`h-1.5 rounded-full transition-all ${i === activeIndex ? 'w-6 bg-neutral-900' : 'w-1.5 bg-neutral-300 hover:bg-neutral-400'}`}
-            />
+              // Padding expands the actual tap target to 24px+ (was a 6px hit
+              // area, flagged by PageSpeed); the matching negative margin
+              // keeps the row's visual spacing identical to before, since the
+              // dot itself -- not this button -- carries the visible size.
+              className="group p-[9px] -m-[9px] flex items-center justify-center"
+            >
+              <span
+                // transition-colors, not transition-all: animating width is a
+                // non-composited (main-thread, layout-triggering) animation,
+                // flagged by PageSpeed. The width change still happens instantly
+                // on click, just without animating through the in-between values.
+                className={`block h-1.5 rounded-full transition-colors ${i === activeIndex ? 'w-6 bg-neutral-900' : 'w-1.5 bg-neutral-300 group-hover:bg-neutral-400'}`}
+              />
+            </button>
           ))}
         </div>
         <button
@@ -1096,11 +1108,11 @@ export default function Home() {
                   to={`/rankings/${id}`}
                   aria-label={name}
                   title={name}
-                  // YouTube's brand guidelines don't allow altering the mark's
-                  // appearance, and dimming it to 70% is an alteration. Every
-                  // other platform keeps the quiet resting state; YouTube alone
-                  // renders at full opacity.
-                  className={id === 'youtube' ? '' : 'opacity-70 hover:opacity-100 transition-opacity'}
+                  // p-1.5 -m-1.5: expands the tap target past the 18-22px
+                  // icon to comfortably clear 24px (flagged by PageSpeed),
+                  // while the matching negative margin keeps the row's gap
+                  // spacing visually identical to before.
+                  className={`p-1.5 -m-1.5 flex items-center justify-center ${id === 'youtube' ? '' : 'opacity-70 hover:opacity-100 transition-opacity'}`}
                 >
                   <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
                 </Link>

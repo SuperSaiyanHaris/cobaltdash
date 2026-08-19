@@ -41,7 +41,7 @@ function CreatorMentions({ creators }) {
   if (!creators.length) return null;
   return (
     <div className="mt-12 pt-8 border-t border-neutral-200">
-      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-4">Creators in this post</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-4">Creators in this post</p>
       <div className="flex flex-wrap gap-2">
         {creators.map(({ platform, username, displayName }) => {
           const meta = PLATFORM_META[platform];
@@ -146,7 +146,7 @@ function StatsStrip({ raw, theme }) {
           <div className="text-3xl sm:text-4xl font-semibold text-neutral-900 tabular-nums leading-none">
             {item.value}
           </div>
-          <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 leading-snug">
+          <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 leading-snug">
             {item.label}
           </div>
         </div>

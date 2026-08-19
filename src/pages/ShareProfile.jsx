@@ -159,14 +159,14 @@ export default function ShareProfile() {
               <div className={`grid ${secondary ? 'grid-cols-3' : 'grid-cols-2'} divide-x divide-neutral-200/80 border border-neutral-200/80 rounded-lg mb-6`}>
                 {/* Primary */}
                 <div className="p-3 sm:p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">{config.primary}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-1">{config.primary}</p>
                   <p className="text-xl sm:text-2xl font-semibold text-neutral-900 tabular-nums">{formatNumber(latestCount)}</p>
                 </div>
 
                 {/* 30-day growth */}
                 {growth30d !== null && (
                   <div className="p-3 sm:p-4">
-                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">Last 30d</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-1">Last 30d</p>
                     <p className={`text-xl sm:text-2xl font-semibold tabular-nums ${growth30d >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {growth30d >= 0 ? '+' : ''}{formatNumber(growth30d)}
                     </p>
@@ -184,7 +184,7 @@ export default function ShareProfile() {
                 {/* Secondary (views / likes / posts) */}
                 {secondary && (
                   <div className="p-3 sm:p-4">
-                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">{secondary.label}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-1">{secondary.label}</p>
                     <p className="text-xl sm:text-2xl font-semibold text-neutral-900 tabular-nums">{formatNumber(secondary.value)}</p>
                   </div>
                 )}

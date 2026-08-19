@@ -35,7 +35,7 @@ const PLATFORM_ICONS = {
 };
 
 // Typographic backbone shared with the dashboard
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 const INPUT = 'bg-white border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 text-sm transition-colors';
 

@@ -7,7 +7,7 @@ import SEO from '../components/SEO';
 const BUYMEACOFFEE_URL = 'https://buymeacoffee.com/shinypull';
 
 // Typographic backbone shared with the rest of the precision system
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
 const BMCButton = ({ label = 'Buy Me a Coffee', size = 'lg' }) => (

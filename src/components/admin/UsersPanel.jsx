@@ -7,7 +7,7 @@ import { formatRelativeTime } from '../../lib/utils';
 import CreatorAvatar from '../CreatorAvatar';
 
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400';
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 
 function GrowthTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;

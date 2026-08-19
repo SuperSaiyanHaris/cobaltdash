@@ -102,7 +102,11 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {FEATURE_LINKS.map(([to, label]) => (
                 <li key={to}>
-                  <Link to={to} className="text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {/* py-1.5 -my-1.5: expands the tap target to clear 24px
+                      (flagged by PageSpeed) without changing the list's
+                      visual row spacing -- the negative margin cancels the
+                      padding out of the layout box space-y-2.5 measures. */}
+                  <Link to={to} className="block py-1.5 -my-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
                     {label}
                   </Link>
                 </li>
@@ -123,7 +127,7 @@ export default function Footer() {
             >
               {PLATFORM_LINKS.map(([to, label, Icon]) => (
                 <li key={to}>
-                  <Link to={to} className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors">
+                  <Link to={to} className="flex items-center gap-2 py-1.5 -my-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
                     <Icon className="w-3.5 h-3.5" />
                     {label}
                   </Link>
@@ -138,7 +142,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {COMPANY_LINKS.map(([to, label]) => (
                 <li key={to}>
-                  <Link to={to} className="text-neutral-600 hover:text-neutral-900 transition-colors">
+                  <Link to={to} className="block py-1.5 -my-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
                     {label}
                   </Link>
                 </li>
@@ -152,7 +156,7 @@ export default function Footer() {
           <p>&copy; {currentYear} ShinyPull. Statistics are provided for informational purposes only.</p>
           <div className="flex items-center gap-4">
             {LEGAL_LINKS.map(([to, label]) => (
-              <Link key={to} to={to} className="hover:text-neutral-900 transition-colors">
+              <Link key={to} to={to} className="py-1.5 -my-1.5 hover:text-neutral-900 transition-colors">
                 {label}
               </Link>
             ))}

@@ -169,7 +169,7 @@ export default function Blog() {
         <div className="bg-white border-b border-neutral-200/80">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <div className="max-w-6xl mx-auto text-center">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">Blog</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">Blog</p>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Resources</h1>
               <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-2xl mx-auto">
                 Platform news, rankings breakdowns, and creator economy analysis, backed by the data we track every day

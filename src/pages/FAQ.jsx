@@ -167,7 +167,7 @@ export default function FAQ() {
         {/* Header — white block, hairline rule, typographic */}
         <div className="bg-white border-b border-neutral-200/80">
           <div className="max-w-3xl mx-auto px-4 py-12 sm:py-14 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-3">FAQ</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">FAQ</p>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Frequently Asked Questions</h1>
             <p className="mt-2 text-sm sm:text-base text-neutral-500">
               Common questions about ShinyPull, our data, and how everything works.
@@ -178,7 +178,7 @@ export default function FAQ() {
         <div className="max-w-3xl mx-auto px-4 py-12 space-y-10">
           {faqs.map((section) => (
             <div key={section.category}>
-              <h2 className="text-[10px] font-medium text-neutral-400 uppercase tracking-[0.14em] mb-4">
+              <h2 className="text-[10px] font-medium text-neutral-600 uppercase tracking-[0.14em] mb-4">
                 {section.category}
               </h2>
               <div className="space-y-3">

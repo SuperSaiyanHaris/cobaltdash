@@ -87,7 +87,7 @@ export default function Admin() {
               <ArrowLeft className="w-3.5 h-3.5" />
               Back
             </Link>
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-2">Admin</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-2">Admin</p>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Dashboard</h1>
           </div>
         </div>

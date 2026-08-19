@@ -2463,7 +2463,7 @@ function StatCard({ icon: Icon, label, value, sublabel }) {
     <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-3 sm:p-5 transition-colors hover:border-neutral-300">
       <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
         {Icon && <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${tint}`} />}
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 leading-tight line-clamp-2 break-words">{label}</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 leading-tight line-clamp-2 break-words">{label}</p>
       </div>
       <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">{value}</p>
       {sublabel && <p className="text-[10px] sm:text-xs text-neutral-400 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
@@ -2480,7 +2480,7 @@ function SummaryCard({ label, sublabel, value, change }) {
   return (
     <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 sm:p-5">
       <p className={`font-semibold text-neutral-900 mb-1 tabular-nums ${isLongValue ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl'}`}>{value}</p>
-      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">{label}</p>
       {sublabel && <p className="text-xs text-neutral-400 mt-1">{sublabel}</p>}
       {change !== undefined && change !== null && (
         <p className={`text-xs mt-2 font-medium tabular-nums ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400'}`}>
@@ -2504,7 +2504,7 @@ function GrowthRateCard({ label, value, platform }) {
   return (
     <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">{label}</span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">{label}</span>
         <TrendingUp className={`w-4 h-4 ${valueColor} ${isNegative ? 'rotate-180' : ''}`} />
       </div>
       <div className={`text-2xl font-semibold tabular-nums ${valueColor}`}>
@@ -2566,7 +2566,7 @@ function RecordRankCard({ rankContext, peakStats, currentCount, primaryLabel, pl
     <div className={`grid grid-cols-1 ${cellCount === 2 ? 'sm:grid-cols-2' : ''} bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-neutral-200/80 mb-6`}>
       {hasRank && (
         <div className="p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-2 flex items-center gap-1.5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-2 flex items-center gap-1.5">
             <Trophy className="w-3 h-3" /> Platform rank
           </p>
           <p className="text-2xl font-semibold text-neutral-900 tabular-nums">#{formatNumber(rank)}</p>
@@ -2577,7 +2577,7 @@ function RecordRankCard({ rankContext, peakStats, currentCount, primaryLabel, pl
       )}
       {showPeakCell && (
         <div className="p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-2">All-time high</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-2">All-time high</p>
           <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
             {formatNumber(peakValue)} <span className="text-sm font-normal text-neutral-400">{primaryLabel}</span>
           </p>
@@ -2600,7 +2600,7 @@ function SimilarCreators({ creators, platform, platformName, primaryLabel, exclu
 
   return (
     <div className="mt-8 pt-8 border-t border-neutral-200/80">
-      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400 mb-1">Nearby in the rankings</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-1">Nearby in the rankings</p>
       <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-4">Similar-sized {platformName} creators</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((c) => (
