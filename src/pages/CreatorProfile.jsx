@@ -2106,7 +2106,7 @@ export default function CreatorProfile() {
                     Export CSV
                   </button>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto hidden md:block">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
@@ -2403,6 +2403,154 @@ export default function CreatorProfile() {
                       </tr>
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile: stacked cards, not a horizontally-scrolling table.
+                    The desktop table's rightmost column (Est. Earnings on
+                    YouTube) was invisible unless a user scrolled sideways --
+                    easy to miss entirely. Every value here matches the
+                    desktop table's own per-platform column logic exactly,
+                    just laid out vertically instead of in cells. */}
+                <div className="md:hidden divide-y divide-neutral-100">
+                  {metrics.dailyStats.map((stat) => {
+                    const secondary = [];
+                    if (platform === 'tiktok') {
+                      secondary.push({ label: 'Likes', value: formatNumber(stat.total_views || 0), change: stat.viewsChange, fmtChange: formatNumber });
+                      secondary.push({ label: 'Videos', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
+                    } else if (platform === 'bluesky' || platform === 'mastodon') {
+                      secondary.push({ label: 'Posts', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
+                    } else if (platform === 'rumble') {
+                      secondary.push({ label: 'Videos', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
+                    } else if (platform === 'music') {
+                      secondary.push({ label: 'Total Plays', value: formatNumber(stat.total_views || 0), change: stat.viewsChange, fmtChange: formatNumber });
+                    } else if (platform === 'youtube') {
+                      secondary.push({ label: 'Views', value: formatNumber(stat.total_views), change: stat.viewsChange, fmtChange: formatNumber });
+                      secondary.push({ label: 'Videos', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
+                    }
+
+                    const earnings = platform === 'youtube' ? (() => {
+                      // Same fallback-to-trailing-average logic as the desktop
+                      // table's Est. Earnings cell -- see the comment there.
+                      const viewsForEstimate = stat.viewsChange > 0 ? stat.viewsChange : metrics.dailyAverage.views;
+                      return viewsForEstimate > 0
+                        ? formatEarnings(viewsForEstimate / 1000 * 2, viewsForEstimate / 1000 * 7)
+                        : '—';
+                    })() : null;
+
+                    return (
+                      <div key={stat.recorded_at} className="p-4">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <span className="text-sm font-semibold text-neutral-900">
+                            {new Date(stat.recorded_at + 'T12:00:00').toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                          <span className="text-right">
+                            <span className="font-semibold text-neutral-900 tabular-nums">{formatNumber(stat.subscribers || stat.followers)}</span>
+                            {(platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'substack' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0 && (
+                              <span className={`ml-1.5 text-xs tabular-nums ${stat.subsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {stat.subsChange > 0 ? '+' : ''}{formatNumber(stat.subsChange)}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {secondary.length > 0 && (
+                          <div className={`grid gap-3 ${secondary.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'mb-3' : ''}`}>
+                            {secondary.map((s) => (
+                              <div key={s.label}>
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400 mb-0.5">{s.label}</p>
+                                <p className="text-sm font-semibold text-neutral-900 tabular-nums">
+                                  {s.value}
+                                  {s.change !== 0 && (
+                                    <span className={`ml-1 text-xs ${s.change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                      {s.change > 0 ? '+' : ''}{s.fmtChange(s.change)}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {earnings !== null && (
+                          <div className="flex items-center justify-between px-3 py-2 bg-indigo-50 rounded-lg">
+                            <span className="text-xs font-medium text-indigo-700">Est. Earnings</span>
+                            <span className="text-sm font-bold text-indigo-900 tabular-nums">{earnings}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Summary cards -- same three rows and same per-platform
+                      column logic as the desktop table's summary rows. */}
+                  {[
+                    {
+                      label: 'Daily Average',
+                      subs: metrics.dailyAverage.subs,
+                      hideSubs: platform === 'youtube' && (creator.subscribers || 0) >= 1000,
+                      views: metrics.dailyAverage.views,
+                      videos: null,
+                    },
+                    {
+                      label: 'Weekly Average',
+                      subs: metrics.weeklyAverage.subs,
+                      hideSubs: platform === 'youtube',
+                      views: metrics.weeklyAverage.views,
+                      videos: null,
+                    },
+                    {
+                      label: 'Last 30 Days',
+                      subs: metrics.last30Days.subs,
+                      hideSubs: platform === 'youtube',
+                      views: metrics.last30Days.views,
+                      videos: platform === 'tiktok' || platform === 'youtube' ? metrics.last30Days.videos : null,
+                    },
+                  ].map((row) => {
+                    const showViews = platform === 'tiktok' || platform === 'music' || platform === 'youtube';
+                    const earnings = platform === 'youtube'
+                      ? (row.views > 0 ? formatEarnings(row.views / 1000 * 2, row.views / 1000 * 7) : '—')
+                      : null;
+                    return (
+                      <div key={row.label} className="p-4 bg-indigo-50/60">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <span className="text-sm font-semibold text-indigo-900">{row.label}</span>
+                          {!row.hideSubs && (
+                            <span className={`text-sm font-semibold tabular-nums ${row.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                              {row.subs >= 0 ? '+' : ''}{formatNumber(row.subs)}
+                            </span>
+                          )}
+                        </div>
+                        {showViews && (
+                          <div className={`grid gap-3 ${row.videos !== null ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'mb-3' : ''}`}>
+                            <div>
+                              <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-0.5">
+                                {platform === 'music' ? 'Plays' : 'Views'}
+                              </p>
+                              <p className={`text-sm font-semibold tabular-nums ${row.views > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
+                                {row.views > 0 ? `+${formatNumber(row.views)}` : '—'}
+                              </p>
+                            </div>
+                            {row.videos !== null && (
+                              <div>
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-0.5">Videos</p>
+                                <p className={`text-sm font-semibold tabular-nums ${row.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {row.videos >= 0 ? '+' : ''}{row.videos}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {earnings !== null && (
+                          <div className="flex items-center justify-between px-3 py-2 bg-white rounded-lg">
+                            <span className="text-xs font-medium text-indigo-700">Est. Earnings</span>
+                            <span className="text-sm font-bold text-indigo-900 tabular-nums">{earnings}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
