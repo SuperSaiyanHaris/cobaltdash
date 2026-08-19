@@ -4,6 +4,7 @@ import { Calendar, Clock, Loader2, BookOpen, Filter, X, Search } from 'lucide-re
 import SEO from '../components/SEO';
 import NewsletterSignup from '../components/NewsletterSignup';
 import { getAllPosts, getAllCategories } from '../services/blogService';
+import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
 
 const PAGE_SIZE = 9;
 
@@ -316,7 +317,7 @@ export default function Blog() {
                         <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200 h-full flex flex-col">
                           <div className="relative">
                             <img
-                              src={post.image}
+                              src={resizedBlogImageUrl(post.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
                               alt={post.title}
                               loading="lazy"
                               className="w-full h-48 object-cover"

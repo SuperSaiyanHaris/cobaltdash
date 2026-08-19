@@ -27,6 +27,7 @@ import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import PreviewRankingRow from '../components/PreviewRankingRow';
 import { PLATFORM_COUNT, PLATFORM_ACCENTS } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
+import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
 
 const PLATFORMS = [
   { id: 'youtube',  name: 'YouTube',  Icon: YouTubeIcon,  accent: PLATFORM_ACCENTS.youtube },
@@ -118,7 +119,13 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
 
   return (
     <span className="relative block overflow-hidden mt-1">
-      <AnimatePresence mode="wait">
+      {/* initial={false}: skip the enter transition only for the very first
+          word (part of the page's LCP element) — every rotation after that
+          still animates in exactly as before. Without this, Lighthouse
+          measured the LCP "element render delay" at 2,400ms, an exact match
+          to this component's rotation interval, meaning Chrome wasn't
+          counting the headline as painted until the first rotation fired. */}
+      <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={word}
           initial={{ opacity: 0, y: '30%' }}
@@ -315,7 +322,7 @@ function ChampionsGrid({ tops }) {
                     is lost. Don't move this icon back onto every card. */}
                 <div className="flex items-center gap-1.5 mb-5">
                   {Icon && isActive && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
-                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">{top._platformLabel}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">{top._platformLabel}</span>
                 </div>
 
                 <div className="relative mb-4">
@@ -882,7 +889,7 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
                 {post.image && (
                   <div className="aspect-[16/9] overflow-hidden bg-neutral-100">
                     <img
-                      src={post.image}
+                      src={resizedBlogImageUrl(post.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
                       alt={post.title}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -1027,17 +1034,20 @@ export default function Home() {
               so the section reads as intentionally composed at any content length. */}
           <div className="relative flex-1 flex flex-col justify-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
-            {/* Headline — condensed to 2 lines, lighter weight above the fold */}
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.05 }}
+            {/* Headline — condensed to 2 lines, lighter weight above the fold.
+                Plain h1, not motion.h1: this text is the page's LCP element,
+                and animating it in from opacity:0 measurably delays LCP (a
+                fade-in means Chrome can't count it as painted until the
+                animation resolves). Confirmed via PageSpeed Insights on
+                2026-08-19 (poor 6.4s mobile LCP). No visual polish is worth
+                that on the single most time-sensitive element on the page. */}
+            <h1
               className="text-center font-black tracking-[-0.035em] leading-[0.95] text-white max-w-4xl mx-auto"
               style={{ fontSize: 'clamp(2.25rem, 6vw, 5rem)' }}
             >
               <span className="block">Analytics for every</span>
               <RotatingHeadlineWord />
-            </motion.h1>
+            </h1>
 
             {/* Glass search — the page's primary action */}
             <motion.form
@@ -1250,7 +1260,7 @@ export default function Home() {
               Start tracking creators in seconds.
             </h2>
             <p className="text-base text-neutral-600 max-w-xl mx-auto mb-7">
-              Free. No signup required to browse. Sign in to follow creators, save comparisons, and get growth alerts.
+              Free. No signup required to browse. Sign in to follow creators and save comparisons.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button

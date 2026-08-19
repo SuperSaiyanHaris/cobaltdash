@@ -9,6 +9,7 @@ import ShareButtons from '../components/ShareButtons';
 import BlogContent from '../components/BlogContent';
 import { getPostBySlug, getRelatedPosts } from '../services/blogService';
 import { getCategoryTheme } from '../lib/blogTheme';
+import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
 
 // middleware.js embeds a <script id="__BLOG_DATA__"> alongside the visible
 // server-rendered article so this component's very first render already has
@@ -235,7 +236,7 @@ export default function BlogPost() {
                   >
                     <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
                       <img
-                        src={related.image}
+                        src={resizedBlogImageUrl(related.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
                         alt={related.title}
                         loading="lazy"
                         className="w-full h-40 object-cover"
