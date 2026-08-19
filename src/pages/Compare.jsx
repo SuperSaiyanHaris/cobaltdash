@@ -580,7 +580,9 @@ export default function Compare() {
                           {AIcon && <AIcon className={`w-4 h-4 flex-shrink-0 ${platformConfig[aPlatform]?.color}`} />}
                           <span className="text-sm font-semibold text-neutral-900 truncate">{aName}</span>
                         </div>
-                        <span className="mx-3 text-[10px] font-bold text-neutral-300 tracking-[0.14em] flex-shrink-0 select-none">
+                        {/* neutral-600, not neutral-300: measured ~1.5:1 on
+                            white, far under WCAG AA. */}
+                        <span className="mx-3 text-[10px] font-bold text-neutral-600 tracking-[0.14em] flex-shrink-0 select-none">
                           VS
                         </span>
                         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
@@ -648,11 +650,11 @@ export default function Compare() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                     onClick={addSlot}
-                    className="group min-h-[280px] border border-dashed border-neutral-300 hover:border-neutral-400 rounded-xl flex flex-col items-center justify-center gap-3 text-neutral-400 hover:text-neutral-900 transition-colors"
+                    className="group min-h-[280px] border border-dashed border-neutral-300 hover:border-neutral-400 rounded-xl flex flex-col items-center justify-center gap-3 text-neutral-600 hover:text-neutral-900 transition-colors"
                   >
                     <Plus className="w-5 h-5" />
                     <span className="text-sm font-medium">Add creator</span>
-                    <span className="text-[11px] text-neutral-400 tabular-nums">Slot {creators.length + 1} of {maxCompare}</span>
+                    <span className="text-[11px] text-neutral-600 tabular-nums">Slot {creators.length + 1} of {maxCompare}</span>
                   </motion.button>
                 )}
               </AnimatePresence>
@@ -670,7 +672,7 @@ export default function Compare() {
               {/* Desktop Table View */}
               <div className={`hidden md:block ${CARD} overflow-hidden`}>
                 <div className="px-6 py-4 border-b border-neutral-200/80 flex items-center gap-2">
-                  <h3 className="text-base font-medium text-neutral-900">Comparison</h3>
+                  <h2 className="text-base font-medium text-neutral-900">Comparison</h2>
                   <InfoTooltip text="Some fields show dashes for newer creators. Growth and earnings need a few days of tracked data before they populate." />
                   {loadingGrowth && (
                     <span className="ml-auto flex items-center gap-1.5 text-xs text-neutral-400">
@@ -1564,8 +1566,8 @@ function ComparisonRadarChart({ creators, growthData, loadingGrowth }) {
   return (
     <div className={`${CARD} p-5`}>
       <div className="flex items-baseline justify-between mb-1">
-        <h3 className="text-sm font-medium text-neutral-900">Performance Overview</h3>
-        <span className="text-xs text-neutral-400">100 = top among compared</span>
+        <h2 className="text-sm font-medium text-neutral-900">Performance Overview</h2>
+        <span className="text-xs text-neutral-600">100 = top among compared</span>
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <RadarChart data={radarData} margin={{ top: 16, right: 34, bottom: 16, left: 34 }}>
