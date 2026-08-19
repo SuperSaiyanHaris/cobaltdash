@@ -322,7 +322,11 @@ function ChampionsGrid({ tops }) {
                     is lost. Don't move this icon back onto every card. */}
                 <div className="flex items-center gap-1.5 mb-5">
                   {Icon && isActive && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
-                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">{top._platformLabel}</span>
+                  {/* neutral-500 (4.74:1 on white) still tripped Lighthouse's
+                      contrast audit in production -- right at the WCAG AA
+                      edge isn't safe margin. neutral-600 (~7.5:1) clears it
+                      with real headroom. */}
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-600">{top._platformLabel}</span>
                 </div>
 
                 <div className="relative mb-4">
