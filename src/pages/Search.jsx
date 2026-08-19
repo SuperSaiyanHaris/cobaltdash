@@ -95,7 +95,7 @@ function FilterDropdown({ label, options, value, onChange }) {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 h-9 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
       >
-        <span className="text-neutral-400">{label}:</span> {current.label}
+        <span className="text-neutral-600">{label}:</span> {current.label}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
@@ -605,14 +605,14 @@ export default function Search() {
               <User className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
               {liveSearchUnavailable ? (
                 <>
-                  <h3 className="text-base font-medium text-neutral-900 mb-1">Couldn't check just now</h3>
+                  <h2 className="text-base font-medium text-neutral-900 mb-1">Couldn't check just now</h2>
                   <p className="text-sm text-neutral-500 mb-4">
                     "{query}" isn't in our database yet, and we couldn't verify it against live {currentPlatform?.name} data this time. If you're sure this creator is real, try again in a few minutes.
                   </p>
                 </>
               ) : (
                 <>
-                  <h3 className="text-base font-medium text-neutral-900 mb-1">No creators found</h3>
+                  <h2 className="text-base font-medium text-neutral-900 mb-1">No creators found</h2>
                   <p className="text-sm text-neutral-500 mb-4">
                     We couldn't find any {currentPlatform?.name} creators matching "{query}"
                   </p>
@@ -628,7 +628,7 @@ export default function Search() {
                         If you know the exact handle, enter it below. Otherwise leave as-is and our smart search will find the right match.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="text-neutral-400 text-base font-medium">@</span>
+                        <span className="text-neutral-600 text-base font-medium">@</span>
                         <input
                           type="text"
                           value={normalizedUsername}
@@ -645,7 +645,7 @@ export default function Search() {
                         <Clock className="w-4 h-4" />
                         Request @{normalizedUsername || '...'}
                       </button>
-                      <p className="text-xs text-neutral-400 mt-3">
+                      <p className="text-xs text-neutral-600 mt-3">
                         We'll add them within 24 hours
                       </p>
                     </div>
@@ -712,7 +712,7 @@ export default function Search() {
                           <Clock className="w-4 h-4" />
                           Track this {selectedPlatform === 'rumble' ? 'channel' : selectedPlatform === 'substack' ? 'newsletter' : 'account'}
                         </button>
-                        <p className="text-xs text-neutral-400 mt-3">
+                        <p className="text-xs text-neutral-600 mt-3">
                           We'll add it within 24 hours, then build daily stats automatically.
                         </p>
                       </div>
@@ -754,7 +754,7 @@ export default function Search() {
                   was the thing that failed — "check your spelling" is wrong
                   advice when we never actually got to check. */}
               {!['tiktok', 'rumble', 'mastodon', 'substack'].includes(selectedPlatform) && !liveSearchUnavailable && (
-                <p className="text-sm text-neutral-400">
+                <p className="text-sm text-neutral-600">
                   Try searching for a different name or check the spelling
                 </p>
               )}
@@ -812,7 +812,7 @@ export default function Search() {
                         </p>
                         <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                           <Icon className={`w-3 h-3 flex-shrink-0 ${tint}`} />
-                          <p className="text-xs text-neutral-400 truncate">@{creator.username}</p>
+                          <p className="text-xs text-neutral-600 truncate">@{creator.username}</p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0 flex items-baseline gap-2">
@@ -852,7 +852,7 @@ export default function Search() {
                             If you know the exact handle, enter it below. Otherwise leave as-is and our smart search will find the right match.
                           </p>
                           <div className="flex items-center gap-2 mb-4 px-4">
-                            <span className="text-neutral-400 text-base font-medium">@</span>
+                            <span className="text-neutral-600 text-base font-medium">@</span>
                             <input
                               type="text"
                               value={normalizedUsername}
@@ -869,7 +869,7 @@ export default function Search() {
                             <Clock className="w-4 h-4" />
                             Request @{normalizedUsername || '...'}
                           </button>
-                          <p className="text-xs text-neutral-400 mt-3">
+                          <p className="text-xs text-neutral-600 mt-3">
                             We'll add them within 24 hours
                           </p>
                         </>
