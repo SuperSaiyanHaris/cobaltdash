@@ -564,7 +564,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
             <PlatformIcon className={`w-3 h-3 flex-shrink-0 ${tint}`} />
-            <p className="text-xs text-neutral-400 truncate">@{creator.username}</p>
+            <p className="text-xs text-neutral-600 truncate">@{creator.username}</p>
           </div>
         </div>
         <div className="text-right flex-shrink-0 min-w-[84px]">
@@ -648,7 +648,7 @@ export default function Dashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-neutral-900 truncate">{displayName}</p>
-              <p className="text-sm text-neutral-400 truncate">{user.email}</p>
+              <p className="text-sm text-neutral-600 truncate">{user.email}</p>
               <p className="sm:hidden mt-1 text-xs text-neutral-500 tabular-nums">
                 {followedCreators.length} following · {savedCompares.length} saved compares
               </p>
@@ -704,7 +704,7 @@ export default function Dashboard() {
                       const SIcon = platformIcons[spotlightCreator.platform] || Users;
                       return <SIcon className={`w-3.5 h-3.5 flex-shrink-0 ${platformTint[spotlightCreator.platform] || 'text-neutral-400'}`} />;
                     })()}
-                    <p className="text-sm text-neutral-400 truncate">{PLATFORM_LABELS[spotlightCreator.platform]} · @{spotlightCreator.username}</p>
+                    <p className="text-sm text-neutral-600 truncate">{PLATFORM_LABELS[spotlightCreator.platform]} · @{spotlightCreator.username}</p>
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -735,7 +735,7 @@ export default function Dashboard() {
                   <Icon className="w-4 h-4" />
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">{tab.shortLabel}</span>
-                  {tab.count > 0 && <span className="text-xs text-neutral-400 tabular-nums">{tab.count}</span>}
+                  {tab.count > 0 && <span className="text-xs text-neutral-600 tabular-nums">{tab.count}</span>}
                 </button>
               );
             })}
@@ -761,7 +761,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-baseline gap-2">
                           <span className="text-sm font-medium text-neutral-900">Compare mode</span>
-                          <span className="text-xs text-neutral-400 tabular-nums">{selectedForCompare.length}/3 selected</span>
+                          <span className="text-xs text-neutral-600 tabular-nums">{selectedForCompare.length}/3 selected</span>
                         </div>
                         <button
                           onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
@@ -980,7 +980,7 @@ export default function Dashboard() {
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-xs text-neutral-400 tabular-nums">{Math.floor(recentlyViewedIndex / 8) + 1} / {Math.ceil(recentlyViewed.length / 8)}</span>
+                            <span className="text-xs text-neutral-600 tabular-nums">{Math.floor(recentlyViewedIndex / 8) + 1} / {Math.ceil(recentlyViewed.length / 8)}</span>
                             <button
                               onClick={() => setRecentlyViewedIndex(Math.min(recentlyViewed.length - 8, recentlyViewedIndex + 8))}
                               disabled={recentlyViewedIndex >= recentlyViewed.length - 8}
@@ -1018,7 +1018,7 @@ export default function Dashboard() {
                                 <p className="font-medium text-neutral-900 text-[13px] truncate">{creator.displayName}</p>
                                 <div className="flex items-center justify-center gap-1.5 mt-1">
                                   <PlatformIcon className={`w-3 h-3 ${tint}`} />
-                                  <span className="text-xs text-neutral-400 tabular-nums">
+                                  <span className="text-xs text-neutral-600 tabular-nums">
                                     {formatNumber(creator.subscribers || creator.followers || 0)}
                                   </span>
                                 </div>
