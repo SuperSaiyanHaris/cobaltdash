@@ -46,6 +46,22 @@ const topCounts = [50, 100, 500];
 
 const MotionLink = motion(Link);
 
+// "Updated 2h ago" for the header stat strip. Every ranked creator already
+// carries `computedAt` (rankings_cache.computed_at), so the freshest one
+// across the platforms we just loaded gives a real cache age for free, with
+// no extra query. Returns null when nothing has loaded yet so the cell can
+// hold its skeleton instead of rendering a wrong "0m ago".
+function timeAgo(iso) {
+  if (!iso) return null;
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (!Number.isFinite(mins) || mins < 0) return null;
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 // Typographic backbone shared with the dashboard/account precision system
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
@@ -257,6 +273,18 @@ function RankingsOverview() {
     });
   }, []);
 
+  // Freshest computed_at across every platform we just loaded. Derived from
+  // data already in state, so the "Updated" cell costs no extra query.
+  const lastUpdated = useMemo(() => {
+    let newest = null;
+    Object.values(platformData).forEach((rows) => {
+      (rows || []).forEach((c) => {
+        if (c?.computedAt && (!newest || c.computedAt > newest)) newest = c.computedAt;
+      });
+    });
+    return timeAgo(newest);
+  }, [platformData]);
+
   return (
     <>
       <SEO
@@ -267,43 +295,95 @@ function RankingsOverview() {
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <div>
-              <p className={`${MICRO} mb-3`}>Rankings</p>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Rankings</h1>
-              <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+            {/* Masthead row. Title and stat strip sit side by side from lg up
+                instead of stacking, which is what left the right two thirds of
+                this block empty on desktop (raised in user feedback). Below lg
+                they stack exactly as before, so mobile is unchanged. */}
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+              <div className="lg:flex-shrink-0">
+                <p className={`${MICRO} mb-3`}>Rankings</p>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Rankings</h1>
+                <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
+              </div>
+
+              {/* Live stat strip — the same real, honest counts the home page
+                  shows, giving first-time visitors something concrete before
+                  they've scanned a single row. The box itself is always
+                  mounted (fixed height, same border) so the async counts
+                  resolving ~1-3s late never shifts the page — only the value
+                  inside each cell swaps from a skeleton pulse to the real
+                  one. Previously the whole block only mounted once both
+                  counts existed, which meant it popped in and pushed the
+                  loading skeletons down (reported as a mobile "blip" after
+                  landing on Rankings from the header). CountUp itself still
+                  only renders once a value is truthy, matching the documented
+                  safe pattern in CLAUDE.md (never animates from a fake 0).
+                  The fourth cell is a real cache age derived from
+                  rankings_cache.computed_at, not a static "updated daily"
+                  claim, and it's a plain string so it never goes near CountUp. */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 w-full lg:w-auto lg:min-w-[34rem] bg-white border border-neutral-200 rounded-xl divide-x divide-y sm:divide-y-0 divide-neutral-200 overflow-hidden">
+                {[
+                  { label: 'Creators tracked', value: liveStats.creators },
+                  { label: 'Daily data points', value: liveStats.dataPoints },
+                  { label: 'Platforms', value: PLATFORM_COUNT },
+                  { label: 'Rankings updated', text: lastUpdated, live: true },
+                ].map((s) => (
+                  <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
+                    {s.text ? (
+                      <p className="flex items-center gap-1.5 text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
+                        {s.live && <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" aria-hidden="true" />}
+                        {s.text}
+                      </p>
+                    ) : s.value ? (
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
+                        <CountUp value={s.value} />
+                      </p>
+                    ) : (
+                      <div className="h-[1.125rem] sm:h-[1.25rem] w-10 bg-neutral-100 rounded animate-pulse" />
+                    )}
+                    <p className={`${MICRO} mt-1.5`}>{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Live stat strip — the same real, honest counts the home page
-                shows, giving first-time visitors something concrete before
-                they've scanned a single row. The box itself is always
-                mounted (fixed height, same border) so the two async counts
-                resolving ~1-3s late never shifts the page — only the number
-                inside each cell swaps from a skeleton pulse to the real
-                value. Previously the whole block only mounted once both
-                counts existed, which meant it popped in and pushed the
-                loading skeletons down (reported as a mobile "blip" after
-                landing on Rankings from the header). CountUp itself still
-                only renders once a value is truthy, matching the documented
-                safe pattern in CLAUDE.md (never animates from a fake 0). */}
-            <div className="mt-8 grid grid-cols-3 max-w-xl bg-white border border-neutral-200 rounded-xl divide-x divide-neutral-200 overflow-hidden">
-              {[
-                { label: 'Creators tracked', value: liveStats.creators },
-                { label: 'Daily data points', value: liveStats.dataPoints },
-                { label: 'Platforms', value: PLATFORM_COUNT },
-              ].map((s) => (
-                <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
-                  {s.value ? (
-                    <p className="text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
-                      <CountUp value={s.value} />
-                    </p>
-                  ) : (
-                    <div className="h-[1.125rem] sm:h-[1.25rem] w-10 bg-neutral-100 rounded animate-pulse" />
-                  )}
-                  <p className={`${MICRO} mt-1.5`}>{s.label}</p>
-                </div>
-              ))}
-            </div>
+            {/* Platform rail. Same pill treatment and inverted active state as
+                the tabs already used on /rankings/:platform, so navigating
+                between the two views doesn't change how the nav looks. Nine
+                platforms were previously only reachable by scrolling past
+                three rows of cards. These are real links, not filters — the
+                overview has no per-platform state to toggle. */}
+            {/* Scrolls as one row below lg and wraps above it. Wrapping on a
+                375px screen pushed the rail to five rows (~215px) and shoved
+                the actual rankings below the fold, which would have regressed
+                the mobile layout this redesign was told not to touch. The
+                negative margin lets the row bleed to the screen edges so it
+                reads as scrollable instead of clipped. */}
+            <nav
+              aria-label="Rankings by platform"
+              className="mt-7 pt-6 border-t border-neutral-200/80 flex gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-x-visible"
+            >
+              <span
+                aria-current="page"
+                className="flex-shrink-0 flex items-center h-9 px-3.5 rounded-lg text-sm font-medium border bg-neutral-900 border-neutral-900 text-white"
+              >
+                All platforms
+              </span>
+              {platforms.map((platform) => {
+                const Icon = platform.icon;
+                return (
+                  <Link
+                    key={platform.id}
+                    to={`/rankings/${platform.id}`}
+                    className="flex-shrink-0 flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300"
+                  >
+                    {Icon && <Icon className={`w-4 h-4 ${platform.tint}`} />}
+                    {platform.name}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
         </div>
 
@@ -736,7 +816,7 @@ function PlatformRankings({ urlPlatform }) {
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
         <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
             <p className={`${MICRO} mb-3`}>Rankings</p>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
             <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
@@ -745,36 +825,53 @@ function PlatformRankings({ urlPlatform }) {
                 {getPlatformIntro(currentPlatform)}
               </p>
             )}
+
+            {/* Platform rail lives inside the header block here for the same
+                reason it does on the /rankings overview: if one page renders
+                it in the white masthead and the other renders it down in the
+                grey body, the nav visibly jumps position every time you move
+                between them. Same pills, same inverted active state, same
+                mobile scroll behaviour. "All platforms" leads back to the
+                overview, which previously had no link back from here. */}
+            <nav
+              aria-label="Rankings by platform"
+              className="mt-7 pt-6 border-t border-neutral-200/80 flex gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-x-visible"
+            >
+              <Link
+                to="/rankings"
+                className="flex-shrink-0 flex items-center h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300"
+              >
+                All platforms
+              </Link>
+              {platforms.map((platform) => {
+                const Icon = platform.icon;
+                const isSelected = selectedPlatform === platform.id;
+
+                return (
+                  <button
+                    key={platform.id}
+                    onClick={() => platform.available && handlePlatformChange(platform.id)}
+                    disabled={!platform.available}
+                    aria-current={isSelected ? 'page' : undefined}
+                    className={`flex-shrink-0 flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
+                      isSelected
+                        ? 'bg-neutral-900 border-neutral-900 text-white'
+                        : platform.available
+                        ? 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+                        : 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {Icon && <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : platform.tint}`} />}
+                    {platform.name}
+                    {!platform.available && <span className="text-xs opacity-75">(Soon)</span>}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </div>
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-          {/* Platform Tabs */}
-          <div className="flex flex-wrap gap-1.5 mb-6">
-            {platforms.map((platform) => {
-              const Icon = platform.icon;
-              const isSelected = selectedPlatform === platform.id;
-
-              return (
-                <button
-                  key={platform.id}
-                  onClick={() => platform.available && handlePlatformChange(platform.id)}
-                  disabled={!platform.available}
-                  className={`flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
-                    isSelected
-                      ? 'bg-neutral-900 border-neutral-900 text-white'
-                      : platform.available
-                      ? 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
-                      : 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
-                  }`}
-                >
-                  {Icon && <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : platform.tint}`} />}
-                  {platform.name}
-                  {!platform.available && <span className="text-xs opacity-75">(Soon)</span>}
-                </button>
-              );
-            })}
-          </div>
 
           {/* Rank Type Tabs + Top Count + Category dropdowns — one compact row */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
