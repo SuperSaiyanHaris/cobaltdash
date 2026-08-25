@@ -57,6 +57,15 @@ tmpclaude-*
 temp_*.md
 temp_*.txt
 
+# Ad-hoc agent scratch scripts. The blog/X automation loops write one-off
+# Node scripts to run a single upload, resize, or publish, and they routinely
+# hardcode an absolute path into a session-specific scratchpad directory, so
+# they are dead code the moment that session ends. Three of them sat untracked
+# in scripts/ for days and were nearly committed by a blind `git add -A` on
+# 2026-08-25. The loops are already told to stage this work in the scratchpad
+# rather than the repo; this makes forgetting that unable to reach a commit.
+scripts/_temp-*
+
 # PowerShell scripts (may contain or expose credentials — never commit)
 *.ps1
 _*.html
