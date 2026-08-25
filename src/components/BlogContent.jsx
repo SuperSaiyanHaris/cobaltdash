@@ -303,7 +303,21 @@ function buildMarkdownComponents(theme, getH2Index) {
       </motion.blockquote>
     ),
 
-    img: ({ src, alt }) => (
+    // `alt` and the visible caption are deliberately NOT the same string.
+    // This used to render `alt` into the figcaption, which printed every
+    // image's screen-reader description under the image as body text. Alt
+    // text describes a picture for someone who can't see it, so it reads as
+    // a literal scene description ("a single folded pair of blue jeans on the
+    // concrete floor of an empty photography studio"), which looked like a
+    // leaked image prompt sitting under every post's artwork. Flagged by the
+    // user on 2026-08-25.
+    //
+    // Alt is still set on the <img>, so screen readers and SEO are unchanged.
+    // A caption now only appears when a post explicitly asks for one via
+    // markdown's title syntax: ![alt text](url "the visible caption"). No
+    // existing post uses that syntax, so this silently removes the stray
+    // captions from every published post without touching their content.
+    img: ({ src, alt, title }) => (
       <motion.figure
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -317,7 +331,7 @@ function buildMarkdownComponents(theme, getH2Index) {
           loading="lazy"
           className="w-full rounded-xl object-cover max-h-[480px] border border-neutral-200/80"
         />
-        {alt && <figcaption className="mt-3 text-center text-xs text-neutral-500 italic">{alt}</figcaption>}
+        {title && <figcaption className="mt-3 text-center text-xs text-neutral-500 italic">{title}</figcaption>}
       </motion.figure>
     ),
   };
