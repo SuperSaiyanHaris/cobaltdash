@@ -1136,7 +1136,12 @@ export default function CreatorProfile() {
         title={seoTitle}
         description={seoDescription}
         keywords={seoKeywords}
-        image={`https://shinypull.com/og-image/${platform}/${encodeURIComponent(creator.username || username)}`}
+        // One shared profile card rather than a per-creator generated one.
+        // The old /og-image/:platform/:username route rendered that creator's
+        // live stats, but it was only ever set here on the client, so social
+        // scrapers reading the server HTML never saw it anyway; middleware.js
+        // now serves this same static card for every profile URL.
+        image="https://shinypull.com/og/profile.jpg"
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileSchema).replace(/<\/script>/gi, '<\\/script>') }} />
       <StructuredData schema={breadcrumbSchema} />

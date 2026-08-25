@@ -719,6 +719,38 @@ async function handleBadge(platform, username) {
 // Static-page meta (unchanged behavior)
 // ---------------------------------------------------------------------------
 
+// Per-page Open Graph share cards, pre-rendered by scripts/generateOgImages.mjs
+// and served as static files. Replaces the single generic card that api/og.js
+// used to generate for every route, which had also drifted to advertising six
+// platforms when we support nine.
+//
+// Order matters: the first matching entry wins, so put specific prefixes above
+// general ones. Anything unmatched keeps the home card already in index.html,
+// which is the correct fallback for the remaining static pages (about, faq,
+// privacy and so on) rather than a bespoke image nobody will ever share.
+const OG_CARDS = [
+  [/^\/rankings(\/|$)/,            'rankings'],
+  [/^\/best(\/|$)/,                'rankings'],
+  [/^\/compare(\/|$)/,             'compare'],
+  [/^\/trending(\/|$)/,            'trending'],
+  [/^\/milestones(\/|$)/,          'milestones'],
+  [/^\/promote(\/|$)/,             'promote'],
+  [/^\/blog(\/|$)/,                'blog'],
+  [/^\/youtube\/money-calculator/, 'calculator'],
+];
+
+function ogCardFor(pathname) {
+  for (const [re, name] of OG_CARDS) {
+    if (re.test(pathname)) return `${SITE_URL}/og/${name}.jpg`;
+  }
+  // Creator profiles are /:platform/:username. Matched last and by an explicit
+  // platform list so it cannot swallow unrelated two-segment routes.
+  if (/^\/(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)\/[^/]+$/.test(pathname)) {
+    return `${SITE_URL}/og/profile.jpg`;
+  }
+  return null;
+}
+
 function getMeta(pathname, searchParams) {
   // /best — hub index
   if (pathname === '/best') {
@@ -934,7 +966,9 @@ export default async function middleware(request) {
   const title = content?.status === 'ok' ? content.title : meta.title;
   const description = content?.status === 'ok' ? content.description : meta.description;
   const canonicalUrl = `${SITE_URL}${content?.status === 'ok' && content.canonicalPath ? content.canonicalPath : url.pathname}`;
-  const image = content?.status === 'ok' ? content.image : null;
+  // Share card precedence: a blog post's own cover, else the card for this
+  // route, else whatever index.html already carries (the home card).
+  const image = (content?.status === 'ok' ? content.image : null) || ogCardFor(url.pathname);
 
   // Inject page-specific values via string replacement
   html = html

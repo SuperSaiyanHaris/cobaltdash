@@ -1,3 +1,20 @@
+// RETIRED 2026-08-25. NOT DEPLOYED. Kept for reference, not dead weight.
+//
+// This generated the site's Open Graph share cards at request time: one
+// generic brand card for every page, plus a per-creator card carrying that
+// creator's live stats. Both were replaced by static per-page cards built by
+// scripts/generateOgImages.mjs and served from public/og/.
+//
+// It lives outside api/ so Vercel stops building it as a serverless function.
+// Hobby caps Node functions at 12 and this project sat exactly at that cap, so
+// leaving it in api/ would have kept consuming a slot for code nothing calls.
+//
+// To bring per-creator stat cards back: move this file to api/og.js, restore
+// the two /og-image rewrites in vercel.json, and point CreatorProfile.jsx's
+// SEO image back at /og-image/:platform/:username. Read the comment block
+// below first, it documents two failure modes that each shipped blank
+// previews to every social scraper.
+
 // Vercel Edge Function — generates Open Graph preview images.
 // Two modes:
 //   /api/og                                          → default brand card
