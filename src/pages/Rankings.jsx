@@ -66,6 +66,131 @@ function timeAgo(iso) {
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
+// Platform navigation, shared by the /rankings overview and every
+// /rankings/:platform page so the nav can never drift between them.
+//
+// Desktop keeps the pill rail. Mobile gets a dropdown instead, because the
+// rail's first mobile version was a horizontal scroll strip: ten pills against
+// a 375px viewport meant seven were off-screen behind a swipe with no
+// scrollbar, no edge fade, and no arrow to say they existed. The only hint
+// was a pill sliced by the viewport edge. Hidden navigation with no
+// affordance is worse than navigation that costs one extra tap, so the
+// trigger now names the current platform and the menu lists all ten.
+//
+// The dropdown deliberately copies the "Top 50" / "Browse by category"
+// pattern already on this page (trigger + full-screen click-catcher + absolute
+// panel) rather than introducing a third menu style.
+//
+// `onSelect` exists because the two call sites genuinely differ: the platform
+// page must route through handlePlatformChange, which also resets the rank
+// type when moving to a platform with no views metric and fires analytics.
+// Passing it renders buttons; omitting it renders plain links.
+function PlatformNav({ current, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const activeId = current === 'all' ? null : current;
+  const active = platforms.find((p) => p.id === activeId);
+  const ActiveIcon = active?.icon;
+
+  // `available` is true for all 9 today, so the disabled branch below is
+  // currently unreachable. It's kept because the platforms array still
+  // carries the flag, and a future not-yet-live platform should degrade to a
+  // greyed "(Soon)" entry rather than a link that 404s.
+  const items = [{ id: 'all', name: 'All platforms', icon: null, tint: '', available: true }, ...platforms];
+
+  return (
+    <div className="mt-7 pt-6 border-t border-neutral-200/80">
+      {/* Mobile: dropdown */}
+      <div className="relative lg:hidden">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          className="w-full flex items-center justify-between gap-2 h-11 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-900 hover:border-neutral-300 transition-colors"
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            {ActiveIcon ? <ActiveIcon className={`w-4 h-4 flex-shrink-0 ${active.tint}`} /> : null}
+            <span className="truncate">{active ? active.name : 'All platforms'}</span>
+          </span>
+          <ChevronDown className={`w-4 h-4 flex-shrink-0 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+            <div role="menu" className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-neutral-200 rounded-lg shadow-xl z-40 overflow-hidden max-h-[60vh] overflow-y-auto">
+              {items.map((item) => {
+                const Icon = item.icon;
+                const isActive = (item.id === 'all' && !activeId) || item.id === activeId;
+                const cls = `w-full flex items-center gap-2.5 text-left px-3.5 py-2.5 text-sm transition-colors ${
+                  item.available === false
+                    ? 'text-neutral-400 cursor-not-allowed'
+                    : isActive
+                    ? 'bg-neutral-50 text-neutral-900 font-medium'
+                    : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'
+                }`;
+                const inner = (
+                  <>
+                    {Icon ? <Icon className={`w-4 h-4 flex-shrink-0 ${item.tint}`} /> : <span className="w-4 flex-shrink-0" />}
+                    {item.name}
+                    {item.available === false && <span className="text-xs opacity-75">(Soon)</span>}
+                  </>
+                );
+                if (item.available === false) {
+                  return <span key={item.id} role="menuitem" aria-disabled="true" className={cls}>{inner}</span>;
+                }
+                if (item.id !== 'all' && onSelect) {
+                  return (
+                    <button key={item.id} type="button" role="menuitem" className={cls} onClick={() => { setOpen(false); onSelect(item.id); }}>
+                      {inner}
+                    </button>
+                  );
+                }
+                return (
+                  <Link key={item.id} role="menuitem" to={item.id === 'all' ? '/rankings' : `/rankings/${item.id}`} className={cls} onClick={() => setOpen(false)}>
+                    {inner}
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Desktop: pill rail */}
+      <nav aria-label="Rankings by platform" className="hidden lg:flex flex-wrap gap-1.5">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = (item.id === 'all' && !activeId) || item.id === activeId;
+          const cls = `flex-shrink-0 flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
+            item.available === false
+              ? 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
+              : isActive
+              ? 'bg-neutral-900 border-neutral-900 text-white'
+              : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+          }`;
+          const inner = (
+            <>
+              {Icon && <Icon className={`w-4 h-4 ${isActive && item.available !== false ? 'text-white' : item.tint}`} />}
+              {item.name}
+              {item.available === false && <span className="text-xs opacity-75">(Soon)</span>}
+            </>
+          );
+          if (item.available === false) {
+            return <span key={item.id} aria-disabled="true" className={cls}>{inner}</span>;
+          }
+          if (isActive) {
+            return <span key={item.id} aria-current="page" className={cls}>{inner}</span>;
+          }
+          if (item.id !== 'all' && onSelect) {
+            return <button key={item.id} type="button" className={cls} onClick={() => onSelect(item.id)}>{inner}</button>;
+          }
+          return <Link key={item.id} to={item.id === 'all' ? '/rankings' : `/rankings/${item.id}`} className={cls}>{inner}</Link>;
+        })}
+      </nav>
+    </div>
+  );
+}
+
 // Rank is a plain tabular numeral — position alone is the hierarchy signal,
 // no medal-colored dots.
 function RankBadge({ rank, size = 'md' }) {
@@ -348,42 +473,7 @@ function RankingsOverview() {
               </div>
             </div>
 
-            {/* Platform rail. Same pill treatment and inverted active state as
-                the tabs already used on /rankings/:platform, so navigating
-                between the two views doesn't change how the nav looks. Nine
-                platforms were previously only reachable by scrolling past
-                three rows of cards. These are real links, not filters — the
-                overview has no per-platform state to toggle. */}
-            {/* Scrolls as one row below lg and wraps above it. Wrapping on a
-                375px screen pushed the rail to five rows (~215px) and shoved
-                the actual rankings below the fold, which would have regressed
-                the mobile layout this redesign was told not to touch. The
-                negative margin lets the row bleed to the screen edges so it
-                reads as scrollable instead of clipped. */}
-            <nav
-              aria-label="Rankings by platform"
-              className="mt-7 pt-6 border-t border-neutral-200/80 flex gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-x-visible"
-            >
-              <span
-                aria-current="page"
-                className="flex-shrink-0 flex items-center h-9 px-3.5 rounded-lg text-sm font-medium border bg-neutral-900 border-neutral-900 text-white"
-              >
-                All platforms
-              </span>
-              {platforms.map((platform) => {
-                const Icon = platform.icon;
-                return (
-                  <Link
-                    key={platform.id}
-                    to={`/rankings/${platform.id}`}
-                    className="flex-shrink-0 flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300"
-                  >
-                    {Icon && <Icon className={`w-4 h-4 ${platform.tint}`} />}
-                    {platform.name}
-                  </Link>
-                );
-              })}
-            </nav>
+            <PlatformNav current="all" />
           </div>
         </div>
 
@@ -826,48 +916,7 @@ function PlatformRankings({ urlPlatform }) {
               </p>
             )}
 
-            {/* Platform rail lives inside the header block here for the same
-                reason it does on the /rankings overview: if one page renders
-                it in the white masthead and the other renders it down in the
-                grey body, the nav visibly jumps position every time you move
-                between them. Same pills, same inverted active state, same
-                mobile scroll behaviour. "All platforms" leads back to the
-                overview, which previously had no link back from here. */}
-            <nav
-              aria-label="Rankings by platform"
-              className="mt-7 pt-6 border-t border-neutral-200/80 flex gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-x-visible"
-            >
-              <Link
-                to="/rankings"
-                className="flex-shrink-0 flex items-center h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300"
-              >
-                All platforms
-              </Link>
-              {platforms.map((platform) => {
-                const Icon = platform.icon;
-                const isSelected = selectedPlatform === platform.id;
-
-                return (
-                  <button
-                    key={platform.id}
-                    onClick={() => platform.available && handlePlatformChange(platform.id)}
-                    disabled={!platform.available}
-                    aria-current={isSelected ? 'page' : undefined}
-                    className={`flex-shrink-0 flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
-                      isSelected
-                        ? 'bg-neutral-900 border-neutral-900 text-white'
-                        : platform.available
-                        ? 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
-                        : 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {Icon && <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : platform.tint}`} />}
-                    {platform.name}
-                    {!platform.available && <span className="text-xs opacity-75">(Soon)</span>}
-                  </button>
-                );
-              })}
-            </nav>
+            <PlatformNav current={selectedPlatform} onSelect={handlePlatformChange} />
           </div>
         </div>
 
