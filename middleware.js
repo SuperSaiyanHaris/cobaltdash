@@ -431,7 +431,13 @@ async function getProfileContent(platform, username) {
     statsHistory: stats,
   };
 
-  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, dataId: '__CREATOR_DATA__', image: c.profile_image || null, thin };
+  // Deliberately no `image` here, so ogCardFor() supplies the shared profile
+  // share card instead. This used to return c.profile_image, which meant every
+  // creator page shared that creator's raw avatar: a square image dropped into
+  // a 1200x630 slot, so social platforms cropped it badly, and it carried no
+  // indication the link even went to ShinyPull. The avatar is still used for
+  // the JSON-LD `image` and inside the injected HTML, both built above.
+  return { status: 'ok', title, description, html, jsonLd, canonicalPath, initialData, dataId: '__CREATOR_DATA__', thin };
 }
 
 // ---------------------------------------------------------------------------
