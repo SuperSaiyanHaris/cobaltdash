@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import BackToTop from './components/BackToTop';
+import MobileBottomNav from './components/MobileBottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthPanel from './components/AuthPanel';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -225,10 +226,10 @@ function LayoutWrapper() {
   const isShareRoute = location.pathname.startsWith('/s/');
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col">
+    <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
       <RouteChangeTracker />
       <ScrollToTop />
-      <BackToTop />
+      <BackToTop hasBottomNav={!isShareRoute} />
       {!isShareRoute && <Header />}
       <main className="flex-1">
         <ErrorBoundary>
@@ -274,6 +275,7 @@ function LayoutWrapper() {
         </ErrorBoundary>
       </main>
       {!isShareRoute && <Footer />}
+      {!isShareRoute && <MobileBottomNav />}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { ArrowUp } from 'lucide-react';
  * BackToTop - Floating button that appears when scrolling down
  * Scrolls smoothly to top of page when clicked
  */
-export default function BackToTop() {
+export default function BackToTop({ hasBottomNav = false }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -37,7 +37,9 @@ export default function BackToTop() {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 p-3 md:p-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full shadow-lg shadow-black/10 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2"
+          className={`fixed right-4 md:bottom-8 md:right-8 z-50 p-3 md:p-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full shadow-lg shadow-black/10 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 ${
+            hasBottomNav ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)]' : 'bottom-4'
+          }`}
           aria-label="Back to top"
         >
           <ArrowUp className="w-6 h-6" />
