@@ -1545,1080 +1545,31 @@ export default function CreatorProfile() {
               </div>
             )}
 
-            {/* Stats Grid */}
-            <div className={`grid gap-2 sm:gap-4 mb-6 ${
-              platform === 'tiktok' ? 'grid-cols-3'
-              : platform === 'kick' ? (creator.category ? 'grid-cols-2' : 'grid-cols-1 max-w-md')
-              : platform === 'twitch' && creator.category ? 'grid-cols-2 sm:grid-cols-3'
-              : platform === 'twitch' ? 'grid-cols-2'
-              : platform === 'bluesky' ? 'grid-cols-2'
-              : platform === 'mastodon' ? 'grid-cols-2'
-              : platform === 'rumble' ? 'grid-cols-2'
-              : platform === 'substack' ? 'grid-cols-1 max-w-md'
-              : platform === 'music' ? (creator.description ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2')
-              : 'grid-cols-2 lg:grid-cols-4'
-            }`}>
-              {/* Subscribers/Followers Card */}
-              <StatCard
-                icon={Users}
-                label={platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subscribers' : platform === 'music' ? 'Monthly Listeners' : 'Subscribers'}
-                value={formatNumber(creator.subscribers || creator.followers)}
-                rawValue={creator.subscribers || creator.followers}
-                sublabel={creator.hiddenSubscribers ? '(hidden)' : (platform === 'youtube' && (creator.subscribers || 0) >= 1000) ? '(rounded by YouTube)' : creator.broadcasterType ? `(${creator.broadcasterType})` : null}
+            {platform === 'youtube' && (
+              <YouTubeVerdictSection
+                creator={creator}
+                statsHistory={statsHistory}
+                metrics={metrics}
+                peakStats={peakStats}
+                rankContext={rankContext}
+                dbCreatorId={dbCreatorId}
+                latestVideo={latestVideo}
+                historyDays={historyDays}
               />
-
-              {/* TikTok: Show Likes and Videos */}
-              {platform === 'tiktok' && (
-                <>
-                  <StatCard
-                    icon={Eye}
-                    label="Total Likes"
-                    value={formatNumber(creator.totalViews || 0)}
-                    rawValue={creator.totalViews || 0}
-                  />
-                  <StatCard
-                    icon={Video}
-                    label="Videos"
-                    value={formatNumber(creator.totalPosts || 0)}
-                    rawValue={creator.totalPosts || 0}
-                  />
-                </>
-              )}
-
-              {/* Bluesky: Show Posts count */}
-              {platform === 'bluesky' && (
-                <StatCard
-                  icon={Video}
-                  label="Posts"
-                  value={formatNumber(creator.totalPosts || 0)}
-                  rawValue={creator.totalPosts || 0}
-                />
-              )}
-
-              {/* Mastodon: Show Posts count (same as Bluesky) */}
-              {platform === 'mastodon' && (
-                <StatCard
-                  icon={Video}
-                  label="Posts"
-                  value={formatNumber(creator.totalPosts || 0)}
-                  rawValue={creator.totalPosts || 0}
-                />
-              )}
-
-              {/* Rumble: Show Videos count */}
-              {platform === 'rumble' && (
-                <StatCard
-                  icon={Video}
-                  label="Videos"
-                  value={formatNumber(creator.totalPosts || 0)}
-                  rawValue={creator.totalPosts || 0}
-                />
-              )}
-
-              {/* Music: Show Total Plays + Genres */}
-              {platform === 'music' && (
-                <>
-                  <StatCard
-                    icon={Play}
-                    label="Total Plays"
-                    value={formatNumber(creator.totalViews || 0)}
-                    rawValue={creator.totalViews || 0}
-                  />
-                  {creator.description && (
-                    <StatCard
-                      icon={Music}
-                      label="Genres"
-                      value={creator.description}
-                    />
-                  )}
-                </>
-              )}
-
-              {/* Hours Watched / Total Views */}
-              {platform === 'twitch' || platform === 'kick' ? (
-                <StatCard
-                  icon={Eye}
-                  label="Hours Watched"
-                  value={
-                    creator.hoursWatchedMonth
-                      ? formatHoursWatched(creator.hoursWatchedMonth)
-                      : (creator.dbCreatedAt || creator.created_at) &&
-                        Date.now() - new Date(creator.dbCreatedAt || creator.created_at).getTime() > 30 * 24 * 60 * 60 * 1000
-                        ? '0'
-                        : 'Tracking...'
-                  }
-                  sublabel="Last 30 days"
-                />
-              ) : platform === 'youtube' ? (
-                <StatCard
-                  icon={Eye}
-                  label="Total Views"
-                  value={formatNumber(creator.totalViews)}
-                  rawValue={creator.totalViews}
-                />
-              ) : null}
-
-              {/* Videos / Category */}
-              {platform === 'twitch' && creator.category && (
-                <StatCard
-                  icon={Video}
-                  label="Category"
-                  value={creator.category}
-                />
-              )}
-              {platform === 'kick' && creator.category && (
-                <StatCard
-                  icon={Video}
-                  label="Category"
-                  value={creator.category}
-                />
-              )}
-              {platform === 'youtube' && (
-                <StatCard
-                  icon={Video}
-                  label="Videos"
-                  value={formatNumber(creator.totalPosts)}
-                  rawValue={creator.totalPosts}
-                />
-              )}
-
-              {/* Avg Views/Video - Only for YouTube */}
-              {platform === 'youtube' && (
-                <StatCard
-                  icon={TrendingUp}
-                  label="Avg Views/Video"
-                  value={creator.totalPosts > 0 ? formatNumber(Math.round(creator.totalViews / creator.totalPosts)) : '-'}
-                  rawValue={creator.totalPosts > 0 ? Math.round(creator.totalViews / creator.totalPosts) : undefined}
-                />
-              )}
-            </div>
-
-            {/* Latest Post Card — Rumble, Mastodon, Substack */}
-            {(platform === 'rumble' || platform === 'mastodon' || platform === 'substack') && creator.latestPost?.publishedAt && (
-              <a
-                href={creator.latestPost.url || creator.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block mb-6 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-4 sm:p-5 hover:border-neutral-300 transition-colors"
-              >
-                <div className="flex gap-4">
-                  {creator.latestPost.thumbnail && (
-                    <div className="flex-shrink-0 w-32 sm:w-44 aspect-video rounded-lg overflow-hidden bg-neutral-100">
-                      <img
-                        src={creator.latestPost.thumbnail}
-                        alt=""
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                      platform === 'rumble' ? 'text-lime-700' : platform === 'substack' ? 'text-orange-700' : 'text-violet-700'
-                    }`}>
-                      Latest {platform === 'rumble' ? 'Video' : 'Post'}
-                    </div>
-                    {creator.latestPost.title && (
-                      <h3 className="text-base sm:text-lg font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:underline">
-                        {creator.latestPost.title}
-                      </h3>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        {formatRelativeTime(creator.latestPost.publishedAt)}
-                      </span>
-                      {creator.latestPost.views != null && (
-                        <span className="inline-flex items-center gap-1">
-                          <Eye className="w-3.5 h-3.5" />
-                          {formatNumber(creator.latestPost.views)} views
-                        </span>
-                      )}
-                      {creator.latestPost.reactions != null && creator.latestPost.reactions > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <ThumbsUp className="w-3.5 h-3.5" />
-                          {formatNumber(creator.latestPost.reactions)}
-                        </span>
-                      )}
-                      {creator.latestPost.comments != null && creator.latestPost.comments > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          {formatNumber(creator.latestPost.comments)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </a>
             )}
 
-            {/* Growth Rate Cards + Summary - Combined row for Twitch/Kick/Bluesky */}
-            {(platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble') && metrics && metrics.growthRates && statsHistory.length >= 7 && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-                <GrowthRateCard
-                  label="7-Day Growth"
-                  value={metrics.growthRates.sevenDay}
-                  platform={platform}
-                />
-                <GrowthRateCard
-                  label="30-Day Growth"
-                  value={metrics.growthRates.thirtyDay}
-                  platform={platform}
-                />
-                <SummaryCard
-                  label={platform === 'kick' ? 'Paid Subscribers' : 'Followers'}
-                  sublabel="Last 30 days"
-                  value={metrics ? formatNumber(metrics.last30Days.subs) : '--'}
-                  change={metrics?.last30Days.subs}
-                />
-              </div>
-            )}
-
-            {/* Fallback Summary for Twitch/Kick/Bluesky when not enough history for growth rates */}
-            {(platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble') && metrics && !(metrics.growthRates && statsHistory.length >= 7) && (
-              <div className="grid grid-cols-1 max-w-xs gap-4 mb-6">
-                <SummaryCard
-                  label={platform === 'kick' ? 'Paid Subscribers' : 'Followers'}
-                  sublabel="Last 30 days"
-                  value={formatNumber(metrics.last30Days.subs)}
-                  change={metrics?.last30Days.subs}
-                />
-              </div>
-            )}
-
-            {/* Growth Rate Cards - Other platforms (Mastodon uses the Twitch/Kick/Bluesky branch above).
-                Substack is excluded entirely: its subscriber value is an order-of-
-                magnitude bucket, so a growth percentage would be misleading. */}
-            {platform !== 'twitch' && platform !== 'kick' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && platform !== 'substack' && metrics && metrics.growthRates && statsHistory.length >= 7 && (
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <GrowthRateCard
-                  label="7-Day Growth"
-                  value={metrics.growthRates.sevenDay}
-                  platform={platform}
-                />
-                <GrowthRateCard
-                  label="30-Day Growth"
-                  value={metrics.growthRates.thirtyDay}
-                  platform={platform}
-                />
-              </div>
-            )}
-
-            {/* Growth Summary - Non Twitch/Kick/Bluesky/Mastodon platforms (those use the SummaryCard rendered above) */}
-            {platform !== 'twitch' && platform !== 'kick' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && platform !== 'substack' && (creator.subscribers || creator.followers) && (
-              <div className={`grid gap-4 mb-6 ${
-                platform === 'youtube' ? 'grid-cols-2 lg:grid-cols-4'
-                : platform === 'tiktok' || platform === 'music' ? 'grid-cols-2'
-                : 'grid-cols-2 lg:grid-cols-4'
-              }`}>
-                {platform === 'youtube' ? (
-                  <>
-                    {/* For YouTube, lead with Views (accurate) instead of Subscribers (rounded) */}
-                    <SummaryCard
-                      label="Views"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.views) : '--'}
-                      change={metrics?.last30Days.views}
-                    />
-                    <SummaryCard
-                      label="Videos"
-                      sublabel="Last 30 days"
-                      value={metrics ? `${metrics.last30Days.videos >= 0 ? '+' : ''}${metrics.last30Days.videos}` : '--'}
-                    />
-                    <SummaryCard
-                      label="Monthly Est."
-                      sublabel="Based on avg CPM"
-                      value={metrics && metrics.last30Days.views > 0
-                        ? formatEarnings(metrics.last30Days.views / 1000 * 2, metrics.last30Days.views / 1000 * 7)
-                        : '--'
-                      }
-                    />
-                    <SummaryCard
-                      label="Yearly Est."
-                      sublabel="Based on avg CPM"
-                      value={metrics && metrics.last30Days.views > 0
-                        ? formatEarnings(metrics.last30Days.views / 1000 * 2 * 12, metrics.last30Days.views / 1000 * 7 * 12)
-                        : '--'
-                      }
-                    />
-                  </>
-                ) : platform === 'tiktok' ? (
-                  <>
-                    <SummaryCard
-                      label="Followers"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.subs) : '--'}
-                      change={metrics?.last30Days.subs}
-                    />
-                    <SummaryCard
-                      label="Likes"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.views) : '--'}
-                      change={metrics?.last30Days.views}
-                    />
-                  </>
-                ) : platform === 'music' ? (
-                  <>
-                    <SummaryCard
-                      label="Monthly Listeners"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.subs) : '--'}
-                      change={metrics?.last30Days.subs}
-                    />
-                    <SummaryCard
-                      label="Total Plays"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.views) : '--'}
-                      change={metrics?.last30Days.views}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <SummaryCard
-                      label="Subscribers"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.subs) : '--'}
-                      change={metrics?.last30Days.subs}
-                    />
-                    <SummaryCard
-                      label="Views"
-                      sublabel="Last 30 days"
-                      value={metrics ? formatNumber(metrics.last30Days.views) : '--'}
-                      change={metrics?.last30Days.views}
-                    />
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Latest Video Card - YouTube only */}
-            {platform === 'youtube' && latestVideo && (
-              <a
-                href={`https://youtube.com/watch?v=${latestVideo.videoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6 hover:border-neutral-300 transition-colors group"
-              >
-                <div className="flex flex-col sm:flex-row">
-                  <div className="relative sm:w-72 flex-shrink-0">
-                    <img
-                      src={latestVideo.thumbnail}
-                      alt={latestVideo.title}
-                      loading="lazy"
-                      className="w-full h-44 sm:h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <div className="w-12 h-12 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-5 flex flex-col justify-between flex-1 min-w-0">
-                    <div>
-                      <p className="text-xs font-medium text-indigo-600 mb-1.5">Latest Video</p>
-                      <h3 className="font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-indigo-400 transition-colors">
-                        {latestVideo.title}
-                      </h3>
-                      <p className="text-sm text-neutral-700">
-                        Uploaded {(() => {
-                          const published = new Date(latestVideo.publishedAt);
-                          const now = new Date();
-                          const diffDays = Math.floor((now - published) / (1000 * 60 * 60 * 24));
-                          if (diffDays === 0) return 'today';
-                          if (diffDays === 1) return 'yesterday';
-                          if (diffDays < 7) return `${diffDays} days ago`;
-                          if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-                          if (diffDays < 365) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-                          return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
-                        })()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-5 mt-3 text-sm text-neutral-700">
-                      <span className="flex items-center gap-1.5">
-                        <Eye className="w-4 h-4 text-neutral-700" />
-                        {formatNumber(latestVideo.views)} <span className="text-neutral-500">views</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <ThumbsUp className="w-4 h-4 text-neutral-700" />
-                        {formatNumber(latestVideo.likes)} <span className="text-neutral-500">likes</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <MessageCircle className="w-4 h-4 text-neutral-700" />
-                        {formatNumber(latestVideo.comments)} <span className="text-neutral-500">comments</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </a>
-            )}
-
-            {/* Live Counter Link - Hidden for TikTok, Bluesky, and Mastodon.
-                These platforms don't have a meaningful "ticking up in real time" experience —
-                follower counts change slowly. The counter exists for YT/Twitch/Kick where numbers move every second. */}
-            {platform !== 'tiktok' && platform !== 'bluesky' && platform !== 'mastodon' && platform !== 'rumble' && platform !== 'substack' && (
-              <Link
-                to={`/live/${platform}/${creator.username}`}
-                className="flex items-center justify-between bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-4 sm:p-5 mb-6 hover:border-neutral-300 transition-colors group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base text-neutral-900 truncate">
-                      Live {platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Follower' : platform === 'kick' ? 'Paid Subscriber' : platform === 'music' ? 'Listener' : 'Subscriber'} Count
-                    </p>
-                    <p className="text-xs sm:text-sm text-neutral-500 truncate">Watch the count update in real-time</p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-900 flex-shrink-0 group-hover:gap-2.5 transition-all">
-                  <span className="hidden sm:inline">Open</span>
-                  <ExternalLink className="w-4 h-4" />
-                </span>
-              </Link>
-            )}
-
-            <RecordRankCard
-              rankContext={rankContext}
-              peakStats={peakStats}
-              currentCount={primaryCount}
-              primaryLabel={primaryLabel}
-              platformName={platformName}
-            />
-
-            {/* Milestone Predictions — hidden for music since monthly listeners fluctuate
-                (rolling 30-day window, not monotonically increasing like subs/followers) */}
-            {metrics && platform !== 'music' && (
-              platform === 'youtube'
-                ? creator.totalViews && metrics.dailyAverage.views > 0
-                : creator.subscribers || creator.followers
-            ) && (
-              <MilestonePredictions
-                currentCount={platform === 'youtube' ? creator.totalViews : (creator.subscribers || creator.followers)}
-                dailyGrowth={platform === 'youtube' ? metrics.dailyAverage.views : metrics.dailyAverage.subs}
+            {GENERIC_PLATFORM_CONFIG[platform] && (
+              <GenericVerdictSection
                 platform={platform}
+                creator={creator}
+                statsHistory={statsHistory}
+                metrics={metrics}
+                peakStats={peakStats}
+                rankContext={rankContext}
+                latestVideo={latestVideo}
+                musicTracks={musicTracks}
+                musicAlbums={musicAlbums}
               />
-            )}
-
-            {/* Growth Chart */}
-            {statsHistory.length >= 2 && (
-              <GrowthChart
-                data={statsHistory}
-                range={chartRange}
-                onRangeChange={(val) => {
-                  setChartRange(val);
-                }}
-                metric={chartMetric}
-                onMetricChange={(metric) => {
-                  setChartMetric(metric);
-                  analytics.changeChartMetric(metric);
-                }}
-                platform={platform}
-                maxHistoryDays={historyDays}
-                subscribers={creator?.subscribers || 0}
-              />
-            )}
-
-            {/* Music: Top Albums */}
-            {platform === 'music' && musicAlbums.length > 0 && (
-              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
-                <div className="px-6 py-4 border-b border-neutral-200">
-                  <h2 className="text-lg font-semibold text-neutral-900">Top Albums</h2>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-0">
-                  {musicAlbums.slice(0, 6).map((album, i) => {
-                    const img = album.image?.find(im => im.size === 'large' || im.size === 'extralarge')?.['#text'];
-                    const hasImg = img && !img.includes('2a96cbd8b46e442fc41c2b86b821562f');
-                    return (
-                      <a
-                        key={i}
-                        href={album.url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative block aspect-square overflow-hidden hover:z-10"
-                      >
-                        {hasImg ? (
-                          <img
-                            src={img}
-                            alt={album.name}
-                            loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-amber-50 flex items-center justify-center">
-                            <Music className="w-8 h-8 text-amber-700" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3">
-                          <p className="text-white text-xs font-semibold line-clamp-2 leading-tight">{album.name}</p>
-                          {album.playcount && (
-                            <p className="text-neutral-700 text-xs mt-0.5">{formatNumber(parseInt(album.playcount))} plays</p>
-                          )}
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Music: Top Tracks */}
-            {platform === 'music' && musicTracks.length > 0 && (
-              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden mb-6">
-                <div className="px-6 py-4 border-b border-neutral-200">
-                  <h2 className="text-lg font-semibold text-neutral-900">Top Tracks</h2>
-                </div>
-                <div className="divide-y divide-gray-800">
-                  {musicTracks.slice(0, 10).map((track, i) => (
-                    <a
-                      key={i}
-                      href={track.url || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 px-6 py-3 hover:bg-neutral-50 transition-colors group"
-                    >
-                      <span className="w-6 text-center text-sm font-mono text-neutral-400 flex-shrink-0">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 truncate group-hover:text-amber-700 transition-colors">{track.name}</p>
-                      </div>
-                      <div className="flex items-center gap-4 flex-shrink-0 text-right">
-                        {track.listeners && (
-                          <span className="text-xs text-neutral-500 hidden sm:block">{formatNumber(parseInt(track.listeners))} listeners</span>
-                        )}
-                        {track.playcount && (
-                          <span className="text-xs text-neutral-700 font-medium w-20 text-right">{formatNumber(parseInt(track.playcount))} plays</span>
-                        )}
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Daily Metrics Table */}
-            {metrics ? (
-              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
-                <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-neutral-900">Daily Channel Metrics</h2>
-                  <button
-                    onClick={handleExportCSV}
-                    title="Export as CSV"
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      hasExport
-                        ? 'bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 border border-neutral-200'
-                        : 'bg-neutral-50 text-neutral-400 border border-neutral-200 cursor-pointer'
-                    }`}
-                  >
-                    {hasExport ? <Download className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    Export CSV
-                  </button>
-                </div>
-                <div className="overflow-x-auto hidden md:block">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-                        <th className="px-6 py-4 font-semibold text-neutral-700">Date</th>
-                        <th className="px-6 py-4 font-semibold text-neutral-700 text-right">
-                          {platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subs' : platform === 'music' ? 'Listeners' : 'Subscribers'}
-                        </th>
-                        {platform === 'tiktok' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Likes</th>}
-                        {platform === 'tiktok' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Videos</th>}
-                        {platform === 'bluesky' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Posts</th>}
-                        {platform === 'mastodon' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Posts</th>}
-                        {platform === 'rumble' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Videos</th>}
-                        {platform === 'music' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Total Plays</th>}
-                        {platform === 'youtube' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Views</th>}
-                        {platform === 'youtube' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Videos</th>}
-                        {platform === 'youtube' && <th className="px-6 py-4 font-semibold text-neutral-700 text-right">Est. Earnings</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {metrics.dailyStats.map((stat) => (
-                        <tr key={stat.recorded_at} className="border-b border-neutral-200 hover:bg-neutral-50 transition-colors">
-                          <td className="px-6 py-4 text-neutral-900">
-                            {new Date(stat.recorded_at + 'T12:00:00').toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex flex-col items-end">
-                              <span className="font-medium text-neutral-900">{formatNumber(stat.subscribers || stat.followers)}</span>
-                              {(platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'substack' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0 && (
-                                <span className={`text-xs ${stat.subsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                  {stat.subsChange > 0 ? '+' : ''}{formatNumber(stat.subsChange)}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          {platform === 'tiktok' && (
-                            <>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex flex-col items-end">
-                                  <span className="font-medium text-neutral-900">{formatNumber(stat.total_views || 0)}</span>
-                                  {stat.viewsChange !== 0 && (
-                                    <span className={`text-xs ${stat.viewsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                      {stat.viewsChange > 0 ? '+' : ''}{formatNumber(stat.viewsChange)}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex flex-col items-end">
-                                  <span className="font-medium text-neutral-900">{formatNumber(stat.total_posts || 0)}</span>
-                                  {stat.videosChange !== 0 && (
-                                    <span className={`text-xs ${stat.videosChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                      {stat.videosChange > 0 ? '+' : ''}{stat.videosChange}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                            </>
-                          )}
-                          {platform === 'bluesky' && (
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-neutral-900">{formatNumber(stat.total_posts || 0)}</span>
-                                {stat.videosChange !== 0 && (
-                                  <span className={`text-xs ${stat.videosChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {stat.videosChange > 0 ? '+' : ''}{stat.videosChange}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          {platform === 'mastodon' && (
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-neutral-900">{formatNumber(stat.total_posts || 0)}</span>
-                                {stat.videosChange !== 0 && (
-                                  <span className={`text-xs ${stat.videosChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {stat.videosChange > 0 ? '+' : ''}{stat.videosChange}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          {platform === 'rumble' && (
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-neutral-900">{formatNumber(stat.total_posts || 0)}</span>
-                                {stat.videosChange !== 0 && (
-                                  <span className={`text-xs ${stat.videosChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {stat.videosChange > 0 ? '+' : ''}{stat.videosChange}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          {platform === 'music' && (
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex flex-col items-end">
-                                <span className="font-medium text-neutral-900">{formatNumber(stat.total_views || 0)}</span>
-                                {stat.viewsChange !== 0 && (
-                                  <span className={`text-xs ${stat.viewsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {stat.viewsChange > 0 ? '+' : ''}{formatNumber(stat.viewsChange)}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          {platform === 'youtube' && (
-                            <>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex flex-col items-end">
-                                  <span className="font-medium text-neutral-900">{formatNumber(stat.total_views)}</span>
-                                  {stat.viewsChange !== 0 && (
-                                    <span className={`text-xs ${stat.viewsChange > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
-                                      {stat.viewsChange > 0 ? '+' : ''}{formatNumber(stat.viewsChange)}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex flex-col items-end">
-                                  <span className="font-medium text-neutral-900">{formatNumber(stat.total_posts || 0)}</span>
-                                  {stat.videosChange !== 0 && (
-                                    <span className={`text-xs ${stat.videosChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                      {stat.videosChange > 0 ? '+' : ''}{stat.videosChange}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-right text-neutral-700">
-                                {(() => {
-                                  // YouTube's public view counter doesn't tick every single day for
-                                  // every channel (verified: Cocomelon goes flat for a day then jumps
-                                  // by 2-3 days' worth at once, while e.g. PewDiePie/T-Series update
-                                  // smoothly daily) -- it's a real per-channel API reporting artifact,
-                                  // not a missed collection. A flat day here does NOT mean zero real
-                                  // views/revenue that day, so fall back to the channel's own trailing
-                                  // 30-day daily average instead of hiding the estimate as "no data".
-                                  const viewsForEstimate = stat.viewsChange > 0 ? stat.viewsChange : metrics.dailyAverage.views;
-                                  return viewsForEstimate > 0
-                                    ? formatEarnings(viewsForEstimate / 1000 * 2, viewsForEstimate / 1000 * 7)
-                                    : '—';
-                                })()}
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
-
-                      {/* Summary Rows */}
-                      <tr className="bg-indigo-50 font-semibold">
-                        <td className="px-6 py-4 text-indigo-900">Daily Average</td>
-                        <td className="px-6 py-4 text-right">
-                          {/* For large YouTube channels, hide sub average since counts are rounded */}
-                          {platform === 'youtube' && (creator.subscribers || 0) >= 1000 ? (
-                            <span className="text-neutral-700">—</span>
-                          ) : (
-                            <span className={metrics.dailyAverage.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                              {metrics.dailyAverage.subs >= 0 ? '+' : ''}{formatNumber(metrics.dailyAverage.subs)}
-                            </span>
-                          )}
-                        </td>
-                        {platform === 'tiktok' && (
-                          <>
-                            <td className="px-6 py-4 text-right">
-                              <span className={metrics.dailyAverage.views >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                                {metrics.dailyAverage.views > 0 ? `+${formatNumber(metrics.dailyAverage.views)}` : '—'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right"></td>
-                          </>
-                        )}
-                        {platform === 'music' && (
-                          <td className="px-6 py-4 text-right">
-                            <span className={metrics.dailyAverage.views >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                              {metrics.dailyAverage.views > 0 ? `+${formatNumber(metrics.dailyAverage.views)}` : '—'}
-                            </span>
-                          </td>
-                        )}
-                        {platform === 'youtube' && (
-                          <>
-                            <td className={`px-6 py-4 text-right ${metrics.dailyAverage.views > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
-                              {metrics.dailyAverage.views > 0
-                                ? `+${formatNumber(metrics.dailyAverage.views)}`
-                                : '—'
-                              }
-                            </td>
-                            <td className="px-6 py-4 text-right"></td>
-                            <td className="px-6 py-4 text-right text-indigo-900">
-                              {metrics.dailyAverage.views > 0
-                                ? formatEarnings(metrics.dailyAverage.views / 1000 * 2, metrics.dailyAverage.views / 1000 * 7)
-                                : '—'
-                              }
-                            </td>
-                          </>
-                        )}
-                      </tr>
-
-                      <tr className="bg-indigo-50 font-semibold">
-                        <td className="px-6 py-4 text-indigo-900">Weekly Average</td>
-                        <td className="px-6 py-4 text-right">
-                          {platform === 'youtube' ? (
-                            <span className="text-neutral-700">—</span>
-                          ) : (
-                            <span className={metrics.weeklyAverage.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                              {metrics.weeklyAverage.subs >= 0 ? '+' : ''}{formatNumber(metrics.weeklyAverage.subs)}
-                            </span>
-                          )}
-                        </td>
-                        {platform === 'tiktok' && (
-                          <>
-                            <td className="px-6 py-4 text-right">
-                              <span className={metrics.weeklyAverage.views >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                                {metrics.weeklyAverage.views > 0 ? `+${formatNumber(metrics.weeklyAverage.views)}` : '—'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right"></td>
-                          </>
-                        )}
-                        {platform === 'music' && (
-                          <td className="px-6 py-4 text-right">
-                            <span className={metrics.weeklyAverage.views >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                              {metrics.weeklyAverage.views > 0 ? `+${formatNumber(metrics.weeklyAverage.views)}` : '—'}
-                            </span>
-                          </td>
-                        )}
-                        {platform === 'youtube' && (
-                          <>
-                            <td className={`px-6 py-4 text-right ${metrics.weeklyAverage.views > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
-                              {metrics.weeklyAverage.views > 0
-                                ? `+${formatNumber(metrics.weeklyAverage.views)}`
-                                : '—'
-                              }
-                            </td>
-                            <td className="px-6 py-4 text-right"></td>
-                            <td className="px-6 py-4 text-right text-indigo-900">
-                              {metrics.weeklyAverage.views > 0
-                                ? formatEarnings(metrics.weeklyAverage.views / 1000 * 2, metrics.weeklyAverage.views / 1000 * 7)
-                                : '—'
-                              }
-                            </td>
-                          </>
-                        )}
-                      </tr>
-
-                      <tr className="bg-indigo-50 font-semibold">
-                        <td className="px-6 py-4 text-indigo-900">Last 30 Days</td>
-                        <td className="px-6 py-4 text-right">
-                          {platform === 'youtube' ? (
-                            <span className="text-neutral-700">—</span>
-                          ) : (
-                            <span className={metrics.last30Days.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                              {metrics.last30Days.subs >= 0 ? '+' : ''}{formatNumber(metrics.last30Days.subs)}
-                            </span>
-                          )}
-                        </td>
-                        {platform === 'tiktok' && (
-                          <>
-                            <td className={`px-6 py-4 text-right ${metrics.last30Days.views >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                              {metrics.last30Days.views >= 0 ? '+' : ''}{formatNumber(metrics.last30Days.views)}
-                            </td>
-                            <td className={`px-6 py-4 text-right ${metrics.last30Days.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                              {metrics.last30Days.videos >= 0 ? '+' : ''}{metrics.last30Days.videos}
-                            </td>
-                          </>
-                        )}
-                        {platform === 'music' && (
-                          <td className={`px-6 py-4 text-right ${metrics.last30Days.views >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                            {metrics.last30Days.views >= 0 ? '+' : ''}{formatNumber(metrics.last30Days.views)}
-                          </td>
-                        )}
-                        {platform === 'youtube' && (
-                          <>
-                            <td className="px-6 py-4 text-right text-emerald-600">
-                              {metrics.last30Days.views > 0
-                                ? `+${formatNumber(metrics.last30Days.views)}`
-                                : '—'
-                              }
-                            </td>
-                            <td className={`px-6 py-4 text-right ${metrics.last30Days.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                              {metrics.last30Days.videos >= 0 ? '+' : ''}{metrics.last30Days.videos}
-                            </td>
-                            <td className="px-6 py-4 text-right text-indigo-900">
-                              {metrics.last30Days.views > 0
-                                ? formatEarnings(metrics.last30Days.views / 1000 * 2, metrics.last30Days.views / 1000 * 7)
-                                : '—'
-                              }
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile: stacked cards, not a horizontally-scrolling table.
-                    The desktop table's rightmost column (Est. Earnings on
-                    YouTube) was invisible unless a user scrolled sideways --
-                    easy to miss entirely. Every value here matches the
-                    desktop table's own per-platform column logic exactly,
-                    just laid out vertically instead of in cells. Each day is
-                    a real bordered/shadowed card (not a divide-y hairline)
-                    on a tinted backdrop specifically so consecutive days
-                    read as distinct units at a glance -- the flat hairline
-                    version this replaced was flagged as hard to tell apart. */}
-                <div className="md:hidden bg-neutral-50/70 p-3 space-y-3">
-                  {metrics.dailyStats.map((stat) => {
-                    const secondary = [];
-                    if (platform === 'tiktok') {
-                      secondary.push({ label: 'Likes', value: formatNumber(stat.total_views || 0), change: stat.viewsChange, fmtChange: formatNumber });
-                      secondary.push({ label: 'Videos', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
-                    } else if (platform === 'bluesky' || platform === 'mastodon') {
-                      secondary.push({ label: 'Posts', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
-                    } else if (platform === 'rumble') {
-                      secondary.push({ label: 'Videos', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
-                    } else if (platform === 'music') {
-                      secondary.push({ label: 'Total Plays', value: formatNumber(stat.total_views || 0), change: stat.viewsChange, fmtChange: formatNumber });
-                    } else if (platform === 'youtube') {
-                      secondary.push({ label: 'Views', value: formatNumber(stat.total_views), change: stat.viewsChange, fmtChange: formatNumber });
-                      secondary.push({ label: 'Videos', value: formatNumber(stat.total_posts || 0), change: stat.videosChange, fmtChange: (v) => v });
-                    }
-
-                    const earnings = platform === 'youtube' ? (() => {
-                      // Same fallback-to-trailing-average logic as the desktop
-                      // table's Est. Earnings cell -- see the comment there.
-                      const viewsForEstimate = stat.viewsChange > 0 ? stat.viewsChange : metrics.dailyAverage.views;
-                      return viewsForEstimate > 0
-                        ? formatEarnings(viewsForEstimate / 1000 * 2, viewsForEstimate / 1000 * 7)
-                        : '—';
-                    })() : null;
-
-                    const showSubsChange = (platform === 'tiktok' || platform === 'twitch' || platform === 'kick' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' || platform === 'substack' || platform === 'music' || (platform === 'youtube' && (creator.subscribers || 0) < 1000)) && stat.subsChange !== 0;
-
-                    return (
-                      <div key={stat.recorded_at} className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
-                        {/* Header bar -- the one thing that has to be
-                            unmistakable at a glance scrolling through 14+
-                            of these, so it gets its own row and a hairline
-                            of its own rather than sharing space with data. */}
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-neutral-50/80 border-b border-neutral-100">
-                          <Calendar className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
-                          <span className="text-sm font-bold text-neutral-900 tracking-tight">
-                            {new Date(stat.recorded_at + 'T12:00:00').toLocaleDateString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </span>
-                        </div>
-
-                        <div className="p-4">
-                          {/* Primary metric -- same label-over-value pattern as
-                              the StatCard components above, so it reads as
-                              part of the same page rather than a bolted-on table. */}
-                          <div className="flex items-end justify-between gap-3 mb-1">
-                            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-400">
-                              {platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subs' : platform === 'music' ? 'Listeners' : 'Subscribers'}
-                            </p>
-                            {showSubsChange && (
-                              <span className={`text-xs font-semibold tabular-nums ${stat.subsChange > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                {stat.subsChange > 0 ? '+' : ''}{formatNumber(stat.subsChange)}
-                              </span>
-                            )}
-                          </div>
-                          <p className={`text-2xl font-bold text-neutral-900 tabular-nums leading-none ${secondary.length > 0 || earnings !== null ? 'mb-4' : ''}`}>
-                            {formatNumber(stat.subscribers || stat.followers)}
-                          </p>
-
-                          {secondary.length > 0 && (
-                            <div className={`grid gap-3 ${secondary.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'pb-4 mb-4 border-b border-neutral-100' : ''}`}>
-                              {secondary.map((s) => (
-                                <div key={s.label}>
-                                  <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400 mb-1">{s.label}</p>
-                                  <p className="text-base font-bold text-neutral-900 tabular-nums leading-tight">
-                                    {s.value}
-                                    {s.change !== 0 && (
-                                      <span className={`ml-1.5 text-xs font-semibold ${s.change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {s.change > 0 ? '+' : ''}{s.fmtChange(s.change)}
-                                      </span>
-                                    )}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {earnings !== null && (
-                            <div className="flex items-center justify-between px-3.5 py-3 bg-indigo-50 border border-indigo-100 rounded-lg">
-                              <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Est. Earnings</span>
-                              <span className="text-base font-bold text-indigo-900 tabular-nums">{earnings}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Summary section -- deliberately its own visual group
-                      (eyebrow label + indigo-tinted cards, not white) so it
-                      reads as "totals across many days" and can't be
-                      mistaken for one more day in the list above it. */}
-                  <div className="pt-3">
-                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500 mb-2.5 px-1">30-Day Summary</p>
-                    <div className="space-y-3">
-                      {[
-                        {
-                          label: 'Daily Average',
-                          subs: metrics.dailyAverage.subs,
-                          hideSubs: platform === 'youtube' && (creator.subscribers || 0) >= 1000,
-                          views: metrics.dailyAverage.views,
-                          videos: null,
-                        },
-                        {
-                          label: 'Weekly Average',
-                          subs: metrics.weeklyAverage.subs,
-                          hideSubs: platform === 'youtube',
-                          views: metrics.weeklyAverage.views,
-                          videos: null,
-                        },
-                        {
-                          label: 'Last 30 Days',
-                          subs: metrics.last30Days.subs,
-                          hideSubs: platform === 'youtube',
-                          views: metrics.last30Days.views,
-                          videos: platform === 'tiktok' || platform === 'youtube' ? metrics.last30Days.videos : null,
-                        },
-                      ].map((row) => {
-                        const showViews = platform === 'tiktok' || platform === 'music' || platform === 'youtube';
-                        const earnings = platform === 'youtube'
-                          ? (row.views > 0 ? formatEarnings(row.views / 1000 * 2, row.views / 1000 * 7) : '—')
-                          : null;
-                        return (
-                          <div key={row.label} className="bg-indigo-50 rounded-xl border border-indigo-100 overflow-hidden">
-                            <div className="px-4 py-2.5 bg-indigo-100/40 border-b border-indigo-100">
-                              <span className="text-sm font-bold text-indigo-900">{row.label}</span>
-                            </div>
-                            <div className="p-4">
-                              {!row.hideSubs && (
-                                <div className={showViews || earnings !== null ? 'mb-4' : ''}>
-                                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-indigo-400 mb-1">
-                                    {platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers' : platform === 'kick' ? 'Paid Subs' : platform === 'music' ? 'Listeners' : 'Subscribers'}
-                                  </p>
-                                  <p className={`text-xl font-bold tabular-nums leading-none ${row.subs >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {row.subs >= 0 ? '+' : ''}{formatNumber(row.subs)}
-                                  </p>
-                                </div>
-                              )}
-                              {showViews && (
-                                <div className={`grid gap-3 ${row.videos !== null ? 'grid-cols-2' : 'grid-cols-1'} ${earnings !== null ? 'pb-4 mb-4 border-b border-indigo-100' : ''}`}>
-                                  <div>
-                                    <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-1">
-                                      {platform === 'music' ? 'Plays' : 'Views'}
-                                    </p>
-                                    <p className={`text-base font-bold tabular-nums leading-tight ${row.views > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>
-                                      {row.views > 0 ? `+${formatNumber(row.views)}` : '—'}
-                                    </p>
-                                  </div>
-                                  {row.videos !== null && (
-                                    <div>
-                                      <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-400 mb-1">Videos</p>
-                                      <p className={`text-base font-bold tabular-nums leading-tight ${row.videos >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {row.videos >= 0 ? '+' : ''}{row.videos}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              {earnings !== null && (
-                                <div className="flex items-center justify-between px-3.5 py-3 bg-white border border-indigo-100 rounded-lg">
-                                  <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Est. Earnings</span>
-                                  <span className="text-base font-bold text-indigo-900 tabular-nums">{earnings}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 text-center">
-                <TrendingUp className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
-                <h3 className="text-base font-medium text-neutral-900 mb-1.5">Building Historical Data</h3>
-                <p className="text-neutral-500 text-sm mb-2">
-                  This creator is being tracked. We collect daily snapshots to show growth trends and metrics.
-                </p>
-                <p className="text-xs text-neutral-600 tabular-nums">
-                  {statsHistory.length} day(s) of data collected • Check back soon for trends
-                </p>
-              </div>
-            )}
-
-            {/* Channel Creation Date */}
-            {creator.createdAt && (
-              <div className="mt-6 flex items-center gap-2 text-sm text-neutral-700">
-                <Calendar className="w-4 h-4" />
-                <span>Channel created: {new Date(creator.createdAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</span>
-              </div>
             )}
 
             <SimilarCreators
@@ -2635,85 +1586,1098 @@ export default function CreatorProfile() {
   );
 }
 
-// Precision system: stat identity is a muted icon tint, nothing else.
-const STAT_TINTS = {
-  Subscribers:        'text-red-500',
-  Followers:          'text-pink-500',
-  'Total Views':      'text-indigo-500',
-  Videos:             'text-sky-500',
-  'Avg Views/Video':  'text-amber-500',
-  'Hours Watched':    'text-purple-500',
-  'Paid Subscribers': 'text-emerald-600',
-  'Monthly Listeners':'text-amber-500',
-  Posts:              'text-sky-500',
-};
+// ============================================================================
+// Verdict-first profile layout (added 2026-08-28, generalized to all 9
+// platforms same day). Replaces the old flat stack of equally-weighted cards
+// with: a plain-language verdict sentence, one prominent relative-axis chart,
+// a stat strip, a revenue+live row (YouTube/Twitch/Kick/Music only), and
+// tabbed sections (Daily readings first, per the standing instruction —
+// Recent videos/Latest post/Top tracks second, About third).
+//
+// Every number here derives from the SAME `metrics`/`statsHistory` the rest
+// of the page already computes — no parallel calculation, so the chart's net
+// growth, the hero delta, and the stat strip can never disagree with each
+// other the way the old page's cards sometimes did.
+//
+// YouTube gets its own bespoke section (YouTubeVerdictSection) since it's the
+// only platform with a revenue estimate and a real per-video "Recent videos"
+// list. The other 8 platforms share GenericVerdictSection, configured per
+// platform via GENERIC_PLATFORM_CONFIG below — each only gets a stat cell,
+// chart metric, or tab it has real data for (see that section's own comment).
+// ============================================================================
 
-function StatCard({ icon: Icon, label, value, sublabel }) {
-  const tint = STAT_TINTS[label] || 'text-neutral-400';
+function fmtSigned(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return '—';
+  return (n >= 0 ? '+' : '') + formatNumber(n);
+}
+
+// Milestone targets are always round numbers in the 1-9 x 10^n sequence
+// (200B, 7M, etc). formatNumber() always shows 1-2 decimals, which turns a
+// round number into "200.00B" — this drops the trailing zeros for exact
+// milestones while still using formatNumber's real rounding elsewhere.
+function fmtMilestone(n) {
+  const s = formatNumber(n);
+  return s.replace(/\.0+([BMK])$/, '$1');
+}
+
+// Bare 30-day view/subscriber deltas, safe wherever GrowthChart's own
+// filteredData logic already lives — kept separate (not exported) so a
+// change here can't affect the other 8 platforms' still-unmodified chart.
+function buildYouTubeSeries(statsHistory, rangeDays) {
+  const sorted = [...statsHistory].sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
+  const cutoff = rangeDays >= 9999 ? null : (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - rangeDays);
+    return d;
+  })();
+  const filtered = cutoff ? sorted.filter((s) => new Date(s.recorded_at) >= cutoff) : sorted;
+  return filtered.map((s) => ({
+    date: s.recorded_at,
+    views: s.total_views || 0,
+    subscribers: s.subscribers || s.followers || 0,
+    videos: s.total_posts || 0,
+    label: new Date(s.recorded_at + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  }));
+}
+
+// Real prior-30-days-vs-current-30-days views comparison, computed from raw
+// history rather than asserted — returns null (not a guess) when there isn't
+// enough history to compute it honestly.
+function computeViewsMomentum(statsHistory) {
+  const sorted = [...statsHistory].sort((a, b) => new Date(b.recorded_at) - new Date(a.recorded_at));
+  if (sorted.length < 45) return null; // need real signal on both sides of the comparison
+  const latest = sorted[0];
+  const day30 = sorted[Math.min(29, sorted.length - 1)];
+  const day60 = sorted[Math.min(59, sorted.length - 1)];
+  if (sorted.length < 60) return null;
+  const current = latest.total_views - day30.total_views;
+  const prior = day30.total_views - day60.total_views;
+  if (!prior || prior <= 0) return null;
+  return { current, prior, pct: ((current - prior) / prior) * 100 };
+}
+
+function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
+  const rank = rankContext?.rank;
+  const total = rankContext?.total;
+  const dailyViews = metrics?.dailyAverage?.views ?? 0;
+  const weeklyViews = metrics?.weeklyAverage?.views ?? 0;
+  // "Accelerating" is only said when the last-7-day pace genuinely beats the
+  // last-30-day pace — not asserted by default.
+  const accelerating = weeklyViews > 0 && dailyViews > weeklyViews;
+  const isAllTimeHigh = peakStats?.subscribers ? creator.subscribers >= peakStats.subscribers : creator.subscribers > 0;
+  // The rounding-artifact clause only renders when it's genuinely true: 7-day
+  // subscriber delta reads as zero while there's real 30-day movement.
+  const sevenDayFlat = metrics && metrics.last14Days && metrics.growthRates &&
+    Math.round(metrics.growthRates.sevenDay * (creator.subscribers || 1) / 100) === 0 &&
+    (metrics.last30Days?.subs || 0) !== 0;
+
+  const rankClause = rank
+    ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatNumber(total)} tracked YouTube creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatNumber(rank)}</span> of {formatNumber(total)} tracked YouTube creators.</>)
+    : null;
+
   return (
-    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-3 sm:p-5 transition-colors hover:border-neutral-300">
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-        {Icon && <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${tint}`} />}
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 leading-tight line-clamp-2 break-words">{label}</p>
-      </div>
-      <p className="text-lg sm:text-3xl font-semibold text-neutral-900 tabular-nums truncate">{value}</p>
-      {sublabel && <p className="text-[10px] sm:text-xs text-neutral-600 mt-1 sm:mt-1.5 truncate">{sublabel}</p>}
-    </div>
+    <>
+      {rankClause}{rankClause ? ' ' : ''}
+      {dailyViews > 0 ? (
+        <>Views climbing <span className="font-semibold text-emerald-600">{formatNumber(dailyViews)} views</span> a day{accelerating ? ' and accelerating' : ''}
+          {isAllTimeHigh && <>; subscriber count is at an all-time high{sevenDayFlat ? ", but YouTube only reports three digits, so week-over-week reads as flat" : ''}</>}.
+        </>
+      ) : (
+        <>Not enough recent data yet to show a growth trend.</>
+      )}
+    </>
   );
 }
 
-function SummaryCard({ label, sublabel, value, change }) {
-  const isPositive = change !== undefined && change > 0;
-  const isNegative = change !== undefined && change < 0;
-  // Use smaller text for longer values (like earnings ranges)
-  const isLongValue = value && value.length > 12;
+function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rankContext, dbCreatorId, latestVideo, historyDays }) {
+  const [activeTab, setActiveTab] = useState('daily'); // daily first, per standing instruction
+  const [chartMetric, setChartMetric] = useState('views');
+  const [chartRange, setChartRange] = useState(30);
+  const [cpm, setCpm] = useState(3.5);
+  const [drilldownOpen, setDrilldownOpen] = useState(false);
+  const [scrubIndex, setScrubIndex] = useState(null);
+
+  const total = rankContext?.total;
+  const rank = rankContext?.rank;
+  const band = getPercentileBand(rank, total);
+
+  const series = useMemo(() => buildYouTubeSeries(statsHistory, chartRange), [statsHistory, chartRange]);
+  const momentum = useMemo(() => computeViewsMomentum(statsHistory), [statsHistory]);
+
+  const METRICS = [
+    { value: 'views', label: 'Views', dataKey: 'views' },
+    { value: 'subscribers', label: 'Subscribers', dataKey: 'subscribers' },
+    { value: 'videos', label: 'Videos', dataKey: 'videos' },
+  ];
+  const currentMetric = METRICS.find((m) => m.value === chartMetric) || METRICS[0];
+  const values = series.map((d) => d[currentMetric.dataKey]);
+  const minV = values.length ? Math.min(...values) : 0;
+  const maxV = values.length ? Math.max(...values) : 0;
+  const span = maxV - minV || 1;
+  const pad = span * 0.12;
+  const relData = series.map((d) => ({ ...d, rel: d[currentMetric.dataKey] - minV }));
+  const heroValue = currentMetric.value === 'views' ? formatNumber(creator.totalViews)
+    : currentMetric.value === 'subscribers' ? formatNumber(creator.subscribers)
+    : formatNumber(creator.totalPosts);
+  const netGrowth = values.length >= 2 ? values[values.length - 1] - values[0] : 0;
+
+  const dailyReadingsRows = [...series].reverse();
+
+  const nearestMilestone = useMemo(() => {
+    const dailyGrowth = metrics?.dailyAverage?.views || 0;
+    if (dailyGrowth <= 0 || !creator.totalViews) return null;
+    const startPow = Math.floor(Math.log10(Math.max(creator.totalViews, 1)));
+    for (let pow = startPow; pow < startPow + 3; pow++) {
+      const decade = Math.pow(10, pow);
+      for (let digit = 1; digit <= 9; digit++) {
+        const m = digit * decade;
+        if (m > creator.totalViews) {
+          const days = Math.ceil((m - creator.totalViews) / dailyGrowth);
+          const date = new Date();
+          date.setDate(date.getDate() + days);
+          return { milestone: m, days, date };
+        }
+      }
+    }
+    return null;
+  }, [creator.totalViews, metrics]);
+
+  const CPM_MEDIAN = 3.4;
+  const monthlyRevenue = (metrics?.last30Days?.views || 0) / 1000 * cpm;
+
+  const tabs = [
+    { key: 'daily', label: 'Daily readings', count: dailyReadingsRows.length },
+    { key: 'videos', label: 'Recent videos', count: latestVideo ? 1 : 0 },
+    { key: 'about', label: 'About', count: null },
+  ];
 
   return (
-    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 sm:p-5">
-      <p className={`font-semibold text-neutral-900 mb-1 tabular-nums ${isLongValue ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl'}`}>{value}</p>
-      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">{label}</p>
-      {sublabel && <p className="text-xs text-neutral-600 mt-1">{sublabel}</p>}
-      {change !== undefined && change !== null && (
-        <p className={`text-xs mt-2 font-medium tabular-nums ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400'}`}>
-          {isPositive ? '+' : ''}{formatNumber(change)}
-        </p>
+    <div>
+      {/* Verdict sentence */}
+      <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
+        {buildYouTubeVerdict({ creator, metrics, rankContext, peakStats })}
+      </p>
+
+      {/* Chart card */}
+      <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 sm:p-6 mt-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg">
+            {METRICS.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setChartMetric(m.value)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  chartMetric === m.value ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200' : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg overflow-x-auto max-w-full">
+            {[{ l: '30D', v: 30 }, { l: '60D', v: 60 }, { l: '90D', v: 90 }, { l: 'All', v: 9999 }].map((r) => (
+              <button
+                key={r.v}
+                onClick={() => setChartRange(r.v)}
+                className={`flex-shrink-0 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  chartRange === r.v ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200' : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                {r.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-end gap-3 mt-6">
+          <p className="text-3xl sm:text-[44px] font-bold tabular-nums text-neutral-900 leading-none tracking-tight">{heroValue}</p>
+          <div className="pb-1">
+            <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
+            <p className="text-xs text-neutral-500">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
+          </div>
+        </div>
+
+        <div className="h-56 sm:h-64 mt-4 cursor-pointer md:cursor-default" onClick={() => setDrilldownOpen(true)}>
+          {relData.length >= 2 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={relData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="ytVerdictGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#a3a3a3', fontSize: 11 }} interval="preserveStartEnd" minTickGap={50} />
+                <YAxis
+                  domain={[0 - pad, span + pad]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                  tickFormatter={(v) => (v <= 0 ? '+0' : '+' + formatNumber(v))}
+                  width={56}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const raw = payload[0].payload[currentMetric.dataKey];
+                    return (
+                      <div className="bg-white border border-neutral-200 rounded-lg shadow-lg px-3 py-2">
+                        <p className="text-xs text-neutral-500">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        <p className="text-sm font-semibold text-neutral-900 tabular-nums">{formatNumber(raw)}</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Area type="monotone" dataKey="rel" stroke="#059669" strokeWidth={2} fill="url(#ytVerdictGradient)" dot={false} activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }} animationDuration={900} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-sm text-neutral-500">Not enough history yet for this range.</div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-neutral-200/80 text-xs sm:text-sm text-neutral-600">
+          <span>{series.length} daily readings</span>
+          <span className="text-neutral-300">&middot;</span>
+          <span>net {fmtSigned(netGrowth)}</span>
+          <span className="flex-1" />
+          {nearestMilestone && (
+            <button onClick={() => setDrilldownOpen(true)} className="text-left hover:text-neutral-900 transition-colors">
+              Next milestone <span className="font-semibold text-neutral-900">{fmtMilestone(nearestMilestone.milestone)} views</span> in ~{nearestMilestone.days} days
+              <span className="text-neutral-400"> ({nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, at the current pace)</span>
+              <span className="hidden sm:inline text-neutral-400"> Details &rsaquo;</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 6-cell stat strip — real values, derived from the same metrics/rankContext as everywhere else on the page */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-neutral-200/80 mt-6">
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Subscribers</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.subscribers)}</p>
+          <p className="text-xs text-emerald-600 mt-1">all-time high</p>
+        </div>
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Total views</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalViews)}</p>
+          <p className="text-xs text-neutral-500 mt-1">{creator.createdAt ? `since ${new Date(creator.createdAt).getFullYear()}` : 'lifetime'}</p>
+        </div>
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Videos</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
+          {metrics && <p className={`text-xs mt-1 ${metrics.last30Days.videos > 0 ? 'text-emerald-600' : 'text-neutral-500'}`}>{fmtSigned(metrics.last30Days.videos)} in 30 days</p>}
+        </div>
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Avg / video</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{creator.totalPosts > 0 ? formatNumber(creator.totalViews / creator.totalPosts) : '—'}</p>
+          <p className="text-xs text-neutral-500 mt-1">lifetime</p>
+        </div>
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">30-day views</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{metrics ? fmtSigned(metrics.last30Days.views) : '—'}</p>
+          {momentum && (
+            <p className={`text-xs mt-1 ${momentum.pct >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{momentum.pct >= 0 ? '+' : ''}{momentum.pct.toFixed(2)}% vs. prior 30d</p>
+          )}
+        </div>
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Platform rank</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatNumber(rank)}` : '—'}</p>
+          <p className="text-xs text-neutral-500 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
+        </div>
+      </div>
+
+      {/* Revenue + live count row */}
+      <div className="flex flex-col lg:flex-row gap-4 mt-6 items-stretch">
+        <div className="flex-1 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Estimated revenue</p>
+            <span className="flex-1" />
+            <p className="text-xs text-neutral-500">your CPM assumption</p>
+          </div>
+          <div className="flex flex-wrap items-end gap-6 mt-3">
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold tabular-nums text-neutral-900 leading-none">{formatEarningsSingle(monthlyRevenue)}</p>
+              <p className="text-xs text-neutral-500 mt-1.5">per month &middot; {formatEarningsSingle(monthlyRevenue * 12)} per year</p>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <div className="flex items-baseline gap-2 mb-1.5">
+                <span className="text-base font-semibold tabular-nums text-neutral-900">${cpm.toFixed(2)}</span>
+                <span className="text-xs text-neutral-500">CPM &middot; category median ${CPM_MEDIAN.toFixed(2)}</span>
+              </div>
+              <input type="range" min="1" max="12" step="0.1" value={cpm} onChange={(e) => setCpm(parseFloat(e.target.value))} className="w-full accent-neutral-900 h-8" />
+              <div className="flex justify-between text-[10px] text-neutral-400 mt-0.5"><span>$1</span><span>$12</span></div>
+            </div>
+          </div>
+        </div>
+        <div className="lg:w-72 flex-shrink-0 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6 flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Live subscriber count</p>
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-neutral-900 mt-3">{creator.subscribers?.toLocaleString('en-US')}</p>
+          <p className="text-xs text-neutral-500 mt-1">updated every 60s</p>
+          <span className="flex-1" />
+          <Link to={`/live/youtube/${creator.username}`} className="text-sm font-medium text-neutral-900 hover:underline mt-3 inline-flex items-center gap-1">
+            Open full-screen counter <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Section tabs — Daily readings first, Recent videos second, About third */}
+      <div className="flex gap-6 mt-8 border-b border-neutral-200/80 overflow-x-auto">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`flex-shrink-0 text-sm font-medium pb-3 -mb-px border-b-2 transition-colors ${
+              activeTab === t.key ? 'text-neutral-900 border-neutral-900' : 'text-neutral-500 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            {t.label}{t.count != null && <span className="text-neutral-400 font-normal ml-1.5">{t.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'daily' && (
+        <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden mt-4">
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Date</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">Views</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">&Delta; views</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">Subscribers</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">Videos</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">Est. revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyReadingsRows.map((row, i) => {
+                  const prev = dailyReadingsRows[i + 1];
+                  const delta = prev ? row.views - prev.views : null;
+                  return (
+                    <tr key={row.date} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
+                      <td className="px-5 py-3 text-neutral-900 tabular-nums">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                      <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">{formatNumber(row.views)}</td>
+                      <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta != null ? fmtSigned(delta) : '—'}</td>
+                      <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{formatNumber(row.subscribers)}</td>
+                      <td className="px-5 py-3 text-right text-neutral-500 tabular-nums">{row.videos}</td>
+                      <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile: list, not a table — tables don't survive 390px */}
+          <div className="md:hidden divide-y divide-neutral-100">
+            {dailyReadingsRows.map((row, i) => {
+              const prev = dailyReadingsRows[i + 1];
+              const delta = prev ? row.views - prev.views : null;
+              return (
+                <div key={row.date} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-neutral-900">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5 tabular-nums">{formatNumber(row.subscribers)} subs &middot; {row.videos} videos</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold tabular-nums text-neutral-900">{delta != null ? fmtSigned(delta) : '—'}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'videos' && (
+        <div className="mt-4">
+          {latestVideo ? (
+            <a
+              href={`https://youtube.com/watch?v=${latestVideo.videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors group"
+            >
+              <div className="flex flex-col sm:flex-row">
+                <div className="relative sm:w-72 flex-shrink-0">
+                  <img src={latestVideo.thumbnail} alt={latestVideo.title} loading="lazy" className="w-full h-44 sm:h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <div className="w-12 h-12 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-5 flex flex-col justify-between flex-1 min-w-0">
+                  <div>
+                    <p className="text-xs font-medium text-neutral-500 mb-1.5">Most recent upload</p>
+                    <h3 className="font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-neutral-700 transition-colors">{latestVideo.title}</h3>
+                    <p className="text-sm text-neutral-500">{formatRelativeTime(latestVideo.publishedAt)}</p>
+                  </div>
+                  <div className="flex items-center gap-5 mt-3 text-sm text-neutral-700">
+                    <span className="flex items-center gap-1.5 tabular-nums"><Eye className="w-4 h-4 text-neutral-400" />{formatNumber(latestVideo.views)}</span>
+                    <span className="flex items-center gap-1.5 tabular-nums"><ThumbsUp className="w-4 h-4 text-neutral-400" />{formatNumber(latestVideo.likes)}</span>
+                    <span className="flex items-center gap-1.5 tabular-nums"><MessageCircle className="w-4 h-4 text-neutral-400" />{formatNumber(latestVideo.comments)}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          ) : (
+            <div className="bg-white rounded-xl border border-neutral-200/80 p-8 text-center text-sm text-neutral-500">No recent video data yet.</div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'about' && (
+        <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-6 sm:p-7 mt-4 max-w-3xl">
+          {creator.description && <p className="text-sm leading-relaxed text-neutral-700 text-pretty whitespace-pre-line">{creator.description}</p>}
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-neutral-200/80">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Joined</p>
+              <p className="text-sm text-neutral-900 mt-1">{creator.createdAt ? new Date(creator.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Country</p>
+              <p className="text-sm text-neutral-900 mt-1">{creator.country || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Tracked since</p>
+              <p className="text-sm text-neutral-900 mt-1">{creator.dbCreatedAt ? new Date(creator.dbCreatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile drill-down: scrubbable full-height chart + sticky footer, matches the approved design */}
+      {drilldownOpen && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col md:hidden">
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-neutral-200/80">
+            <button onClick={() => { setDrilldownOpen(false); setScrubIndex(null); }} className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <p className="text-sm font-semibold text-neutral-900 flex-1">{currentMetric.label} &middot; {creator.displayName}</p>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 pt-4">
+            {(() => {
+              const idx = scrubIndex == null ? relData.length - 1 : scrubIndex;
+              const pt = relData[idx];
+              const prevPt = relData[idx - 1];
+              const delta = pt && prevPt ? pt[currentMetric.dataKey] - prevPt[currentMetric.dataKey] : null;
+              return pt ? (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                  <div className="flex items-end gap-3 mt-2">
+                    <p className="text-4xl font-bold tabular-nums text-neutral-900 leading-none">{formatNumber(pt[currentMetric.dataKey])}</p>
+                    {delta != null && <p className="text-sm font-semibold text-emerald-600 tabular-nums pb-1">{fmtSigned(delta)} that day</p>}
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-1.5">drag across the chart to read any day</p>
+                </>
+              ) : null;
+            })()}
+            <div
+              className="relative mt-5"
+              style={{ height: 280, touchAction: 'none' }}
+              onPointerDown={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+                setScrubIndex(Math.round(f * (relData.length - 1)));
+              }}
+              onPointerMove={(e) => {
+                if (e.buttons === 0) return;
+                const r = e.currentTarget.getBoundingClientRect();
+                const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+                setScrubIndex(Math.round(f * (relData.length - 1)));
+              }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={relData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="ytDrilldownGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#059669" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <YAxis domain={[0 - pad, span + pad]} axisLine={false} tickLine={false} tick={{ fill: '#a3a3a3', fontSize: 10 }} tickFormatter={(v) => (v <= 0 ? '+0' : '+' + formatNumber(v))} width={48} />
+                  <Area type="monotone" dataKey="rel" stroke="#059669" strokeWidth={2.5} fill="url(#ytDrilldownGradient)" dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-between mt-2 text-[10px] text-neutral-400 tabular-nums">
+              <span>{relData[0] && new Date(relData[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              <span>{relData[relData.length - 1] && new Date(relData[relData.length - 1].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 mt-5">
+              {[{ l: '30D', v: 30 }, { l: '60D', v: 60 }, { l: '90D', v: 90 }, { l: 'All', v: 9999 }].map((r) => (
+                <button key={r.v} onClick={() => { setChartRange(r.v); setScrubIndex(null); }} className={`h-9 rounded-lg text-xs font-semibold ${chartRange === r.v ? 'bg-neutral-900 text-white' : 'border border-neutral-200 text-neutral-700'}`}>{r.l}</button>
+              ))}
+            </div>
+
+            <div className="mt-5 border border-neutral-200/80 rounded-xl overflow-hidden divide-y divide-neutral-100">
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Total views</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{formatNumber(creator.totalViews)}</span></div>
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Net over {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(netGrowth)}</span></div>
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Best day</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(Math.max(...relData.map((d, i) => i > 0 ? d[currentMetric.dataKey] - relData[i - 1][currentMetric.dataKey] : 0)))}</span></div>
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Daily average</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(Math.round(netGrowth / Math.max(1, relData.length - 1)))}</span></div>
+            </div>
+
+            {nearestMilestone && (
+              <div className="mt-4 rounded-xl bg-neutral-900 text-white p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Next milestone</p>
+                <p className="text-xl font-bold mt-1.5">{fmtMilestone(nearestMilestone.milestone)} views</p>
+                <p className="text-xs text-neutral-400 mt-1">~{nearestMilestone.days} days &middot; {nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at the current pace</p>
+              </div>
+            )}
+            <div className="h-6" />
+          </div>
+          <div className="flex-shrink-0 flex gap-2.5 px-4 py-3 border-t border-neutral-200/80">
+            <Link to={`/compare?creators=youtube:${creator.username}`} className="flex-1 h-12 rounded-xl bg-neutral-900 text-white text-sm font-semibold flex items-center justify-center">Compare channels</Link>
+            <button className="w-12 h-12 rounded-xl border border-neutral-200 flex items-center justify-center flex-shrink-0"><Download className="w-4 h-4" /></button>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-function GrowthRateCard({ label, value, platform }) {
-  const isPositive = value > 0;
-  const isNegative = value < 0;
+function formatEarningsSingle(n) {
+  if (!n || n < 0) return '$0';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+  return '$' + Math.round(n);
+}
 
-  const valueColor = isPositive ? 'text-emerald-600' : isNegative ? 'text-red-600' : 'text-neutral-400';
+// ============================================================================
+// Verdict-first layout for the other 8 platforms (added 2026-08-28).
+// Same structure/pattern as YouTubeVerdictSection above, generalized via a
+// per-platform config table instead of 8 near-duplicate components — mirrors
+// how GrowthChart already branches its metrics array per platform. Every
+// field referenced here is real (creator/metrics/rankContext/peakStats, the
+// same objects the rest of the page already computes) — no platform gets a
+// stat cell, a chart metric, a revenue estimate, or a third tab it doesn't
+// have real data for. Notably: no platform except YouTube gets a revenue
+// estimate (no CPM methodology exists for the others in this codebase, and
+// inventing one would be fabricating a number) or a "recent items" tab
+// unless it has one real item to show (a single latest post for Rumble/
+// Mastodon/Substack, real top tracks for Music) — never a fabricated list.
+// ============================================================================
 
-  const followerLabel = platform === 'kick' ? 'Paid Subscribers'
-    : platform === 'tiktok' || platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'Followers'
-    : 'Subscribers';
+const GENERIC_PLATFORM_CONFIG = {
+  twitch: {
+    primaryLabel: 'Followers',
+    chartMetrics: [{ value: 'subscribers', label: 'Followers', dataKey: 'subscribers' }],
+    hasLiveCount: true,
+    liveLabel: 'Live follower count',
+    thirdTab: null,
+  },
+  kick: {
+    primaryLabel: 'Paid Subscribers',
+    chartMetrics: [{ value: 'subscribers', label: 'Paid Subscribers', dataKey: 'subscribers' }],
+    hasLiveCount: true,
+    liveLabel: 'Live paid subscriber count',
+    thirdTab: null,
+  },
+  tiktok: {
+    primaryLabel: 'Followers',
+    chartMetrics: [{ value: 'subscribers', label: 'Followers', dataKey: 'subscribers' }, { value: 'views', label: 'Likes', dataKey: 'views' }],
+    hasLiveCount: false,
+    thirdTab: null,
+  },
+  bluesky: {
+    primaryLabel: 'Followers',
+    chartMetrics: [{ value: 'subscribers', label: 'Followers', dataKey: 'subscribers' }, { value: 'videos', label: 'Posts', dataKey: 'videos' }],
+    hasLiveCount: false,
+    thirdTab: null,
+  },
+  mastodon: {
+    primaryLabel: 'Followers',
+    chartMetrics: [{ value: 'subscribers', label: 'Followers', dataKey: 'subscribers' }, { value: 'videos', label: 'Posts', dataKey: 'videos' }],
+    hasLiveCount: false,
+    thirdTab: null,
+  },
+  rumble: {
+    primaryLabel: 'Followers',
+    chartMetrics: [{ value: 'subscribers', label: 'Followers', dataKey: 'subscribers' }, { value: 'videos', label: 'Videos', dataKey: 'videos' }],
+    hasLiveCount: false,
+    thirdTab: 'latestPost',
+  },
+  substack: {
+    primaryLabel: 'Subscribers',
+    chartMetrics: [{ value: 'subscribers', label: 'Subscriber Reach', dataKey: 'subscribers' }],
+    hasLiveCount: false,
+    thirdTab: 'latestPost',
+    noGrowthRate: true, // subscriber value is an order-of-magnitude band — a % would be misleading
+  },
+  music: {
+    primaryLabel: 'Monthly Listeners',
+    chartMetrics: [{ value: 'subscribers', label: 'Listeners', dataKey: 'subscribers' }, { value: 'views', label: 'Plays', dataKey: 'views' }],
+    hasLiveCount: true,
+    liveLabel: 'Live listener count',
+    thirdTab: 'topTracks',
+    noMilestone: true, // monthly listeners is a rolling 30-day window, not monotonically increasing
+  },
+};
+
+function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel }) {
+  const rank = rankContext?.rank;
+  const total = rankContext?.total;
+  const dailySubs = metrics?.dailyAverage?.subs ?? 0;
+  const primaryCount = creator.subscribers ?? creator.followers ?? 0;
+  const isAllTimeHigh = peakStats?.subscribers ? primaryCount >= peakStats.subscribers : primaryCount > 0;
+  const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
+  const noun = primaryLabel.toLowerCase();
+
+  const rankClause = rank
+    ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatNumber(total)} tracked {platformName} creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatNumber(rank)}</span> of {formatNumber(total)} tracked {platformName} creators.</>)
+    : null;
 
   return (
-    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600">{label}</span>
-        <TrendingUp className={`w-4 h-4 ${valueColor} ${isNegative ? 'rotate-180' : ''}`} />
-      </div>
-      <div className={`text-2xl font-semibold tabular-nums ${valueColor}`}>
-        {isPositive ? '+' : ''}{value.toFixed(2)}%
-      </div>
-      <p className="text-xs text-neutral-600 mt-1">{followerLabel} growth rate</p>
-    </div>
+    <>
+      {rankClause}{rankClause ? ' ' : ''}
+      {dailySubs !== 0 ? (
+        <>{dailySubs > 0 ? 'Gaining' : 'Losing'} <span className={`font-semibold ${dailySubs > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatNumber(Math.abs(dailySubs))} {noun}</span> a day{isAllTimeHigh && dailySubs > 0 ? '; currently at an all-time high.' : '.'}</>
+      ) : (
+        <>{noun.charAt(0).toUpperCase() + noun.slice(1)} count has been flat recently.</>
+      )}
+    </>
   );
 }
 
-function formatEarnings(low, high) {
-  if (!low || !high) return '$0';
-  const formatCurrency = (num) => {
-    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `$${(num / 1000).toFixed(0)}K`;
-    return `$${Math.round(num)}`;
-  };
-  return `${formatCurrency(low)} - ${formatCurrency(high)}`;
+function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakStats, rankContext, latestVideo, musicTracks, musicAlbums }) {
+  const config = GENERIC_PLATFORM_CONFIG[platform];
+  const [activeTab, setActiveTab] = useState('daily');
+  const [chartMetric, setChartMetric] = useState(config.chartMetrics[0].value);
+  const [chartRange, setChartRange] = useState(30);
+  const [drilldownOpen, setDrilldownOpen] = useState(false);
+  const [scrubIndex, setScrubIndex] = useState(null);
+
+  const total = rankContext?.total;
+  const rank = rankContext?.rank;
+  const band = getPercentileBand(rank, total);
+  const primaryCount = creator.subscribers ?? creator.followers ?? 0;
+
+  const series = useMemo(() => buildYouTubeSeries(statsHistory, chartRange), [statsHistory, chartRange]);
+  const currentMetric = config.chartMetrics.find((m) => m.value === chartMetric) || config.chartMetrics[0];
+  const values = series.map((d) => d[currentMetric.dataKey]);
+  const minV = values.length ? Math.min(...values) : 0;
+  const maxV = values.length ? Math.max(...values) : 0;
+  const span = maxV - minV || 1;
+  const pad = span * 0.12;
+  const relData = series.map((d) => ({ ...d, rel: d[currentMetric.dataKey] - minV }));
+  const heroValue = formatNumber(currentMetric.dataKey === 'subscribers' ? primaryCount : creator[currentMetric.dataKey === 'views' ? 'totalViews' : 'totalPosts']);
+  const netGrowth = values.length >= 2 ? values[values.length - 1] - values[0] : 0;
+  const dailyReadingsRows = [...series].reverse();
+
+  const nearestMilestone = useMemo(() => {
+    if (config.noMilestone) return null;
+    const dailyGrowth = metrics?.dailyAverage?.subs || 0;
+    const current = primaryCount;
+    if (dailyGrowth <= 0 || !current) return null;
+    const startPow = Math.floor(Math.log10(Math.max(current, 1)));
+    for (let pow = startPow; pow < startPow + 3; pow++) {
+      const decade = Math.pow(10, pow);
+      for (let digit = 1; digit <= 9; digit++) {
+        const m = digit * decade;
+        if (m > current) {
+          const days = Math.ceil((m - current) / dailyGrowth);
+          const date = new Date();
+          date.setDate(date.getDate() + days);
+          return { milestone: m, days, date };
+        }
+      }
+    }
+    return null;
+  }, [primaryCount, metrics, config.noMilestone]);
+
+  const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
+  const hasThirdTabContent = config.thirdTab === 'latestPost' ? !!creator.latestPost
+    : config.thirdTab === 'topTracks' ? musicTracks?.length > 0
+    : false;
+
+  const tabs = [
+    { key: 'daily', label: 'Daily readings', count: dailyReadingsRows.length },
+    ...(hasThirdTabContent ? [{ key: 'third', label: config.thirdTab === 'topTracks' ? 'Top tracks' : 'Latest post', count: null }] : []),
+    { key: 'about', label: 'About', count: null },
+  ];
+
+  return (
+    <div>
+      <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
+        {buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel: config.primaryLabel })}
+      </p>
+
+      <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 sm:p-6 mt-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          {config.chartMetrics.length > 1 ? (
+            <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg">
+              {config.chartMetrics.map((m) => (
+                <button
+                  key={m.value}
+                  onClick={() => setChartMetric(m.value)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    chartMetric === m.value ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200' : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          ) : <div />}
+          <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg overflow-x-auto max-w-full">
+            {[{ l: '30D', v: 30 }, { l: '60D', v: 60 }, { l: '90D', v: 90 }, { l: 'All', v: 9999 }].map((r) => (
+              <button
+                key={r.v}
+                onClick={() => setChartRange(r.v)}
+                className={`flex-shrink-0 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  chartRange === r.v ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200' : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                {r.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-end gap-3 mt-6">
+          <p className="text-3xl sm:text-[44px] font-bold tabular-nums text-neutral-900 leading-none tracking-tight">{heroValue}</p>
+          <div className="pb-1">
+            <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
+            <p className="text-xs text-neutral-500">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
+          </div>
+        </div>
+
+        <div className="h-56 sm:h-64 mt-4 cursor-pointer md:cursor-default" onClick={() => setDrilldownOpen(true)}>
+          {relData.length >= 2 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={relData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <defs>
+                  <linearGradient id={`genVerdictGradient-${platform}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#a3a3a3', fontSize: 11 }} interval="preserveStartEnd" minTickGap={50} />
+                <YAxis domain={[0 - pad, span + pad]} axisLine={false} tickLine={false} tick={{ fill: '#a3a3a3', fontSize: 11 }} tickFormatter={(v) => (v <= 0 ? '+0' : '+' + formatNumber(v))} width={56} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const raw = payload[0].payload[currentMetric.dataKey];
+                    return (
+                      <div className="bg-white border border-neutral-200 rounded-lg shadow-lg px-3 py-2">
+                        <p className="text-xs text-neutral-500">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        <p className="text-sm font-semibold text-neutral-900 tabular-nums">{formatNumber(raw)}</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Area type="monotone" dataKey="rel" stroke="#059669" strokeWidth={2} fill={`url(#genVerdictGradient-${platform})`} dot={false} activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }} animationDuration={900} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-sm text-neutral-500">Not enough history yet for this range.</div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-neutral-200/80 text-xs sm:text-sm text-neutral-600">
+          <span>{series.length} daily readings</span>
+          <span className="text-neutral-300">&middot;</span>
+          <span>net {fmtSigned(netGrowth)}</span>
+          <span className="flex-1" />
+          {nearestMilestone && (
+            <button onClick={() => setDrilldownOpen(true)} className="text-left hover:text-neutral-900 transition-colors">
+              Next milestone <span className="font-semibold text-neutral-900">{fmtMilestone(nearestMilestone.milestone)} {config.primaryLabel.toLowerCase()}</span> in ~{nearestMilestone.days} days
+              <span className="text-neutral-400"> ({nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, at the current pace)</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Stat strip — cells vary per platform, every value real */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-neutral-200/80 mt-6">
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">{config.primaryLabel}</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(primaryCount)}</p>
+          <p className="text-xs text-emerald-600 mt-1">{peakStats?.subscribers && primaryCount >= peakStats.subscribers ? 'all-time high' : ''}</p>
+        </div>
+
+        {(platform === 'twitch' || platform === 'kick') && (
+          <div className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Hours watched</p>
+            <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{creator.hoursWatchedMonth ? formatHoursWatched(creator.hoursWatchedMonth) : '—'}</p>
+            <p className="text-xs text-neutral-500 mt-1">last 30 days</p>
+          </div>
+        )}
+        {platform === 'tiktok' && (
+          <div className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Total likes</p>
+            <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalViews)}</p>
+          </div>
+        )}
+        {(platform === 'bluesky' || platform === 'mastodon') && (
+          <div className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Posts</p>
+            <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
+          </div>
+        )}
+        {platform === 'rumble' && (
+          <div className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Videos</p>
+            <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
+          </div>
+        )}
+        {platform === 'music' && (
+          <>
+            <div className="p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Total plays</p>
+              <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalViews)}</p>
+            </div>
+            {creator.description && (
+              <div className="p-4">
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Genres</p>
+                <p className="text-sm font-semibold text-neutral-900 mt-1.5 line-clamp-2">{creator.description}</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {!config.noGrowthRate && (
+          <div className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">30-day {config.primaryLabel.toLowerCase()}</p>
+            <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{metrics ? fmtSigned(metrics.last30Days.subs) : '—'}</p>
+            {metrics?.growthRates && <p className={`text-xs mt-1 ${metrics.growthRates.thirtyDay >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{metrics.growthRates.thirtyDay >= 0 ? '+' : ''}{metrics.growthRates.thirtyDay.toFixed(2)}% growth rate</p>}
+          </div>
+        )}
+
+        <div className="p-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Platform rank</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatNumber(rank)}` : '—'}</p>
+          <p className="text-xs text-neutral-500 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
+        </div>
+      </div>
+
+      {/* Live count row — only for platforms where numbers move fast enough to matter */}
+      {config.hasLiveCount && (
+        <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6 mt-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">{config.liveLabel}</p>
+              <p className="text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{primaryCount.toLocaleString('en-US')}</p>
+            </div>
+          </div>
+          <Link to={`/live/${platform}/${creator.username}`} className="text-sm font-medium text-neutral-900 hover:underline inline-flex items-center gap-1 flex-shrink-0">
+            Open <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* Section tabs */}
+      <div className="flex gap-6 mt-8 border-b border-neutral-200/80 overflow-x-auto">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`flex-shrink-0 text-sm font-medium pb-3 -mb-px border-b-2 transition-colors ${
+              activeTab === t.key ? 'text-neutral-900 border-neutral-900' : 'text-neutral-500 border-transparent hover:text-neutral-700'
+            }`}
+          >
+            {t.label}{t.count != null && <span className="text-neutral-400 font-normal ml-1.5">{t.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'daily' && (
+        <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden mt-4">
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Date</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">{config.primaryLabel}</th>
+                  <th className="px-5 py-3 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider text-right">&Delta;</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyReadingsRows.map((row, i) => {
+                  const prev = dailyReadingsRows[i + 1];
+                  const delta = prev ? row.subscribers - prev.subscribers : null;
+                  return (
+                    <tr key={row.date} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
+                      <td className="px-5 py-3 text-neutral-900 tabular-nums">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                      <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">{formatNumber(row.subscribers)}</td>
+                      <td className={`px-5 py-3 text-right tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-400'}`}>{delta != null ? fmtSigned(delta) : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="md:hidden divide-y divide-neutral-100">
+            {dailyReadingsRows.map((row, i) => {
+              const prev = dailyReadingsRows[i + 1];
+              const delta = prev ? row.subscribers - prev.subscribers : null;
+              return (
+                <div key={row.date} className="flex items-center gap-3 px-4 py-3">
+                  <p className="text-sm font-semibold text-neutral-900 flex-1">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                  <p className={`text-sm font-semibold tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-400'}`}>{delta != null ? fmtSigned(delta) : '—'}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'third' && config.thirdTab === 'latestPost' && creator.latestPost && (
+        <a
+          href={creator.latestPost.url || `https://${creator.username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group block mt-4 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 hover:border-neutral-300 transition-colors"
+        >
+          <div className="flex gap-4">
+            {creator.latestPost.thumbnail && (
+              <div className="flex-shrink-0 w-32 sm:w-44 aspect-video rounded-lg overflow-hidden bg-neutral-100">
+                <img src={creator.latestPost.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              {creator.latestPost.title && <h3 className="text-base font-semibold text-neutral-900 leading-snug line-clamp-2 group-hover:underline">{creator.latestPost.title}</h3>}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
+                {creator.latestPost.publishedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatRelativeTime(creator.latestPost.publishedAt)}</span>}
+                {creator.latestPost.views != null && <span className="inline-flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{formatNumber(creator.latestPost.views)} views</span>}
+                {creator.latestPost.reactions > 0 && <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" />{formatNumber(creator.latestPost.reactions)}</span>}
+                {creator.latestPost.comments > 0 && <span className="inline-flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" />{formatNumber(creator.latestPost.comments)}</span>}
+              </div>
+            </div>
+          </div>
+        </a>
+      )}
+
+      {activeTab === 'third' && config.thirdTab === 'topTracks' && (
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {(musicTracks || []).slice(0, 6).map((track, i) => (
+            <a
+              key={i}
+              href={track.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-4 hover:border-neutral-300 transition-colors"
+            >
+              <span className="text-xs font-mono text-neutral-400">{i + 1}</span>
+              <p className="text-sm font-semibold text-neutral-900 line-clamp-2 mt-1">{track.name}</p>
+              {track.playcount && <p className="text-xs text-neutral-500 mt-1 tabular-nums">{formatNumber(Number(track.playcount))} plays</p>}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'about' && (
+        <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-6 sm:p-7 mt-4 max-w-3xl">
+          {creator.description && <p className="text-sm leading-relaxed text-neutral-700 text-pretty whitespace-pre-line">{creator.description}</p>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-neutral-200/80">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Joined</p>
+              <p className="text-sm text-neutral-900 mt-1">{creator.createdAt ? new Date(creator.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Country</p>
+              <p className="text-sm text-neutral-900 mt-1">{creator.country || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Tracked since</p>
+              <p className="text-sm text-neutral-900 mt-1">{creator.dbCreatedAt ? new Date(creator.dbCreatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile drill-down */}
+      {drilldownOpen && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col md:hidden">
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-neutral-200/80">
+            <button onClick={() => { setDrilldownOpen(false); setScrubIndex(null); }} className="w-9 h-9 rounded-full border border-neutral-200 flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <p className="text-sm font-semibold text-neutral-900 flex-1">{currentMetric.label} &middot; {creator.displayName}</p>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 pt-4">
+            {(() => {
+              const idx = scrubIndex == null ? relData.length - 1 : scrubIndex;
+              const pt = relData[idx];
+              const prevPt = relData[idx - 1];
+              const delta = pt && prevPt ? pt[currentMetric.dataKey] - prevPt[currentMetric.dataKey] : null;
+              return pt ? (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                  <div className="flex items-end gap-3 mt-2">
+                    <p className="text-4xl font-bold tabular-nums text-neutral-900 leading-none">{formatNumber(pt[currentMetric.dataKey])}</p>
+                    {delta != null && <p className={`text-sm font-semibold tabular-nums pb-1 ${delta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(delta)} that day</p>}
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-1.5">drag across the chart to read any day</p>
+                </>
+              ) : null;
+            })()}
+            <div
+              className="relative mt-5"
+              style={{ height: 280, touchAction: 'none' }}
+              onPointerDown={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+                setScrubIndex(Math.round(f * (relData.length - 1)));
+              }}
+              onPointerMove={(e) => {
+                if (e.buttons === 0) return;
+                const r = e.currentTarget.getBoundingClientRect();
+                const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+                setScrubIndex(Math.round(f * (relData.length - 1)));
+              }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={relData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id={`genDrilldownGradient-${platform}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#059669" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <YAxis domain={[0 - pad, span + pad]} axisLine={false} tickLine={false} tick={{ fill: '#a3a3a3', fontSize: 10 }} tickFormatter={(v) => (v <= 0 ? '+0' : '+' + formatNumber(v))} width={48} />
+                  <Area type="monotone" dataKey="rel" stroke="#059669" strokeWidth={2.5} fill={`url(#genDrilldownGradient-${platform})`} dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-between mt-2 text-[10px] text-neutral-400 tabular-nums">
+              <span>{relData[0] && new Date(relData[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              <span>{relData[relData.length - 1] && new Date(relData[relData.length - 1].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            </div>
+            <div className="grid grid-cols-4 gap-1.5 mt-5">
+              {[{ l: '30D', v: 30 }, { l: '60D', v: 60 }, { l: '90D', v: 90 }, { l: 'All', v: 9999 }].map((r) => (
+                <button key={r.v} onClick={() => { setChartRange(r.v); setScrubIndex(null); }} className={`h-9 rounded-lg text-xs font-semibold ${chartRange === r.v ? 'bg-neutral-900 text-white' : 'border border-neutral-200 text-neutral-700'}`}>{r.l}</button>
+              ))}
+            </div>
+            <div className="mt-5 border border-neutral-200/80 rounded-xl overflow-hidden divide-y divide-neutral-100">
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Total {config.primaryLabel.toLowerCase()}</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{formatNumber(primaryCount)}</span></div>
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Net over {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(netGrowth)}</span></div>
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Best day</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(Math.max(...relData.map((d, i) => i > 0 ? d[currentMetric.dataKey] - relData[i - 1][currentMetric.dataKey] : 0)))}</span></div>
+            </div>
+            {nearestMilestone && (
+              <div className="mt-4 rounded-xl bg-neutral-900 text-white p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Next milestone</p>
+                <p className="text-xl font-bold mt-1.5">{fmtMilestone(nearestMilestone.milestone)} {config.primaryLabel.toLowerCase()}</p>
+                <p className="text-xs text-neutral-400 mt-1">~{nearestMilestone.days} days &middot; {nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at the current pace</p>
+              </div>
+            )}
+            <div className="h-6" />
+          </div>
+          <div className="flex-shrink-0 flex gap-2.5 px-4 py-3 border-t border-neutral-200/80">
+            <Link to={`/compare?creators=${platform}:${creator.username}`} className="flex-1 h-12 rounded-xl bg-neutral-900 text-white text-sm font-semibold flex items-center justify-center">Compare channels</Link>
+            <button className="w-12 h-12 rounded-xl border border-neutral-200 flex items-center justify-center flex-shrink-0"><Download className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function formatHoursWatched(hours) {
@@ -2734,51 +2698,6 @@ function getPercentileBand(rank, total) {
   if (pct <= 25) return 25;
   if (pct <= 50) return 50;
   return null; // below median isn't a flattering stat to surface
-}
-
-// Stat strip: one bordered container, hairline-divided cells, per the site's
-// precision-instrument system. Hides entirely when neither stat is available
-// rather than showing an empty or half-guessed card.
-function RecordRankCard({ rankContext, peakStats, currentCount, primaryLabel, platformName }) {
-  const rank = rankContext?.rank;
-  const total = rankContext?.total;
-  const band = getPercentileBand(rank, total);
-  const hasRank = Boolean(rank && total);
-
-  const peakValue = peakStats?.subscribers;
-  const showPeakCell = Boolean(peakValue && peakValue > 0);
-  const isCurrentPeak = showPeakCell && currentCount >= peakValue;
-
-  if (!hasRank && !showPeakCell) return null;
-
-  const cellCount = (hasRank ? 1 : 0) + (showPeakCell ? 1 : 0);
-
-  return (
-    <div className={`grid grid-cols-1 ${cellCount === 2 ? 'sm:grid-cols-2' : ''} bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y sm:divide-y-0 sm:divide-x divide-neutral-200/80 mb-6`}>
-      {hasRank && (
-        <div className="p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-2 flex items-center gap-1.5">
-            <Trophy className="w-3 h-3" /> Platform rank
-          </p>
-          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">#{formatNumber(rank)}</p>
-          <p className="text-xs text-neutral-500 mt-1">
-            of {formatNumber(total)} {platformName} creators tracked{band ? ` · top ${band}%` : ''}
-          </p>
-        </div>
-      )}
-      {showPeakCell && (
-        <div className="p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-2">All-time high</p>
-          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
-            {formatNumber(peakValue)} <span className="text-sm font-normal text-neutral-400">{primaryLabel}</span>
-          </p>
-          <p className="text-xs text-neutral-500 mt-1">
-            {isCurrentPeak ? 'Currently at a record high' : `Reached ${new Date(peakStats.recorded_at + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
-          </p>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // "Similar in size" — creators ranked just above/below this one on the same
@@ -2809,431 +2728,6 @@ function SimilarCreators({ creators, platform, platformName, primaryLabel, exclu
             </div>
           </Link>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function MilestonePredictions({ currentCount, dailyGrowth, platform }) {
-  // Generate the next N milestones algorithmically using the 1–9 × 10^n sequence.
-  // Every "round number" humans care about (7M, 8M, 9M, 10M, 20M, 1B, etc.) fits this pattern.
-  // No static list needed — works for any count at any scale, forever.
-  //   450K  → [500K, 600K, 700K]
-  //   6.4M  → [7M, 8M, 9M]
-  //   995K  → [1M, 2M, 3M]
-  //   85B   → [90B, 100B, 200B]
-  const getNextMilestones = (count, n = 3) => {
-    const results = [];
-    const startPow = Math.floor(Math.log10(Math.max(count, 1)));
-    for (let pow = startPow; results.length < n; pow++) {
-      const decade = Math.pow(10, pow);
-      for (let digit = 1; digit <= 9 && results.length < n; digit++) {
-        if (digit * decade > count) results.push(digit * decade);
-      }
-    }
-    return results;
-  };
-
-  const metricLabel = platform === 'youtube' ? 'views'
-    : platform === 'kick' ? 'paid subscribers'
-    : platform === 'music' ? 'listeners'
-    : 'followers';
-
-  if (dailyGrowth <= 0) return null;
-
-  const nextMilestones = getNextMilestones(currentCount);
-  if (nextMilestones.length === 0) return null;
-
-  const predictions = nextMilestones.map(milestone => {
-    const needed = milestone - currentCount;
-    const daysNeeded = Math.ceil(needed / dailyGrowth);
-    const estimatedDate = new Date();
-    estimatedDate.setDate(estimatedDate.getDate() + daysNeeded);
-    return { milestone, needed, daysNeeded, estimatedDate };
-  });
-
-  const formatMilestone = (num) => {
-    if (num >= 1e12) return (num / 1e12).toFixed(0) + 'T';
-    if (num >= 1e9) {
-      const v = num / 1e9;
-      return (Number.isInteger(v) ? v.toFixed(0) : parseFloat(v.toFixed(2)).toString()) + 'B';
-    }
-    if (num >= 1e6) {
-      const v = num / 1e6;
-      return (Number.isInteger(v) ? v.toFixed(0) : parseFloat(v.toFixed(1)).toString()) + 'M';
-    }
-    if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
-    return num.toLocaleString();
-  };
-
-  const formatDays = (days) => {
-    if (days > 365) {
-      const years = Math.floor(days / 365);
-      const months = Math.floor((days % 365) / 30);
-      return `~${years}y ${months}m`;
-    }
-    if (days > 30) {
-      const months = Math.floor(days / 30);
-      const remainingDays = days % 30;
-      return `~${months}mo ${remainingDays}d`;
-    }
-    return `~${days} days`;
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6 mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Target className="w-5 h-5 text-indigo-600" />
-        <h2 className="text-lg font-semibold text-neutral-900">Milestone Predictions</h2>
-      </div>
-      <p className="text-sm text-neutral-700 mb-4">
-        Based on current {metricLabel} growth of <span className="font-semibold text-indigo-600">+{formatNumber(dailyGrowth)}/day</span>
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {predictions.map((pred, index) => (
-          <div
-            key={pred.milestone}
-            className={`rounded-xl p-4 border ${
-              index === 0
-                ? 'bg-neutral-900 border-neutral-900'
-                : 'bg-white border-neutral-200/80'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Target className={`w-4 h-4 ${index === 0 ? 'text-neutral-400' : 'text-neutral-300'}`} />
-              <span className={`text-2xl font-semibold tabular-nums ${
-                index === 0 ? 'text-white' : 'text-neutral-900'
-              }`}>
-                {formatMilestone(pred.milestone)}
-              </span>
-            </div>
-            <div className="space-y-1">
-              <p className={`text-sm flex items-center gap-1 tabular-nums ${index === 0 ? 'text-neutral-300' : 'text-neutral-600'}`}>
-                <Clock className="w-3.5 h-3.5" />
-                {formatDays(pred.daysNeeded)}
-              </p>
-              {/* Light-on-dark and dark-on-light both need to move toward
-                  more contrast, not the same direction: neutral-500 on the
-                  neutral-900 card measured ~3.8:1, neutral-400 on white
-                  measured ~2.3:1, both under WCAG AA's 4.5:1. */}
-              <p className={`text-xs tabular-nums ${index === 0 ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                Est. {pred.estimatedDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: pred.estimatedDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-                })}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-neutral-600 mt-4">
-        * Predictions assume consistent growth. Actual results may vary based on content, algorithm changes, and other factors.
-      </p>
-    </div>
-  );
-}
-
-function GrowthChart({ data, range, onRangeChange, metric, onMetricChange, platform, maxHistoryDays, subscribers = 0 }) {
-  const ranges = [
-    { label: '30D', value: 30 },
-    { label: '60D', value: 60 },
-    { label: '90D', value: 90 },
-    { label: 'All', value: 9999 },
-  ].map((r) => ({
-    ...r,
-    locked: isFinite(maxHistoryDays) && r.value > maxHistoryDays,
-  }));
-
-  // Build metrics array based on platform
-  // For YouTube: Views first (accurate), then Subscribers (rounded), then Videos
-  // For Twitch: Followers only (views deprecated)
-  const metrics = [];
-
-  if (platform === 'youtube') {
-    // Views are accurate for YouTube, show first
-    metrics.push({
-      value: 'views',
-      label: 'View Growth',
-      dataKey: 'views',
-      color: '#10b981'
-    });
-    metrics.push({
-      value: 'subscribers',
-      label: 'Subscriber Growth',
-      dataKey: 'subscribers',
-      color: '#6366f1',
-      ...(subscribers >= 1000 && { note: '(rounded by YouTube)' })
-    });
-    metrics.push({
-      value: 'videos',
-      label: 'Video Count',
-      dataKey: 'videos',
-      color: '#f59e0b'
-    });
-  } else if (platform === 'tiktok') {
-    // TikTok: Follower Growth + Likes Growth
-    metrics.push({
-      value: 'subscribers',
-      label: 'Follower Growth',
-      dataKey: 'subscribers',
-      color: '#6366f1'
-    });
-    metrics.push({
-      value: 'views',
-      label: 'Likes Growth',
-      dataKey: 'views',
-      color: '#ec4899'
-    });
-  } else if (platform === 'twitch') {
-    // Twitch: follower growth + hours watched (cumulative)
-    metrics.push({
-      value: 'subscribers',
-      label: 'Follower Growth',
-      dataKey: 'subscribers',
-      color: '#6366f1'
-    });
-  } else if (platform === 'kick') {
-    // Kick: only paid subscriber growth (no views/followers available)
-    metrics.push({
-      value: 'subscribers',
-      label: 'Subscriber Growth',
-      dataKey: 'subscribers',
-      color: '#6366f1'
-    });
-  } else if (platform === 'bluesky') {
-    // Bluesky: follower growth + posts count
-    metrics.push({
-      value: 'subscribers',
-      label: 'Follower Growth',
-      dataKey: 'subscribers',
-      color: '#0ea5e9'
-    });
-    metrics.push({
-      value: 'videos',
-      label: 'Post Count',
-      dataKey: 'videos',
-      color: '#38bdf8'
-    });
-  } else if (platform === 'mastodon') {
-    // Mastodon: follower growth + posts count (same shape as Bluesky)
-    metrics.push({
-      value: 'subscribers',
-      label: 'Follower Growth',
-      dataKey: 'subscribers',
-      color: '#7c3aed'
-    });
-    metrics.push({
-      value: 'videos',
-      label: 'Post Count',
-      dataKey: 'videos',
-      color: '#a78bfa'
-    });
-  } else if (platform === 'rumble') {
-    // Rumble: follower growth + video count
-    metrics.push({
-      value: 'subscribers',
-      label: 'Follower Growth',
-      dataKey: 'subscribers',
-      color: '#65a30d'
-    });
-    metrics.push({
-      value: 'videos',
-      label: 'Video Count',
-      dataKey: 'videos',
-      color: '#84cc16'
-    });
-  } else if (platform === 'music') {
-    // Music (Last.fm): listener growth + total plays growth
-    metrics.push({
-      value: 'subscribers',
-      label: 'Listener Growth',
-      dataKey: 'subscribers',
-      color: '#f59e0b'
-    });
-    metrics.push({
-      value: 'views',
-      label: 'Play Growth',
-      dataKey: 'views',
-      color: '#fb923c'
-    });
-  } else if (platform === 'substack') {
-    // Substack: only the subscriber-reach bucket over time (no views/posts).
-    metrics.push({
-      value: 'subscribers',
-      label: 'Subscriber Reach',
-      dataKey: 'subscribers',
-      color: '#ea580c'
-    });
-  } else {
-    // Other platforms
-    metrics.push({
-      value: 'subscribers',
-      label: 'Subscriber Growth',
-      dataKey: 'subscribers',
-      color: '#6366f1'
-    });
-    metrics.push({
-      value: 'views',
-      label: 'View Growth',
-      dataKey: 'views',
-      color: '#10b981'
-    });
-    metrics.push({
-      value: 'videos',
-      label: 'Video Count',
-      dataKey: 'videos',
-      color: '#f59e0b'
-    });
-  }
-
-  const currentMetric = metrics.find(m => m.value === metric) || metrics[0];
-
-  const filteredData = data
-    .filter((stat) => {
-      if (range === 9999) return true;
-      const statDate = new Date(stat.recorded_at);
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - range);
-      return statDate >= cutoffDate;
-    })
-    .map((stat) => ({
-      date: stat.recorded_at,
-      subscribers: stat.subscribers || stat.followers || 0,
-      views: stat.total_views || 0,
-      videos: stat.total_posts || 0,
-      hoursWatched: stat.hours_watched_month || null,
-      label: new Date(stat.recorded_at + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    }));
-
-  if (filteredData.length < 2) {
-    return null;
-  }
-
-  const values = filteredData.map(d => d[currentMetric.dataKey]);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-
-  // Calculate padding - ensure minimum 1% range for zero-variance data
-  const valueRange = maxValue - minValue;
-  const minPaddingRange = maxValue * 0.01 || 1000; // At least 1% of max value or 1000
-  const padding = valueRange > 0
-    ? Math.max(valueRange * 0.1, metric === 'views' ? 1000 : 100)
-    : minPaddingRange;
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-neutral-200 rounded-xl shadow-lg p-3">
-          <p className="text-sm font-medium text-neutral-900 mb-1">
-            {new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </p>
-          <p className="text-sm text-neutral-700">
-            <span className="font-semibold" style={{ color: currentMetric.color }}>
-              {currentMetric.dataKey === 'hoursWatched'
-                ? formatHoursWatched(payload[0].value)
-                : formatNumber(payload[0].value)}
-            </span>
-            {' '}{currentMetric.label.toLowerCase().replace(' growth', '').replace(' count', '')}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6 mb-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap gap-1 bg-neutral-100 p-1 rounded-lg">
-          {metrics.map((m) => (
-            <button
-              key={m.value}
-              onClick={() => onMetricChange(m.value)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                metric === m.value
-                  ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200'
-                  : 'text-neutral-700 hover:text-neutral-900'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg">
-          {ranges.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => onRangeChange(r.value)}
-              className={`relative flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                r.locked
-                  ? 'text-neutral-400 cursor-pointer hover:text-neutral-400'
-                  : range === r.value
-                  ? 'bg-white text-neutral-900 shadow-sm border border-neutral-200'
-                  : 'text-neutral-700 hover:text-neutral-900'
-              }`}
-            >
-              {r.locked && (
-                <svg className="w-2.5 h-2.5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              )}
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={filteredData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <defs>
-              <linearGradient id={`${metric}Gradient`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={currentMetric.color} stopOpacity={0.2} />
-                <stop offset="95%" stopColor={currentMetric.color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#737373', fontSize: 12 }}
-              interval="preserveStartEnd"
-              minTickGap={50}
-            />
-            <YAxis
-              domain={[minValue - padding, maxValue + padding]}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#737373', fontSize: 12 }}
-              tickFormatter={(value) => formatNumber(value)}
-              width={60}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey={currentMetric.dataKey}
-              stroke={currentMetric.color}
-              strokeWidth={2}
-              fill={`url(#${metric}Gradient)`}
-              dot={false}
-              activeDot={{ r: 6, fill: currentMetric.color, stroke: '#ffffff', strokeWidth: 2 }}
-              animationDuration={1100}
-              animationEasing="ease-out"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="flex items-center justify-center gap-4 mt-4 text-sm text-neutral-700">
-        <span>{filteredData.length} data points</span>
-        <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-        <span>
-          {formatNumber(filteredData[filteredData.length - 1]?.[currentMetric.dataKey] - filteredData[0]?.[currentMetric.dataKey])} net growth
-        </span>
       </div>
     </div>
   );
