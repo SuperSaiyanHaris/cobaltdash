@@ -64,7 +64,7 @@ export function emailShell({
           </table>
         </div>
 
-        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" style="width:100%;height:224px;object-fit:cover;display:block;" />` : ""}
+        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="" style="width:100%;height:auto;display:block;" />` : ""}
 
         <div style="padding:36px 32px 32px;">
           ${contentHtml}

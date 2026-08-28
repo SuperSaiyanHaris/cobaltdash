@@ -267,12 +267,12 @@ export default function Blog() {
                 {featuredPost && (
                   <Link to={`/blog/${featuredPost.slug}`} className="block mb-8 group">
                     <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
-                      <div className="md:flex">
-                        <div className="md:w-1/2 min-h-64">
+                      <div className="md:flex md:items-center">
+                        <div className="md:w-1/2 aspect-[16/9] overflow-hidden bg-neutral-100 flex-shrink-0">
                           <img
-                            src={featuredPost.image}
+                            src={resizedBlogImageUrl(featuredPost.image, 1200, 675)}
                             alt={featuredPost.title}
-                            className="w-full h-64 md:h-full object-cover"
+                            className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="md:w-1/2 p-8 flex flex-col justify-center">
