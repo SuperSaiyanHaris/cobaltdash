@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
 
       const [{ data: listings }, { data: follows }, { data: savedReports }, { data: savedCompares }, { data: creatorRequests }] = await Promise.all([
         sb.from("featured_listings")
-          .select("id, platform, placement_tier, status, active_from, active_until, is_mod_free, created_at, creators(id, username, display_name, profile_image, platform)")
+          .select("id, platform, placement_tier, status, cancel_at_period_end, active_from, active_until, is_mod_free, created_at, creators(id, username, display_name, profile_image, platform)")
           .eq("purchased_by_user_id", userId)
           .order("created_at", { ascending: false }),
         sb.from("user_saved_creators")

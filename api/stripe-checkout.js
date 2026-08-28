@@ -10,13 +10,18 @@
  * Featured listing — Premium ($149/mo, top-10 placement, 2 slots/platform):
  *   Body: { priceKey: 'featured-premium', creatorId: string, platform: string, returnUrl: string }
  *
- * Cancel a listing (owner):
+ * Cancel a listing (owner) — schedules cancellation for the end of the
+ * current billing period (Stripe cancel_at_period_end: true), so an already-
+ * paid-for placement stays live/active until then instead of vanishing
+ * immediately. `status` only flips to 'canceled' once Stripe actually ends
+ * the subscription and fires customer.subscription.deleted (stripe-webhook.js):
  *   Body: { priceKey: 'cancel-listing', listingId: string }
  *
  * Cancel a listing (admin, on behalf of any user — see the /admin/users/:id page):
  *   Body: { priceKey: 'cancel-listing', listingId: string, adminOverride: true }
  *   Caller's own JWT must belong to an address in ADMIN_EMAILS; the ownership
- *   check against purchased_by_user_id is skipped in this case.
+ *   check against purchased_by_user_id is skipped in this case. Same
+ *   period-end scheduling as the owner path above.
  *
  * Featured Listings is the only paid product — subscription tiers (Lurker/Sub/Mod) are deprecated.
  * The webhook creates the listing row only after payment succeeds; no orphan rows from abandoned checkouts.
@@ -96,19 +101,35 @@ export default async function handler(req, res) {
 
       let listingQuery = supabase
         .from('featured_listings')
-        .select('id, stripe_subscription_id, status, purchased_by_user_id')
+        .select('id, stripe_subscription_id, status, cancel_at_period_end, purchased_by_user_id')
         .eq('id', listingId);
       if (!isAdmin) listingQuery = listingQuery.eq('purchased_by_user_id', user.id);
       const { data: listing } = await listingQuery.maybeSingle();
 
       if (!listing) return res.status(404).json({ error: 'Listing not found' });
       if (listing.status !== 'active') return res.status(400).json({ error: 'Listing is not active' });
+      if (listing.cancel_at_period_end) return res.status(400).json({ error: 'Listing is already set to cancel at period end' });
 
       if (listing.stripe_subscription_id) {
-        // Stripe-backed listing — cancel subscription; webhook flips status to 'canceled'
-        await stripe.subscriptions.cancel(listing.stripe_subscription_id);
+        // Stripe-backed listing — schedule cancellation for the end of the
+        // current billing period rather than cancelling immediately, so the
+        // placement (which was already paid for) stays live until then, per
+        // the UI's own promise. Status stays 'active' in the meantime; Stripe
+        // auto-cancels the subscription at period end and fires
+        // customer.subscription.deleted, which is what actually flips status
+        // to 'canceled' (see stripe-webhook.js). customer.subscription.updated
+        // (fired synchronously by this same update call) is the authoritative
+        // reconciliation of the cancel_at_period_end flag below — this direct
+        // write is just so the UI reflects it immediately instead of waiting
+        // on webhook delivery.
+        await stripe.subscriptions.update(listing.stripe_subscription_id, { cancel_at_period_end: true });
+        const { error: updateError } = await supabase
+          .from('featured_listings')
+          .update({ cancel_at_period_end: true })
+          .eq('id', listingId);
+        if (updateError) throw updateError;
       } else {
-        // Promotional / legacy listing — update DB directly
+        // Promotional / legacy listing — no subscription to schedule against, cancel now
         const { error: updateError } = await supabase
           .from('featured_listings')
           .update({ status: 'canceled' })

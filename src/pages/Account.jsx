@@ -83,7 +83,7 @@ export default function Account() {
     if (!user) return;
     const { data } = await supabase
       .from('featured_listings')
-      .select('id, platform, status, active_from, active_until, is_mod_free, created_at, creators(display_name, username, profile_image, platform)')
+      .select('id, platform, status, cancel_at_period_end, active_from, active_until, is_mod_free, created_at, creators(display_name, username, profile_image, platform)')
       .eq('purchased_by_user_id', user.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -275,7 +275,7 @@ export default function Account() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not cancel listing');
-      toast.success('Listing canceled', { description: 'Your placement will remain active until the end of the current billing period.' });
+      toast.success('Cancellation scheduled', { description: 'Your placement will remain active until the end of the current billing period, then it will stop automatically.' });
       loadFeaturedListings();
     } catch (err) {
       showToast(err.message || 'Could not cancel listing.', 'error');
@@ -469,6 +469,7 @@ export default function Account() {
                             const c = listing.creators;
                             const isActive = listing.status === 'active';
                             const isPending = listing.status === 'pending';
+                            const isCanceling = isActive && listing.cancel_at_period_end;
                             const until = listing.active_until
                               ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                               : null;
@@ -489,18 +490,18 @@ export default function Account() {
                                   <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
                                   <p className="text-xs text-neutral-400 mt-0.5">
                                     {listing.platform}
-                                    {until && isActive ? ` · until ${until}` : ''}
+                                    {until && isActive ? (isCanceling ? ` · cancels ${until}` : ` · until ${until}`) : ''}
                                     {listing.is_mod_free ? ' · promotional' : ''}
                                   </p>
                                 </div>
                                 <span className="inline-flex items-center gap-1.5 flex-shrink-0">
                                   <span className={`w-1.5 h-1.5 rounded-full ${
-                                    isActive ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-neutral-300'
+                                    isCanceling ? 'bg-amber-500' : isActive ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-neutral-300'
                                   }`} />
                                   <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${
-                                    isActive ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-neutral-400'
+                                    isCanceling ? 'text-amber-600' : isActive ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-neutral-400'
                                   }`}>
-                                    {listing.status}
+                                    {isCanceling ? 'canceling' : listing.status}
                                   </span>
                                 </span>
                                 <ChevronRight className="w-3.5 h-3.5 text-neutral-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -528,7 +529,7 @@ export default function Account() {
                                         <Eye className="w-3.5 h-3.5" />
                                         View in rankings
                                       </button>
-                                      {isActive && !isPending && (
+                                      {isActive && !isPending && !isCanceling && (
                                         <button
                                           onClick={() => { setOpenListingActionsId(null); handleCancelListing(listing.id); }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"

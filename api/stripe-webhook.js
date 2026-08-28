@@ -7,7 +7,10 @@
  * Endpoint: https://shinypull.com/api/stripe-webhook
  * Events to enable:
  *   - checkout.session.completed      (activates featured listings)
- *   - customer.subscription.deleted   (cancels featured listings)
+ *   - customer.subscription.updated   (reconciles cancel_at_period_end)
+ *   - customer.subscription.deleted   (cancels featured listings — Stripe fires
+ *                                      this automatically at period end for a
+ *                                      subscription with cancel_at_period_end)
  *   - invoice.payment_failed          (cancels listing on failed renewal)
  */
 
@@ -141,6 +144,23 @@ export default async function handler(req, res) {
           .single();
 
         console.log(`Created and activated featured listing ${listing?.id} for user ${userId}`);
+        break;
+      }
+
+      // Authoritative reconciliation of the "cancels at period end" flag —
+      // catches an un-cancel done directly in the Stripe dashboard, and
+      // covers the (rare) case where the direct DB write in the cancel-listing
+      // handler (api/stripe-checkout.js) didn't land. Does not touch `status`;
+      // the listing stays 'active' until Stripe actually ends the subscription
+      // and fires customer.subscription.deleted below.
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        if (!isFeaturedSubscription(subscription)) break;
+
+        await supabase
+          .from('featured_listings')
+          .update({ cancel_at_period_end: !!subscription.cancel_at_period_end })
+          .eq('stripe_subscription_id', subscription.id);
         break;
       }
 

@@ -174,9 +174,9 @@ export default function AdminUserDetail() {
       await adminCancelListing(listingId);
       setDetail(prev => ({
         ...prev,
-        listings: prev.listings.map(l => l.id === listingId ? { ...l, status: 'canceled' } : l),
+        listings: prev.listings.map(l => l.id === listingId ? { ...l, cancel_at_period_end: true } : l),
       }));
-      toast.success('Listing canceled');
+      toast.success('Cancellation scheduled', { description: 'Stays active until the end of the current billing period.' });
     } catch (err) {
       toast.error(err.message || 'Failed to cancel listing');
     } finally {
@@ -330,6 +330,7 @@ export default function AdminUserDetail() {
                 {detail.listings.map(l => {
                   const c = l.creators;
                   const isActive = l.status === 'active';
+                  const isCanceling = isActive && l.cancel_at_period_end;
                   const until = l.active_until ? new Date(l.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
                   return (
                     <div key={l.id} className="flex items-center gap-3 px-3.5 py-3">
@@ -338,13 +339,13 @@ export default function AdminUserDetail() {
                         <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
                         <p className="text-xs text-neutral-400 mt-0.5">
                           {PLATFORM_LABELS[l.platform] || l.platform} &middot; {l.placement_tier === 'premium' ? 'Premium' : 'Basic'}
-                          {until && isActive ? ` · until ${until}` : ''}
+                          {until && isActive ? (isCanceling ? ` · cancels ${until}` : ` · until ${until}`) : ''}
                           {l.is_mod_free ? ' · promotional' : ''}
                         </p>
                       </div>
                       <span className="inline-flex items-center gap-1.5 flex-shrink-0">
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-neutral-300'}`} />
-                        <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${isActive ? 'text-emerald-600' : 'text-neutral-400'}`}>{l.status}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isCanceling ? 'bg-amber-500' : isActive ? 'bg-emerald-500' : 'bg-neutral-300'}`} />
+                        <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${isCanceling ? 'text-amber-600' : isActive ? 'text-emerald-600' : 'text-neutral-400'}`}>{isCanceling ? 'canceling' : l.status}</span>
                       </span>
                       {isActive && (
                         <>
@@ -355,14 +356,16 @@ export default function AdminUserDetail() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </Link>
-                          <button
-                            onClick={() => handleCancelListing(l.id)}
-                            disabled={cancelingId === l.id}
-                            className="p-1.5 text-neutral-300 hover:text-red-600 transition-colors flex-shrink-0 disabled:opacity-50"
-                            title="Cancel listing"
-                          >
-                            {cancelingId === l.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
-                          </button>
+                          {!isCanceling && (
+                            <button
+                              onClick={() => handleCancelListing(l.id)}
+                              disabled={cancelingId === l.id}
+                              className="p-1.5 text-neutral-300 hover:text-red-600 transition-colors flex-shrink-0 disabled:opacity-50"
+                              title="Cancel listing"
+                            >
+                              {cancelingId === l.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
