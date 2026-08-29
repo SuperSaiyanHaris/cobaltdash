@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Star, Users, Loader2,
   Scale, Clock, ChevronRight, ChevronLeft, Check, X, Trash2,
-  Download, Lock, Settings, TrendingUp,
+  Lock, Settings, TrendingUp,
 } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
@@ -288,170 +288,6 @@ export default function Dashboard() {
       </>
     );
   }
-
-  const handleBulkExport = () => {
-    if (!followedCreators.length) return;
-
-    const exportDate = new Date().toISOString().split('T')[0];
-    const fmtDelta = (n) => n == null ? '' : (n >= 0 ? `+${n}` : `${n}`);
-    const esc = (v) => {
-      const s = String(v ?? '');
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-
-    const lines = [
-      ['ShinyPull Creator Report'],
-      ['Exported', exportDate],
-      ['Total Creators', followedCreators.length],
-      [],
-    ];
-
-    const PLATFORM_ORDER = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble', 'substack'];
-    const PLATFORM_LABELS_LOCAL = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
-
-    for (const platform of PLATFORM_ORDER) {
-      const creators = followedCreators.filter(c => c.platform === platform);
-      if (!creators.length) continue;
-
-      lines.push([`--- ${PLATFORM_LABELS_LOCAL[platform]} (${creators.length}) ---`]);
-
-      if (platform === 'youtube') {
-        lines.push(['Name', 'Username', 'Subscribers', '1-Day Sub Change', '7-Day Sub Change', 'Total Views', '1-Day Views', 'Videos', 'Est Monthly Revenue Low ($)', 'Est Monthly Revenue High ($)', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const oneDaySubs = curr && prev ? fmtDelta((curr.subscribers || 0) - (prev.subscribers || 0)) : '';
-          const sevenDaySubs = curr && weekAgo && weekAgo !== curr ? fmtDelta((curr.subscribers || 0) - (weekAgo.subscribers || 0)) : '';
-          const dailyViews = curr && prev ? (curr.total_views || 0) - (prev.total_views || 0) : null;
-          const moLow = dailyViews != null && dailyViews > 0 ? (dailyViews * 30 * 2 / 1000).toFixed(0) : '';
-          const moHigh = dailyViews != null && dailyViews > 0 ? (dailyViews * 30 * 7 / 1000).toFixed(0) : '';
-          lines.push([
-            c.display_name || c.username, c.username,
-            curr?.subscribers ?? '',
-            oneDaySubs, sevenDaySubs,
-            curr?.total_views ?? '',
-            dailyViews !== null ? fmtDelta(dailyViews) : '',
-            curr?.total_posts ?? '',
-            moLow, moHigh,
-            `https://shinypull.com/youtube/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'tiktok') {
-        lines.push(['Name', 'Username', 'Followers', '1-Day Change', '7-Day Change', 'Total Likes', '1-Day Likes', 'Videos', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const fol = (s) => s?.followers ?? s?.subscribers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            fol(curr) || '',
-            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
-            curr?.total_views ?? '',
-            curr && prev ? fmtDelta((curr.total_views || 0) - (prev.total_views || 0)) : '',
-            curr?.total_posts ?? '',
-            `https://shinypull.com/tiktok/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'twitch') {
-        lines.push(['Name', 'Username', 'Followers', '1-Day Change', '7-Day Change', 'Hours Watched (Daily)', 'Peak Viewers', 'Avg Viewers', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const fol = (s) => s?.followers ?? s?.subscribers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            fol(curr) || '',
-            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
-            curr?.hours_watched_day ?? '',
-            curr?.peak_viewers_day ?? '',
-            curr?.avg_viewers_day ?? '',
-            `https://shinypull.com/twitch/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'kick') {
-        lines.push(['Name', 'Username', 'Paid Subscribers', '1-Day Change', '7-Day Change', 'Hours Watched (Daily)', 'Peak Viewers', 'Avg Viewers', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const subs = (s) => s?.subscribers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            subs(curr) || '',
-            curr && prev ? fmtDelta(subs(curr) - subs(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(subs(curr) - subs(weekAgo)) : '',
-            curr?.hours_watched_day ?? '',
-            curr?.peak_viewers_day ?? '',
-            curr?.avg_viewers_day ?? '',
-            `https://shinypull.com/kick/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'bluesky') {
-        lines.push(['Name', 'Username', 'Followers', '1-Day Change', '7-Day Change', 'Posts', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const fol = (s) => s?.followers ?? s?.subscribers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            fol(curr) || '',
-            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
-            curr?.total_posts ?? '',
-            `https://shinypull.com/bluesky/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'mastodon') {
-        lines.push(['Name', 'Handle', 'Followers', '1-Day Change', '7-Day Change', 'Posts', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const fol = (s) => s?.followers ?? s?.subscribers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            fol(curr) || '',
-            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
-            curr?.total_posts ?? '',
-            `https://shinypull.com/mastodon/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'rumble') {
-        lines.push(['Name', 'Channel', 'Followers', '1-Day Change', '7-Day Change', 'Videos', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const fol = (s) => s?.followers ?? s?.subscribers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            fol(curr) || '',
-            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
-            curr?.total_posts ?? '',
-            `https://shinypull.com/rumble/${c.username}`,
-          ]);
-        }
-      } else if (platform === 'substack') {
-        lines.push(['Name', 'Publication', 'Subscribers', '1-Day Change', '7-Day Change', 'Profile URL']);
-        for (const c of creators) {
-          const { current: curr, previous: prev, weekAgo } = creatorStats[c.id] || {};
-          const fol = (s) => s?.subscribers ?? s?.followers ?? 0;
-          lines.push([
-            c.display_name || c.username, c.username,
-            fol(curr) || '',
-            curr && prev ? fmtDelta(fol(curr) - fol(prev)) : '',
-            curr && weekAgo && weekAgo !== curr ? fmtDelta(fol(curr) - fol(weekAgo)) : '',
-            `https://shinypull.com/substack/${c.username}`,
-          ]);
-        }
-      }
-
-      lines.push([]);
-    }
-
-    const csvStr = '﻿' + lines.map(r => r.map(esc).join(',')).join('\r\n');
-    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shinypull-creator-report-${exportDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
 
@@ -828,15 +664,6 @@ export default function Dashboard() {
                             Compare
                           </button>
                         )}
-
-                        <button
-                          onClick={handleBulkExport}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-300 text-xs rounded-lg transition-colors"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span className="hidden sm:inline">Export CSV</span>
-                          <span className="sm:hidden">Export</span>
-                        </button>
                       </div>
                     </div>
                   )}

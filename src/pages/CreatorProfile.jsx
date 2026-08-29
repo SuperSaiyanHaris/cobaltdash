@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Download, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
+import { Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -772,153 +772,6 @@ export default function CreatorProfile() {
 
   const Icon = platformIcons[platform];
   const colors = platformColors[platform] || platformColors.youtube;
-
-  const handleExportCSV = () => {
-    if (!statsHistory.length) return;
-
-    const sorted = [...statsHistory].sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
-    const creatorName = creator?.display_name || creator?.username || username;
-    const exportDate = new Date().toISOString().split('T')[0];
-
-    // Compute daily deltas for every row
-    const withChanges = sorted.map((s, i) => {
-      const prev = sorted[i - 1];
-      return {
-        ...s,
-        subsChange: prev != null ? (s.subscribers || s.followers || 0) - (prev.subscribers || prev.followers || 0) : null,
-        viewsChange: prev != null ? (s.total_views || 0) - (prev.total_views || 0) : null,
-        postsChange: prev != null ? (s.total_posts || 0) - (prev.total_posts || 0) : null,
-      };
-    });
-
-    const fmtDate = (d) => d ? d.split('T')[0] : '';
-    const fmtDelta = (n) => n === null || n === undefined ? '' : (n >= 0 ? `+${n}` : `${n}`);
-    const esc = (v) => {
-      const s = String(v ?? '');
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-
-    const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music' };
-
-    const meta = [
-      ['ShinyPull Stats Export'],
-      ['Creator', creatorName],
-      ['Platform', PLATFORM_LABELS[platform] || platform],
-      ['Exported', exportDate],
-      ['Profile URL', `https://shinypull.com/${platform}/${username}`],
-      [],
-    ];
-
-    let headers, rows;
-    if (platform === 'youtube') {
-      headers = ['Date', 'Subscribers', 'Total Views', 'Daily Views', 'Videos', 'Video Change', 'Est Daily Revenue Low ($)', 'Est Daily Revenue High ($)', 'Est Monthly Revenue Low ($)', 'Est Monthly Revenue High ($)'];
-      rows = withChanges.map(s => {
-        const dv = s.viewsChange;
-        const hasViews = dv != null && dv > 0;
-        return [
-          fmtDate(s.recorded_at),
-          s.subscribers ?? '',
-          s.total_views ?? '',
-          fmtDelta(s.viewsChange),
-          s.total_posts ?? '',
-          fmtDelta(s.postsChange),
-          hasViews ? (dv * 2 / 1000).toFixed(2) : '',
-          hasViews ? (dv * 7 / 1000).toFixed(2) : '',
-          hasViews ? (dv * 30 * 2 / 1000).toFixed(2) : '',
-          hasViews ? (dv * 30 * 7 / 1000).toFixed(2) : '',
-        ];
-      });
-    } else if (platform === 'tiktok') {
-      headers = ['Date', 'Followers', 'Follower Change', 'Total Likes', 'Daily Likes', 'Videos', 'Video Change'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.followers ?? s.subscribers ?? '',
-        fmtDelta(s.subsChange),
-        s.total_views ?? '',
-        fmtDelta(s.viewsChange),
-        s.total_posts ?? '',
-        fmtDelta(s.postsChange),
-      ]);
-    } else if (platform === 'twitch') {
-      headers = ['Date', 'Followers', 'Follower Change', 'Hours Watched', 'Peak Viewers', 'Avg Viewers'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.followers ?? s.subscribers ?? '',
-        fmtDelta(s.subsChange),
-        s.hours_watched_day ?? '',
-        s.peak_viewers_day ?? '',
-        s.avg_viewers_day ?? '',
-      ]);
-    } else if (platform === 'kick') {
-      headers = ['Date', 'Paid Subscribers', 'Sub Change', 'Hours Watched', 'Peak Viewers', 'Avg Viewers'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.subscribers ?? '',
-        fmtDelta(s.subsChange),
-        s.hours_watched_day ?? '',
-        s.peak_viewers_day ?? '',
-        s.avg_viewers_day ?? '',
-      ]);
-    } else if (platform === 'bluesky') {
-      headers = ['Date', 'Followers', 'Follower Change', 'Posts', 'Post Change'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.subscribers ?? '',
-        fmtDelta(s.subsChange),
-        s.total_posts ?? '',
-        fmtDelta(s.postsChange),
-      ]);
-    } else if (platform === 'music') {
-      headers = ['Date', 'Monthly Listeners', 'Listener Change', 'Total Plays'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.subscribers ?? s.followers ?? '',
-        fmtDelta(s.subsChange),
-        s.total_views ?? '',
-      ]);
-    } else if (platform === 'mastodon') {
-      headers = ['Date', 'Followers', 'Follower Change', 'Posts', 'Post Change'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.subscribers ?? s.followers ?? '',
-        fmtDelta(s.subsChange),
-        s.total_posts ?? '',
-        fmtDelta(s.postsChange),
-      ]);
-    } else if (platform === 'rumble') {
-      headers = ['Date', 'Followers', 'Follower Change', 'Videos', 'Video Change'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.subscribers ?? s.followers ?? '',
-        fmtDelta(s.subsChange),
-        s.total_posts ?? '',
-        fmtDelta(s.postsChange),
-      ]);
-    } else if (platform === 'substack') {
-      headers = ['Date', 'Subscribers', 'Subscriber Change'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.subscribers ?? s.followers ?? '',
-        fmtDelta(s.subsChange),
-      ]);
-    } else {
-      headers = ['Date', 'Followers', 'Follower Change'];
-      rows = withChanges.map(s => [
-        fmtDate(s.recorded_at),
-        s.followers ?? s.subscribers ?? '',
-        fmtDelta(s.subsChange),
-      ]);
-    }
-
-    const csvStr = '\uFEFF' + [...meta, headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
-    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shinypull-${platform}-${creator?.username || username}-${exportDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   // Memoized on statsHistory only — this component re-renders often for
   // reasons that have nothing to do with stats (60s live-poll ticks, follow
@@ -2134,7 +1987,6 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
           </div>
           <div className="flex-shrink-0 flex gap-2.5 px-4 py-3 border-t border-neutral-200/80">
             <Link to={`/compare?creators=youtube:${creator.username}`} className="flex-1 h-12 rounded-xl bg-neutral-900 text-white text-sm font-semibold flex items-center justify-center">Compare channels</Link>
-            <button className="w-12 h-12 rounded-xl border border-neutral-200 flex items-center justify-center flex-shrink-0"><Download className="w-4 h-4" /></button>
           </div>
         </div>
       )}
@@ -2672,7 +2524,6 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
           </div>
           <div className="flex-shrink-0 flex gap-2.5 px-4 py-3 border-t border-neutral-200/80">
             <Link to={`/compare?creators=${platform}:${creator.username}`} className="flex-1 h-12 rounded-xl bg-neutral-900 text-white text-sm font-semibold flex items-center justify-center">Compare channels</Link>
-            <button className="w-12 h-12 rounded-xl border border-neutral-200 flex items-center justify-center flex-shrink-0"><Download className="w-4 h-4" /></button>
           </div>
         </div>
       )}

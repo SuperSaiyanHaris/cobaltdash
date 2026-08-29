@@ -60,7 +60,6 @@ const Account = lazyWithRetry(() => import('./pages/Account'));
 const Promote = lazyWithRetry(() => import('./pages/Promote'));
 const Refunds = lazyWithRetry(() => import('./pages/Refunds'));
 const ShareProfile = lazyWithRetry(() => import('./pages/ShareProfile'));
-const Reports = lazyWithRetry(() => import('./pages/Reports'));
 const FAQ = lazyWithRetry(() => import('./pages/FAQ'));
 const Methodology = lazyWithRetry(() => import('./pages/Methodology'));
 const Trending = lazyWithRetry(() => import('./pages/Trending'));
@@ -252,7 +251,6 @@ function LayoutWrapper() {
           <Route path="/auth/sign-up" element={<AuthPage initialMode="signup" />} />
           <Route path="/auth/reset" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/reports" element={<Reports />} />
           <Route path="/account" element={<Account />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
