@@ -116,7 +116,13 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-1KWMEM41YG');
+      // GA4 auto-redacts any page_path containing '@' as likely PII (looks like
+      // an email), which silently collapses Mastodon profile views
+      // (/mastodon/user@instance.tld) into one opaque "(redacted)" bucket.
+      // Swap '@' for '-at-' in the reported path only; the real URL is untouched.
+      gtag('config', 'G-1KWMEM41YG', {
+        page_path: location.pathname.replace(/@/g, '-at-') + location.search,
+      });
       window.addEventListener('load', function() {
         var s = document.createElement('script');
         s.src = 'https://www.googletagmanager.com/gtag/js?id=G-1KWMEM41YG';

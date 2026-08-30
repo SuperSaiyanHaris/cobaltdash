@@ -173,8 +173,13 @@ function RouteChangeTracker() {
       return;
     }
     if (window.gtag) {
+      // GA4 auto-redacts any page_path containing '@' as likely PII (looks like
+      // an email), which silently collapses every Mastodon profile view
+      // (/mastodon/user@instance.tld) into one opaque "(redacted)" bucket.
+      // Swap '@' for '-at-' in the reported path only; the real route is untouched.
+      const path = (location.pathname + location.search).replace(/@/g, '-at-');
       window.gtag('config', 'G-1KWMEM41YG', {
-        page_path: location.pathname + location.search,
+        page_path: path,
       });
     }
   }, [location]);
