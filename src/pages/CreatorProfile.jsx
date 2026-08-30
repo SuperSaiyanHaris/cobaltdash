@@ -466,23 +466,29 @@ export default function CreatorProfile() {
         }
       } else if (platform === 'music') {
         // Music: username is a slug, platform_id is mbid or slug
-        const navPlatformId = location.state?.platformId;
-        const MBID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (navPlatformId) {
-          channelData = MBID_RE.test(navPlatformId)
-            ? await getArtistByMbid(navPlatformId)
-            : await getArtistByName(navPlatformId);
-        }
-        if (!channelData) {
-          const dbCreator = await getCreatorByUsername('music', username);
-          if (dbCreator?.platform_id) {
-            channelData = MBID_RE.test(dbCreator.platform_id)
-              ? await getArtistByMbid(dbCreator.platform_id)
-              : await getArtistByName(dbCreator.display_name || username);
+        try {
+          const navPlatformId = location.state?.platformId;
+          const MBID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (navPlatformId) {
+            channelData = MBID_RE.test(navPlatformId)
+              ? await getArtistByMbid(navPlatformId)
+              : await getArtistByName(navPlatformId);
           }
-        }
-        if (!channelData) {
-          throw new Error('Artist not found. Try searching Music for this artist.');
+          if (!channelData) {
+            const dbCreator = await getCreatorByUsername('music', username);
+            if (dbCreator?.platform_id) {
+              channelData = MBID_RE.test(dbCreator.platform_id)
+                ? await getArtistByMbid(dbCreator.platform_id)
+                : await getArtistByName(dbCreator.display_name || username);
+            }
+          }
+          if (!channelData) {
+            throw new Error('Artist not found. Try searching Music for this artist.');
+          }
+        } catch (liveErr) {
+          channelData = await buildDbFallback();
+          if (!channelData) throw liveErr;
+          logger.warn('Music live fetch failed, showing stored data:', liveErr);
         }
       } else if (platform === 'tiktok') {
         // TikTok: Load creator and latest stats from database in parallel
