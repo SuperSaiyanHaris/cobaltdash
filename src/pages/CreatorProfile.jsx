@@ -21,7 +21,7 @@ import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
-import { upsertCreator, saveCreatorStats, getCreatorByUsername, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext } from '../services/creatorService';
+import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
@@ -285,6 +285,15 @@ export default function CreatorProfile() {
       const buildDbFallback = async () => {
         const dbCreator = await getCreatorByUsername(platform, username);
         if (!dbCreator) return null;
+        // No live API to re-resolve against here (that's the whole reason
+        // we're in the fallback), so if the username is ambiguous there is
+        // no safe way to know which real creator this is. Confidently
+        // showing the wrong one under someone else's name/URL is worse than
+        // a clear "unavailable" error — better to surface the original
+        // live-fetch error than guess. Verified 2026-08-31: without this
+        // guard, /youtube/eminem's fallback picked a 469-subscriber copycat
+        // over the real channel.
+        if (await isUsernameAmbiguous(platform, username)) return null;
         return {
           platform,
           platformId: dbCreator.platform_id,
@@ -319,7 +328,15 @@ export default function CreatorProfile() {
           // Priority 2: Check database for stored platform_id
           if (!channelData) {
             const knownCreator = await getCreatorByUsername('youtube', username);
-            if (knownCreator?.platform_id) {
+            // Our own username derivation falls back to a channel's display
+            // title when it has no claimed @handle, and titles aren't unique
+            // on YouTube — this shortcut can silently pick a copycat/fan
+            // channel's platform_id instead of the real one when several
+            // creators share a username. Only trust it when the match is
+            // unambiguous; otherwise fall through to Priority 3 below, which
+            // resolves directly against YouTube's own real, unique handle.
+            const ambiguous = knownCreator ? await isUsernameAmbiguous('youtube', username) : false;
+            if (knownCreator?.platform_id && !ambiguous) {
               channelData = await getYouTubeChannelById(knownCreator.platform_id);
               // Verify the DB record points to the right channel — the stored username
               // must match what was requested (prevents stale/wrong DB mappings)

@@ -86,6 +86,31 @@ async function _fetchCreatorByUsername(platform, username) {
 }
 
 /**
+ * True when more than one creators row shares this exact (platform, username).
+ * Real problem, not theoretical: YouTube's username derivation falls back to a
+ * channel's display TITLE when it has no claimed @handle (see api/youtube.js),
+ * and YouTube never enforces title uniqueness, so a copycat/fan channel with a
+ * similar-enough name collides with the real one. Confirmed 2026-08-31: 60
+ * colliding username groups across 218 rows on YouTube alone (mrbeast x6,
+ * eminem x4, dozens more). A plain username lookup can't be trusted to return
+ * the right row when this is true — callers with a live, authoritative
+ * re-resolution path (YouTube's real forHandle API) should fall through to
+ * that instead of trusting this shortcut.
+ */
+export const isUsernameAmbiguous = withErrorHandling(
+  async (platform, username) => {
+    const { count, error } = await supabase
+      .from('creators')
+      .select('id', { count: 'exact', head: true })
+      .eq('platform', platform)
+      .ilike('username', username);
+    if (error) throw error;
+    return (count || 0) > 1;
+  },
+  'creatorService.isUsernameAmbiguous'
+);
+
+/**
  * Get creator by platform and username
  */
 export const getCreatorByUsername = withErrorHandling(
