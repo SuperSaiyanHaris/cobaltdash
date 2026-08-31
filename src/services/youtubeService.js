@@ -71,17 +71,17 @@ export const getChannelById = withErrorHandling(
 );
 
 /**
- * Get the latest video for a channel
+ * Get the most recent videos for a channel (newest first, up to 5)
  */
-export const getLatestVideo = async (channelId) => {
+export const getRecentVideos = async (channelId) => {
   try {
     const response = await fetch(
-      `${API_URL}?action=getLatestVideo&channelId=${encodeURIComponent(channelId)}`
+      `${API_URL}?action=getRecentVideos&channelId=${encodeURIComponent(channelId)}`
     );
-    if (!response.ok) return null;
+    if (!response.ok) return [];
     return await response.json();
   } catch {
-    return null;
+    return [];
   }
 };
 

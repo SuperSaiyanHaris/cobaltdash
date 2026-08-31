@@ -229,9 +229,11 @@ async function getChannelByUsername(username) {
 }
 
 /**
- * Get the latest video for a channel
+ * Get the most recent videos for a channel (newest first). Both calls below
+ * cost a flat 1 quota unit regardless of how many items/IDs are requested (up
+ * to 50), so asking for 5 instead of 1 doesn't cost any more YouTube quota.
  */
-async function getLatestVideo(channelId) {
+async function getRecentVideos(channelId, count = 5) {
   if (!YOUTUBE_API_KEY) {
     throw new Error('Missing YouTube API key');
   }
@@ -241,44 +243,48 @@ async function getLatestVideo(channelId) {
 
   const playlistResponse = await fetch(
     `https://www.googleapis.com/youtube/v3/playlistItems?` +
-    `part=snippet&playlistId=${uploadsPlaylistId}&maxResults=1&key=${YOUTUBE_API_KEY}`
+    `part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${count}&key=${YOUTUBE_API_KEY}`
   );
 
   if (!playlistResponse.ok) {
-    return null;
+    return [];
   }
 
   const playlistData = await playlistResponse.json();
   if (!playlistData.items || playlistData.items.length === 0) {
-    return null;
+    return [];
   }
 
-  const videoId = playlistData.items[0].snippet.resourceId.videoId;
-  const snippet = playlistData.items[0].snippet;
+  const items = playlistData.items.filter((item) => item.snippet?.resourceId?.videoId);
+  const videoIds = items.map((item) => item.snippet.resourceId.videoId);
 
-  // Fetch video statistics
+  // One batched statistics call for every video ID, same 1-unit cost as a single ID.
+  const statsById = {};
   const videoResponse = await fetch(
     `https://www.googleapis.com/youtube/v3/videos?` +
-    `part=statistics&id=${videoId}&key=${YOUTUBE_API_KEY}`
+    `part=statistics&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`
   );
-
-  let stats = {};
   if (videoResponse.ok) {
     const videoData = await videoResponse.json();
-    if (videoData.items && videoData.items.length > 0) {
-      stats = videoData.items[0].statistics;
+    for (const item of videoData.items || []) {
+      statsById[item.id] = item.statistics;
     }
   }
 
-  return {
-    videoId,
-    title: snippet.title,
-    thumbnail: snippet.thumbnails.high?.url || snippet.thumbnails.medium?.url || snippet.thumbnails.default?.url,
-    publishedAt: snippet.publishedAt,
-    views: parseInt(stats.viewCount || 0),
-    likes: parseInt(stats.likeCount || 0),
-    comments: parseInt(stats.commentCount || 0),
-  };
+  return items.map((item) => {
+    const videoId = item.snippet.resourceId.videoId;
+    const snippet = item.snippet;
+    const stats = statsById[videoId] || {};
+    return {
+      videoId,
+      title: snippet.title,
+      thumbnail: snippet.thumbnails.high?.url || snippet.thumbnails.medium?.url || snippet.thumbnails.default?.url,
+      publishedAt: snippet.publishedAt,
+      views: parseInt(stats.viewCount || 0),
+      likes: parseInt(stats.likeCount || 0),
+      comments: parseInt(stats.commentCount || 0),
+    };
+  });
 }
 
 /**
@@ -345,11 +351,11 @@ export default async function handler(req, res) {
         result = await getChannelByUsername(username);
         break;
 
-      case 'getLatestVideo':
+      case 'getRecentVideos':
         if (!channelId) {
           return res.status(400).json({ error: 'Missing channelId parameter' });
         }
-        result = await getLatestVideo(channelId);
+        result = await getRecentVideos(channelId);
         break;
 
       default:

@@ -10,7 +10,7 @@ import MastodonIcon from '../components/MastodonIcon';
 import RumbleIcon from '../components/RumbleIcon';
 import FunErrorState from '../components/FunErrorState';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { getChannelByUsername as getYouTubeChannel, getChannelById as getYouTubeChannelById, getLatestVideo as getYouTubeLatestVideo } from '../services/youtubeService';
+import { getChannelByUsername as getYouTubeChannel, getChannelById as getYouTubeChannelById, getRecentVideos as getYouTubeRecentVideos } from '../services/youtubeService';
 import { getChannelByUsername as getTwitchChannel, getLiveStreams as getTwitchLiveStreams } from '../services/twitchService';
 import { getChannelByUsername as getKickChannel, getLiveStreams as getKickLiveStreams } from '../services/kickService';
 import { getBlueskyProfile } from '../services/blueskyService';
@@ -159,7 +159,7 @@ export default function CreatorProfile() {
   const [dbCreatorId, setDbCreatorId] = useState(() => embeddedData?.dbId || null); // Store database UUID
   const [isLive, setIsLive] = useState(false);
   const [liveStreamInfo, setLiveStreamInfo] = useState(null);
-  const [latestVideo, setLatestVideo] = useState(null);
+  const [recentVideos, setRecentVideos] = useState([]);
   const [musicTracks, setMusicTracks] = useState([]);
   const [musicAlbums, setMusicAlbums] = useState([]);
   const [showSharePanel, setShowSharePanel] = useState(false);
@@ -552,10 +552,10 @@ export default function CreatorProfile() {
           followers: channelData.followers,
         });
 
-        // Fetch latest video for YouTube channels (non-blocking)
+        // Fetch recent videos for YouTube channels (non-blocking)
         if (platform === 'youtube' && channelData.platformId) {
-          getYouTubeLatestVideo(channelData.platformId).then(video => {
-            if (video) setLatestVideo(video);
+          getYouTubeRecentVideos(channelData.platformId).then(videos => {
+            if (videos?.length) setRecentVideos(videos);
           });
         }
 
@@ -1412,7 +1412,7 @@ export default function CreatorProfile() {
                 peakStats={peakStats}
                 rankContext={rankContext}
                 dbCreatorId={dbCreatorId}
-                latestVideo={latestVideo}
+                recentVideos={recentVideos}
                 historyDays={historyDays}
               />
             )}
@@ -1425,7 +1425,6 @@ export default function CreatorProfile() {
                 metrics={metrics}
                 peakStats={peakStats}
                 rankContext={rankContext}
-                latestVideo={latestVideo}
                 musicTracks={musicTracks}
                 musicAlbums={musicAlbums}
               />
@@ -1548,7 +1547,7 @@ function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
   );
 }
 
-function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rankContext, dbCreatorId, latestVideo, historyDays }) {
+function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rankContext, dbCreatorId, recentVideos, historyDays }) {
   const [activeTab, setActiveTab] = useState('daily'); // daily first, per standing instruction
   const [chartMetric, setChartMetric] = useState('views');
   const [chartRange, setChartRange] = useState(30);
@@ -1606,7 +1605,7 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
 
   const tabs = [
     { key: 'daily', label: 'Daily readings', count: dailyReadingsRows.length },
-    { key: 'videos', label: 'Recent videos', count: latestVideo ? 1 : 0 },
+    { key: 'videos', label: 'Recent videos', count: recentVideos.length },
     { key: 'about', label: 'About', count: null },
   ];
 
@@ -1857,37 +1856,63 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
       )}
 
       {activeTab === 'videos' && (
-        <div className="mt-4">
-          {latestVideo ? (
-            <a
-              href={`https://youtube.com/watch?v=${latestVideo.videoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors group"
-            >
-              <div className="flex flex-col sm:flex-row">
-                <div className="relative sm:w-72 flex-shrink-0">
-                  <img src={latestVideo.thumbnail} alt={latestVideo.title} loading="lazy" className="w-full h-44 sm:h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                    <div className="w-12 h-12 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+        <div className="mt-4 space-y-3">
+          {recentVideos.length > 0 ? (
+            <>
+              <a
+                href={`https://youtube.com/watch?v=${recentVideos[0].videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors group"
+              >
+                <div className="flex flex-col sm:flex-row">
+                  <div className="relative sm:w-72 flex-shrink-0">
+                    <img src={recentVideos[0].thumbnail} alt={recentVideos[0].title} loading="lazy" className="w-full h-44 sm:h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <div className="w-12 h-12 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-5 flex flex-col justify-between flex-1 min-w-0">
+                    <div>
+                      <p className="text-xs font-medium text-neutral-500 mb-1.5">Most recent upload</p>
+                      <h3 className="font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-neutral-700 transition-colors">{recentVideos[0].title}</h3>
+                      <p className="text-sm text-neutral-500">{formatRelativeTime(recentVideos[0].publishedAt)}</p>
+                    </div>
+                    <div className="flex items-center gap-5 mt-3 text-sm text-neutral-700">
+                      <span className="flex items-center gap-1.5 tabular-nums"><Eye className="w-4 h-4 text-neutral-400" />{formatNumber(recentVideos[0].views)}</span>
+                      <span className="flex items-center gap-1.5 tabular-nums"><ThumbsUp className="w-4 h-4 text-neutral-400" />{formatNumber(recentVideos[0].likes)}</span>
+                      <span className="flex items-center gap-1.5 tabular-nums"><MessageCircle className="w-4 h-4 text-neutral-400" />{formatNumber(recentVideos[0].comments)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="p-5 flex flex-col justify-between flex-1 min-w-0">
-                  <div>
-                    <p className="text-xs font-medium text-neutral-500 mb-1.5">Most recent upload</p>
-                    <h3 className="font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-neutral-700 transition-colors">{latestVideo.title}</h3>
-                    <p className="text-sm text-neutral-500">{formatRelativeTime(latestVideo.publishedAt)}</p>
-                  </div>
-                  <div className="flex items-center gap-5 mt-3 text-sm text-neutral-700">
-                    <span className="flex items-center gap-1.5 tabular-nums"><Eye className="w-4 h-4 text-neutral-400" />{formatNumber(latestVideo.views)}</span>
-                    <span className="flex items-center gap-1.5 tabular-nums"><ThumbsUp className="w-4 h-4 text-neutral-400" />{formatNumber(latestVideo.likes)}</span>
-                    <span className="flex items-center gap-1.5 tabular-nums"><MessageCircle className="w-4 h-4 text-neutral-400" />{formatNumber(latestVideo.comments)}</span>
-                  </div>
+              </a>
+
+              {recentVideos.length > 1 && (
+                <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] divide-y divide-neutral-100 overflow-hidden">
+                  {recentVideos.slice(1).map((video) => (
+                    <a
+                      key={video.videoId}
+                      href={`https://youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3.5 px-4 py-3 hover:bg-neutral-50 transition-colors group"
+                    >
+                      <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-24 h-14 flex-shrink-0 rounded-lg object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-medium text-neutral-900 line-clamp-1 group-hover:text-neutral-700 transition-colors">{video.title}</h4>
+                        <p className="text-xs text-neutral-500 mt-1">{formatRelativeTime(video.publishedAt)}</p>
+                        <div className="flex items-center gap-3.5 mt-1.5 text-xs text-neutral-500">
+                          <span className="flex items-center gap-1 tabular-nums"><Eye className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.views)}</span>
+                          <span className="flex items-center gap-1 tabular-nums"><ThumbsUp className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.likes)}</span>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
                 </div>
-              </div>
-            </a>
+              )}
+            </>
           ) : (
             <div className="bg-white rounded-xl border border-neutral-200/80 p-8 text-center text-sm text-neutral-500">No recent video data yet.</div>
           )}
@@ -2107,7 +2132,7 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   );
 }
 
-function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakStats, rankContext, latestVideo, musicTracks, musicAlbums }) {
+function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakStats, rankContext, musicTracks, musicAlbums }) {
   const config = GENERIC_PLATFORM_CONFIG[platform];
   const [activeTab, setActiveTab] = useState('daily');
   const [chartMetric, setChartMetric] = useState(config.chartMetrics[0].value);
