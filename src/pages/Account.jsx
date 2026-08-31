@@ -509,7 +509,119 @@ export default function Account() {
                     {featuredListings.length > 0 && (
                       <div className="mb-7">
                         <p className={`${MICRO} mb-2.5`}>Active listings</p>
-                        <div className="border border-neutral-200/80 rounded-lg divide-y divide-neutral-100 overflow-hidden">
+
+                        {/* Desktop: real table with column headers — same pattern as the
+                            Daily Readings table on creator profiles. Comparing platform/
+                            tier/runs/status across several listings is exactly the kind
+                            of tabular data that pattern exists for. */}
+                        <div className="hidden md:block border border-neutral-200/80 rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
+                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Creator</th>
+                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Platform</th>
+                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Tier</th>
+                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Runs</th>
+                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-2.5 w-10" />
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {featuredListings.map(listing => {
+                                const c = listing.creators;
+                                const isActive = listing.status === 'active';
+                                const isPending = listing.status === 'pending';
+                                const isCanceling = isActive && listing.cancel_at_period_end;
+                                const until = listing.active_until
+                                  ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                  : null;
+                                const isMenuOpen = openListingActionsId === listing.id;
+                                const isPremiumTier = listing.placement_tier === 'premium';
+                                const PlatformIcon = PLATFORM_ICONS[listing.platform];
+                                return (
+                                  <tr
+                                    key={listing.id}
+                                    onClick={() => goToRankingsListing(listing)}
+                                    className="border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50 transition-colors cursor-pointer"
+                                  >
+                                    <td className="px-4 py-2.5">
+                                      <button onClick={() => goToRankingsListing(listing)} className="flex items-center gap-2.5 min-w-0 text-left">
+                                        <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="sm" rounded="rounded-lg" />
+                                        <span className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</span>
+                                      </button>
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className="inline-flex items-center gap-1.5 text-sm text-neutral-600">
+                                        {PlatformIcon && <PlatformIcon className="w-3.5 h-3.5 flex-shrink-0" />}
+                                        {PLATFORM_LABELS[listing.platform] || listing.platform}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className={`inline-flex items-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] ${
+                                        isPremiumTier ? 'bg-amber-100 border border-amber-200 text-amber-700' : 'bg-neutral-100 border border-neutral-200 text-neutral-500'
+                                      }`}>
+                                        {isPremiumTier ? 'Premium' : 'Basic'}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-neutral-500">
+                                      {listing.is_mod_free ? 'promotional' : until && isActive ? (isCanceling ? `cancels ${until}` : `until ${until}`) : '—'}
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span className={`w-1.5 h-1.5 rounded-full ${
+                                          isCanceling ? 'bg-amber-500' : isActive ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-neutral-300'
+                                        }`} />
+                                        <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${
+                                          isCanceling ? 'text-amber-600' : isActive ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-neutral-400'
+                                        }`}>
+                                          {isCanceling ? 'canceling' : listing.status}
+                                        </span>
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                                      <div className="relative inline-block">
+                                        {isMenuOpen && (
+                                          <div className="fixed inset-0 z-30" onClick={() => setOpenListingActionsId(null)} />
+                                        )}
+                                        <button
+                                          onClick={() => setOpenListingActionsId(isMenuOpen ? null : listing.id)}
+                                          className="p-1.5 text-neutral-300 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
+                                          title="Listing actions"
+                                        >
+                                          <MoreVertical className="w-3.5 h-3.5" />
+                                        </button>
+                                        {isMenuOpen && (
+                                          <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-40 text-left">
+                                            <button
+                                              onClick={() => { setOpenListingActionsId(null); goToRankingsListing(listing); }}
+                                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
+                                            >
+                                              <Eye className="w-3.5 h-3.5" />
+                                              View in rankings
+                                            </button>
+                                            {isActive && !isPending && !isCanceling && (
+                                              <button
+                                                onClick={() => { setOpenListingActionsId(null); handleCancelListing(listing.id); }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                                              >
+                                                <X className="w-3.5 h-3.5" />
+                                                Cancel listing
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile: stacked list — a table doesn't survive narrow width,
+                            same pattern as the Daily Readings mobile fallback. */}
+                        <div className="md:hidden border border-neutral-200/80 rounded-lg divide-y divide-neutral-100 overflow-hidden">
                           {featuredListings.map(listing => {
                             const c = listing.creators;
                             const isActive = listing.status === 'active';
@@ -519,6 +631,8 @@ export default function Account() {
                               ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                               : null;
                             const isMenuOpen = openListingActionsId === listing.id;
+                            const isPremiumTier = listing.placement_tier === 'premium';
+                            const PlatformIcon = PLATFORM_ICONS[listing.platform];
                             return (
                               <div
                                 key={listing.id}
@@ -532,10 +646,18 @@ export default function Account() {
                               >
                                 <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="md" rounded="rounded-lg" />
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
-                                  <p className="text-xs text-neutral-400 mt-0.5">
-                                    {listing.platform}
-                                    {until && isActive ? (isCanceling ? ` · cancels ${until}` : ` · until ${until}`) : ''}
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
+                                    <span className={`inline-flex items-center px-1.5 h-4 rounded text-[9px] font-medium uppercase tracking-[0.1em] flex-shrink-0 ${
+                                      isPremiumTier ? 'bg-amber-100 border border-amber-200 text-amber-700' : 'bg-neutral-100 border border-neutral-200 text-neutral-500'
+                                    }`}>
+                                      {isPremiumTier ? 'Premium' : 'Basic'}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-neutral-400 mt-0.5 inline-flex items-center gap-1">
+                                    {PlatformIcon && <PlatformIcon className="w-3 h-3 flex-shrink-0" />}
+                                    {PLATFORM_LABELS[listing.platform] || listing.platform}
+                                    {until && isActive ? ` · ${isCanceling ? 'cancels' : 'until'} ${until}` : ''}
                                     {listing.is_mod_free ? ' · promotional' : ''}
                                   </p>
                                 </div>
