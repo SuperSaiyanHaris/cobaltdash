@@ -1906,6 +1906,7 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
                         <div className="flex items-center gap-3.5 mt-1.5 text-xs text-neutral-500">
                           <span className="flex items-center gap-1 tabular-nums"><Eye className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.views)}</span>
                           <span className="flex items-center gap-1 tabular-nums"><ThumbsUp className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.likes)}</span>
+                          <span className="flex items-center gap-1 tabular-nums"><MessageCircle className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.comments)}</span>
                         </div>
                       </div>
                     </a>
