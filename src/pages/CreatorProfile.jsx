@@ -36,6 +36,17 @@ import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 
+// How far back getCreatorStats reaches for the chart/daily-readings history.
+// Was hardcoded to 90 at both call sites below, which silently capped the
+// "All" time-range button (and the Daily readings tab/count) to the last 90
+// calendar days no matter how much real history a creator actually has —
+// found 2026-08-31 after a user noticed MrBeast's "All" view only showed 88
+// readings despite being tracked since 2026-03-29 (153 real daily rows sitting
+// in creator_stats the whole time). 3650 days (10 years) is comfortably past
+// any creator's real tracked history for a long time yet; getCreatorStats
+// filters by date, not row count, so this only ever returns real rows.
+const STATS_HISTORY_DAYS = 3650;
+
 const platformIcons = {
   youtube: YouTubeIcon,
   twitch: TwitchIcon,
@@ -119,7 +130,6 @@ export default function CreatorProfile() {
   // No tier gates — every signed-in user gets full features.
   // Featured Listings is the only paid product; profile features are free.
   const maxFollows = Infinity;
-  const historyDays = Infinity;
   const hasExport = true;
   // Lazy initializers so readEmbeddedCreatorData only ever runs once, on the
   // very first render — not a bug if it's called from multiple initializers,
@@ -503,7 +513,7 @@ export default function CreatorProfile() {
               .order('recorded_at', { ascending: false })
               .limit(1)
               .single(),
-            getCreatorStats(dbCreator.id, 90),
+            getCreatorStats(dbCreator.id, STATS_HISTORY_DAYS),
           ]);
 
           const latestStats = latestStatsResult.data;
@@ -624,7 +634,7 @@ export default function CreatorProfile() {
             }
 
             // Now fetch history + hours watched in parallel (both read-only)
-            const readOps = [getCreatorStats(dbCreator.id, 90)];
+            const readOps = [getCreatorStats(dbCreator.id, STATS_HISTORY_DAYS)];
             if (platform === 'twitch' || platform === 'kick') {
               readOps.push(getHoursWatched(dbCreator.id));
             }
@@ -1413,7 +1423,6 @@ export default function CreatorProfile() {
                 rankContext={rankContext}
                 dbCreatorId={dbCreatorId}
                 recentVideos={recentVideos}
-                historyDays={historyDays}
               />
             )}
 
@@ -1547,7 +1556,7 @@ function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
   );
 }
 
-function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rankContext, dbCreatorId, recentVideos, historyDays }) {
+function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rankContext, dbCreatorId, recentVideos }) {
   const [activeTab, setActiveTab] = useState('daily'); // daily first, per standing instruction
   const [chartMetric, setChartMetric] = useState('views');
   const [chartRange, setChartRange] = useState(30);
