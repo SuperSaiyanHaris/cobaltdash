@@ -272,10 +272,21 @@ async function getProfileContent(platform, username) {
     `creators?platform=eq.${platform}&username=ilike.${encodeURIComponent(username)}` +
     `&select=${encodeURIComponent(select)}` +
     `&creator_stats.order=recorded_at.desc&creator_stats.limit=31` +
-    `&order=updated_at.desc&limit=1`
+    `&order=updated_at.desc&limit=2`
   );
   if (rows === null) return { status: 'error' };          // fetch failed — fall back silently
   if (!rows.length) return { status: 'notfound' };        // real 404 — noindex the shell
+  // Our own username derivation falls back to a channel's display title when
+  // it has no claimed @handle (see api/youtube.js), and titles aren't unique
+  // on the real platform — a copycat/fan channel can collide with the real
+  // one in our username column (confirmed 2026-08-31: 60 colliding groups
+  // across 218 rows on YouTube alone, see isUsernameAmbiguous in
+  // creatorService.js). limit=2 above lets us detect that case: if a second
+  // row came back, `order=updated_at.desc` can't be trusted to have picked
+  // the right one, so don't inject possibly-wrong SEO content — fall back
+  // silently and let the client resolve it via the live platform API, which
+  // has the real authority CreatorProfile.jsx already checks against.
+  if (rows.length > 1) return { status: 'error' };
 
   const c = rows[0];
   const stats = (c.creator_stats || []).filter(s => s.subscribers !== null && s.subscribers !== undefined);
@@ -690,10 +701,13 @@ async function handleBadge(platform, username) {
     `creators?platform=eq.${platform}&username=ilike.${encodeURIComponent(username)}` +
     `&select=${encodeURIComponent(select)}` +
     `&creator_stats.order=recorded_at.desc&creator_stats.limit=1` +
-    `&order=updated_at.desc&limit=1`
+    `&order=updated_at.desc&limit=2`
   );
 
-  if (!rows || !rows.length) {
+  // limit=2 above so an ambiguous username (see isUsernameAmbiguous in
+  // creatorService.js — copycat/fan channels can collide with a real one)
+  // is caught here instead of silently badging the wrong creator's count.
+  if (!rows || rows.length !== 1) {
     // Unknown creator (or DB hiccup): neutral brand badge, short cache, 404
     // so crawlers/embedders know it's not a real resource.
     return new Response(
