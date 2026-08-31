@@ -585,7 +585,7 @@ export default function Account() {
                                         )}
                                         <button
                                           onClick={() => setOpenListingActionsId(isMenuOpen ? null : listing.id)}
-                                          className="p-1.5 text-neutral-300 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
+                                          className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
                                           title="Listing actions"
                                         >
                                           <MoreVertical className="w-3.5 h-3.5" />
@@ -682,7 +682,7 @@ export default function Account() {
                                   )}
                                   <button
                                     onClick={() => setOpenListingActionsId(isMenuOpen ? null : listing.id)}
-                                    className="p-1.5 text-neutral-300 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
+                                    className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
                                     title="Listing actions"
                                   >
                                     <MoreVertical className="w-3.5 h-3.5" />
