@@ -76,6 +76,7 @@ export default function CreatorAvatar({
   className = '',
   loading = 'lazy',
   targetPx,
+  style,
 }) {
   // Index into `candidates` below. Advances one rung per onError.
   const [errorStage, setErrorStage] = useState(0);
@@ -111,6 +112,7 @@ export default function CreatorAvatar({
     return (
       <div
         role="img"
+        style={style}
         className={`${sizeClasses.box} ${rounded} bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 ${className}`}
         aria-label={alt || name}
       >
@@ -126,6 +128,7 @@ export default function CreatorAvatar({
       loading={loading}
       referrerPolicy="no-referrer"
       onError={() => setErrorStage((s) => s + 1)}
+      style={style}
       className={`${sizeClasses.box} ${rounded} object-cover bg-gray-800 flex-shrink-0 ${className}`}
     />
   );
