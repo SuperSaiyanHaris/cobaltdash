@@ -1823,7 +1823,7 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
                       <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta != null ? fmtSigned(delta) : '—'}</td>
                       <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{formatNumber(row.subscribers)}</td>
                       <td className="px-5 py-3 text-right text-neutral-500 tabular-nums">{row.videos}</td>
-                      <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</td>
+                      <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</td>
                     </tr>
                   );
                 })}
@@ -1836,14 +1836,18 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
               const prev = dailyReadingsRows[i + 1];
               const delta = prev ? row.views - prev.views : null;
               return (
-                <div key={row.date} className="flex items-center gap-3 px-4 py-3">
+                <div key={row.date} className="flex items-center gap-4 px-4 py-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-neutral-900">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                     <p className="text-xs text-neutral-500 mt-0.5 tabular-nums">{formatNumber(row.subscribers)} subs &middot; {row.videos} videos</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold tabular-nums text-neutral-900">{delta != null ? fmtSigned(delta) : '—'}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</p>
+                    <p className="text-sm font-semibold tabular-nums text-emerald-600">{delta != null ? fmtSigned(delta) : '—'}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 mt-0.5">&Delta; views</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold tabular-nums text-emerald-600">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 mt-0.5">est. revenue</p>
                   </div>
                 </div>
               );
@@ -2379,7 +2383,10 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
               return (
                 <div key={row.date} className="flex items-center gap-3 px-4 py-3">
                   <p className="text-sm font-semibold text-neutral-900 flex-1">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                  <p className={`text-sm font-semibold tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-400'}`}>{delta != null ? fmtSigned(delta) : '—'}</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-sm font-semibold tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-400'}`}>{delta != null ? fmtSigned(delta) : '—'}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 mt-0.5">&Delta; {config.primaryLabel.toLowerCase()}</p>
+                  </div>
                 </div>
               );
             })}
