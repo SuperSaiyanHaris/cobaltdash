@@ -140,6 +140,37 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
+    // Open Stripe's hosted Customer Portal — gives the user real invoice/
+    // billing history and payment-method management for free, no custom UI
+    // or stored card data on our side. Added instead of a new api/ file: the
+    // project is already at the Vercel Hobby 12-Node-function cap (see
+    // CLAUDE.md), so this reuses stripe-checkout.js the same way
+    // 'cancel-listing' already does above rather than adding a 13th function.
+    //
+    // Requires a Customer Portal configuration to exist for this Stripe
+    // account (Dashboard → Settings → Billing → Customer portal, or
+    // stripe.billingPortal.configurations.create() once) — Stripe auto-
+    // provisions a default one in test mode but NOT in live mode. Without it
+    // this call fails with a clean Stripe error, not a crash.
+    if (priceKey === 'billing-portal') {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('stripe_customer_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (!userData?.stripe_customer_id) {
+        return res.status(400).json({ error: 'No billing history yet — this appears after your first purchase.' });
+      }
+
+      const portalOrigin = getSiteOrigin(req);
+      const portalReturnUrl = returnUrl && isSafeReturnUrl(returnUrl) ? returnUrl : `${portalOrigin}/account`;
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: userData.stripe_customer_id,
+        return_url: portalReturnUrl,
+      });
+      return res.status(200).json({ url: portalSession.url });
+    }
+
     if (!priceKey || !PRICE_IDS[priceKey]) {
       return res.status(400).json({ error: 'Invalid price key' });
     }

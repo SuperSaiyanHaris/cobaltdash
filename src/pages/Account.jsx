@@ -28,6 +28,7 @@ const TABS = [
 ];
 
 const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+const TIER_PRICE = { basic: 49, premium: 149 };
 const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
 const PLATFORM_ICONS = {
   youtube: YouTubeIcon, tiktok: TikTokIcon, twitch: TwitchIcon, kick: KickIcon, bluesky: BlueskyIcon,
@@ -75,6 +76,7 @@ export default function Account() {
   const [alreadyListed, setAlreadyListed] = useState(false);
   const [purchasingListing, setPurchasingListing] = useState(false);
   const [purchasingPremiumListing, setPurchasingPremiumListing] = useState(false);
+  const [openingBillingPortal, setOpeningBillingPortal] = useState(false);
   const [premiumSlotsLeft, setPremiumSlotsLeft] = useState(2);
   // Exact next-open-slot rank for this platform, computed when a creator is
   // selected — shown in the confirm step below so a buyer knows their real
@@ -90,7 +92,7 @@ export default function Account() {
     if (!user) return;
     const { data } = await supabase
       .from('featured_listings')
-      .select('id, platform, status, cancel_at_period_end, active_from, active_until, is_mod_free, created_at, creators(display_name, username, profile_image, platform)')
+      .select('id, platform, placement_tier, status, cancel_at_period_end, active_from, active_until, is_mod_free, created_at, creators(display_name, username, profile_image, platform)')
       .eq('purchased_by_user_id', user.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -274,6 +276,27 @@ export default function Account() {
     } catch (err) {
       showToast(err.message || 'Could not start checkout.', 'error');
       setPurchasingPremiumListing(false);
+    }
+  };
+
+  // Opens Stripe's hosted Customer Portal — real invoice history + payment
+  // method management, no custom billing UI to build or card data to store.
+  const handleOpenBillingPortal = async () => {
+    setOpeningBillingPortal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ priceKey: 'billing-portal', returnUrl: window.location.href }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not open billing portal');
+      window.location.href = data.url;
+    } catch (err) {
+      showToast(err.message || 'Could not open billing portal.', 'error');
+      setOpeningBillingPortal(false);
     }
   };
 
@@ -567,17 +590,52 @@ export default function Account() {
                             );
                           })}
                         </div>
+
+                        {/* Summary strip — real monthly total + next charge date,
+                            computed from the same rows above (paid tiers only,
+                            promotional listings don't bill). */}
+                        {(() => {
+                          const billed = featuredListings.filter(l => !l.is_mod_free);
+                          if (billed.length === 0) return null;
+                          const monthlyTotal = billed.reduce((sum, l) => sum + (TIER_PRICE[l.placement_tier] || TIER_PRICE.basic), 0);
+                          const nextCharge = billed
+                            .filter(l => !l.cancel_at_period_end && l.active_until)
+                            .map(l => new Date(l.active_until))
+                            .sort((a, b) => a - b)[0];
+                          return (
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-2.5 px-1 text-xs text-neutral-400">
+                              <span>{billed.length} active</span>
+                              <span>&middot;</span>
+                              <span>${monthlyTotal}/month</span>
+                              {nextCharge && (
+                                <>
+                                  <span>&middot;</span>
+                                  <span>next charge {nextCharge.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 
-                    {/* Add new listing — opens a dialog rather than living inline */}
-                    <button
-                      onClick={openListingDialog}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Add a listing
-                    </button>
+                    {/* Add new listing / manage billing */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        onClick={openListingDialog}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add a listing
+                      </button>
+                      <button
+                        onClick={handleOpenBillingPortal}
+                        disabled={openingBillingPortal}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-600 hover:text-neutral-900 text-sm font-medium transition-colors"
+                      >
+                        {openingBillingPortal ? 'Opening...' : 'Manage billing'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

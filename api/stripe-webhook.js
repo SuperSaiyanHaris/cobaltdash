@@ -12,6 +12,11 @@
  *                                      this automatically at period end for a
  *                                      subscription with cancel_at_period_end)
  *   - invoice.payment_failed          (cancels listing on failed renewal)
+ *   - invoice.paid                    (extends active_until on each successful
+ *                                      renewal — REQUIRED, see note below. If
+ *                                      this event isn't enabled on the Stripe
+ *                                      webhook endpoint yet, add it in the
+ *                                      Dashboard before relying on this fix.)
  */
 
 import Stripe from 'stripe';
@@ -173,6 +178,36 @@ export default async function handler(req, res) {
           .update({ status: 'canceled' })
           .eq('stripe_subscription_id', subscription.id);
         console.log(`Canceled featured listing for subscription ${subscription.id}`);
+        break;
+      }
+
+      // Extends the listing's active_until on every successful renewal.
+      // Without this, active_until is set ONCE at checkout.session.completed
+      // (purchase date + 30 days) and never touched again — so a listing that
+      // renews past its first cycle would silently drop out of every
+      // `active_until > now` check in the app (the sponsored-slot query in
+      // Rankings, the premium 2-slots-per-platform cap, the duplicate-listing
+      // check) while Stripe keeps charging the customer monthly. Reading the
+      // period end straight off the invoice (rather than "now + 30 days")
+      // means this is exact even if the webhook is delayed, and idempotent if
+      // Stripe retries the event. Guarded to only touch rows still 'active' so
+      // a late/retried event can never resurrect an already-canceled listing.
+      case 'invoice.paid': {
+        const invoice = event.data.object;
+        const subscriptionId = invoice.subscription;
+        if (!subscriptionId) break;
+
+        const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+        if (!periodEnd) break;
+
+        const { error, count } = await supabase
+          .from('featured_listings')
+          .update({ active_until: new Date(periodEnd * 1000).toISOString() })
+          .eq('stripe_subscription_id', subscriptionId)
+          .eq('status', 'active')
+          .select('id', { count: 'exact' });
+        if (error) console.error('Failed to extend active_until on invoice.paid:', error);
+        else console.log(`Extended active_until for subscription ${subscriptionId} on ${count} listing(s)`);
         break;
       }
 
