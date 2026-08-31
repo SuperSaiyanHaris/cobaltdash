@@ -76,6 +76,13 @@ export default function Account() {
   const [purchasingListing, setPurchasingListing] = useState(false);
   const [purchasingPremiumListing, setPurchasingPremiumListing] = useState(false);
   const [premiumSlotsLeft, setPremiumSlotsLeft] = useState(2);
+  // Exact next-open-slot rank for this platform, computed when a creator is
+  // selected — shown in the confirm step below so a buyer knows their real
+  // placement (e.g. rank #485) before paying, not just the generic "15, 20,
+  // 25..." pattern. null while the count is still loading.
+  const [nextBasicRank, setNextBasicRank] = useState(null);
+  const [nextPremiumRank, setNextPremiumRank] = useState(null);
+  const [pendingTier, setPendingTier] = useState(null); // 'basic' | 'premium' | null — confirm-step gate before Stripe
   const [tikTokAdding, setTikTokAdding] = useState(false);
   const [tikTokAddError, setTikTokAddError] = useState('');
 
@@ -155,6 +162,9 @@ export default function Account() {
     setListingResults([]);
     setAlreadyListed(false);
     setTikTokAddError('');
+    setNextBasicRank(null);
+    setNextPremiumRank(null);
+    setPendingTier(null);
   };
 
   const openListingDialog = () => {
@@ -173,16 +183,28 @@ export default function Account() {
     setListingResults([]);
     setAlreadyListed(false);
     setPremiumSlotsLeft(2);
+    setNextBasicRank(null);
+    setNextPremiumRank(null);
+    setPendingTier(null);
     const now = new Date().toISOString();
-    const [{ data: existing }, { count: premiumCount }] = await Promise.all([
+    // Pull every active listing for this platform in one query and bucket it
+    // the same way Rankings.jsx does (placement_tier !== 'premium' counts as
+    // basic) so the estimate here matches what actually renders on /rankings.
+    const [{ data: existing }, { data: platformListings }] = await Promise.all([
       supabase.from('featured_listings').select('id')
         .eq('creator_id', creator.id).eq('status', 'active').gt('active_until', now).limit(1),
-      supabase.from('featured_listings').select('id', { count: 'exact', head: true })
-        .eq('platform', creator.platform).eq('placement_tier', 'premium')
-        .eq('status', 'active').gt('active_until', now),
+      supabase.from('featured_listings').select('id, placement_tier')
+        .eq('platform', creator.platform).eq('status', 'active').gt('active_until', now),
     ]);
     setAlreadyListed(!!(existing && existing.length > 0));
-    setPremiumSlotsLeft(Math.max(0, 2 - (premiumCount || 0)));
+    const listings = platformListings || [];
+    const premiumCount = listings.filter(l => l.placement_tier === 'premium').length;
+    const basicCount = listings.length - premiumCount;
+    setPremiumSlotsLeft(Math.max(0, 2 - premiumCount));
+    // Basic slots land at organic rank 15, 20, 25... (Rankings.jsx); premium
+    // lands at rank 5 for the first active listing, rank 10 for the second.
+    setNextBasicRank(15 + basicCount * 5);
+    setNextPremiumRank(premiumCount === 0 ? 5 : premiumCount === 1 ? 10 : null);
   };
 
   const handleTikTokInstantAdd = async () => {
@@ -639,7 +661,7 @@ export default function Account() {
                             />
                             {listingQuery && (
                               <button
-                                onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); }}
+                                onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); setNextBasicRank(null); setNextPremiumRank(null); setPendingTier(null); }}
                                 className="text-neutral-400 hover:text-neutral-900"
                               >
                                 <X className="w-3.5 h-3.5" />
@@ -702,14 +724,14 @@ export default function Account() {
                               </div>
 
                               {/* Tier selection */}
-                              {!alreadyListed && (
+                              {!alreadyListed && !pendingTier && (
                                 <div className="space-y-2.5">
                                   <p className={`${MICRO} pt-1`}>Choose your slot</p>
                                   <div className="grid sm:grid-cols-2 gap-2.5">
                                     {/* Basic */}
                                     <button
-                                      onClick={handlePurchaseListing}
-                                      disabled={purchasingListing}
+                                      onClick={() => setPendingTier('basic')}
+                                      disabled={nextBasicRank === null}
                                       className="group text-left bg-white border border-neutral-200 hover:border-neutral-400 disabled:opacity-50 rounded-xl p-4 transition-colors"
                                     >
                                       <div className="flex items-center justify-between mb-3">
@@ -717,16 +739,20 @@ export default function Account() {
                                         <span className="text-[10px] text-neutral-400">Cancel anytime</span>
                                       </div>
                                       <p className="text-2xl font-semibold text-neutral-900 tabular-nums">$49<span className="text-sm font-normal text-neutral-400">/mo</span></p>
-                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Placed at rank 15, 20, 25... on the {PLATFORM_LABELS[listingPlatform]} rankings.</p>
+                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">
+                                        {nextBasicRank === null
+                                          ? 'Checking the next open slot...'
+                                          : <>Next open slot: <span className="font-medium text-neutral-700 tabular-nums">rank #{nextBasicRank}</span> on {PLATFORM_LABELS[listingPlatform]}.</>}
+                                      </p>
                                       <span className="inline-flex items-center gap-1 mt-3.5 text-xs font-medium text-neutral-600 group-hover:text-neutral-900 transition-colors">
-                                        {purchasingListing ? 'Redirecting...' : <>Get this slot <ChevronRight className="w-3 h-3" /></>}
+                                        Get this slot <ChevronRight className="w-3 h-3" />
                                       </span>
                                     </button>
 
                                     {/* Premium — one thin amber rule is the entire differentiation */}
                                     <button
-                                      onClick={premiumSlotsLeft > 0 ? handlePurchasePremiumListing : undefined}
-                                      disabled={premiumSlotsLeft === 0 || purchasingPremiumListing}
+                                      onClick={premiumSlotsLeft > 0 ? () => setPendingTier('premium') : undefined}
+                                      disabled={premiumSlotsLeft === 0 || nextPremiumRank === null}
                                       className={`group text-left rounded-xl p-4 border transition-colors ${
                                         premiumSlotsLeft > 0
                                           ? 'bg-white border-neutral-200 border-t-2 border-t-amber-400 hover:border-neutral-400 hover:border-t-amber-500'
@@ -742,14 +768,58 @@ export default function Account() {
                                       <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
                                         $149<span className="text-sm font-normal text-neutral-400">/mo</span>
                                       </p>
-                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">Top-10 placement between rank 4-5 and 9-10. Maximum visibility.</p>
+                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">
+                                        {premiumSlotsLeft > 0
+                                          ? <>Next open slot: <span className="font-medium text-neutral-700 tabular-nums">rank #{nextPremiumRank}</span> on {PLATFORM_LABELS[listingPlatform]}.</>
+                                          : 'Top-10 placement between rank 4-5 and 9-10. Maximum visibility.'}
+                                      </p>
                                       <span className={`inline-flex items-center gap-1 mt-3.5 text-xs font-medium transition-colors ${
                                         premiumSlotsLeft > 0 ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-400'
                                       }`}>
-                                        {purchasingPremiumListing ? 'Redirecting...' : premiumSlotsLeft > 0
+                                        {premiumSlotsLeft > 0
                                           ? <>Get this slot <ChevronRight className="w-3 h-3" /></>
                                           : 'Waitlist coming soon'}
                                       </span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Confirm step — shown after picking a tier, before redirecting to Stripe.
+                                  Answers "what am I actually buying and where does it land" before payment. */}
+                              {!alreadyListed && pendingTier && (
+                                <div className="space-y-2.5">
+                                  <p className={`${MICRO} pt-1`}>Confirm your placement</p>
+                                  <div className={`rounded-xl p-4 border bg-white ${pendingTier === 'premium' ? 'border-neutral-200 border-t-2 border-t-amber-400' : 'border-neutral-200'}`}>
+                                    <div className="flex items-center justify-between">
+                                      <span className={`text-[10px] font-medium uppercase tracking-[0.14em] ${pendingTier === 'premium' ? 'text-amber-600' : 'text-neutral-500'}`}>
+                                        {pendingTier === 'premium' ? 'Premium' : 'Basic'}
+                                      </span>
+                                      <span className="text-sm font-semibold tabular-nums text-neutral-900">{pendingTier === 'premium' ? '$149/mo' : '$49/mo'}</span>
+                                    </div>
+                                    <p className="text-sm text-neutral-700 mt-3 leading-relaxed">
+                                      <span className="font-medium text-neutral-900">{selectedCreator.display_name}</span> will appear at{' '}
+                                      <span className="font-semibold text-neutral-900 tabular-nums">rank #{pendingTier === 'premium' ? nextPremiumRank : nextBasicRank}</span>{' '}
+                                      on the {PLATFORM_LABELS[listingPlatform]} rankings.
+                                    </p>
+                                    <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+                                      This is the next open slot right now. It could shift by one slot if another purchase completes at the same moment.
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-2.5">
+                                    <button
+                                      onClick={() => setPendingTier(null)}
+                                      disabled={purchasingListing || purchasingPremiumListing}
+                                      className="flex-1 h-10 rounded-lg border border-neutral-200 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+                                    >
+                                      Back
+                                    </button>
+                                    <button
+                                      onClick={pendingTier === 'premium' ? handlePurchasePremiumListing : handlePurchaseListing}
+                                      disabled={purchasingListing || purchasingPremiumListing}
+                                      className="flex-1 h-10 rounded-lg bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                                    >
+                                      {(purchasingListing || purchasingPremiumListing) ? 'Redirecting...' : 'Proceed to payment'}
                                     </button>
                                   </div>
                                 </div>
