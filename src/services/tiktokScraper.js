@@ -27,7 +27,9 @@ export async function scrapeTikTokProfile(username) {
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`);
+    const err = new Error(`HTTP ${response.status} for ${url}`);
+    err.status = response.status;
+    throw err;
   }
 
   const html = await response.text();

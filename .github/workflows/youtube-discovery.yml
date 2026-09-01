@@ -84,22 +84,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/discoverMastodonCreators.js
 
-      - name: Discover Rumble creators
-        id: rumble
-        continue-on-error: true
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/discoverRumbleCreators.js
-
-      - name: Discover Substack publications
-        id: substack
-        continue-on-error: true
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/discoverSubstackCreators.js
-
       - name: Discover Music artists
         id: music
         continue-on-error: true
@@ -119,8 +103,6 @@ jobs:
             [TikTok]="${{ steps.tiktok.outcome }}"
             [Bluesky]="${{ steps.bluesky.outcome }}"
             [Mastodon]="${{ steps.mastodon.outcome }}"
-            [Rumble]="${{ steps.rumble.outcome }}"
-            [Substack]="${{ steps.substack.outcome }}"
             [Music]="${{ steps.music.outcome }}"
           )
           failed=0

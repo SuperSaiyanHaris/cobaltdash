@@ -54,6 +54,17 @@ function getTodayLocal() {
  */
 async function processRumbleRequest(request) {
   const slug = request.username; // case preserved by the API for Rumble
+  // rumble.com Cloudflare-challenges every datacenter IP we've tried (GitHub
+  // Actions, Vercel, Supabase Edge) — same block documented for collection and
+  // discovery. Attempting this here can't distinguish "genuinely no such
+  // channel" from "we're blocked," so a real request would get wrongly
+  // tombstoned as failed. Leave it pending; scripts/local/rumble-auto.bat runs
+  // this same processor with a platform filter from the one connection that
+  // actually reaches rumble.com.
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    console.log(`[rumble/${slug}] ⏭️  Skipped in CI (Rumble is IP-blocked here) — left pending for the local runner`);
+    return { success: false, username: slug, error: 'skipped in CI', skipped: true };
+  }
   console.log(`[rumble/${slug}] Fetching channel page...`);
   await supabase.from('creator_requests').update({ status: 'processing' }).eq('id', request.id);
 
@@ -206,6 +217,16 @@ async function processMastodonRequest(request) {
  */
 async function processSubstackRequest(request) {
   const slug = request.username.toLowerCase();
+  // substack.com blocks GitHub Actions datacenter IPs the same way it blocks
+  // Rumble's (Supabase Edge is the one runtime that gets through). The
+  // supabase/functions/collect-substack Edge Function already resolves
+  // pending Substack requests every day as part of its category sweep —
+  // attempting it again here would just fail the same blocked way and, worse,
+  // could tombstone a genuinely valid request as "not found."
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    console.log(`[substack/${slug}] ⏭️  Skipped in CI (Substack is IP-blocked here) — resolved daily by the collect-substack Edge Function instead`);
+    return { success: false, username: slug, error: 'skipped in CI', skipped: true };
+  }
   console.log(`[substack/${slug}] Searching category leaderboards...`);
   await supabase.from('creator_requests').update({ status: 'processing' }).eq('id', request.id);
 
@@ -336,8 +357,19 @@ async function processRequest(request) {
     return { success: true, username: request.username };
 
   } catch (error) {
-    const isRateLimit = error.message.includes('429');
-    const isScrapeBlocked = error.message.includes('No __UNIVERSAL_DATA');
+    // Check the actual HTTP status TikTok returned, not a substring match on
+    // the message text — a plain includes('429') false-positives on any
+    // username/id that happens to contain those digits (e.g. a request for
+    // "stevenjoshlujan4295" got misread as a 429 rate limit purely because
+    // the username ends in 4295, which permanently jammed the whole queue:
+    // that one request kept reverting to pending, landing back at the front
+    // next run since created_at doesn't change, and re-triggering the same
+    // false abort forever).
+    const isRateLimit = error.status === 429;
+    // A page that loaded (200 OK) but didn't contain TikTok's expected data
+    // structure is the real signal of being served a block/challenge page
+    // instead of a genuine "no such user."
+    const isScrapeBlocked = error.message.includes('No rehydration data found');
     console.error(`[${request.username}] ❌ Error:`, error.message);
 
     // If rate limited, revert to pending immediately (no AI resolution needed)
@@ -347,7 +379,7 @@ async function processRequest(request) {
         .update({ status: 'pending' })
         .eq('id', request.id);
       console.log(`[${request.username}] ↩️  Reverted to pending (rate limited, will retry next run)`);
-      return { success: false, username: request.username, error: error.message, rateLimited: true, scrapeBlocked: false };
+      return { success: false, username: request.username, error: error.message, rateLimited: true, scrapeBlocked: isScrapeBlocked };
     }
 
     // All attempts exhausted — mark as failed (keeps row as tombstone so discovery
@@ -357,7 +389,7 @@ async function processRequest(request) {
       .update({ status: 'failed', error_message: error.message })
       .eq('id', request.id);
     console.log(`[${request.username}] 🗑️  Marked as failed (no valid profile found after all attempts)`);
-    return { success: false, username: request.username, error: error.message, rateLimited: false, scrapeBlocked: false };
+    return { success: false, username: request.username, error: error.message, rateLimited: false, scrapeBlocked: isScrapeBlocked };
   }
 }
 

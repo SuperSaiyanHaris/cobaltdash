@@ -49,8 +49,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Platform and username are required' });
     }
 
-    // Validate platform
-    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'youtube', 'twitch', 'kick', 'rumble', 'mastodon', 'substack'];
+    // Validate platform. YouTube/Twitch/Kick/Bluesky/Music aren't here on
+    // purpose — they all have live search APIs, so a real creator not yet
+    // tracked is found by search and auto-added the moment someone clicks
+    // through to their profile (see the comment above handleRequestCreator
+    // in Search.jsx). Only DB-only-search platforms need this queue, and
+    // processCreatorRequests.js only has a handler for these four.
+    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'rumble', 'mastodon', 'substack'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: instant ? 'Instant lookup is only supported for TikTok' : 'Invalid platform' });
     }

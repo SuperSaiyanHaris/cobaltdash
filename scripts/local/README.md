@@ -12,9 +12,12 @@ Supabase's IPs. Nothing to do locally for Substack.)
 ## Scripts
 
 - **`rumble-auto.bat`** — **Recommended.** Self-scheduling Rumble collector (no
-  Task Scheduler). Leave it running; it re-collects every 24h.
-- **`collect-rumble.bat`** — One-shot manual Rumble collection (double-click
-  whenever you want an immediate refresh).
+  Task Scheduler). Leave it running; every 24h it collects stats, processes any
+  pending Rumble creator requests (the site's "Track this channel" self-add
+  form), and discovers new channels.
+- **`collect-rumble.bat`** — One-shot manual version of the same three steps
+  (double-click whenever you want an immediate refresh instead of waiting for
+  the 24h cycle).
 - **`refresh-tiktok.bat`** - Manually refresh ALL TikTok profiles (fallback only)
 - **`discover-tiktok.bat`** - Discovers new creators from curated list
 
@@ -37,6 +40,21 @@ residential connection passes fine.
 
 If your machine is off, that day's Rumble snapshot is simply skipped — charts
 tolerate gaps and the next run resumes. Everything else runs in the cloud.
+
+A Rumble request submitted via the site (`/search?platform=rumble` → "Track
+this channel") queues into `creator_requests` and just waits there — the
+GitHub Actions request processor deliberately skips `platform=rumble` (it
+can't tell "no such channel" apart from "we're blocked" from a datacenter, and
+would wrongly reject a real submission). It only gets resolved here, next time
+this script runs successfully.
+
+**If Rumble collection stops working from here too** (all 117 channels come
+back "Channel not found," including well-known ones like PragerU): that means
+Cloudflare has started challenging this residential IP as well, not just
+datacenters. A router reboot (new IP from your ISP) is the first thing to try;
+`FALLBACK_IP.md` has the mobile-hotspot fallback if that doesn't help. There's
+currently no cloud path for Rumble at all — Cloudflare challenges Supabase Edge
+for rumble.com too, unlike Substack.
 
 ## Normal Operation
 

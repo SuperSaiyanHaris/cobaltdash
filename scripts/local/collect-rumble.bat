@@ -25,4 +25,12 @@ echo Refreshing rankings cache (fast platforms, includes rumble + substack)...
 node scripts/refreshRankingsCache.js
 
 echo.
+echo Processing any pending Rumble creator requests...
+node scripts/processCreatorRequests.js 50 rumble
+
+echo.
+echo Discovering new Rumble creators...
+node scripts/discoverRumbleCreators.js
+
+echo.
 echo Collection complete!

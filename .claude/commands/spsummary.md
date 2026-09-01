@@ -57,6 +57,18 @@ SELECT platform, max(computed_at) FROM rankings_cache GROUP BY platform;
 ```
 Flag any platform whose `computed_at` is more than ~4 hours stale for the fast platforms, or more than ~6 hours for youtube/twitch (the heavy-platform cron runs every 3h).
 
+**This `computed_at` check alone can miss a fully-stalled platform** — the rankings refresh recomputes ranks from whichever `recorded_at` is latest per creator and stamps `computed_at = NOW()` regardless of how old that underlying data actually is, so the cache can look perfectly fresh while collection itself has been dead for weeks (this exact blind spot hid a 14-day total Rumble collection outage on 2026-09-01 — found only by checking `creator_stats` directly, not the cache). Always also check real data freshness per platform:
+```sql
+SELECT c.platform,
+  count(*) AS total,
+  count(*) FILTER (WHERE latest.recorded_at >= CURRENT_DATE - INTERVAL '2 days') AS fresh_last_2d,
+  max(latest.recorded_at) AS most_recent_any
+FROM creators c
+LEFT JOIN LATERAL (SELECT recorded_at FROM creator_stats WHERE creator_id=c.id ORDER BY recorded_at DESC LIMIT 1) latest ON true
+GROUP BY c.platform ORDER BY fresh_last_2d::float / NULLIF(total,0) ASC;
+```
+A platform sitting at or near 0% fresh (not just a few percent of stale outliers, which is normal churn) is a real collection outage, not noise — flag it loudly, and note `most_recent_any` so the report says how long it's been broken. Rumble is the platform most likely to break this way (only collectible from one residential connection, see CLAUDE.md's Local Automation section and `scripts/local/README.md` — check whether `rumble-auto.bat` is actually still running and whether Cloudflare has started challenging that IP too before assuming it's just an off machine).
+
 **5. Deploy status**
 ```
 gh api repos/SuperSaiyanHaris/cobaltdash/commits/main/status --jq '{state, statuses: [.statuses[] | {context, state, created_at}]}'

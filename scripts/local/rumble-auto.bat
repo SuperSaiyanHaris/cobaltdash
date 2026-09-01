@@ -25,6 +25,12 @@ node scripts/collectDailyStats.js
 set COLLECT_ONLY=
 node scripts/refreshRankingsCache.js
 echo.
+echo Processing any pending Rumble creator requests (site "Track this channel" submissions)...
+node scripts/processCreatorRequests.js 50 rumble
+echo.
+echo Discovering new Rumble creators...
+node scripts/discoverRumbleCreators.js
+echo.
 echo Done. Next run in 24 hours. (Leave this window open. Ctrl+C to stop.)
 timeout /t 86400 /nobreak
 goto loop
