@@ -92,9 +92,14 @@ async function getKickAccessToken(retryCount = 0) {
 }
 
 /**
- * Make authenticated Kick API request
+ * Make authenticated Kick API request. Retries on 5xx (Cloudflare/Kick-side
+ * transient errors, e.g. a 502 that clears up within a minute) since those
+ * aren't real failures, just bad timing. Does not retry 4xx.
  */
-async function kickFetch(endpoint) {
+async function kickFetch(endpoint, retryCount = 0) {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 5000; // 5 seconds
+
   const token = await getKickAccessToken();
   const response = await fetch(`${KICK_API_BASE}${endpoint}`, {
     headers: { 'Authorization': `Bearer ${token}` },
@@ -102,6 +107,13 @@ async function kickFetch(endpoint) {
 
   if (!response.ok) {
     const text = await response.text();
+
+    if (response.status >= 500 && retryCount < MAX_RETRIES) {
+      console.log(`⚠️  Kick API ${response.status} on ${endpoint} (attempt ${retryCount + 1}/${MAX_RETRIES}). Retrying in ${RETRY_DELAY/1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return kickFetch(endpoint, retryCount + 1);
+    }
+
     throw new Error(`Kick API error (${response.status}): ${text}`);
   }
 
