@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
-  LineChart, DollarSign, Users, ChevronLeft, ChevronRight, Sparkles,
+  LineChart, DollarSign, Users, ChevronLeft, ChevronRight, Megaphone,
 } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -1155,7 +1155,7 @@ export default function Home() {
                 className="group flex items-center gap-3 pl-3.5 pr-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-xl border border-amber-400/25 hover:border-amber-400/40 rounded-2xl transition-all"
               >
                 <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/15 flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <Megaphone className="w-4 h-4 text-amber-300" />
                 </span>
                 <span className="text-left leading-tight">
                   <span className="block text-sm font-semibold text-white">Get Featured</span>

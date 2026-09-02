@@ -29,7 +29,7 @@ export const CATEGORY_THEME = {
   },
   'Platform Updates': {
     accent: 'sky',
-    iconName: 'Sparkles',
+    iconName: 'Bell',
     chartHex: { bg: 'rgba(56,189,248,0.85)', border: 'rgba(56,189,248,1)' },
     h2Bar: 'bg-gradient-to-r from-sky-400 to-blue-500',
     pill: 'bg-sky-50 text-sky-700 border border-sky-200',

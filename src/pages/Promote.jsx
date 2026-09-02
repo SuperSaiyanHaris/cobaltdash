@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Megaphone, Trophy, Sparkles, TrendingUp, Shield, ArrowRight,
+  Megaphone, Trophy, TrendingUp, Shield, ArrowRight,
   Check, BarChart3, Users, Eye, Lock,
 } from 'lucide-react';
 import SEO from '../components/SEO';
@@ -173,7 +173,7 @@ export default function Promote() {
                     to={ctaHref} onClick={handleCtaClick}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium rounded-lg transition-colors"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <Megaphone className="w-4 h-4" />
                     Get featured
                     <ArrowRight className="w-4 h-4" />
                   </Link>
@@ -406,7 +406,7 @@ export default function Promote() {
                 to={ctaHref} onClick={handleCtaClick}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium rounded-lg transition-colors"
               >
-                <Sparkles className="w-4 h-4" />
+                <Megaphone className="w-4 h-4" />
                 Start now
                 <ArrowRight className="w-4 h-4" />
               </Link>

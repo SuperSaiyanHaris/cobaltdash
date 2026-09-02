@@ -4,9 +4,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 import {
-  Newspaper, Sparkles, TrendingUp, Star, Lightbulb,
+  Newspaper, Bell, TrendingUp, Star, Lightbulb,
   Rocket, Eye, Mic, BookOpen, BarChart3, Trophy, Quote, Zap, Info,
-  AlertTriangle, ArrowRight,
+  AlertTriangle, ArrowRight, ListChecks,
 } from 'lucide-react';
 import YouTubeIcon from './YouTubeIcon';
 import TwitchIcon from './TwitchIcon';
@@ -21,7 +21,7 @@ import { getCategoryTheme } from '../lib/blogTheme';
 
 // Map category iconName -> lucide component
 const ICON_MAP = {
-  Newspaper, Sparkles, Twitch: TwitchIcon, Youtube: YouTubeIcon, TrendingUp, Star, Lightbulb,
+  Newspaper, Bell, Twitch: TwitchIcon, Youtube: YouTubeIcon, TrendingUp, Star, Lightbulb,
   Rocket, Eye, Mic, BookOpen, BarChart3, Trophy,
 };
 
@@ -106,7 +106,7 @@ function TldrBox({ children, theme }) {
     >
       <div className="px-6 py-5 sm:px-8 sm:py-6">
         <div className={`inline-flex items-center gap-1.5 mb-4 text-[10px] font-medium uppercase tracking-[0.14em] ${theme.accentText}`}>
-          <Sparkles className="w-3 h-3" />
+          <ListChecks className="w-3 h-3" />
           The Quick Read
         </div>
         <div className={`text-neutral-800 ${`[&_ul]:list-none [&_ul]:ml-0 [&_li]:relative [&_li]:pl-6 [&_li]:mb-2 [&_li:before]:content-['→'] [&_li:before]:absolute [&_li:before]:left-0 [&_li:before]:font-bold [&_p]:leading-relaxed`} [&_li:before]:${theme.accentText}`}>
