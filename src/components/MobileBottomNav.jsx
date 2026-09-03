@@ -9,30 +9,65 @@ import { useAuth } from '../contexts/AuthContext';
 // Curve + glow shape modeled on the PlayStation app's bottom bar (2026-09-02
 // design pass, see the mobile-nav-redesign artifact this was iterated from).
 // Both curves and every icon position below are computed from the same
-// quadratic bezier (edge y=10, control y=-30, so the visible peak sits at
-// y=-10 at the horizontal center) — the bottom curve is the identical shape
+// quadratic bezier (edge y=0, control y=-40, so the visible peak sits at
+// y=-20 at the horizontal center) — the bottom curve is the identical shape
 // offset +46 on y, and each icon's vertical position is the midpoint between
 // the two curves at that icon's x, so the row visually arcs to fit the
 // channel instead of a flat row the curves cut across. Don't hand-tune any
 // of POSITIONS without recomputing from that same curve, they'll drift out
-// of alignment with the two <path> shapes below. Edge y is deliberately low
-// (10, not the ~20 an earlier pass used) so there's no dead white gap above
-// the curve at the left/right corners of the bar.
+// of alignment with the two <path> shapes below. Edge y is 0 — not some
+// small-but-nonzero value — so the white fill touches the very top-left/
+// top-right corners of the bar with zero gap; the svg needs overflow-visible
+// (below) since the peak goes negative, above the nominal viewBox.
 const POSITIONS = [
-  { xPercent: 10, top: 15, gapBefore: 12 },
-  { xPercent: 30, top: 5, gapBefore: 90 },
-  { xPercent: 50, top: 2, gapBefore: 168 },
-  { xPercent: 70, top: 5, gapBefore: 246 },
-  { xPercent: 90, top: 15, gapBefore: 324 },
+  { xPercent: 10, top: 5, gapBefore: 12 },
+  { xPercent: 30, top: -5, gapBefore: 90 },
+  { xPercent: 50, top: -8, gapBefore: 168 },
+  { xPercent: 70, top: -5, gapBefore: 246 },
+  { xPercent: 90, top: 5, gapBefore: 324 },
 ];
-const BAR_HEIGHT = 102;
-const TOP_CURVE = 'M0,10 Q195,-30 390,10';
-const BOTTOM_CURVE = 'M0,56 Q195,16 390,56';
+const BAR_HEIGHT = 92;
+const TOP_CURVE = 'M0,0 Q195,-40 390,0';
+const BOTTOM_CURVE = 'M0,46 Q195,6 390,46';
 
 const NAV_ITEMS = [
   { path: '/rankings', label: 'Rankings', icon: ChartNoAxesColumnIncreasing, isActive: (p) => p.startsWith('/rankings') },
   { path: '/compare', label: 'Compare', icon: Scale, isActive: (p) => p === '/compare' },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, isActive: (p) => p === '/dashboard' },
+];
+
+// Broader than NAV_ITEMS: this drives the floating page-name label only, not
+// which icon lights up. Every route in App.jsx gets a short name here so the
+// label always shows something, not just on the 5 tab pages. Order matters —
+// first match wins, so specific paths must come before the generic 2-segment
+// creator-profile fallback at the end.
+const PAGE_LABELS = [
+  { label: 'Home', isActive: (p) => p === '/' },
+  { label: 'Rankings', isActive: (p) => p.startsWith('/rankings') },
+  { label: 'Best Of', isActive: (p) => p.startsWith('/best') },
+  { label: 'Compare', isActive: (p) => p === '/compare' },
+  { label: 'Earnings Calc', isActive: (p) => p === '/youtube/money-calculator' },
+  { label: 'Trending', isActive: (p) => p === '/trending' },
+  { label: 'Milestones', isActive: (p) => p === '/milestones' },
+  { label: 'Live', isActive: (p) => p.startsWith('/live/') },
+  { label: 'Shared Profile', isActive: (p) => p.startsWith('/s/') },
+  { label: 'Dashboard', isActive: (p) => p === '/dashboard' },
+  { label: 'Account', isActive: (p) => p === '/account' },
+  { label: 'About', isActive: (p) => p === '/about' },
+  { label: 'Contact', isActive: (p) => p === '/contact' },
+  { label: 'Privacy', isActive: (p) => p === '/privacy' },
+  { label: 'Terms', isActive: (p) => p === '/terms' },
+  { label: 'Refunds', isActive: (p) => p === '/refunds' },
+  { label: 'Support', isActive: (p) => p === '/support' },
+  { label: 'Get Featured', isActive: (p) => p === '/promote' },
+  { label: 'Blog', isActive: (p) => p.startsWith('/blog') },
+  { label: 'FAQ', isActive: (p) => p === '/faq' },
+  { label: 'Methodology', isActive: (p) => p === '/methodology' },
+  { label: 'Admin', isActive: (p) => p.startsWith('/admin') },
+  { label: 'Sign In', isActive: (p) => p.startsWith('/auth/') },
+  { label: 'Search', isActive: (p) => p === '/search' },
+  { label: 'Unsubscribe', isActive: (p) => p === '/newsletter/unsubscribe' },
+  { label: 'Profile', isActive: (p) => /^\/[^/]+\/[^/]+$/.test(p) },
 ];
 
 export default function MobileBottomNav() {
@@ -50,6 +85,7 @@ export default function MobileBottomNav() {
   const items = [...NAV_ITEMS, youItem, searchItem];
   const activeIndex = items.findIndex((item) => item.isActive(location.pathname));
   const activePos = activeIndex >= 0 ? POSITIONS[activeIndex] : null;
+  const pageLabel = PAGE_LABELS.find((entry) => entry.isActive(location.pathname))?.label ?? null;
 
   return (
     <nav
@@ -115,12 +151,12 @@ export default function MobileBottomNav() {
           );
         })}
 
-        {activePos && (
+        {pageLabel && (
           <span
             className="absolute -translate-x-1/2 text-[10px] font-bold text-neutral-900 whitespace-nowrap"
-            style={{ left: '50%', top: 64 }}
+            style={{ left: '50%', top: 54 }}
           >
-            {items[activeIndex].label}
+            {pageLabel}
           </span>
         )}
       </div>
