@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search } from 'lucide-react';
+import useRankingsHint from '../hooks/useRankingsHint';
 
 // Global mobile tab bar — Dashboard, Compare, Rankings, Blog, Search, always
 // reachable with one tap. Desktop keeps its own center pill nav (Header.jsx's
@@ -78,6 +79,7 @@ const PAGE_LABELS = [
 
 export default function MobileBottomNav() {
   const location = useLocation();
+  const showRankingsHint = useRankingsHint();
 
   const items = NAV_ITEMS;
   const activeIndex = items.findIndex((item) => item.isActive(location.pathname));
@@ -150,6 +152,18 @@ export default function MobileBottomNav() {
               }}
             >
               <Icon className="w-full h-full" />
+              {/* First-visit attention ping — Rankings only, gone for good
+                  once the visitor has ever landed on /rankings. See
+                  useRankingsHint. */}
+              {item.path === '/rankings' && showRankingsHint && (
+                <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                  <span
+                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-80"
+                    style={{ background: 'linear-gradient(90deg,#6366f1,#a855f7,#e879f9)' }}
+                  />
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#a855f7' }} />
+                </span>
+              )}
             </Link>
           );
         })}

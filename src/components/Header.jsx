@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
+import useRankingsHint from '../hooks/useRankingsHint';
 
 // Feature launcher entries. `tint` is the only color each gets — a muted icon
 // tint for wayfinding, no gradient boxes (precision system).
@@ -35,6 +36,7 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, isAuthenticated } = useAuth();
+  const showRankingsHint = useRankingsHint();
 
   // AuthPanel is rendered at the App level (see App.jsx) — Header's backdrop-blur
   // creates a containing block which would collapse the panel's position:fixed h-full.
@@ -107,12 +109,22 @@ export default function Header() {
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   isActive(path)
                     ? 'bg-neutral-900 text-white'
                     : 'text-neutral-900 hover:bg-neutral-100'
                 }`}
               >
+                {/* First-visit attention pulse — Rankings only, gone for good
+                    once the visitor has ever landed on /rankings (any route).
+                    See useRankingsHint. */}
+                {path === '/rankings' && showRankingsHint && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-full animate-ping pointer-events-none"
+                    style={{ background: 'linear-gradient(90deg,#6366f1,#a855f7,#e879f9)', animationDuration: '1.8s' }}
+                  />
+                )}
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>
               </Link>
