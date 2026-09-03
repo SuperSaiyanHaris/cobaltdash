@@ -115,15 +115,18 @@ export default function Header() {
                     : 'text-neutral-900 hover:bg-neutral-100'
                 }`}
               >
-                {/* First-visit attention pulse — Rankings only, gone for good
+                {/* First-visit attention cue — Rankings only, gone for good
                     once the visitor has ever landed on /rankings (any route).
-                    See useRankingsHint. */}
+                    A quiet periodic light sweep, not a pulsing ring (too
+                    attention-grabby, see feedback 2026-09-03). See
+                    useRankingsHint and the sp-hint-sweep keyframe in index.css. */}
                 {path === '/rankings' && showRankingsHint && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-0 rounded-full animate-ping pointer-events-none"
-                    style={{ background: 'linear-gradient(90deg,#6366f1,#a855f7,#e879f9)', animationDuration: '1.8s' }}
-                  />
+                  <span aria-hidden="true" className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                    <span
+                      className="absolute inset-y-0 w-1/2 sp-hint-sweep"
+                      style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,.4), transparent)' }}
+                    />
+                  </span>
                 )}
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>

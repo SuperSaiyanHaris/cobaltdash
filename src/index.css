@@ -280,6 +280,18 @@ h1, h2, h3, h4 {
 .auth-col-up   { animation: auth-scroll-up   60s linear infinite; }
 .auth-col-down { animation: auth-scroll-down 60s linear infinite; }
 
+/* First-visit "try Rankings" cue on the desktop pill nav (Header.jsx). A
+   pulsing ring (animate-ping) read as too attention-grabby per direct
+   feedback 2026-09-03 — swapped for a quiet light sweep instead: mostly
+   idle, a soft gradient streak glides across the pill every ~4.5s. Clipped
+   to the pill's own rounded shape by the wrapping overflow-hidden span. */
+@keyframes sp-hint-sweep {
+  0%, 38%  { transform: translateX(-130%); }
+  62%      { transform: translateX(230%); }
+  100%     { transform: translateX(230%); }
+}
+.sp-hint-sweep { animation: sp-hint-sweep 4.5s ease-in-out infinite; }
+
 /* WCAG 2.3.3 — kill decorative looping animations for reduced-motion users.
    Loading spinners (animate-spin) are deliberately left alone. */
 @media (prefers-reduced-motion: reduce) {
@@ -289,7 +301,8 @@ h1, h2, h3, h4 {
   .animate-ping,
   .animate-pulse-slow,
   .auth-col-up,
-  .auth-col-down {
+  .auth-col-down,
+  .sp-hint-sweep {
     animation: none;
   }
 }

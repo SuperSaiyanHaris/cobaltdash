@@ -154,9 +154,11 @@ export default function MobileBottomNav() {
               <Icon className="w-full h-full" />
               {/* First-visit attention ping — Rankings only, gone for good
                   once the visitor has ever landed on /rankings. See
-                  useRankingsHint. */}
+                  useRankingsHint. Offset a full 8px clear of the icon's own
+                  24x24 box on both axes so the dot never overlaps the glyph
+                  itself (it used to sit right on the icon's corner). */}
               {item.path === '/rankings' && showRankingsHint && (
-                <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                <span aria-hidden="true" className="absolute -top-2 -right-2 flex h-2 w-2">
                   <span
                     className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-80"
                     style={{ background: 'linear-gradient(90deg,#6366f1,#a855f7,#e879f9)' }}
