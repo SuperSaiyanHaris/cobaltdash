@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Lock, Share2, Check, Scale, Trophy } from 'lucide-react';
+import { Users, Eye, Video, TrendingUp, ExternalLink, AlertCircle, Calendar, Target, Clock, Radio, Star, Play, ThumbsUp, MessageCircle, Lock, Share2, Check, Scale } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';

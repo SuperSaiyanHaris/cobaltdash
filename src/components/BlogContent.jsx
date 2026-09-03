@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
 import {
   Newspaper, Bell, TrendingUp, Star, Lightbulb,
-  Rocket, Eye, Mic, BookOpen, BarChart3, Trophy, Quote, Zap, Info,
+  Rocket, Eye, Mic, BookOpen, BarChart3, ChartNoAxesColumnIncreasing, Quote, Zap, Info,
   AlertTriangle, ArrowRight, ListChecks,
 } from 'lucide-react';
 import YouTubeIcon from './YouTubeIcon';
@@ -22,7 +22,7 @@ import { getCategoryTheme } from '../lib/blogTheme';
 // Map category iconName -> lucide component
 const ICON_MAP = {
   Newspaper, Bell, Twitch: TwitchIcon, Youtube: YouTubeIcon, TrendingUp, Star, Lightbulb,
-  Rocket, Eye, Mic, BookOpen, BarChart3, Trophy,
+  Rocket, Eye, Mic, BookOpen, BarChart3, ChartNoAxesColumnIncreasing,
 };
 
 const PLATFORM_META = {

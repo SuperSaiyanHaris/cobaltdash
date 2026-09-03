@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Megaphone, Trophy, TrendingUp, Shield, ArrowRight,
+  Megaphone, TrendingUp, Shield, ArrowRight,
   Check, BarChart3, Users, Eye, Lock,
 } from 'lucide-react';
 import SEO from '../components/SEO';

@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
-import { Home, Search, Trophy, TrendingUp } from 'lucide-react';
+import { Home, Search, ChartNoAxesColumnIncreasing, TrendingUp } from 'lucide-react';
 
 const QUICK_LINKS = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/search', icon: Search, label: 'Search creators' },
-  { to: '/rankings', icon: Trophy, label: 'Rankings' },
+  { to: '/rankings', icon: ChartNoAxesColumnIncreasing, label: 'Rankings' },
   { to: '/trending', icon: TrendingUp, label: 'Trending' },
 ];
 

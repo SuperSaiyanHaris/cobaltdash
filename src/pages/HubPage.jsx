@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Trophy, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ChartNoAxesColumnIncreasing, ArrowLeft } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
 import YouTubeIcon from '../components/YouTubeIcon';
 import { TableSkeleton } from '../components/Skeleton';
@@ -221,7 +221,7 @@ function Hub({ hub }) {
 
             {!loading && !error && creators.length === 0 && (
               <div className="px-6 py-16 text-center">
-                <Trophy className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                <ChartNoAxesColumnIncreasing className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
                 <p className="text-neutral-900 font-medium mb-1">No artists tracked here yet</p>
                 <p className="text-sm text-neutral-500">This category will fill in as data comes in</p>
               </div>

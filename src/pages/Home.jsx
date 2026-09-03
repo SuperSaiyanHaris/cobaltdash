@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, Trophy,
+  Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, ChartNoAxesColumnIncreasing,
   LineChart, DollarSign, Users, ChevronLeft, ChevronRight, Megaphone,
 } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
@@ -521,7 +521,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-amber-500" />
+                <ChartNoAxesColumnIncreasing className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-bold text-neutral-900">Top YouTubers</h3>
               </div>
               {updatedAt && (
@@ -954,7 +954,7 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
 });
 
 const FEATURES = [
-  { Icon: Trophy,     title: 'Live Rankings',       body: 'Updated daily, every platform',        to: '/rankings',                 accent: 'amber' },
+  { Icon: ChartNoAxesColumnIncreasing, title: 'Live Rankings', body: 'Updated daily, every platform', to: '/rankings', accent: 'amber' },
   { Icon: Search,     title: 'Universal Search',    body: 'Find any creator instantly', bodyDesktop: `${IS_MAC ? '⌘K' : 'Ctrl K'} from anywhere`, to: '/search', accent: 'indigo' },
   { Icon: Scale,      title: 'Head-to-Head Compare',body: 'Stack any two creators',                to: '/compare',                  accent: 'violet' },
   { Icon: TrendingUp, title: 'Trending This Month',  body: 'Catch growth before it peaks',          to: '/trending',                 accent: 'emerald' },

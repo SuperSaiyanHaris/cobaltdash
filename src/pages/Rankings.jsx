@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Eye, Trophy, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
+import { TrendingUp, Users, Eye, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -1100,7 +1100,7 @@ function PlatformRankings({ urlPlatform }) {
             {/* Empty State */}
             {!loading && !error && rankings.length === 0 && (
               <div className="px-6 py-16 text-center">
-                <Trophy className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
+                <ChartNoAxesColumnIncreasing className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
                 <p className="text-neutral-900 font-medium mb-1">No ranking data available yet</p>
                 <p className="text-sm text-neutral-500">Rankings will appear here once creators are tracked</p>
               </div>

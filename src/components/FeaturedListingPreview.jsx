@@ -16,7 +16,7 @@
 
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, ArrowRight } from 'lucide-react';
+import { ChartNoAxesColumnIncreasing, ArrowRight } from 'lucide-react';
 import PreviewRankingRow from './PreviewRankingRow';
 import { formatRelativeTimeShort } from '../lib/utils';
 
@@ -56,7 +56,7 @@ export default function FeaturedListingPreview({ topCreators = [], showCtas = tr
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-500" />
+            <ChartNoAxesColumnIncreasing className="w-4 h-4 text-amber-500" />
             <h3 className="text-sm font-bold text-neutral-900">Top YouTubers</h3>
           </div>
           {updatedAt && (

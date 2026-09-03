@@ -216,7 +216,7 @@ export const CATEGORY_THEME = {
   },
   'Rankings': {
     accent: 'yellow',
-    iconName: 'Trophy',
+    iconName: 'ChartNoAxesColumnIncreasing',
     chartHex: { bg: 'rgba(250,204,21,0.85)', border: 'rgba(250,204,21,1)' },
     h2Bar: 'bg-gradient-to-r from-yellow-400 to-amber-500',
     pill: 'bg-yellow-50 text-yellow-700 border border-yellow-200',

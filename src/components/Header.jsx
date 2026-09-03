@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Search, Trophy, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone } from 'lucide-react';
+import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
 
@@ -23,7 +23,7 @@ const moreLinks = [
 // The 3 primary destinations, always visible as a floating center pill on
 // desktop — same role as Ripit's Packs/Collection/Wallet center nav.
 const CENTER_NAV = [
-  { path: '/rankings',  label: 'Rankings',  icon: Trophy },
+  { path: '/rankings',  label: 'Rankings',  icon: ChartNoAxesColumnIncreasing },
   { path: '/compare',   label: 'Compare',   icon: Scale },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
@@ -262,23 +262,10 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* Mobile action buttons */}
+          {/* Mobile action buttons — Rankings and Search dropped 2026-09-02, both
+              already reachable via the hamburger's Quick access grid below, and
+              Search also lives in the new bottom tab bar (MobileBottomNav.jsx). */}
           <div className="md:hidden flex items-center gap-1">
-            <Link
-              to="/rankings"
-              className="p-2 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-              aria-label="Rankings"
-            >
-              <Trophy className="w-5 h-5" />
-            </Link>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
-              className="p-2 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5" />
-            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
@@ -324,7 +311,7 @@ export default function Header() {
                     }`}
                   >
                     <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
-                      <Trophy className="w-4 h-4 text-amber-500" />
+                      <ChartNoAxesColumnIncreasing className="w-4 h-4 text-amber-500" />
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-neutral-900 text-sm leading-tight">Rankings</p>

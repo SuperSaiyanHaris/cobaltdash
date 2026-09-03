@@ -230,7 +230,7 @@ function LayoutWrapper() {
   const isShareRoute = location.pathname.startsWith('/s/');
 
   return (
-    <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
       <RouteChangeTracker />
       <ScrollToTop />
       <BackToTop hasBottomNav={!isShareRoute} />
