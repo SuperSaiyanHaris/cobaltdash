@@ -82,7 +82,7 @@ export default function Header() {
   const isMoreActive = moreLinks.some(link => isActive(link.path));
 
   return (
-    <header ref={mobileMenuRef} className="bg-white/85 backdrop-blur-md border-b border-neutral-200 sticky top-0 z-50">
+    <header ref={mobileMenuRef} className="bg-white/85 backdrop-blur-md border-b border-neutral-900 sticky top-0 z-50">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
 
@@ -102,7 +102,7 @@ export default function Header() {
           {/* Center pill nav — the 3 primary destinations, floating and
               centered independent of logo/right-cluster width, same role as
               a lot of modern app headers' persistent utility nav. */}
-          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1 p-1 bg-white border border-neutral-200 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1 p-1 bg-white border border-neutral-900 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             {CENTER_NAV.map(({ path, label, icon: Icon }) => (
               <Link
                 key={path}
@@ -110,7 +110,7 @@ export default function Header() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   isActive(path)
                     ? 'bg-neutral-900 text-white'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                    : 'text-neutral-900 hover:bg-neutral-100'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -126,11 +126,11 @@ export default function Header() {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors group"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium text-neutral-900 hover:bg-neutral-100 transition-colors group"
               aria-label="Open command palette"
             >
               <Search className="w-4 h-4" />
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-white border border-neutral-200 rounded text-neutral-500">
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-white border border-neutral-900 rounded text-neutral-900">
                 {isMac ? <span className="text-xs leading-none">⌘</span> : 'Ctrl+'}K
               </kbd>
             </button>
@@ -139,10 +139,8 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  moreMenuOpen || isMoreActive
-                    ? 'bg-neutral-100 text-neutral-900'
-                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium text-neutral-900 transition-colors ${
+                  moreMenuOpen || isMoreActive ? 'bg-neutral-100' : 'hover:bg-neutral-100'
                 }`}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -192,7 +190,7 @@ export default function Header() {
             </div>
 
             {/* Auth section */}
-            <div className="ml-3 pl-3 border-l border-neutral-200">
+            <div className="ml-3 pl-3 border-l border-neutral-900">
               {isAuthenticated ? (
                 <div className="relative">
                   {(() => {
