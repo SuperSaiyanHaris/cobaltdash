@@ -59,7 +59,7 @@ export default function MobileBottomNav() {
     >
       <div className="relative" style={{ height: BAR_HEIGHT }}>
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none"
+          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
           viewBox={`0 0 390 ${BAR_HEIGHT}`}
           preserveAspectRatio="none"
           style={{ filter: 'drop-shadow(0 -3px 7px rgba(0,0,0,.08))' }}

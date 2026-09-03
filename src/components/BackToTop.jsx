@@ -37,12 +37,12 @@ export default function BackToTop({ hasBottomNav = false }) {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className={`fixed right-4 md:bottom-8 md:right-8 z-50 p-3 md:p-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full shadow-lg shadow-black/10 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 ${
-            hasBottomNav ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom)+0.75rem)]' : 'bottom-4'
+          className={`fixed right-4 md:bottom-8 md:right-8 z-50 p-2.5 md:p-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full shadow-lg shadow-black/10 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 ${
+            hasBottomNav ? 'bottom-[calc(102px+env(safe-area-inset-bottom)+1rem)]' : 'bottom-4'
           }`}
           aria-label="Back to top"
         >
-          <ArrowUp className="w-6 h-6" />
+          <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
         </button>
       )}
     </>
