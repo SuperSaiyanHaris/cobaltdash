@@ -9,23 +9,25 @@ import { useAuth } from '../contexts/AuthContext';
 // Curve + glow shape modeled on the PlayStation app's bottom bar (2026-09-02
 // design pass, see the mobile-nav-redesign artifact this was iterated from).
 // Both curves and every icon position below are computed from the same
-// quadratic bezier (edge y=20, control y=-20, so the visible peak sits at
-// y=0 at the horizontal center) — the bottom curve is the identical shape
+// quadratic bezier (edge y=10, control y=-30, so the visible peak sits at
+// y=-10 at the horizontal center) — the bottom curve is the identical shape
 // offset +46 on y, and each icon's vertical position is the midpoint between
 // the two curves at that icon's x, so the row visually arcs to fit the
 // channel instead of a flat row the curves cut across. Don't hand-tune any
 // of POSITIONS without recomputing from that same curve, they'll drift out
-// of alignment with the two <path> shapes below.
+// of alignment with the two <path> shapes below. Edge y is deliberately low
+// (10, not the ~20 an earlier pass used) so there's no dead white gap above
+// the curve at the left/right corners of the bar.
 const POSITIONS = [
-  { xPercent: 10, top: 25, gapBefore: 12 },
-  { xPercent: 30, top: 15, gapBefore: 90 },
-  { xPercent: 50, top: 12, gapBefore: 168 },
-  { xPercent: 70, top: 15, gapBefore: 246 },
-  { xPercent: 90, top: 25, gapBefore: 324 },
+  { xPercent: 10, top: 15, gapBefore: 12 },
+  { xPercent: 30, top: 5, gapBefore: 90 },
+  { xPercent: 50, top: 2, gapBefore: 168 },
+  { xPercent: 70, top: 5, gapBefore: 246 },
+  { xPercent: 90, top: 15, gapBefore: 324 },
 ];
-const BAR_HEIGHT = 112;
-const TOP_CURVE = 'M0,20 Q195,-20 390,20';
-const BOTTOM_CURVE = 'M0,66 Q195,26 390,66';
+const BAR_HEIGHT = 102;
+const TOP_CURVE = 'M0,10 Q195,-30 390,10';
+const BOTTOM_CURVE = 'M0,56 Q195,16 390,56';
 
 const NAV_ITEMS = [
   { path: '/rankings', label: 'Rankings', icon: ChartNoAxesColumnIncreasing, isActive: (p) => p.startsWith('/rankings') },
@@ -106,7 +108,7 @@ export default function MobileBottomNav() {
               aria-current={active ? 'page' : undefined}
               aria-label={item.label}
               className="absolute w-[22px] h-[22px] -translate-x-1/2"
-              style={{ left: `${pos.xPercent}%`, top: pos.top, color: active ? '#171717' : '#b0b0b0' }}
+              style={{ left: `${pos.xPercent}%`, top: pos.top, color: active ? '#a855f7' : '#171717' }}
             >
               <Icon className="w-full h-full" />
             </Link>
@@ -116,7 +118,7 @@ export default function MobileBottomNav() {
         {activePos && (
           <span
             className="absolute -translate-x-1/2 text-[10px] font-bold text-neutral-900 whitespace-nowrap"
-            style={{ left: '50%', top: 74 }}
+            style={{ left: '50%', top: 64 }}
           >
             {items[activeIndex].label}
           </span>
