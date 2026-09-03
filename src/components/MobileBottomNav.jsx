@@ -1,39 +1,45 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ChartNoAxesColumnIncreasing, Scale, LayoutDashboard, User, Search } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search } from 'lucide-react';
 
-// Global mobile tab bar — the 3 primary destinations plus account and search,
-// always reachable with one tap. Desktop keeps its own center pill nav
-// (Header.jsx's CENTER_NAV); this is the mobile-only equivalent.
+// Global mobile tab bar — Dashboard, Compare, Rankings, Blog, Search, always
+// reachable with one tap. Desktop keeps its own center pill nav (Header.jsx's
+// CENTER_NAV); this is the mobile-only equivalent. Order was set explicitly
+// by the user 2026-09-02 (left to right: Dashboard, Compare, Rankings, Blog,
+// Search) — don't reorder or swap icons without being asked again.
 //
 // Curve + glow shape modeled on the PlayStation app's bottom bar (2026-09-02
 // design pass, see the mobile-nav-redesign artifact this was iterated from).
 // Both curves and every icon position below are computed from the same
 // quadratic bezier (edge y=0, control y=-40, so the visible peak sits at
 // y=-20 at the horizontal center) — the bottom curve is the identical shape
-// offset +46 on y, and each icon's vertical position is the midpoint between
-// the two curves at that icon's x, so the row visually arcs to fit the
-// channel instead of a flat row the curves cut across. Don't hand-tune any
-// of POSITIONS without recomputing from that same curve, they'll drift out
-// of alignment with the two <path> shapes below. Edge y is 0 — not some
-// small-but-nonzero value — so the white fill touches the very top-left/
-// top-right corners of the bar with zero gap; the svg needs overflow-visible
-// (below) since the peak goes negative, above the nominal viewBox.
+// offset +66 on y (pushed down further on 2026-09-02 to give the larger
+// icons more breathing room), and each icon's vertical position is the
+// midpoint between the two curves at that icon's x, so the row visually
+// arcs to fit the channel instead of a flat row the curves cut across.
+// Don't hand-tune any of POSITIONS without recomputing from that same
+// curve, they'll drift out of alignment with the two <path> shapes below.
+// Edge y is 0 — not some small-but-nonzero value — so the white fill
+// touches the very top-left/top-right corners of the bar with zero gap;
+// the svg needs overflow-visible (below) since the peak goes negative,
+// above the nominal viewBox.
+const ICON_SIZE = 24; // ~10% up from the original 22px (2026-09-02)
 const POSITIONS = [
-  { xPercent: 10, top: 5, gapBefore: 12 },
-  { xPercent: 30, top: -5, gapBefore: 90 },
-  { xPercent: 50, top: -8, gapBefore: 168 },
-  { xPercent: 70, top: -5, gapBefore: 246 },
-  { xPercent: 90, top: 5, gapBefore: 324 },
+  { xPercent: 10, top: 14, gapBefore: 12 },
+  { xPercent: 30, top: 4, gapBefore: 90 },
+  { xPercent: 50, top: 1, gapBefore: 168 },
+  { xPercent: 70, top: 4, gapBefore: 246 },
+  { xPercent: 90, top: 14, gapBefore: 324 },
 ];
-const BAR_HEIGHT = 92;
+const BAR_HEIGHT = 112;
 const TOP_CURVE = 'M0,0 Q195,-40 390,0';
-const BOTTOM_CURVE = 'M0,46 Q195,6 390,46';
+const BOTTOM_CURVE = 'M0,66 Q195,26 390,66';
 
 const NAV_ITEMS = [
-  { path: '/rankings', label: 'Rankings', icon: ChartNoAxesColumnIncreasing, isActive: (p) => p.startsWith('/rankings') },
-  { path: '/compare', label: 'Compare', icon: Scale, isActive: (p) => p === '/compare' },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, isActive: (p) => p === '/dashboard' },
+  { path: '/compare', label: 'Compare', icon: Scale, isActive: (p) => p === '/compare' },
+  { path: '/rankings', label: 'Rankings', icon: ChartNoAxesColumnIncreasing, isActive: (p) => p.startsWith('/rankings') },
+  { path: '/blog', label: 'Blog', icon: BookOpen, isActive: (p) => p.startsWith('/blog') },
+  { path: '/search', label: 'Search', icon: Search, isActive: (p) => p === '/search' },
 ];
 
 // Broader than NAV_ITEMS: this drives the floating page-name label only, not
@@ -72,17 +78,8 @@ const PAGE_LABELS = [
 
 export default function MobileBottomNav() {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
 
-  const youItem = {
-    path: isAuthenticated ? '/account' : '/auth/sign-in',
-    label: 'You',
-    icon: User,
-    isActive: (p) => p === '/account' || p.startsWith('/auth/'),
-  };
-  const searchItem = { path: '/search', label: 'Search', icon: Search, isActive: (p) => p === '/search' };
-
-  const items = [...NAV_ITEMS, youItem, searchItem];
+  const items = NAV_ITEMS;
   const activeIndex = items.findIndex((item) => item.isActive(location.pathname));
   const activePos = activeIndex >= 0 ? POSITIONS[activeIndex] : null;
   const pageLabel = PAGE_LABELS.find((entry) => entry.isActive(location.pathname))?.label ?? null;
@@ -143,8 +140,14 @@ export default function MobileBottomNav() {
               to={item.path}
               aria-current={active ? 'page' : undefined}
               aria-label={item.label}
-              className="absolute w-[22px] h-[22px] -translate-x-1/2"
-              style={{ left: `${pos.xPercent}%`, top: pos.top, color: active ? '#a855f7' : '#171717' }}
+              className="absolute -translate-x-1/2"
+              style={{
+                left: `${pos.xPercent}%`,
+                top: pos.top,
+                width: ICON_SIZE,
+                height: ICON_SIZE,
+                color: active ? '#a855f7' : '#171717',
+              }}
             >
               <Icon className="w-full h-full" />
             </Link>
@@ -153,8 +156,8 @@ export default function MobileBottomNav() {
 
         {pageLabel && (
           <span
-            className="absolute -translate-x-1/2 text-[10px] font-bold text-neutral-900 whitespace-nowrap"
-            style={{ left: '50%', top: 54 }}
+            className="absolute -translate-x-1/2 text-[12.5px] font-bold text-neutral-900 whitespace-nowrap"
+            style={{ left: '50%', top: 74 }}
           >
             {pageLabel}
           </span>
