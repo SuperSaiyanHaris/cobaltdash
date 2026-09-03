@@ -269,7 +269,7 @@ h1, h2, h3, h4 {
 .animate-marquee:hover { animation-play-state: paused; }
 /* Home hero creator showcase — bigger, richer cards than a plain ticker read
    as rushed at the standard 120s pace, so this one drifts slower. */
-.animate-marquee-slow       { animation: marquee-x 220s linear infinite; }
+.animate-marquee-slow       { animation: marquee-x 286s linear infinite; }
 .animate-marquee-slow:hover { animation-play-state: paused; }
 
 /* Auth-page showcase: columns of creator cards drift vertically. The inner list

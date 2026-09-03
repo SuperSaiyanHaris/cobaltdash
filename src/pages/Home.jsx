@@ -107,7 +107,7 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
 
   useEffect(() => {
     if (reduceMotion) return;
-    const id = setInterval(() => setIdx((i) => (i + 1) % HEADLINE_ROTATIONS.length), 2400);
+    const id = setInterval(() => setIdx((i) => (i + 1) % HEADLINE_ROTATIONS.length), 3120);
     return () => clearInterval(id);
   }, [reduceMotion]);
 
