@@ -82,7 +82,7 @@ export default function Header() {
   const isMoreActive = moreLinks.some(link => isActive(link.path));
 
   return (
-    <header ref={mobileMenuRef} className="bg-white/85 backdrop-blur-md border-b border-neutral-900 sticky top-0 z-50">
+    <header ref={mobileMenuRef} className="bg-white/85 backdrop-blur-md sticky top-0 z-50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
 
