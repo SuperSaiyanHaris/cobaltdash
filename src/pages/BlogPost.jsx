@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Calendar, Clock, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, ArrowRight, Loader2, PenLine } from 'lucide-react';
 import SEO from '../components/SEO';
 import NewsletterSignup from '../components/NewsletterSignup';
 import StructuredData, { createBlogPostingSchema, createBreadcrumbSchema } from '../components/StructuredData';
@@ -203,7 +203,9 @@ export default function BlogPost() {
                   <Clock className="w-4 h-4" />
                   {post.read_time}
                 </span>
-                <span>By {post.author}</span>
+                <Link to="/about#editorial-team" className="hover:text-neutral-900 underline-offset-2 hover:underline">
+                  By {post.author}
+                </Link>
 
                 {/* Share Buttons */}
                 <div className="ml-auto">
@@ -217,6 +219,21 @@ export default function BlogPost() {
 
               {/* Content */}
               <BlogContent content={post.content} category={post.category} />
+
+              {/* Author box — a real editorial-team trust signal, not a data
+                  disclaimer. Links to the About page's Who Writes This section. */}
+              <div className="mt-10 pt-6 border-t border-neutral-200 flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg border bg-indigo-50 text-indigo-600 border-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <PenLine className="w-4 h-4" />
+                </div>
+                <p className="text-sm text-neutral-600 leading-relaxed">
+                  <span className="font-semibold text-neutral-900">Written by {post.author}.</span>{' '}
+                  Every number above is pulled fresh from our own database before publishing.{' '}
+                  <Link to="/about#editorial-team" className="text-indigo-600 hover:text-indigo-700 font-medium underline-offset-2 hover:underline">
+                    More about how we work.
+                  </Link>
+                </p>
+              </div>
             </div>
           </article>
 

@@ -1,6 +1,6 @@
 import SEO from '../components/SEO';
 import { Link } from 'react-router-dom';
-import { BarChart3, Users, TrendingUp, Globe, Database, RefreshCw } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, Globe, Database, RefreshCw, PenLine } from 'lucide-react';
 
 export default function About() {
   return (
@@ -48,6 +48,24 @@ export default function About() {
             <p className="text-neutral-700 leading-relaxed">
               The result is a site that collects data multiple times per day, stores every snapshot, and presents it without editorializing. Subscriber counts are shown exactly as the platform provides them. We note known limitations (like YouTube's rounding policy) but we don't hide them or pretend they don't exist. The goal is transparency, not flattery.
             </p>
+          </div>
+
+          <div id="editorial-team" className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6 scroll-mt-24">
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">Who Writes This</h2>
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-lg border bg-indigo-50 text-indigo-600 border-indigo-100 flex items-center justify-center flex-shrink-0">
+                <PenLine className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-neutral-900 mb-2">ShinyPull Data Team</p>
+                <p className="text-neutral-700 mb-4 leading-relaxed">
+                  Blog posts and creator write-ups are put together by the same team that runs the daily collection behind every chart on this site. Every number in a post is pulled fresh from our own database before it's published, not copied from someone else's coverage.
+                </p>
+                <p className="text-neutral-700 leading-relaxed">
+                  We publish under a team byline instead of an individual name because posts are built from the data pipeline itself as the primary source, not framed as personal commentary. Same numbers you'd find by checking a creator's own profile page here.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 mb-6">
