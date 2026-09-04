@@ -27,7 +27,7 @@ const TABS = [
   { id: 'security', label: 'Security', icon: Shield },
 ];
 
-const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
 const TIER_PRICE = { basic: 49, premium: 149 };
 const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
 const PLATFORM_ICONS = {

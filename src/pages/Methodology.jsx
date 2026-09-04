@@ -7,7 +7,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 
@@ -73,15 +72,6 @@ const platforms = [
     ],
   },
   {
-    icon: RumbleIcon,
-    name: 'Rumble',
-    tint: 'text-lime-600',
-    metrics: ['Follower count', 'Video count'],
-    notes: [
-      'Rumble does not make a channel-level total view count public, so we track followers and video count only.',
-    ],
-  },
-  {
     icon: SubstackIcon,
     name: 'Substack',
     tint: 'text-orange-500',
@@ -133,7 +123,7 @@ export default function Methodology() {
     <>
       <SEO
         title="Data Methodology"
-        description="How ShinyPull presents publicly available creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music, with daily snapshots and real historical data."
+        description="How ShinyPull presents publicly available creator statistics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music, with daily snapshots and real historical data."
       />
 
       <div className="min-h-screen bg-[#fafaf9]">

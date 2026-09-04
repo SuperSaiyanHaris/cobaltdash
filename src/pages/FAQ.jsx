@@ -11,7 +11,7 @@ const faqs = [
     questions: [
       {
         q: 'What is ShinyPull?',
-        a: 'ShinyPull tracks publicly available statistics for content creators and artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music. We present public metrics like subscriber, follower, and listener counts as daily charts and historical trends. Think of it as a stats tracker for the creator economy.',
+        a: 'ShinyPull tracks publicly available statistics for content creators and artists across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music. We present public metrics like subscriber, follower, and listener counts as daily charts and historical trends. Think of it as a stats tracker for the creator economy.',
       },
       {
         q: 'Is ShinyPull free?',
@@ -19,7 +19,7 @@ const faqs = [
       },
       {
         q: 'What is the Trending page?',
-        a: 'The Trending page shows the fastest growing creators on each platform over the last 30 days. Each platform uses the metric that best reflects real growth: view count growth for YouTube (since subscriber counts are rounded by policy), follower growth for TikTok, Bluesky, Mastodon, and Rumble, hours watched growth for Twitch, paid subscriber growth for Kick, and monthly listener growth for Music.',
+        a: 'The Trending page shows the fastest growing creators on each platform over the last 30 days. Each platform uses the metric that best reflects real growth: view count growth for YouTube (since subscriber counts are rounded by policy), follower growth for TikTok, Bluesky, and Mastodon, hours watched growth for Twitch, paid subscriber growth for Kick, and monthly listener growth for Music.',
       },
       {
         q: 'What makes ShinyPull different from other stats trackers?',
@@ -80,10 +80,6 @@ const faqs = [
         a: 'We track follower count and post count for Mastodon accounts. Mastodon is decentralized, so handles include the instance (for example, user@mastodon.social). It has no profile-level view counts.',
       },
       {
-        q: 'What does Rumble track?',
-        a: 'We track follower count and video count for Rumble channels from publicly available information. Rumble does not make a channel-level total view count public, so we do not show total views.',
-      },
-      {
         q: 'What does Substack track?',
         a: 'We track subscriber reach for Substack newsletters. Substack makes subscriber counts public as approximate ranges rather than exact numbers, so the figure shown is an approximate minimum.',
       },
@@ -98,7 +94,7 @@ const faqs = [
     questions: [
       {
         q: 'How do I add a creator to ShinyPull?',
-        a: 'Search for the creator by username on our search page. For YouTube, Twitch, Kick, Bluesky, Mastodon, and Rumble, the profile is fetched and added automatically when you search. For TikTok, you can submit a request if no result is found, and it will be processed within 24 hours.',
+        a: 'Search for the creator by username on our search page. For YouTube, Twitch, Kick, Bluesky, and Mastodon, the profile is fetched and added automatically when you search. For TikTok, you can submit a request if no result is found, and it will be processed within 24 hours.',
       },
       {
         q: 'How do I follow a creator?',

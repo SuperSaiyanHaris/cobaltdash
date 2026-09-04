@@ -130,7 +130,7 @@ export default function Promote() {
     <>
       <SEO
         title="Featured Listings: Promote Your Creators on ShinyPull"
-        description="Get your creator featured in our daily rankings. $49/mo for visibility across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music rankings. Premium slots from $149/mo."
+        description="Get your creator featured in our daily rankings. $49/mo for visibility across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music rankings. Premium slots from $149/mo."
         keywords="creator promotion, sponsored ranking, featured listing, B2B creator marketing, talent promotion, agency tools"
       />
 

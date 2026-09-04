@@ -20,7 +20,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const PLATFORMS = ['tiktok', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+// Rumble was delisted 2026-09-04 (permanently Cloudflare-blocked, see CLAUDE.md)
+// and dropped from here — no reason to keep spending a refresh cycle on a
+// platform with no UI path to it. Its rankings_cache rows just go stale in
+// place; harmless, since nothing but a direct-URL visit reads them anymore.
+const PLATFORMS = ['tiktok', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
 
 console.log('🏆 Refreshing rankings cache (per-platform)...');
 const totalStart = Date.now();

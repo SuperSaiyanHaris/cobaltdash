@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     // through to their profile (see the comment above handleRequestCreator
     // in Search.jsx). Only DB-only-search platforms need this queue, and
     // processCreatorRequests.js only has a handler for these four.
-    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'rumble', 'mastodon', 'substack'];
+    const validPlatforms = instant ? ['tiktok'] : ['tiktok', 'mastodon', 'substack'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: instant ? 'Instant lookup is only supported for TikTok' : 'Invalid platform' });
     }

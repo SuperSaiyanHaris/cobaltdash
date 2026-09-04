@@ -90,7 +90,7 @@ export default async function handler(req, res) {
       }
 
       // Validate platform is a known value
-      const validPlatforms = ['youtube', 'twitch', 'kick', 'tiktok', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+      const validPlatforms = ['youtube', 'twitch', 'kick', 'tiktok', 'bluesky', 'music', 'mastodon', 'substack'];
       if (!validPlatforms.includes(creatorData.platform)) {
         return res.status(400).json({ error: 'Invalid platform' });
       }

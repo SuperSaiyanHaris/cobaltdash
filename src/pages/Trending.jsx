@@ -8,7 +8,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import { getRankedCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -25,7 +24,6 @@ const PLATFORMS = [
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, tint: 'text-sky-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
   { id: 'music', name: 'Music', icon: Music, tint: 'text-amber-500', followerLabel: 'listeners', growthLabel: 'listeners gained', growthNote: 'Monthly listener growth. Reflects how many more unique listeners an artist reached this month vs. last.' },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, tint: 'text-violet-500', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
-  { id: 'rumble', name: 'Rumble', icon: RumbleIcon, tint: 'text-lime-600', followerLabel: 'followers', growthLabel: 'followers gained', growthNote: null },
 ];
 
 export default function Trending() {

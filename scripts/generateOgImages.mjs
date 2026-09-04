@@ -87,7 +87,7 @@ async function card({ eyebrow, headline, sub, accent = '#a5b4fc' }) {
 // Amber on `promote` is deliberate: it is this site's one functional colour for
 // the Premium tier, so the Featured Listings card breaks the family on purpose.
 const CARDS = {
-  home:       { eyebrow: 'Creator analytics',   headline: ['Track any creator.', 'Across 9 platforms.'], sub: 'Live subscriber and follower counts. Updated daily.' },
+  home:       { eyebrow: 'Creator analytics',   headline: ['Track any creator.', 'Across 8 platforms.'], sub: 'Live subscriber and follower counts. Updated daily.' },
   rankings:   { eyebrow: 'Live rankings',       headline: ['Who’s actually #1.'],                    sub: 'Top creators on every platform, ranked daily.' },
   compare:    { eyebrow: 'Head to head',        headline: ['Two creators.', 'One scoreboard.'],          sub: 'Compare growth, reach and totals side by side.' },
   trending:   { eyebrow: 'Trending now',        headline: ['Who’s moving', 'right now.'],            sub: 'The fastest growing creators this week.' },

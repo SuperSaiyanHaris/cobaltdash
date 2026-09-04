@@ -8,7 +8,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import MusicIcon from '../components/MusicIcon';
 import { TableSkeleton } from '../components/Skeleton';
@@ -22,7 +21,7 @@ import StructuredData from '../components/StructuredData';
 import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
 import { supabase } from '../lib/supabase';
-import { PLATFORM_COUNT } from '../lib/constants';
+import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import CountUp from '../components/CountUp';
 import logger from '../lib/logger';
 
@@ -38,7 +37,6 @@ const platforms = [
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon,  tint: 'text-sky-500',     bar: 'bg-sky-500',    heroBg: 'bg-sky-50/70',     available: true },
   { id: 'music',   name: 'Music',   icon: MusicIcon,        tint: 'text-amber-500',   bar: 'bg-amber-500',  heroBg: 'bg-amber-50/70',   available: true },
   { id: 'mastodon',name: 'Mastodon',icon: MastodonIcon, tint: 'text-violet-500',  bar: 'bg-violet-500', heroBg: 'bg-violet-50/70',  available: true },
-  { id: 'rumble',  name: 'Rumble',  icon: RumbleIcon,   tint: 'text-lime-600',    bar: 'bg-lime-600',   heroBg: 'bg-lime-50/70',    available: true },
   { id: 'substack',name: 'Substack',icon: SubstackIcon, tint: 'text-orange-500',  bar: 'bg-orange-500', heroBg: 'bg-orange-50/70',  available: true },
 ];
 
@@ -889,7 +887,21 @@ function PlatformRankings({ urlPlatform }) {
   // Full literal class strings (not interpolated) so Tailwind's JIT emits them.
   const creatorColSpanHeader = secondaryCol ? 'col-span-4' : 'col-span-5';
   const creatorColSpanRow = secondaryCol ? 'md:col-span-4' : 'md:col-span-5';
-  const currentPlatform = platforms.find(p => p.id === selectedPlatform);
+  // Delisted platforms (currently just Rumble) are removed from the `platforms`
+  // tab array so they're not clickable/promoted, but their existing rankings
+  // page is deliberately still reachable by direct URL with real (if frozen)
+  // data — so this falls back to a minimal object instead of leaving
+  // currentPlatform undefined, which would otherwise render "undefined"
+  // strings into the H1/FAQ and silently mismatch SEO copy to another platform.
+  const currentPlatform = platforms.find(p => p.id === selectedPlatform) || (selectedPlatform ? {
+    id: selectedPlatform,
+    name: PLATFORM_DISPLAY_NAMES[selectedPlatform] || selectedPlatform,
+    icon: null,
+    tint: '',
+    bar: 'bg-neutral-400',
+    heroBg: 'bg-neutral-50/70',
+    available: false,
+  } : undefined);
   const platformHubs = getHubsByPlatform(selectedPlatform);
   const seoData = getSeoData(currentPlatform, selectedRankType, topCount);
   const listSchema = createRankingListSchema(rankings, currentPlatform, topCount);

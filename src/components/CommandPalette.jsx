@@ -13,7 +13,6 @@ import KickIcon from './KickIcon';
 import TikTokIcon from './TikTokIcon';
 import BlueskyIcon from './BlueskyIcon';
 import MastodonIcon from './MastodonIcon';
-import RumbleIcon from './RumbleIcon';
 import SubstackIcon from './SubstackIcon';
 import CreatorAvatar from './CreatorAvatar';
 import { searchCreators } from '../services/creatorService';
@@ -27,7 +26,6 @@ const PLATFORM_ICONS = {
   bluesky: { Icon: BlueskyIcon, color: 'text-sky-400' },
   music: { Icon: MusicIcon, color: 'text-amber-400' },
   mastodon: { Icon: MastodonIcon, color: 'text-violet-500' },
-  rumble: { Icon: RumbleIcon, color: 'text-lime-600' },
   substack: { Icon: SubstackIcon, color: 'text-orange-600' },
 };
 
@@ -51,7 +49,6 @@ const PLATFORM_LINKS = [
   { label: 'Bluesky rankings',  to: '/rankings/bluesky',  Icon: BlueskyIcon, color: 'text-sky-400'    },
   { label: 'Music rankings',    to: '/rankings/music',    Icon: MusicIcon,    color: 'text-amber-400'  },
   { label: 'Mastodon rankings', to: '/rankings/mastodon', Icon: MastodonIcon, color: 'text-violet-500' },
-  { label: 'Rumble rankings',   to: '/rankings/rumble',   Icon: RumbleIcon,    color: 'text-lime-600' },
   { label: 'Substack rankings', to: '/rankings/substack', Icon: SubstackIcon,  color: 'text-orange-600' },
 ];
 

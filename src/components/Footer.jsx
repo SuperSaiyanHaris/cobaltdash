@@ -8,7 +8,6 @@ import KickIcon from './KickIcon';
 import TikTokIcon from './TikTokIcon';
 import BlueskyIcon from './BlueskyIcon';
 import MastodonIcon from './MastodonIcon';
-import RumbleIcon from './RumbleIcon';
 import SubstackIcon from './SubstackIcon';
 
 const FEATURE_LINKS = [
@@ -30,7 +29,6 @@ const PLATFORM_LINKS = [
   ['/rankings/bluesky',  'Bluesky',  BlueskyIcon],
   ['/rankings/music',    'Music',    MusicIcon],
   ['/rankings/mastodon', 'Mastodon', MastodonIcon],
-  ['/rankings/rumble',   'Rumble',   RumbleIcon],
   ['/rankings/substack', 'Substack', SubstackIcon],
 ];
 
@@ -69,7 +67,7 @@ export default function Footer() {
               <span aria-hidden="true" className="inline-block w-[5px] h-[19px] rounded-[2px] -ml-px bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
             </Link>
             <p className="text-sm text-neutral-600 leading-relaxed max-w-sm">
-              Creator analytics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music. Updated daily.
+              Creator analytics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music. Updated daily.
             </p>
 
             {/* CTA — Get featured */}

@@ -277,7 +277,7 @@ export default function BlogPost() {
               Track any creator's growth.
             </h2>
             <p className="text-sm text-neutral-500 mb-6 max-w-md mx-auto">
-              Daily subscriber and follower counts across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music.
+              Daily subscriber and follower counts across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music.
             </p>
             <Link
               to="/search"

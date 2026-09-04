@@ -42,7 +42,6 @@ const staticPages = [
   { url: '/rankings/bluesky', lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/rankings/music',   lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/rankings/mastodon',lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
-  { url: '/rankings/rumble',  lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/rankings/substack',lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/best', lastmod: TODAY, changefreq: 'weekly', priority: 0.85 },
   // One entry per hub, generated from the shared taxonomy so a new hub can

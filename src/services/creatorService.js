@@ -564,7 +564,7 @@ export const getShowcaseCreators = withErrorHandling(
       .from('rankings_cache')
       .select('creator_id, platform, username, display_name, profile_image, subscribers')
       .eq('rank_type', 'subscribers')
-      .in('platform', ['youtube', 'twitch', 'tiktok', 'kick', 'bluesky', 'music', 'rumble'])
+      .in('platform', ['youtube', 'twitch', 'tiktok', 'kick', 'bluesky', 'music'])
       .lte('rank_position', perPlatform);
     if (error) throw error;
     return (data || []).map((c) => ({ ...c, id: c.creator_id }));

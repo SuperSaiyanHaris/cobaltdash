@@ -7,7 +7,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import { CreatorRowSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
@@ -34,7 +33,6 @@ const platformIcons = {
   bluesky: BlueskyIcon,
   music: MusicIcon,
   mastodon: MastodonIcon,
-  rumble: RumbleIcon,
   substack: SubstackIcon,
 };
 
@@ -47,7 +45,6 @@ const platformTint = {
   bluesky: 'text-sky-500',
   music: 'text-amber-500',
   mastodon: 'text-violet-500',
-  rumble: 'text-lime-600',
   substack: 'text-orange-500',
   instagram: 'text-pink-500',
 };
@@ -64,7 +61,6 @@ const platforms = [
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, available: true },
   { id: 'music', name: 'Music', icon: MusicIcon, available: true },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, available: true },
-  { id: 'rumble', name: 'Rumble', icon: RumbleIcon, available: true },
   { id: 'substack', name: 'Substack', icon: SubstackIcon, available: true },
 ];
 
@@ -278,7 +274,7 @@ async function mergeSearchSources(apiPromise, dbPromise, platformLabel) {
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
-  const validPlatforms = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack'];
+  const validPlatforms = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
   const initialPlatform = validPlatforms.includes(searchParams.get('platform')) ? searchParams.get('platform') : 'youtube';
   const [selectedPlatform, setSelectedPlatform] = useState(initialPlatform);
   const [results, setResults] = useState([]);

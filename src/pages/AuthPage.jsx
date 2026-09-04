@@ -9,23 +9,22 @@ import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SEO from '../components/SEO';
 import { getShowcaseCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
-import { PLATFORM_ACCENTS } from '../lib/constants';
+import { PLATFORM_ACCENTS, PLATFORM_COUNT } from '../lib/constants';
 
 const PLATFORM_ICONS = {
   youtube: YouTubeIcon, twitch: TwitchIcon, kick: KickIcon, tiktok: TikTokIcon,
-  bluesky: BlueskyIcon, rumble: RumbleIcon, music: MusicIcon,
+  bluesky: BlueskyIcon, music: MusicIcon,
 };
 const PLATFORM_TINT = {
   youtube: '', twitch: '', kick: 'text-green-600',
-  tiktok: 'text-pink-500', bluesky: 'text-sky-500', rumble: 'text-lime-600', music: 'text-amber-500',
+  tiktok: 'text-pink-500', bluesky: 'text-sky-500', music: 'text-amber-500',
 };
 const METRIC = {
   youtube: 'subscribers', twitch: 'followers', kick: 'paid subs', tiktok: 'followers',
-  bluesky: 'followers', rumble: 'followers', music: 'monthly listeners',
+  bluesky: 'followers', music: 'monthly listeners',
 };
 
 function ShowcaseCard({ c }) {
@@ -102,7 +101,7 @@ export default function AuthPage({ initialMode = 'signin' }) {
     <>
       <SEO
         title={mode === 'signup' ? 'Sign Up' : 'Sign In'}
-        description="Sign in to ShinyPull to follow creators, build a personal dashboard, and save comparisons across nine platforms."
+        description="Sign in to ShinyPull to follow creators, build a personal dashboard, and save comparisons across eight platforms."
         noindex
       />
 
@@ -137,7 +136,7 @@ export default function AuthPage({ initialMode = 'signin' }) {
                style={{ background: 'radial-gradient(60% 50% at 80% 15%, rgba(99,102,241,0.18), transparent 60%), radial-gradient(50% 50% at 15% 85%, rgba(217,70,239,0.15), transparent 60%)' }} />
 
           <div className="absolute top-10 left-10 right-10 z-10">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-300">Live across 9 platforms</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-300">Live across {PLATFORM_COUNT} platforms</p>
             <p className="mt-2 text-2xl font-bold text-white leading-snug max-w-sm">The creators everyone is watching, updated every day.</p>
           </div>
 

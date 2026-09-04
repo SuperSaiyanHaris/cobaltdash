@@ -116,12 +116,22 @@ export const BLOG_CATEGORIES = [
   'Rankings',
 ];
 
-// Platform identifiers — single source of truth.
+// Platform identifiers — single source of truth for ACTIVE platforms only.
 //
 // When adding a new platform, append its id here. Anywhere in the codebase
 // that displays a platform count should import PLATFORM_COUNT instead of
 // hardcoding 6/7/8/etc. Stale counts have shipped to production three times
 // because the number was hardcoded in two separate places.
+//
+// Rumble was removed from this list 2026-09-04 (delisted from nav/search/
+// discovery — its data collection is permanently Cloudflare-blocked from
+// every runtime we have, see CLAUDE.md). It deliberately stays OUT of this
+// array so PLATFORM_COUNT and every "active platform" grid/tab drop to 8.
+// It deliberately stays IN the three lookup maps below (display name, accent
+// color, legacy enum) because those are consumed with `|| platform` fallbacks
+// by pages rendering the 117 already-tracked Rumble creators' existing
+// profile/share pages, which are intentionally left live and should still
+// show a real "Rumble" label, not a raw lowercase id.
 export const PLATFORM_IDS = [
   'youtube',
   'tiktok',
@@ -130,7 +140,6 @@ export const PLATFORM_IDS = [
   'bluesky',
   'music',
   'mastodon',
-  'rumble',
   'substack',
 ];
 

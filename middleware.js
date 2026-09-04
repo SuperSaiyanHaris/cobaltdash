@@ -93,7 +93,7 @@ const SECONDARY_METRICS = {
   music:    ['total_views', 'total plays'],
 };
 
-const ALL_PLATFORM_LIST = 'YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music';
+const ALL_PLATFORM_LIST = 'YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music';
 
 const SITE_URL = 'https://shinypull.com';
 
@@ -919,7 +919,7 @@ function getMeta(pathname, searchParams) {
     '/terms':        { title: 'Terms of Service - ShinyPull',    description: "ShinyPull's terms of service." },
     '/reset-password': { title: 'Reset Password - ShinyPull',    description: 'Reset your ShinyPull account password.', noindex: true },
     '/auth/sign-in':   { title: 'Sign In - ShinyPull',           description: 'Sign in to ShinyPull to follow creators and build a personal dashboard.', noindex: true },
-    '/auth/sign-up':   { title: 'Sign Up - ShinyPull',           description: 'Create a free ShinyPull account to follow creators across nine platforms.', noindex: true },
+    '/auth/sign-up':   { title: 'Sign Up - ShinyPull',           description: 'Create a free ShinyPull account to follow creators across eight platforms.', noindex: true },
   };
   if (staticPages[pathname]) return staticPages[pathname];
 

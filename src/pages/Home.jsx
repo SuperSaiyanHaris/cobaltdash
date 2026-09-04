@@ -12,7 +12,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { getAllPosts } from '../services/blogService';
@@ -37,7 +36,6 @@ const PLATFORMS = [
   { id: 'bluesky',  name: 'Bluesky',  Icon: BlueskyIcon,  accent: PLATFORM_ACCENTS.bluesky },
   { id: 'music',    name: 'Music',    Icon: MusicIcon,    accent: PLATFORM_ACCENTS.music },
   { id: 'mastodon', name: 'Mastodon', Icon: MastodonIcon, accent: PLATFORM_ACCENTS.mastodon },
-  { id: 'rumble',   name: 'Rumble',   Icon: RumbleIcon,   accent: PLATFORM_ACCENTS.rumble },
   { id: 'substack', name: 'Substack', Icon: SubstackIcon, accent: PLATFORM_ACCENTS.substack },
 ];
 
@@ -53,7 +51,6 @@ const HEADLINE_ROTATIONS = [
   { word: 'Bluesky poster',   color: PLATFORM_ACCENTS.bluesky },
   { word: 'Musician',         color: PLATFORM_ACCENTS.music },
   { word: 'Mastodon poster',  color: PLATFORM_ACCENTS.mastodon },
-  { word: 'Rumble creator',   color: PLATFORM_ACCENTS.rumble },
   { word: 'Substack writer',  color: PLATFORM_ACCENTS.substack },
 ];
 
@@ -66,7 +63,6 @@ const TOP_CARD_META = [
   { platform: 'bluesky',  label: 'Bluesky',         metric: 'followers' },
   { platform: 'music',    label: 'Artist',          metric: 'monthly listeners' },
   { platform: 'mastodon', label: 'Mastodon',        metric: 'followers' },
-  { platform: 'rumble',   label: 'Rumble',          metric: 'followers' },
   { platform: 'substack', label: 'Substack',        metric: 'subscribers' },
 ];
 
@@ -1048,7 +1044,7 @@ export default function Home() {
     <>
       <SEO
         title="Home"
-        description="Creator analytics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, and Music. Real-time subscriber counts, follower growth, earnings estimates, and rankings updated daily."
+        description="Creator analytics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, and Music. Real-time subscriber counts, follower growth, earnings estimates, and rankings updated daily."
         keywords="youtube statistics, tiktok statistics, twitch statistics, kick statistics, subscriber count, follower count, creator analytics"
       />
 

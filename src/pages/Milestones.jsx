@@ -26,10 +26,15 @@ const PLATFORMS = [
   { id: 'bluesky', name: 'Bluesky', icon: BlueskyIcon, tint: 'text-sky-500', metric: 'followers' },
   { id: 'music', name: 'Music', icon: MusicIcon, tint: 'text-amber-500', metric: 'listeners' },
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, tint: 'text-violet-500', metric: 'followers' },
-  { id: 'rumble', name: 'Rumble', icon: RumbleIcon, tint: 'text-lime-600', metric: 'followers' },
   { id: 'substack', name: 'Substack', icon: SubstackIcon, tint: 'text-orange-600', metric: 'subscribers' },
 ];
-const PLATFORM_LOOKUP = Object.fromEntries(PLATFORMS.map((p) => [p.id, p]));
+// Includes delisted platforms (Rumble) so an already-recorded milestone row
+// for one still renders with a real icon/label instead of nothing — this is
+// a rendering lookup for existing events, not the filter tab list above.
+const PLATFORM_LOOKUP = {
+  ...Object.fromEntries(PLATFORMS.map((p) => [p.id, p])),
+  rumble: { id: 'rumble', name: 'Rumble', icon: RumbleIcon, tint: 'text-lime-600', metric: 'followers' },
+};
 
 export default function Milestones() {
   const [activePlatform, setActivePlatform] = useState(null); // null = all
@@ -55,7 +60,7 @@ export default function Milestones() {
     <>
       <SEO
         title="Creator Milestones"
-        description="Real subscriber, follower, and listener thresholds crossed across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Rumble, Substack, and Music, as they happen."
+        description="Real subscriber, follower, and listener thresholds crossed across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music, as they happen."
         keywords="creator milestones, subscriber milestones, follower milestones, creator growth events, youtube subscriber milestone, twitch follower milestone"
       />
       <div className="min-h-screen bg-[#fafaf9]">

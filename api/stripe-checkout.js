@@ -41,7 +41,7 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .map(e => e.trim().toLowerCase())
   .filter(Boolean);
 
-const VALID_PLATFORMS = new Set(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'rumble', 'substack']);
+const VALID_PLATFORMS = new Set(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'substack']);
 const SAFE_ORIGINS = new Set(['https://shinypull.com', 'http://localhost:3000']);
 
 function isSafeReturnUrl(url) {
