@@ -292,6 +292,14 @@ h1, h2, h3, h4 {
 }
 .sp-hint-sweep { animation: sp-hint-sweep 4.5s ease-in-out infinite; }
 
+/* Compare page bars (popular-matchup share bars, metric-by-metric rows):
+   width is already set correctly via inline style at the target %, this only
+   animates the visual scale from 0 -> 1 on mount, once, so bars feel like
+   they're filling in rather than snapping straight to their final length.
+   transform-only (GPU cheap, doesn't affect layout/reflow). */
+@keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.animate-bar-grow { transform-origin: left; animation: bar-grow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
 /* WCAG 2.3.3 — kill decorative looping animations for reduced-motion users.
    Loading spinners (animate-spin) are deliberately left alone. */
 @media (prefers-reduced-motion: reduce) {
@@ -302,7 +310,8 @@ h1, h2, h3, h4 {
   .animate-pulse-slow,
   .auth-col-up,
   .auth-col-down,
-  .sp-hint-sweep {
+  .sp-hint-sweep,
+  .animate-bar-grow {
     animation: none;
   }
 }

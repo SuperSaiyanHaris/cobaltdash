@@ -296,15 +296,21 @@ export default function Compare() {
 
   // Popular matchups' real live numbers, fetched once, independent of the
   // current lineup, so the tiles always show a true share bar and gap instead
-  // of a guess.
+  // of a guess. Some of these are DB-only lookups (fast) and some are live
+  // platform API calls (real network latency), so each tile fills in as its
+  // own pair resolves instead of the whole grid waiting on the slowest one.
   useEffect(() => {
-    (async () => {
-      const ids = [];
-      POPULAR_MATCHUPS.forEach(m => { ids.push([m.aPlatform, m.aUsername]); ids.push([m.bPlatform, m.bUsername]); });
-      const unique = Array.from(new Map(ids.map(([p, u]) => [`${p}:${u}`, [p, u]])).values());
-      const hydrated = await Promise.all(unique.map(async ([p, u]) => [`${p}:${u}`, await hydrateCreator(p, u)]));
-      setMatchupStats(Object.fromEntries(hydrated.filter(([, v]) => v)));
-    })();
+    let cancelled = false;
+    const ids = [];
+    POPULAR_MATCHUPS.forEach(m => { ids.push([m.aPlatform, m.aUsername]); ids.push([m.bPlatform, m.bUsername]); });
+    const unique = Array.from(new Map(ids.map(([p, u]) => [`${p}:${u}`, [p, u]])).values());
+    unique.forEach(([p, u]) => {
+      hydrateCreator(p, u).then((v) => {
+        if (cancelled || !v) return;
+        setMatchupStats(prev => ({ ...prev, [`${p}:${u}`]: v }));
+      });
+    });
+    return () => { cancelled = true; };
   }, []);
 
   // "From your following" quick-adds
@@ -356,13 +362,30 @@ export default function Compare() {
       const filled = creators.filter(Boolean);
       if (filled.length === 0) return;
       setLoadingGrowth(true);
-      const growth = {};
-      for (const creator of filled) {
+      // Every creator's lookups run in parallel with each other, and within
+      // a creator, the stream-specific queries run in parallel too, instead
+      // of a sequential await chain. That chain (dbCreator lookup -> stats ->
+      // hours watched -> viewership, one creator after another) was the
+      // actual source of the table's visible 1-2s load-in: for a 2-creator
+      // Twitch/Kick comparison that was 8 round trips in a row.
+      const entries = await Promise.all(filled.map(async (creator) => {
         try {
           const dbCreator = await getCreatorByUsername(creator.platform, creator.username);
-          if (!dbCreator) continue;
-          const stats = await getCreatorStats(dbCreator.id, 30);
-          if (!stats || stats.length < 2) continue;
+          if (!dbCreator) return null;
+
+          const isStreamPlatform = creator.platform === 'twitch' || creator.platform === 'kick';
+          const [stats, hw, viewership] = await Promise.all([
+            getCreatorStats(dbCreator.id, 30),
+            isStreamPlatform ? getHoursWatched(dbCreator.id) : Promise.resolve(null),
+            // A real 30-day peak/average from actual stream_sessions, not
+            // creator_stats' single-day snapshot. That single-day reading
+            // looked free to reuse but can be flatly wrong (found 2026-09-05:
+            // a real, currently-huge streamer's most recent tracked day
+            // carried a ~1-minute monitor-artifact session with 0 viewers,
+            // masking a real 270K-peak stream from earlier that month).
+            isStreamPlatform ? getViewershipStats(dbCreator.id) : Promise.resolve(null),
+          ]);
+          if (!stats || stats.length < 2) return null;
 
           const latest = stats[stats.length - 1];
           const sevenDaysBack = stats[Math.max(0, stats.length - 1 - 7)];
@@ -376,37 +399,24 @@ export default function Compare() {
             monthlyViews = Math.max(0, latest.total_views - thirtyDaysBack.total_views);
           }
 
-          let hoursWatched = 0;
-          let peakViewers = null;
-          let avgViewers = null;
-          if (creator.platform === 'twitch' || creator.platform === 'kick') {
-            const hw = await getHoursWatched(dbCreator.id);
-            hoursWatched = hw?.hours_watched_month || 0;
-            // A real 30-day peak/average from actual stream_sessions, not
-            // creator_stats' single-day snapshot. That single-day reading
-            // looked free to reuse but can be flatly wrong (found 2026-09-05:
-            // a real, currently-huge streamer's most recent tracked day
-            // carried a ~1-minute monitor-artifact session with 0 viewers,
-            // masking a real 270K-peak stream from earlier that month).
-            const viewership = await getViewershipStats(dbCreator.id);
-            peakViewers = viewership?.peak ?? null;
-            avgViewers = viewership?.avg ?? null;
-          }
-
-          growth[creator.platformId] = {
+          return [creator.platformId, {
             growth7Day: calc7Day, growth30Day: calc30Day,
             diff7Day: sevenDaysBack?.subscribers != null ? latest.subscribers - sevenDaysBack.subscribers : 0,
             diff30Day: thirtyDaysBack?.subscribers != null ? latest.subscribers - thirtyDaysBack.subscribers : 0,
-            monthlyViews, hoursWatched, peakViewers, avgViewers,
+            monthlyViews,
+            hoursWatched: hw?.hours_watched_month || 0,
+            peakViewers: viewership?.peak ?? null,
+            avgViewers: viewership?.avg ?? null,
             // Real daily series for the indexed growth chart below, same
             // rows already fetched above, just kept instead of discarded.
             series: stats.map(s => ({ date: s.recorded_at, subscribers: s.subscribers, views: s.total_views })),
-          };
+          }];
         } catch (err) {
           logger.warn(`Failed to fetch growth data for ${creator.username}:`, err);
+          return null;
         }
-      }
-      setGrowthData(growth);
+      }));
+      setGrowthData(Object.fromEntries(entries.filter(Boolean)));
       setLoadingGrowth(false);
     };
     fetchGrowthData();
@@ -490,8 +500,8 @@ export default function Compare() {
           <div className="bg-white border-b border-neutral-200/80">
             <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
               <div className="max-w-2xl mx-auto text-center">
-                <p className={`${MICRO} mb-3 flex items-center justify-center gap-1.5`}>
-                  <Swords className="w-3 h-3" />
+                <p className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-full bg-neutral-900 text-white text-xs font-semibold tracking-wide">
+                  <Swords className="w-3.5 h-3.5" />
                   {filledCreators.length === 0 ? 'Step 1 of 2' : 'Step 2 of 2'}
                 </p>
                 {filledCreators.length === 0 ? (
@@ -649,8 +659,8 @@ function MatchupGrid({ matchupStats }) {
   return (
     <div className="mb-10">
       <div className="text-center mb-5">
-        <p className={MICRO}>Popular matchups</p>
-        <p className="mt-1.5 text-sm text-neutral-500">One click loads both sides.</p>
+        <h2 className="text-xl font-bold text-neutral-900">Popular matchups</h2>
+        <p className="mt-1.5 text-sm text-neutral-500">Pick one and we'll pull up both sides for you.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {POPULAR_MATCHUPS.map((m) => {
@@ -671,18 +681,18 @@ function MatchupGrid({ matchupStats }) {
               <div className="flex items-center gap-3">
                 <CreatorAvatar src={a.profileImage} name={a.displayName} size="md" rounded="rounded-lg" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-neutral-900 truncate">{a.displayName}</p>
-                  <p className="text-xs text-neutral-400 flex items-center gap-1">{AIcon && <AIcon className={`w-3 h-3 ${platformConfig[a.platform]?.color}`} />}{formatNumber(aTotal)}</p>
+                  <p className="text-sm font-bold text-neutral-900 tabular-nums flex items-center gap-1">{AIcon && <AIcon className={`w-3 h-3 ${platformConfig[a.platform]?.color}`} />}{formatNumber(aTotal)}</p>
+                  <p className="text-xs font-medium text-neutral-500 truncate">{a.displayName}</p>
                 </div>
                 <span className="flex items-center justify-center w-7 h-7 rounded-full border border-neutral-200 bg-white text-[11px] font-bold text-neutral-900 tracking-wide flex-shrink-0">VS</span>
                 <div className="flex-1 min-w-0 text-right">
-                  <p className="text-sm font-semibold text-neutral-900 truncate">{b.displayName}</p>
-                  <p className="text-xs text-neutral-400 flex items-center gap-1 justify-end">{formatNumber(bTotal)}{BIcon && <BIcon className={`w-3 h-3 ${platformConfig[b.platform]?.color}`} />}</p>
+                  <p className="text-sm font-bold text-neutral-900 tabular-nums flex items-center gap-1 justify-end">{formatNumber(bTotal)}{BIcon && <BIcon className={`w-3 h-3 ${platformConfig[b.platform]?.color}`} />}</p>
+                  <p className="text-xs font-medium text-neutral-500 truncate">{b.displayName}</p>
                 </div>
                 <CreatorAvatar src={b.profileImage} name={b.displayName} size="md" rounded="rounded-lg" />
               </div>
               <div className="flex items-center gap-0.5 h-1.5 mt-3.5 rounded-full overflow-hidden bg-neutral-100">
-                <div className="h-full" style={{ width: `${shareA}%`, background: accentFor(0) }} />
+                <div className="h-full animate-bar-grow" style={{ width: `${shareA}%`, background: accentFor(0) }} />
                 <div className="h-full flex-1" style={{ background: accentFor(1) }} />
               </div>
               <p className="text-xs text-neutral-500 mt-2"><span className="font-semibold text-neutral-700">{lead.displayName}</span> leads by {formatNumber(gap)}</p>
@@ -849,7 +859,12 @@ function ResultsView(props) {
         {/* Tailwind needs the full class name as a literal to pick it up at
             build time, so this is a static lookup rather than string
             concatenation. */}
-        <div className={`grid gap-4 mt-7 grid-cols-2 ${{ 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3' }[filledCreators.length] || 'sm:grid-cols-3'}`}>
+        <div className={`relative grid gap-4 mt-7 grid-cols-2 ${{ 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3' }[filledCreators.length] || 'sm:grid-cols-3'}`}>
+          {isPair && (
+            <div className="absolute left-1/2 top-8 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-neutral-900 text-white text-sm font-bold tracking-wide ring-4 ring-white shadow-md">
+              VS
+            </div>
+          )}
           {filledCreators.map((c, i) => {
             const g = growthData[c.platformId];
             const Icon = platformConfig[c.platform]?.icon;
@@ -881,11 +896,6 @@ function ResultsView(props) {
                     <GrowthIcon className="w-3.5 h-3.5" />{formatGrowth(g.growth30Day)} <span className="text-neutral-400 font-normal">30d</span>
                   </span>
                 ) : <span className="mt-2 block h-[18px]" />}
-                {isWinner ? (
-                  <p className="mt-2 text-xs font-semibold tabular-nums" style={{ color: accentFor(i) }}>{wins[i]} of {total} led</p>
-                ) : (
-                  <p className="mt-2 text-xs text-neutral-400 tabular-nums">{wins[i]} of {total} led</p>
-                )}
               </div>
             );
           })}
@@ -911,7 +921,7 @@ function ResultsView(props) {
           {loadingGrowth && <span className="flex items-center gap-1.5 text-xs text-neutral-400 w-full sm:w-auto"><Loader2 className="w-3.5 h-3.5 animate-spin" />Loading growth data...</span>}
         </div>
         <div className="divide-y divide-neutral-100">
-          {metrics.map((m) => <MetricBarRow key={m.label} metric={m} />)}
+          {metrics.map((m) => <MetricBarRow key={m.label} metric={m} loadingGrowth={loadingGrowth} />)}
         </div>
         <p className="px-5 py-3 text-xs text-neutral-400 leading-relaxed">Growth rows use a centered zero axis, bars extend right for gains, left for losses. Rows marked no-leader (library size, growth rate, concurrent viewers) never decide who's crowned, a small account can post a big percentage, a big library, or one busy stream day without being bigger overall. Only Subscribers/Followers and engagement volume do. Rows only appear when every creator here has a real number for them.</p>
       </div>
@@ -971,26 +981,43 @@ function ResultsView(props) {
   );
 }
 
-function MetricBarRow({ metric }) {
+function MetricBarRow({ metric, loadingGrowth }) {
+  // The amber tag text is a "why this doesn't decide the winner" explanation,
+  // not something worth permanent real estate under every label. It moves
+  // into a hover tooltip instead; the plain gray "higher is better" tag stays
+  // inline since it's short and not the thing being explained away.
+  const isNote = metric.tagFg === 'text-amber-600';
   return (
     <div className="grid gap-3 sm:gap-6 px-5 py-4 grid-cols-1 sm:grid-cols-[180px_1fr]">
       <div>
         <div className="flex items-center gap-1.5">
           {metric.icon && <metric.icon className="w-3.5 h-3.5 text-neutral-400" />}
           <p className="text-sm font-semibold text-neutral-900">{metric.label}</p>
+          {isNote && <InfoTooltip text={metric.tag} />}
         </div>
-        <p className={`text-xs mt-0.5 ${metric.tagFg}`}>{metric.tag}</p>
+        {!isNote && <p className={`text-xs mt-0.5 ${metric.tagFg}`}>{metric.tag}</p>}
       </div>
       <div className="flex flex-col gap-2 min-w-0">
-        {metric.bars.map((b, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="flex-1 min-w-0 h-5 relative bg-neutral-100 rounded">
-              <div className="absolute top-0 bottom-0 rounded" style={{ left: b.left, width: b.width, background: b.color }} />
-              {metric.signed && <div className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-neutral-300" />}
+        {metric.bars.map((b, i) => {
+          const pending = loadingGrowth && b.value === '-';
+          return (
+            <div key={i} className="flex items-center gap-3">
+              <div className="flex-1 min-w-0 h-5 relative bg-neutral-100 rounded overflow-hidden">
+                {pending ? (
+                  <div className="absolute inset-0 animate-pulse bg-neutral-200" />
+                ) : (
+                  <>
+                    <div className="absolute top-0 bottom-0 rounded animate-bar-grow" style={{ left: b.left, width: b.width, background: b.color }} />
+                    {metric.signed && <div className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-neutral-300" />}
+                  </>
+                )}
+              </div>
+              <div className={`w-20 sm:w-24 text-right text-sm font-semibold tabular-nums flex-shrink-0 ${b.isLeader ? 'text-neutral-900' : 'text-neutral-500'}`}>
+                {pending ? <span className="inline-block h-3.5 w-10 rounded bg-neutral-200 animate-pulse align-middle" /> : b.value}
+              </div>
             </div>
-            <div className={`w-20 sm:w-24 text-right text-sm font-semibold tabular-nums flex-shrink-0 ${b.isLeader ? 'text-neutral-900' : 'text-neutral-500'}`}>{b.value}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1011,8 +1038,23 @@ function InfoTooltip({ text }) {
 }
 
 function GrowthChart({ filledCreators, growthData, chartMetric, setChartMetric, getGrowthColor, formatGrowth }) {
-  const hasViews = filledCreators.some(c => growthData[c.platformId]?.series?.some(s => s.views != null));
+  // "Views" is only a real toggle when every creator here actually has view
+  // data, not just one of them - a Twitch-vs-YouTube pairing showing a Views
+  // line for only the YouTuber isn't a comparison, it's one line pretending
+  // to be one.
+  const hasViews = filledCreators.length > 0 && filledCreators.every(c => growthData[c.platformId]?.series?.some(s => s.views != null));
   const key = chartMetric === 'views' && hasViews ? 'views' : 'subscribers';
+
+  // The "views" series is really different units per platform (YouTube's a
+  // real view, TikTok's a like, Music's a play, see CLAUDE.md), so the button
+  // has to say which one it actually is instead of a blanket "Views" that's
+  // flatly wrong for TikTok/Music. Same composed-label approach as the
+  // Subscribers/Followers row in the metric table below.
+  const platforms = filledCreators.map(c => c.platform);
+  const allKick = platforms.length > 0 && platforms.every(p => p === 'kick');
+  const mixedKick = platforms.includes('kick') && !allKick;
+  const followersLabel = allKick ? 'Paid subscribers' : mixedKick ? 'Followers / Paid subs' : 'Subscribers / Followers';
+  const viewsLabel = [...new Set(platforms.map(p => ENGAGEMENT_UNIT[p]).filter(Boolean))].join(' / ') || 'Views';
 
   // Index each creator's series to % change from the first day it has data,
   // so a 109M and a 515M channel can share one axis.
@@ -1023,7 +1065,10 @@ function GrowthChart({ filledCreators, growthData, chartMetric, setChartMetric, 
     return { creator: c, color: accentFor(i), points: raw.map(s => ({ date: s.date, pct: ((s[key] - base) / base) * 100 })) };
   }).filter(Boolean);
 
-  if (seriesByCreator.length === 0) return null;
+  // Same principle as the metric table below: a side-by-side chart needs
+  // every creator represented, not just some of them. Hide the whole section
+  // rather than show a chart with one creator's line missing.
+  if (seriesByCreator.length < filledCreators.length) return null;
 
   // Merge into one array of {date, [displayName]: pct, ...} for Recharts
   const dateSet = Array.from(new Set(seriesByCreator.flatMap(s => s.points.map(p => p.date)))).sort();
@@ -1044,12 +1089,17 @@ function GrowthChart({ filledCreators, growthData, chartMetric, setChartMetric, 
           <p className="text-xs text-neutral-500 mt-1">Indexed to each creator's own value at the start of the window, so different sizes share one axis.</p>
         </div>
         <div className="flex-1" />
-        {hasViews && (
+        {hasViews ? (
           <div className="flex bg-neutral-100 border border-neutral-200 rounded-lg p-0.5 text-sm">
-            {[['subscribers', 'Followers'], ['views', 'Views']].map(([val, label]) => (
+            {[['subscribers', followersLabel], ['views', viewsLabel]].map(([val, label]) => (
               <button key={val} onClick={() => setChartMetric(val)} className={`px-3 py-1.5 rounded-md font-medium transition-colors ${key === val ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500'}`}>{label}</button>
             ))}
           </div>
+        ) : (
+          // Only one metric is ever available here, but the chart still
+          // needs to say which one, same as the toggle does when there's a
+          // real choice, instead of leaving the reader to guess.
+          <span className="px-3 py-1.5 text-sm font-medium text-neutral-500 bg-neutral-100 border border-neutral-200 rounded-lg">{followersLabel}</span>
         )}
       </div>
 
