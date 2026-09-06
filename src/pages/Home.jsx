@@ -592,7 +592,7 @@ const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory 
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-0.5">30 days ago</p>
-                    <p className="text-lg sm:text-xl font-extrabold text-neutral-400 tabular-nums">{formatNumber(viewsStart)}</p>
+                    <p className="text-lg sm:text-xl font-extrabold text-neutral-600 tabular-nums">{formatNumber(viewsStart)}</p>
                   </div>
                   <div className="flex flex-col items-center px-2 flex-shrink-0">
                     <ArrowRight className="w-4 h-4 text-neutral-300" />

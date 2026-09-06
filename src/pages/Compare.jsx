@@ -674,7 +674,7 @@ function MatchupGrid({ matchupStats }) {
                   <p className="text-sm font-semibold text-neutral-900 truncate">{a.displayName}</p>
                   <p className="text-xs text-neutral-400 flex items-center gap-1">{AIcon && <AIcon className={`w-3 h-3 ${platformConfig[a.platform]?.color}`} />}{formatNumber(aTotal)}</p>
                 </div>
-                <span className="text-[10px] font-bold text-neutral-300 tracking-[0.1em] flex-shrink-0">VS</span>
+                <span className="flex items-center justify-center w-7 h-7 rounded-full border border-neutral-200 bg-white text-[11px] font-bold text-neutral-900 tracking-wide flex-shrink-0">VS</span>
                 <div className="flex-1 min-w-0 text-right">
                   <p className="text-sm font-semibold text-neutral-900 truncate">{b.displayName}</p>
                   <p className="text-xs text-neutral-400 flex items-center gap-1 justify-end">{formatNumber(bTotal)}{BIcon && <BIcon className={`w-3 h-3 ${platformConfig[b.platform]?.color}`} />}</p>

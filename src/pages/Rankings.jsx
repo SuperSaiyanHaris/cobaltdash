@@ -195,7 +195,7 @@ function RankBadge({ rank, size = 'md' }) {
   const text = size === 'sm' ? 'text-xs' : 'text-sm';
   return (
     <span className={`inline-flex items-center flex-shrink-0 ${size === 'sm' ? 'w-8' : 'w-10'}`}>
-      <span className={`${text} font-semibold tabular-nums ${rank <= 3 ? 'text-neutral-900' : 'text-neutral-400'}`}>{rank}</span>
+      <span className={`${text} font-semibold tabular-nums text-neutral-900`}>{rank}</span>
     </span>
   );
 }
