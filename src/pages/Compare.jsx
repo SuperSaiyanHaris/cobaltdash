@@ -35,7 +35,7 @@ const MAX_COMPARE = 6;
 const MAX_SAVED_COMPARES = 50;
 
 const POPULAR_MATCHUPS = [
-  { aPlatform: 'youtube', aUsername: 'pewdiepie',      bPlatform: 'youtube', bUsername: 'mrbeast' },
+  { aPlatform: 'twitch',  aUsername: 'kaicenat',        bPlatform: 'twitch',  bUsername: 'ishowspeed' },
   { aPlatform: 'twitch',  aUsername: 'xqc',             bPlatform: 'twitch',  bUsername: 'kaicenat' },
   { aPlatform: 'twitch',  aUsername: 'ninja',            bPlatform: 'twitch',  bUsername: 'shroud' },
   { aPlatform: 'twitch',  aUsername: 'pokimane',         bPlatform: 'twitch',  bUsername: 'hasanabi' },
@@ -462,15 +462,25 @@ export default function Compare() {
               <div className="max-w-2xl mx-auto text-center">
                 <p className={`${MICRO} mb-3 flex items-center justify-center gap-1.5`}>
                   <Swords className="w-3 h-3" />
-                  Head to head
+                  {filledCreators.length === 0 ? 'Step 1 of 2' : 'Step 2 of 2'}
                 </p>
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Who's actually bigger?</h1>
-                <p className="mt-2 text-sm text-neutral-500 max-w-md mx-auto">Search any creator we track. Platform is detected automatically, no need to pick one first.</p>
+                {filledCreators.length === 0 ? (
+                  <>
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Who's actually bigger?</h1>
+                    <p className="mt-2 text-sm text-neutral-500 max-w-md mx-auto">Search any creator we track.</p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Who's up against {filledCreators[0].displayName}?</h1>
+                    <p className="mt-2 text-sm text-neutral-500 max-w-md mx-auto">Add a second creator to compare them against.</p>
+                  </>
+                )}
               </div>
 
               <CreatorSearchBox
                 query={query} setQuery={setQuery} results={results} searching={searching}
                 tray={filledCreators} onAdd={addToLineup} size="lg"
+                placeholder={filledCreators.length === 1 ? `Add someone to compare against ${filledCreators[0].displayName}…` : undefined}
               />
 
               {filledCreators.length > 0 && (
@@ -530,7 +540,7 @@ export default function Compare() {
 /* search on the picker and the compact "add another" search once a matchup */
 /* is loaded.                                                                */
 /* ------------------------------------------------------------------------ */
-function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, size = 'md' }) {
+function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, size = 'md', placeholder }) {
   const inTray = (r) => tray.some(c => c && c.platform === r.platform && c.username === r.username);
   const big = size === 'lg';
   return (
@@ -541,7 +551,7 @@ function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, si
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={big ? 'Search any creator: MrBeast, xQc, Charli, Zach King…' : 'Add another creator…'}
+          placeholder={placeholder || (big ? 'Search any creator: MrBeast, xQc, Charli, Zach King…' : 'Add another creator…')}
           className={`flex-1 min-w-0 bg-transparent text-neutral-900 placeholder-neutral-400 focus:outline-none ${big ? 'text-[16px] sm:text-base' : 'text-sm'}`}
         />
         {query && (
