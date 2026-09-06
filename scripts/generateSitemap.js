@@ -149,7 +149,24 @@ async function generateSitemap() {
   }
 
   // ---- Top: creators currently in rankings_cache (the head) ----------------
+  // Capped at TOP_TIER_RANK_LIMIT per platform (added 2026-09-06). This tier
+  // used to be implicitly capped by rankings_cache's own 500-per-platform
+  // limit on the 'subscribers' rank_type. That limit was intentionally
+  // removed 2026-08-28 so every tracked creator gets a real rank badge on
+  // their own profile page (see CLAUDE.md's "CREATOR PROFILE REQUEST
+  // WATERFALL" section) — rankings_cache now holds ~46K rows for this
+  // rank_type instead of ~4,500. Nothing here changed to match, so this
+  // fetch silently pulled in nearly the entire creator base overnight,
+  // ballooning sitemap-top.xml from ~4,500 to 48,997 URLs. That defeated
+  // the whole point of a segmented "head" sitemap (a "priority 0.7, daily"
+  // signal on the site's full long tail is not a priority signal at all)
+  // and was the direct cause of Search Console's "Discovered - currently
+  // not indexed" count jumping from ~7.5K to ~19K starting the same week.
+  // The fix belongs here, not in rankings_cache, since the per-profile rank
+  // badge is a real, wanted feature — this tier just needs its own notion
+  // of "the head" again, independent of how many rows the table now holds.
   console.log('🏆 Fetching ranked creators (priority tier)...');
+  const TOP_TIER_RANK_LIMIT = 500;
   const topKeys = new Set();
   const topUrls = [];
   {
@@ -159,8 +176,9 @@ async function generateSitemap() {
     while (more) {
       const { data: rows, error } = await supabase
         .from('rankings_cache')
-        .select('platform, username')
+        .select('platform, username, rank_position')
         .eq('rank_type', 'subscribers')
+        .lte('rank_position', TOP_TIER_RANK_LIMIT)
         .order('platform', { ascending: true })
         .order('rank_position', { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
