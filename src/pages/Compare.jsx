@@ -18,7 +18,7 @@ import { getChannelByUsername as getTwitchChannel } from '../services/twitchServ
 import { getChannelByUsername as getKickChannel } from '../services/kickService';
 import { getBlueskyProfile } from '../services/blueskyService';
 import { getArtistByMbid, getArtistByName } from '../services/musicService';
-import { searchCreators, getCreatorByUsername, getCreatorStats, getHoursWatched } from '../services/creatorService';
+import { searchCreators, getCreatorByUsername, getCreatorStats, getHoursWatched, getViewershipStats } from '../services/creatorService';
 import { saveCompare, findSavedCompare, deleteSavedCompare, getSavedCompares } from '../services/compareService';
 import { getFollowedCreators } from '../services/followService';
 import { supabase } from '../lib/supabase';
@@ -382,12 +382,15 @@ export default function Compare() {
           if (creator.platform === 'twitch' || creator.platform === 'kick') {
             const hw = await getHoursWatched(dbCreator.id);
             hoursWatched = hw?.hours_watched_month || 0;
-            // Already fetched alongside hours watched, just unused until now:
-            // their most recent tracked stream day's concurrent viewers, the
-            // same numbers CreatorProfile and the admin Reports export pull
-            // from, not a 30-day aggregate.
-            peakViewers = hw?.peak_viewers_day ?? null;
-            avgViewers = hw?.avg_viewers_day ?? null;
+            // A real 30-day peak/average from actual stream_sessions, not
+            // creator_stats' single-day snapshot. That single-day reading
+            // looked free to reuse but can be flatly wrong (found 2026-09-05:
+            // a real, currently-huge streamer's most recent tracked day
+            // carried a ~1-minute monitor-artifact session with 0 viewers,
+            // masking a real 270K-peak stream from earlier that month).
+            const viewership = await getViewershipStats(dbCreator.id);
+            peakViewers = viewership?.peak ?? null;
+            avgViewers = viewership?.avg ?? null;
           }
 
           growth[creator.platformId] = {
@@ -1150,7 +1153,12 @@ function buildMetrics(filledCreators, growthData) {
     const maxAbs = Math.max(1, ...numeric.map(v => Math.abs(v || 0)));
     const bars = filledCreators.map((c, i) => {
       const v = numeric[i];
-      const color = opts.noLeader ? '#d4d4d4' : accentFor(i);
+      // No-leader rows still get each creator's own identity color, "doesn't
+      // decide the crown" is already communicated by the row's own amber tag
+      // text and by isLeader naturally never being true here (no bold value
+      // either side), graying out the bars on top of that just makes a real
+      // number look broken/disabled instead of merely non-competitive.
+      const color = accentFor(i);
       let left = '0%', width = '2%';
       if (v != null) {
         if (signed) {
@@ -1199,16 +1207,17 @@ function buildMetrics(filledCreators, growthData) {
 
   // Concurrent viewers: a genuinely different axis than followers or watch
   // hours, a creator can have a huge follower count and a quiet stream, or
-  // the reverse. Only Twitch/Kick track this. Both numbers are their most
-  // recent tracked stream day, the same reading their own profile page and
-  // the admin Reports export use, not a rolling average, so one unusually
-  // big or quiet day can swing them. Like growth, this is real and worth
-  // seeing, but it's a single moment, not their overall scale, so it never
-  // decides the crown either, two viewer readings shouldn't get to outvote
-  // Followers just because they're two rows instead of one.
+  // the reverse. Only Twitch/Kick track this. Real 30-day peak/average
+  // computed from actual stream_sessions (see getViewershipStats), not
+  // creator_stats' single-day snapshot, which can read 0 for an otherwise
+  // huge streamer if their single most recent tracked day happened to carry
+  // a monitor-artifact session. Still real, worth seeing, but it's how big
+  // a stream gets, not the same thing as overall audience size, so like
+  // growth it never decides the crown, two viewer rows shouldn't get to
+  // outvote Followers just because they're two rows instead of one.
   if (allSupport(VIEWERS_PLATFORM)) {
-    rows.push(def('Peak viewers', Radio, 'one stream day, not their overall scale', 'text-amber-600', c => growthData[c.platformId]?.peakViewers ?? null, { noLeader: true }));
-    rows.push(def('Avg viewers', Radio, 'one stream day, not their overall scale', 'text-amber-600', c => growthData[c.platformId]?.avgViewers ?? null, { noLeader: true }));
+    rows.push(def('Peak viewers', Radio, "biggest stream in 30 days, not their overall scale", 'text-amber-600', c => growthData[c.platformId]?.peakViewers ?? null, { noLeader: true }));
+    rows.push(def('Avg viewers', Radio, "typical stream in 30 days, not their overall scale", 'text-amber-600', c => growthData[c.platformId]?.avgViewers ?? null, { noLeader: true }));
   }
 
   if (allSupport(CONTENT_UNIT)) {

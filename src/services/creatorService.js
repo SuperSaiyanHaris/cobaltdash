@@ -293,6 +293,44 @@ export const getHoursWatched = withErrorHandling(
 );
 
 /**
+ * Real peak/average concurrent viewers over the last 30 days, computed from
+ * actual stream_sessions rather than creator_stats' single-day
+ * peak_viewers_day/avg_viewers_day snapshot. The single-day reading looks
+ * cheap to reuse (it's already fetched alongside hours watched) but it can
+ * be flatly wrong for an otherwise-huge, currently-relevant streamer: found
+ * 2026-09-05 on a real creator whose most recent tracked day carried a
+ * degenerate ~1-minute session with peak_viewers=0 (a monitor artifact, see
+ * CLAUDE.md's stream-monitor notes on sessions closing with zero samples),
+ * masking a real 270K-peak stream from earlier the same month. Averaging
+ * across real sessions, weighted by how long each one ran, and excluding
+ * sessions with peak_viewers of 0 (the exact shape of that artifact) fixes
+ * this without needing the underlying monitor/aggregation pipeline fixed.
+ */
+export const getViewershipStats = withErrorHandling(
+  async (creatorId) => {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from('stream_sessions')
+      .select('peak_viewers, avg_viewers, hours_watched')
+      .eq('creator_id', creatorId)
+      .gte('started_at', thirtyDaysAgo)
+      .gt('peak_viewers', 0);
+
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+
+    const peak = Math.max(...data.map(s => s.peak_viewers || 0));
+    const totalHours = data.reduce((sum, s) => sum + parseFloat(s.hours_watched || 0), 0);
+    const avg = totalHours > 0
+      ? data.reduce((sum, s) => sum + (s.avg_viewers || 0) * parseFloat(s.hours_watched || 0), 0) / totalHours
+      : data.reduce((sum, s) => sum + (s.avg_viewers || 0), 0) / data.length;
+
+    return { peak, avg: Math.round(avg) };
+  },
+  'creatorService.getViewershipStats'
+);
+
+/**
  * Search creators in database (fuzzy: dots, underscores, dashes are ignored)
  */
 export const searchCreators = withErrorHandling(
