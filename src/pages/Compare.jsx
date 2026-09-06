@@ -666,7 +666,13 @@ function MatchupGrid({ matchupStats }) {
         {POPULAR_MATCHUPS.map((m) => {
           const a = matchupStats[`${m.aPlatform}:${m.aUsername}`];
           const b = matchupStats[`${m.bPlatform}:${m.bUsername}`];
-          if (!a || !b) return null;
+          // Each matchup keeps its own fixed grid slot from the first paint,
+          // whether it's showing a skeleton or the real card, so a slow tile
+          // (a live Twitch/YouTube/Kick lookup) resolving later never shoves
+          // an already-visible one down the page. Same key both states, so
+          // React updates it in place instead of unmounting and reinserting.
+          const url = `${m.aPlatform}:${m.aUsername},${m.bPlatform}:${m.bUsername}`;
+          if (!a || !b) return <MatchupTileSkeleton key={url} />;
           const aTotal = a.subscribers || a.followers || 0;
           const bTotal = b.subscribers || b.followers || 0;
           const sum = aTotal + bTotal || 1;
@@ -675,7 +681,6 @@ function MatchupGrid({ matchupStats }) {
           const gap = Math.abs(aTotal - bTotal);
           const AIcon = platformConfig[a.platform]?.icon;
           const BIcon = platformConfig[b.platform]?.icon;
-          const url = `${a.platform}:${a.username},${b.platform}:${b.username}`;
           return (
             <Link key={url} to={`/compare?creators=${url}`} className={`group block ${CARD} p-4 hover:border-neutral-300 transition-colors`}>
               <div className="flex items-center gap-3">
@@ -700,6 +705,31 @@ function MatchupGrid({ matchupStats }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// Same padding, row structure, and line heights as the real tile above so
+// swapping skeleton -> real content never changes the card's height either,
+// not just its grid position.
+function MatchupTileSkeleton() {
+  return (
+    <div className={`${CARD} p-4`}>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-neutral-100 animate-pulse flex-shrink-0" />
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="h-3.5 w-14 rounded bg-neutral-100 animate-pulse" />
+          <div className="h-2.5 w-20 rounded bg-neutral-100 animate-pulse" />
+        </div>
+        <div className="w-7 h-7 rounded-full bg-neutral-100 animate-pulse flex-shrink-0" />
+        <div className="flex-1 min-w-0 flex flex-col items-end space-y-1.5">
+          <div className="h-3.5 w-14 rounded bg-neutral-100 animate-pulse" />
+          <div className="h-2.5 w-20 rounded bg-neutral-100 animate-pulse" />
+        </div>
+        <div className="w-10 h-10 rounded-lg bg-neutral-100 animate-pulse flex-shrink-0" />
+      </div>
+      <div className="h-1.5 mt-3.5 rounded-full bg-neutral-100 animate-pulse" />
+      <div className="h-3 w-32 mt-2 rounded bg-neutral-100 animate-pulse" />
     </div>
   );
 }
