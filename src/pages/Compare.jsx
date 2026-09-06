@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, Users, Eye, Video, TrendingUp, TrendingDown, Minus, Info, Bookmark, Check, Swords, Loader2 } from 'lucide-react';
+import { Search, X, Users, Eye, Video, TrendingUp, TrendingDown, Minus, Info, Bookmark, Check, Swords, Loader2, Crown } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine } from 'recharts';
@@ -253,7 +253,7 @@ export default function Compare() {
         const withStats = await Promise.all(top.map(async (r) => {
           const { data: stats } = await supabase
             .from('creator_stats')
-            .select('subscribers, followers')
+            .select('subscribers, followers, total_views, total_posts')
             .eq('creator_id', r.id)
             .order('recorded_at', { ascending: false })
             .limit(1)
@@ -262,6 +262,12 @@ export default function Compare() {
             platform: r.platform, platformId: r.platform_id, username: r.username,
             displayName: r.display_name || r.username, profileImage: r.profile_image,
             total: stats?.subscribers || stats?.followers || 0,
+            // Kept alongside `total` (not folded into it) so the metric-by-metric
+            // table can show a real Views/Likes/Plays/library-size number for a
+            // search-added creator instead of a dash that only ever meant "we
+            // didn't bother fetching this," not "this doesn't apply."
+            totalViews: stats?.total_views ?? null,
+            totalPosts: stats?.total_posts ?? null,
           };
         }));
         if (searchSeq.current === mySeq) setResults(withStats);
@@ -573,7 +579,7 @@ function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, si
             return (
               <button
                 key={`${r.platform}:${r.username}`}
-                onClick={() => !already && onAdd({ platform: r.platform, platformId: r.platformId, username: r.username, displayName: r.displayName, profileImage: r.profileImage, subscribers: r.total, followers: r.total })}
+                onClick={() => !already && onAdd({ platform: r.platform, platformId: r.platformId, username: r.username, displayName: r.displayName, profileImage: r.profileImage, subscribers: r.total, followers: r.total, totalViews: r.totalViews, totalPosts: r.totalPosts })}
                 disabled={already}
                 className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-50 disabled:opacity-50 transition-colors text-left border-b border-neutral-100 last:border-b-0"
               >
@@ -735,9 +741,20 @@ function ResultsView(props) {
   const metrics = buildMetrics(filledCreators, growthData);
   const wins = filledCreators.map((c, i) => metrics.reduce((n, m) => n + (m.leaderIndex === i ? 1 : 0), 0));
   const total = metrics.filter(m => m.hasLeader).length;
-  const topIdx = wins.indexOf(Math.max(...wins));
+  const maxWins = Math.max(...wins);
+  const topIdx = wins.indexOf(maxWins);
   const winner = filledCreators[topIdx];
   const isPair = filledCreators.length === 2;
+  // "topIdx" picks the first index at the max by construction, even when
+  // every creator is tied there (including a 0-0 tie with zero comparable
+  // metrics), so it alone can't tell a real leader from a coin flip. Require
+  // the max to be won outright by exactly one creator before crowning anyone.
+  const hasWinner = maxWins > 0 && wins.filter(w => w === maxWins).length === 1;
+  // Two creators can share a display name (e.g. the same brand's YouTube and
+  // TikTok accounts), which makes "X leads" ambiguous about which X. Only
+  // pay the extra words when a real collision exists in this lineup.
+  const winnerNameCollides = hasWinner && filledCreators.filter(c => c.displayName === winner.displayName).length > 1;
+  const winnerLabel = winnerNameCollides ? `${winner.displayName} (${platformConfig[winner.platform]?.label})` : winner?.displayName;
 
   const youtubeCreators = filledCreators.filter(c => c.platform === 'youtube' && growthData[c.platformId]?.monthlyViews > 0);
 
@@ -781,15 +798,24 @@ function ResultsView(props) {
       {/* Verdict card */}
       <div className={`${CARD} p-6 sm:p-8 mb-5`}>
         <p className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 text-center leading-snug text-pretty">
-          <span style={{ color: accentFor(topIdx) }}>{winner.displayName}</span> leads on {wins[topIdx]} of {total} comparable metric{total === 1 ? '' : 's'}
-          {isPair && (() => {
-            const other = filledCreators[1 - topIdx];
-            const wTotal = winner.subscribers || winner.followers || 0;
-            const oTotal = other.subscribers || other.followers || 0;
-            if (!wTotal || !oTotal) return '.';
-            const ratio = wTotal / oTotal;
-            return `, with ${formatNumber(Math.abs(wTotal - oTotal))} more ${metricLabel(winner.platform).toLowerCase()} at ${ratio.toFixed(1)}× the size.`;
-          })()}
+          {hasWinner ? (
+            <>
+              <Crown className="w-5 h-5 inline-block -mt-1 mr-1" style={{ color: accentFor(topIdx) }} />
+              <span style={{ color: accentFor(topIdx) }}>{winnerLabel}</span> leads on {wins[topIdx]} of {total} comparable metric{total === 1 ? '' : 's'}
+              {isPair && (() => {
+                const other = filledCreators[1 - topIdx];
+                const wTotal = winner.subscribers || winner.followers || 0;
+                const oTotal = other.subscribers || other.followers || 0;
+                if (!wTotal || !oTotal) return '.';
+                const ratio = wTotal / oTotal;
+                return `, with ${formatNumber(Math.abs(wTotal - oTotal))} more ${metricLabel(winner.platform).toLowerCase()} at ${ratio.toFixed(1)}× the size.`;
+              })()}
+            </>
+          ) : total > 0 ? (
+            'Dead even, nobody leads on more metrics than anyone else.'
+          ) : (
+            "Not enough comparable metrics between these to call a leader."
+          )}
         </p>
 
         {/* Tailwind needs the full class name as a literal to pick it up at
@@ -800,10 +826,20 @@ function ResultsView(props) {
             const g = growthData[c.platformId];
             const Icon = platformConfig[c.platform]?.icon;
             const GrowthIcon = g ? getGrowthIcon(g.growth30Day) : null;
+            const isWinner = hasWinner && i === topIdx;
             return (
               <div key={c.platformId || c.username} className="text-center">
-                <Link to={`/${c.platform}/${c.username}`}>
+                <Link to={`/${c.platform}/${c.username}`} className="relative inline-block">
                   <CreatorAvatar src={c.profileImage} name={c.displayName} size="xl" rounded="rounded-2xl" className="mx-auto" style={{ boxShadow: `0 0 0 2px ${accentFor(i)}` }} />
+                  {isWinner && (
+                    <span
+                      className="absolute -top-2 -right-2 flex items-center justify-center w-6 h-6 rounded-full bg-white border-2"
+                      style={{ borderColor: accentFor(i) }}
+                      title="Leading this comparison"
+                    >
+                      <Crown className="w-3.5 h-3.5" style={{ color: accentFor(i) }} />
+                    </span>
+                  )}
                 </Link>
                 <p className="mt-3 text-sm sm:text-base font-semibold text-neutral-900 truncate">{c.displayName}</p>
                 <span className="mt-1 inline-flex items-center gap-1.5">
@@ -817,7 +853,11 @@ function ResultsView(props) {
                     <GrowthIcon className="w-3.5 h-3.5" />{formatGrowth(g.growth30Day)} <span className="text-neutral-400 font-normal">30d</span>
                   </span>
                 ) : <span className="mt-2 block h-[18px]" />}
-                <p className="mt-2 text-xs text-neutral-400 tabular-nums">{wins[i]} of {total} led</p>
+                {isWinner ? (
+                  <p className="mt-2 text-xs font-semibold tabular-nums" style={{ color: accentFor(i) }}>{wins[i]} of {total} led</p>
+                ) : (
+                  <p className="mt-2 text-xs text-neutral-400 tabular-nums">{wins[i]} of {total} led</p>
+                )}
               </div>
             );
           })}
@@ -830,7 +870,7 @@ function ResultsView(props) {
       <div className={`${CARD} overflow-hidden mb-5`}>
         <div className="flex items-center gap-2 px-5 py-4 border-b border-neutral-100 flex-wrap">
           <h2 className="text-base font-medium text-neutral-900">Metric by metric</h2>
-          <InfoTooltip text="Some fields show dashes for newer creators or platforms that don't track that metric. Growth needs a few days of tracked data before it populates." />
+          <InfoTooltip text="Rows only show up when every creator here can be fairly compared on them. A dash means a creator is missing that specific reading (e.g. growth needs a few days of tracked data), not that the metric doesn't apply to them." />
           <div className="flex-1" />
           <div className="flex items-center gap-3 flex-wrap">
             {filledCreators.map((c, i) => (
@@ -845,7 +885,7 @@ function ResultsView(props) {
         <div className="divide-y divide-neutral-100">
           {metrics.map((m) => <MetricBarRow key={m.label} metric={m} />)}
         </div>
-        <p className="px-5 py-3 text-xs text-neutral-400 leading-relaxed">Growth rows use a centered zero axis. Bars extend right for gains, left for losses. Library size has no leader: more videos is a different strategy, not a better one.</p>
+        <p className="px-5 py-3 text-xs text-neutral-400 leading-relaxed">Growth rows use a centered zero axis, bars extend right for gains, left for losses. Rows marked no-leader (library size, growth rate) never decide who's crowned, a small account can post a big percentage or a big library without being bigger. Only Subscribers/Followers and engagement volume do. Rows only appear when every creator here has a real number for them.</p>
       </div>
 
       {/* Growth, side by side. Real indexed % line chart */}
@@ -1020,9 +1060,51 @@ function GrowthChart({ filledCreators, growthData, chartMetric, setChartMetric, 
 }
 
 /* ------------------------------------------------------------------------ */
-/* Metric definitions. Same real per-platform logic the old table used,     */
-/* just rendered as bars. "Videos/Content" stays explicitly no-leader.      */
+/* Metric definitions. A row only renders when every creator currently in   */
+/* the lineup has a platform that genuinely supports that metric, not just  */
+/* when at least one does. Showing a real number next to a bare "-" isn't a */
+/* comparison, it's one fact dressed up as one, so rows that can't be truly */
+/* compared across the whole lineup are left out entirely instead of        */
+/* padded with dashes. Where the underlying quantity differs by platform    */
+/* but still answers the same question (Views vs Likes vs Watch hours are   */
+/* all "how much did people engage with this"), the row's own label is      */
+/* composed from whichever of those units are actually present, the same    */
+/* way "Subscribers / Followers" already merges YouTube subs with Twitch    */
+/* followers into one row.                                                  */
 /* ------------------------------------------------------------------------ */
+
+// Engagement volume: the "how much got watched/liked/played" number. Every
+// platform here means something different (a view, a like, an hour), which
+// is exactly why the row's label is built from whichever are in play rather
+// than a single fixed word. Bluesky/Mastodon/Rumble/Substack have no such
+// concept at all (no per-item engagement figure we track), so a lineup that
+// includes any of them drops this row entirely rather than showing a real
+// number next to a dash.
+const ENGAGEMENT_UNIT = {
+  youtube: 'Views',
+  tiktok: 'Likes',
+  music: 'Plays',
+  twitch: 'Watch hrs',
+  kick: 'Watch hrs',
+};
+
+// Content library size: a real inventory count, framed as no-leader since
+// posting more isn't "winning." Twitch/Kick have no video library (their
+// content is live, not archived items), Music and Substack don't expose a
+// post count at all.
+const CONTENT_UNIT = {
+  youtube: 'Videos',
+  tiktok: 'Videos',
+  rumble: 'Videos',
+  mastodon: 'Posts',
+  bluesky: 'Posts',
+};
+
+// Avg per item only means anything where a platform has both a real engagement
+// count AND a real item count, which in practice is just YouTube and TikTok,
+// everywhere else lacks one half of the fraction.
+const AVG_UNIT = { youtube: 'views', tiktok: 'likes' };
+
 function buildMetrics(filledCreators, growthData) {
   const def = (label, icon, tag, tagFg, getVal, opts = {}) => {
     const vals = filledCreators.map(getVal);
@@ -1056,20 +1138,46 @@ function buildMetrics(filledCreators, growthData) {
     return { label, icon, tag, tagFg, bars, signed, hasLeader, leaderIndex };
   };
 
-  const noViews = (p) => p === 'bluesky';
-  const noContent = (p) => p === 'twitch' || p === 'kick' || p === 'music';
-  const noAvg = (p) => p === 'twitch' || p === 'kick' || p === 'bluesky' || p === 'mastodon' || p === 'rumble' || p === 'substack' || p === 'music';
+  const platforms = filledCreators.map(c => c.platform);
+  // Every creator's platform has to be a participant, one non-participant
+  // and the whole row is out, not just dashed out for that one creator.
+  const allSupport = (map) => platforms.every(p => map[p]);
+  // Unique labels in first-seen order, so a single-platform lineup gets its
+  // one real label and a mixed one gets a composed "A / B".
+  const unitsUsed = (map) => [...new Set(platforms.map(p => map[p]))];
 
-  return [
+  const rows = [
     def('Subscribers / Followers', Users, 'higher is better', 'text-neutral-400', c => c.subscribers || c.followers || 0),
-    def('Views / Watch hrs', Eye, 'higher is better', 'text-neutral-400', c => {
-      if (noViews(c.platform)) return null;
-      if (c.platform === 'twitch' || c.platform === 'kick') return growthData[c.platformId]?.hoursWatched || null;
-      return c.totalViews || null;
-    }, { fmt: (v, c) => v == null ? '-' : (c.platform === 'twitch' || c.platform === 'kick') ? `${formatNumber(v)} hrs` : formatNumber(v) }),
-    def('Videos / Content', Video, 'no leader: library size, not performance', 'text-amber-600', c => noContent(c.platform) ? null : (c.totalPosts || 0), { noLeader: true }),
-    def('Avg views per video', TrendingUp, 'higher is better', 'text-neutral-400', c => noAvg(c.platform) ? null : (c.totalPosts > 0 ? Math.round(c.totalViews / c.totalPosts) : null)),
-    def('7-day growth', TrendingUp, 'percent of own base · zero axis centred', 'text-neutral-400', c => growthData[c.platformId]?.growth7Day ?? null, { signed: true, fmt: v => v == null ? '-' : fmtPct(v) }),
-    def('30-day growth', TrendingUp, 'percent of own base · zero axis centred', 'text-neutral-400', c => growthData[c.platformId]?.growth30Day ?? null, { signed: true, fmt: v => v == null ? '-' : fmtPct(v) }),
   ];
+
+  if (allSupport(ENGAGEMENT_UNIT)) {
+    rows.push(def(unitsUsed(ENGAGEMENT_UNIT).join(' / '), Eye, 'higher is better', 'text-neutral-400', c => {
+      if (c.platform === 'twitch' || c.platform === 'kick') return growthData[c.platformId]?.hoursWatched ?? null;
+      return c.totalViews ?? null;
+    }, { fmt: (v, c) => v == null ? '-' : (c.platform === 'twitch' || c.platform === 'kick') ? `${formatNumber(v)} hrs` : formatNumber(v) }));
+  }
+
+  if (allSupport(CONTENT_UNIT)) {
+    rows.push(def(unitsUsed(CONTENT_UNIT).join(' / '), Video, 'no leader: library size, not performance', 'text-amber-600', c => c.totalPosts ?? null, { noLeader: true }));
+  }
+
+  if (allSupport(AVG_UNIT)) {
+    rows.push(def(`Avg ${unitsUsed(AVG_UNIT).join('/')} per video`, TrendingUp, 'higher is better', 'text-neutral-400',
+      c => (c.totalPosts > 0 ? Math.round((c.totalViews || 0) / c.totalPosts) : null)));
+  }
+
+  // Growth is a rate, not a size, a tiny account can post a huge percentage
+  // gain without being remotely bigger. This page's whole question is "who's
+  // actually bigger," so growth stays visible as real, useful context but,
+  // like library size above, never decides the crown or counts toward the
+  // "leads on N of M" tally. Counting it as an equal-weight win alongside
+  // Subscribers/Followers is exactly how a small, fast-growing account could
+  // outscore a much bigger one on a tie, which answers a different question
+  // than the one this page is asking.
+  rows.push(
+    def('7-day growth', TrendingUp, 'a rate, not a size · never decides the leader', 'text-amber-600', c => growthData[c.platformId]?.growth7Day ?? null, { signed: true, noLeader: true, fmt: v => v == null ? '-' : fmtPct(v) }),
+    def('30-day growth', TrendingUp, 'a rate, not a size · never decides the leader', 'text-amber-600', c => growthData[c.platformId]?.growth30Day ?? null, { signed: true, noLeader: true, fmt: v => v == null ? '-' : fmtPct(v) }),
+  );
+
+  return rows;
 }
