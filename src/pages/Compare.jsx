@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, Users, Eye, Video, TrendingUp, TrendingDown, Minus, Info, Bookmark, Check, Swords, Loader2, Crown } from 'lucide-react';
+import { Search, X, Users, Eye, Video, TrendingUp, TrendingDown, Minus, Info, Bookmark, Check, Swords, Loader2, Crown, Radio } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine } from 'recharts';
@@ -41,6 +41,13 @@ const POPULAR_MATCHUPS = [
   { aPlatform: 'twitch',  aUsername: 'pokimane',         bPlatform: 'twitch',  bUsername: 'hasanabi' },
   { aPlatform: 'youtube', aUsername: 'mrbeast',          bPlatform: 'twitch',  bUsername: 'ninja' },
   { aPlatform: 'tiktok',  aUsername: 'charlidamelio',    bPlatform: 'tiktok',  bUsername: 'addisonre' },
+  // Third row, added to cover platforms the first two rows leaned entirely
+  // on Twitch/YouTube/TikTok for. Kick, Music, and Substack picked deliberately:
+  // real, comparably-sized, and (Bluesky/Mastodon's own top ranks skew hard
+  // into politics and news orgs, see CLAUDE.md) safely apolitical.
+  { aPlatform: 'kick',    aUsername: 'n3on',             bPlatform: 'kick',    bUsername: 'adinross' },
+  { aPlatform: 'music',   aUsername: 'coldplay',         bPlatform: 'music',   bUsername: 'rihanna' },
+  { aPlatform: 'substack',aUsername: 'lenny',            bPlatform: 'substack',bUsername: 'pragmaticengineer' },
 ];
 
 // Platform identity is the icon tint alone, precision system
@@ -68,10 +75,16 @@ const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px
 const ACCENT_COLORS = ['#4f46e5', '#0d9488', '#c2410c', '#be185d', '#0369a1', '#65a30d'];
 function accentFor(i) { return ACCENT_COLORS[i % ACCENT_COLORS.length]; }
 
-/** Followers/subscribers/listeners label per platform, used in cards, table, and search results. */
+/** Followers/subscribers/listeners label per platform, used in cards, table, and search results.
+ * Kick gets its own explicit word: its API has no free-follower endpoint at
+ * all, the number we have is a paid-subscriber count, a real but much
+ * smaller and categorically different figure than a free follow anywhere
+ * else. Calling it plain "Subs" would read as the same thing YouTube's
+ * free subscriber count means, it isn't. */
 function metricLabel(platform) {
   if (platform === 'twitch' || platform === 'tiktok' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble') return 'Followers';
   if (platform === 'music') return 'Listeners';
+  if (platform === 'kick') return 'Paid Subs';
   return 'Subs';
 }
 
@@ -364,16 +377,24 @@ export default function Compare() {
           }
 
           let hoursWatched = 0;
+          let peakViewers = null;
+          let avgViewers = null;
           if (creator.platform === 'twitch' || creator.platform === 'kick') {
             const hw = await getHoursWatched(dbCreator.id);
             hoursWatched = hw?.hours_watched_month || 0;
+            // Already fetched alongside hours watched, just unused until now:
+            // their most recent tracked stream day's concurrent viewers, the
+            // same numbers CreatorProfile and the admin Reports export pull
+            // from, not a 30-day aggregate.
+            peakViewers = hw?.peak_viewers_day ?? null;
+            avgViewers = hw?.avg_viewers_day ?? null;
           }
 
           growth[creator.platformId] = {
             growth7Day: calc7Day, growth30Day: calc30Day,
             diff7Day: sevenDaysBack?.subscribers != null ? latest.subscribers - sevenDaysBack.subscribers : 0,
             diff30Day: thirtyDaysBack?.subscribers != null ? latest.subscribers - thirtyDaysBack.subscribers : 0,
-            monthlyViews, hoursWatched,
+            monthlyViews, hoursWatched, peakViewers, avgViewers,
             // Real daily series for the indexed growth chart below, same
             // rows already fetched above, just kept instead of discarded.
             series: stats.map(s => ({ date: s.recorded_at, subscribers: s.subscribers, views: s.total_views })),
@@ -804,6 +825,10 @@ function ResultsView(props) {
               <span style={{ color: accentFor(topIdx) }}>{winnerLabel}</span> leads on {wins[topIdx]} of {total} comparable metric{total === 1 ? '' : 's'}
               {isPair && (() => {
                 const other = filledCreators[1 - topIdx];
+                // One of these is Kick's paid-subscriber count and the other
+                // is a free follower count, so "X more, Y times the size" is
+                // comparing two different things, not a real size gap.
+                if ((winner.platform === 'kick') !== (other.platform === 'kick')) return '.';
                 const wTotal = winner.subscribers || winner.followers || 0;
                 const oTotal = other.subscribers || other.followers || 0;
                 if (!wTotal || !oTotal) return '.';
@@ -885,7 +910,7 @@ function ResultsView(props) {
         <div className="divide-y divide-neutral-100">
           {metrics.map((m) => <MetricBarRow key={m.label} metric={m} />)}
         </div>
-        <p className="px-5 py-3 text-xs text-neutral-400 leading-relaxed">Growth rows use a centered zero axis, bars extend right for gains, left for losses. Rows marked no-leader (library size, growth rate) never decide who's crowned, a small account can post a big percentage or a big library without being bigger. Only Subscribers/Followers and engagement volume do. Rows only appear when every creator here has a real number for them.</p>
+        <p className="px-5 py-3 text-xs text-neutral-400 leading-relaxed">Growth rows use a centered zero axis, bars extend right for gains, left for losses. Rows marked no-leader (library size, growth rate, concurrent viewers) never decide who's crowned, a small account can post a big percentage, a big library, or one busy stream day without being bigger overall. Only Subscribers/Followers and engagement volume do. Rows only appear when every creator here has a real number for them.</p>
       </div>
 
       {/* Growth, side by side. Real indexed % line chart */}
@@ -1088,6 +1113,9 @@ const ENGAGEMENT_UNIT = {
   kick: 'Watch hrs',
 };
 
+// Concurrent viewers: only Twitch and Kick track a live audience at all.
+const VIEWERS_PLATFORM = { twitch: true, kick: true };
+
 // Content library size: a real inventory count, framed as no-leader since
 // posting more isn't "winning." Twitch/Kick have no video library (their
 // content is live, not archived items), Music and Substack don't expose a
@@ -1146,8 +1174,20 @@ function buildMetrics(filledCreators, growthData) {
   // one real label and a mixed one gets a composed "A / B".
   const unitsUsed = (map) => [...new Set(platforms.map(p => map[p]))];
 
+  // Kick's API has no free-follower endpoint at all, "subscribers" there is
+  // real, but it's a paid-subscriber count, a categorically smaller, higher-
+  // commitment number than a free follow anywhere else (see CLAUDE.md's Kick
+  // notes). Kick vs Kick is a fair fight, same unit both sides. Kick mixed
+  // with anything else isn't: a real 2,400 paid subs next to a real 344,000
+  // free followers isn't "who has more," it's two different business metrics
+  // that happen to live in the same DB column. Show both numbers honestly
+  // labeled, but don't let that pairing decide the crown.
+  const allKick = platforms.every(p => p === 'kick');
+  const mixedKick = platforms.includes('kick') && !allKick;
+  const subsLabel = allKick ? 'Paid subscribers' : mixedKick ? 'Followers / Paid subs' : 'Subscribers / Followers';
+  const subsTag = mixedKick ? "Kick only exposes paid subs, not a fair size match against a free follow" : 'higher is better';
   const rows = [
-    def('Subscribers / Followers', Users, 'higher is better', 'text-neutral-400', c => c.subscribers || c.followers || 0),
+    def(subsLabel, Users, subsTag, mixedKick ? 'text-amber-600' : 'text-neutral-400', c => c.subscribers || c.followers || 0, { noLeader: mixedKick }),
   ];
 
   if (allSupport(ENGAGEMENT_UNIT)) {
@@ -1155,6 +1195,20 @@ function buildMetrics(filledCreators, growthData) {
       if (c.platform === 'twitch' || c.platform === 'kick') return growthData[c.platformId]?.hoursWatched ?? null;
       return c.totalViews ?? null;
     }, { fmt: (v, c) => v == null ? '-' : (c.platform === 'twitch' || c.platform === 'kick') ? `${formatNumber(v)} hrs` : formatNumber(v) }));
+  }
+
+  // Concurrent viewers: a genuinely different axis than followers or watch
+  // hours, a creator can have a huge follower count and a quiet stream, or
+  // the reverse. Only Twitch/Kick track this. Both numbers are their most
+  // recent tracked stream day, the same reading their own profile page and
+  // the admin Reports export use, not a rolling average, so one unusually
+  // big or quiet day can swing them. Like growth, this is real and worth
+  // seeing, but it's a single moment, not their overall scale, so it never
+  // decides the crown either, two viewer readings shouldn't get to outvote
+  // Followers just because they're two rows instead of one.
+  if (allSupport(VIEWERS_PLATFORM)) {
+    rows.push(def('Peak viewers', Radio, 'one stream day, not their overall scale', 'text-amber-600', c => growthData[c.platformId]?.peakViewers ?? null, { noLeader: true }));
+    rows.push(def('Avg viewers', Radio, 'one stream day, not their overall scale', 'text-amber-600', c => growthData[c.platformId]?.avgViewers ?? null, { noLeader: true }));
   }
 
   if (allSupport(CONTENT_UNIT)) {
