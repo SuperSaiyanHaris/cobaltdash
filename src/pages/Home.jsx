@@ -1137,9 +1137,13 @@ export default function Home() {
             </motion.div>
 
             {/* Featured Listings CTA — sits under the platform icons, the
-                last thing in the post-search stack. Amber = this site's one
-                functional-color convention for the Premium tier, applied here
-                without a glow/gradient per the no-orbs rule. */}
+                last thing in the post-search stack. Deliberately a quiet
+                text link now (2026-09-07), not a bordered card: this page's
+                job is search, and /promote itself now does the actual
+                selling, so this only needs to be a low-friction pointer to
+                it, not a second pitch competing with the search bar for
+                attention. Amber stays the one accent, this site's
+                established Featured Listings / Premium color. */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1148,16 +1152,12 @@ export default function Home() {
             >
               <Link
                 to="/promote"
-                className="group flex items-center gap-3 pl-3.5 pr-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] backdrop-blur-xl border border-amber-400/25 hover:border-amber-400/40 rounded-2xl transition-all"
+                className="group inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
               >
-                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/15 flex-shrink-0">
-                  <Megaphone className="w-4 h-4 text-amber-300" />
-                </span>
-                <span className="text-left leading-tight">
-                  <span className="block text-sm font-semibold text-white">Get Featured</span>
-                  <span className="block text-xs text-white/50">Sponsored placement in the live rankings</span>
-                </span>
-                <ArrowRight className="w-4 h-4 text-white/40 group-hover:translate-x-0.5 group-hover:text-white/70 transition-all flex-shrink-0" />
+                <Megaphone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span className="font-medium text-amber-300">Get Featured</span>
+                <span className="hidden sm:inline text-white/40">&middot; Sponsored placement in the rankings</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </Link>
             </motion.div>
 
