@@ -547,6 +547,7 @@ export default function CreatorProfile() {
             totalViews: latestStats?.total_views || 0,
             totalPosts: latestStats?.total_posts || 0,
             category: dbCreator.category,
+            dbCreatedAt: dbCreator.created_at,
           };
 
           setDbCreatorId(dbCreator.id);
@@ -1540,6 +1541,22 @@ function computeViewsMomentum(statsHistory) {
   return { current, prior, pct: ((current - prior) / prior) * 100 };
 }
 
+// Shown in place of the growth chart when there aren't yet 2+ daily readings
+// to draw a trend line from. Framed around when tracking started, not as a
+// vague "not enough history" — a brand-new creator reads that as "are you
+// even tracking me?" rather than "check back in a few days."
+function renderNoHistoryMessage(creator) {
+  const dateStr = creator?.dbCreatedAt
+    ? new Date(creator.dbCreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-sm text-neutral-500 text-center px-6 gap-1">
+      <span>{dateStr ? `Added to tracking on ${dateStr}.` : 'Just added to tracking.'}</span>
+      <span>A trend line will appear once a few more daily readings come in.</span>
+    </div>
+  );
+}
+
 function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
   const rank = rankContext?.rank;
   const total = rankContext?.total;
@@ -1716,7 +1733,7 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full flex items-center justify-center text-sm text-neutral-500">Not enough history yet for this range.</div>
+            renderNoHistoryMessage(creator)
           )}
         </div>
 
@@ -2134,7 +2151,7 @@ const GENERIC_PLATFORM_CONFIG = {
   },
 };
 
-function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel }) {
+function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel, readingsCount }) {
   const rank = rankContext?.rank;
   const total = rankContext?.total;
   const dailySubs = metrics?.dailyAverage?.subs ?? 0;
@@ -2143,6 +2160,19 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
   const noun = primaryLabel.toLowerCase();
 
+  // Fewer than 2 readings means dailyAverage.subs is mathematically forced to
+  // 0 (comparing the one reading to itself) — that's "no trend data yet," not
+  // "flat." Distinguishing this from a genuine plateau is the whole point.
+  const tooNewForTrend = (readingsCount ?? 0) < 2;
+
+  // TikTok rounds large accounts in coarse steps (nearest 100 in the low
+  // hundred-thousands, nearest 100,000 past ~1M — confirmed directly against
+  // TikTok's own data 2026-09-06, see CLAUDE.md). A account sitting well
+  // above that floor can show an exact 0 day-over-day delta for weeks while
+  // genuinely growing underneath the rounding step, so asserting "flat" as
+  // fact would be a real, checkable-and-wrong claim, not just an insight.
+  const roundingMayHideMovement = platform === 'tiktok' && primaryCount >= 100000;
+
   const rankClause = rank
     ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatNumber(total)} tracked {platformName} creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatNumber(rank)}</span> of {formatNumber(total)} tracked {platformName} creators.</>)
     : null;
@@ -2150,8 +2180,12 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   return (
     <>
       {rankClause}{rankClause ? ' ' : ''}
-      {dailySubs !== 0 ? (
+      {tooNewForTrend ? (
+        <>Just added to tracking, so there's no growth trend yet. Check back in a few days.</>
+      ) : dailySubs !== 0 ? (
         <>{dailySubs > 0 ? 'Gaining' : 'Losing'} <span className={`font-semibold ${dailySubs > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatNumber(Math.abs(dailySubs))} {noun}</span> a day{isAllTimeHigh && dailySubs > 0 ? '; currently at an all-time high.' : '.'}</>
+      ) : roundingMayHideMovement ? (
+        <>{noun.charAt(0).toUpperCase() + noun.slice(1)} count hasn't moved in our data, but TikTok reports accounts this size in rounded steps, so small day-to-day gains may not show up until they cross the next one.</>
       ) : (
         <>{noun.charAt(0).toUpperCase() + noun.slice(1)} count has been flat recently.</>
       )}
@@ -2219,7 +2253,7 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
   return (
     <div>
       <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
-        {buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel: config.primaryLabel })}
+        {buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel: config.primaryLabel, readingsCount: statsHistory?.length })}
       </p>
 
       <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 sm:p-6 mt-6">
@@ -2290,7 +2324,7 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full flex items-center justify-center text-sm text-neutral-500">Not enough history yet for this range.</div>
+            renderNoHistoryMessage(creator)
           )}
         </div>
 
