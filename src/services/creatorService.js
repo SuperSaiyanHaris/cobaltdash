@@ -403,32 +403,61 @@ const RANKINGS_TTL = 10 * 60 * 1000; // 10 minutes
 async function _fetchRankings(platform, rankType, limit) {
   const { data, error } = await supabase
     .from('rankings_cache')
-    .select('creator_id, platform, username, display_name, profile_image, platform_id, subscribers, total_views, total_posts, growth_30d, hours_watched_day, hours_watched_week, hours_watched_month, computed_at')
+    .select('creator_id, platform, username, display_name, profile_image, platform_id, subscribers, total_views, total_posts, growth_30d, hours_watched_day, hours_watched_week, hours_watched_month, rank_position, computed_at')
     .eq('platform', platform)
     .eq('rank_type', rankType)
     .order('rank_position', { ascending: true })
     .limit(limit);
   if (error) throw error;
-  return (data || []).map((creator) => ({
-    ...creator,
-    id: creator.creator_id,
-    computedAt: creator.computed_at,
-    latestStats: {
-      subscribers: creator.subscribers,
-      followers: creator.subscribers,
-      total_views: creator.total_views,
-      total_posts: creator.total_posts,
-      hours_watched_day: creator.hours_watched_day,
-      hours_watched_week: creator.hours_watched_week,
-      hours_watched_month: creator.hours_watched_month,
-    },
-    totalViews: creator.total_views,
-    totalPosts: creator.total_posts,
-    growth30d: creator.growth_30d,
-    sortValue: rankType === 'views' ? creator.total_views
-      : rankType === 'growth' ? creator.growth_30d
-      : creator.subscribers,
-  }));
+  const rows = data || [];
+
+  // Rank movement vs yesterday's snapshot (src: `rankings` table, populated
+  // once/day by the `snapshot-daily-rankings` pg_cron job). Only meaningful
+  // for `subscribers`: it's the one rank_type with a stable per-creator
+  // position day to day. `views`/`growth` are capped top-500 lists rebuilt
+  // from scratch on every refresh, so there's no comparable history for them.
+  let prevRankByCreator = new Map();
+  if (rankType === 'subscribers' && rows.length > 0) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const { data: prevRows } = await supabase
+      .from('rankings')
+      .select('creator_id, rank_position')
+      .eq('platform', platform)
+      .eq('rank_type', rankType)
+      .eq('recorded_at', yesterday)
+      .in('creator_id', rows.map((r) => r.creator_id));
+    prevRankByCreator = new Map((prevRows || []).map((r) => [r.creator_id, r.rank_position]));
+  }
+
+  return rows.map((creator) => {
+    const prevRank = prevRankByCreator.get(creator.creator_id);
+    // Positive = moved up N spots, negative = moved down N spots, 'new' = no
+    // comparable snapshot from yesterday, null = rank_type doesn't track this.
+    const rankChange = rankType !== 'subscribers'
+      ? null
+      : prevRank == null ? 'new' : prevRank - creator.rank_position;
+    return {
+      ...creator,
+      id: creator.creator_id,
+      computedAt: creator.computed_at,
+      rankChange,
+      latestStats: {
+        subscribers: creator.subscribers,
+        followers: creator.subscribers,
+        total_views: creator.total_views,
+        total_posts: creator.total_posts,
+        hours_watched_day: creator.hours_watched_day,
+        hours_watched_week: creator.hours_watched_week,
+        hours_watched_month: creator.hours_watched_month,
+      },
+      totalViews: creator.total_views,
+      totalPosts: creator.total_posts,
+      growth30d: creator.growth_30d,
+      sortValue: rankType === 'views' ? creator.total_views
+        : rankType === 'growth' ? creator.growth_30d
+        : creator.subscribers,
+    };
+  });
 }
 
 // Module-level listings cache — same SWR pattern as rankings.

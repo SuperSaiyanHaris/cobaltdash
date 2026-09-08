@@ -200,6 +200,35 @@ function RankBadge({ rank, size = 'md' }) {
   );
 }
 
+// Position change vs yesterday's snapshot (see `snapshot-daily-rankings` cron
+// + `rankings` table). `change` is a positive/negative spot count, 'new' when
+// there's no comparable snapshot from yesterday, or null/undefined/0 to show
+// nothing — a flat row stays quiet rather than displaying a colored zero.
+function RankChangePill({ change }) {
+  if (change === null || change === undefined || change === 0) return null;
+  if (change === 'new') {
+    return (
+      <span className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-neutral-100 text-neutral-400 flex-shrink-0">
+        NEW
+      </span>
+    );
+  }
+  const up = change > 0;
+  const Icon = up ? ArrowUp : ArrowDown;
+  return (
+    <span
+      className={`hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums border flex-shrink-0 ${
+        up
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          : 'bg-red-50 text-red-700 border-red-200'
+      }`}
+    >
+      <Icon className="w-2.5 h-2.5" strokeWidth={3} />
+      {Math.abs(change)}
+    </span>
+  );
+}
+
 // SEO helpers per platform
 function getSeoData(platform, rankType, topCount) {
   const p = platform?.name || 'Creator';
@@ -1213,8 +1242,9 @@ function PlatformRankings({ urlPlatform }) {
                   <span className={`pointer-events-none absolute left-0 top-0 bottom-0 w-0.5 ${currentPlatform?.bar || 'bg-neutral-900'} opacity-0 group-hover:opacity-100 transition-opacity`} />
 
                   {/* Rank */}
-                  <div className="col-span-2 md:col-span-1">
+                  <div className="col-span-2 md:col-span-1 flex items-center gap-1.5">
                     <RankBadge rank={creator.originalRank} />
+                    <RankChangePill change={creator.rankChange} />
                   </div>
 
                   {/* Creator Info */}
