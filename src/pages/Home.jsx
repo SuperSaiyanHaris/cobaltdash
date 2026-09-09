@@ -257,13 +257,7 @@ function ChampionsGrid({ tops }) {
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-10%' }}
-        transition={{ duration: 0.5 }}
-        className="text-center mb-10 sm:mb-12"
-      >
+      <div className="scroll-reveal text-center mb-10 sm:mb-12">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 mb-3">Right now</p>
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
           The #1 on every platform
@@ -271,7 +265,7 @@ function ChampionsGrid({ tops }) {
         <p className="mt-4 text-base sm:text-lg text-neutral-600">
           Real numbers, updated daily, across all {PLATFORM_COUNT} platforms.
         </p>
-      </motion.div>
+      </div>
 
       <motion.div
         className="relative h-[340px] sm:h-[380px] flex items-center justify-center touch-pan-y cursor-grab active:cursor-grabbing"
@@ -1183,18 +1177,12 @@ export default function Home() {
         <section className="relative mt-20 sm:mt-28 mb-16 sm:mb-24">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header so the dark→light transition reads as an intentional break */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-10%' }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-10 sm:mb-12"
-            >
+            <div className="scroll-reveal text-center mb-10 sm:mb-12">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-3">Live preview</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
                 Real rankings. Live data.
               </h2>
-            </motion.div>
+            </div>
 
             <PreviewCarousel topCreators={topCreators} topHistory={topHistory} />
 
@@ -1207,13 +1195,7 @@ export default function Home() {
 
         {/* ============== FEATURES ============== */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-10%' }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12 sm:mb-14"
-          >
+          <div className="scroll-reveal text-center mb-12 sm:mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-3">What you can do</p>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
               Track creators like a pro
@@ -1221,7 +1203,7 @@ export default function Home() {
             <p className="mt-4 text-base sm:text-lg text-neutral-600">
               No paywalls. Just data.
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {FEATURES.map((feat, i) => (
@@ -1263,13 +1245,7 @@ export default function Home() {
             only — this section is just the visual sell. */}
         <section className="relative pb-16 sm:pb-24">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-10%' }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-10 sm:mb-12"
-            >
+            <div className="scroll-reveal text-center mb-10 sm:mb-12">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 mb-3">For brands & creators</p>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
                 Show up at the top.
@@ -1277,7 +1253,7 @@ export default function Home() {
               <p className="mt-3 text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto">
                 Sponsored placement inside the live rankings tables. Here's exactly what your slot looks like.
               </p>
-            </motion.div>
+            </div>
 
             <FeaturedListingPreview topCreators={topCreators} />
           </div>

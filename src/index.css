@@ -382,3 +382,75 @@ h1, h2, h3, h4 {
   opacity: 0.025;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
+
+/* =========================================================================
+   Page view transitions (added 2026-09-08) — native browser API, no JS
+   animation cost. Wraps a navigation (via React Router's
+   `unstable_viewTransition`) in document.startViewTransition(), which the
+   browser no-ops on automatically if unsupported (Safari <18, older Firefox),
+   so this is pure progressive enhancement, no feature-detection needed on
+   our end. Default browser behavior is a plain cross-fade of the whole page;
+   this swaps it for a quick fade+rise that matches the ease-out-expo curve
+   used everywhere else on the site (CountUp, Reveal, bar-grow). */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: sp-vt-out 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  ::view-transition-new(root) {
+    animation: sp-vt-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes sp-vt-out { to   { opacity: 0; } }
+@keyframes sp-vt-in   { from { opacity: 0; transform: translateY(6px); } }
+
+/* prefers-reduced-motion: reduce still gets the navigation (view transitions
+   aren't decorative-only, they prevent a hard flash), just without motion. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* =========================================================================
+   Squircle corners (added 2026-09-08) — Chromium-only (~65% of users) native
+   corner-shape property, `@supports`-gated so Safari/Firefox silently keep
+   today's plain rounded corners, zero fallback code needed. Scoped to the
+   site's own canonical card recipe (see CLAUDE.md "Cards:" convention) via
+   an attribute selector, so it's one central rule instead of touching every
+   card's JSX — matches the "spend boldness in one place" design principle.
+   Pure visual polish, no behavior change. */
+@supports (corner-shape: squircle) {
+  [class*="border-neutral-200/80"][class*="rounded-xl"],
+  [class*="border-neutral-200/80"][class*="rounded-2xl"] {
+    corner-shape: squircle;
+  }
+}
+
+/* =========================================================================
+   Scroll-driven reveal (added 2026-09-08) — CSS-only equivalent of the
+   framer-motion `whileInView` fade+rise pattern used across Home/Promote/
+   BlogContent, for the simple non-staggered cases. No IntersectionObserver,
+   no JS animation loop, no React re-render on scroll — the browser's
+   compositor drives it directly off the scroll position.
+   `@supports`-gated: browsers without animation-timeline (Safari, Firefox as
+   of 2026) just show the content immediately, fully visible, no animation —
+   a safe no-op, never a broken/invisible state.
+   Behavior note: unlike the framer-motion version, this is not a "play once
+   and stay" trigger — scrolling back up past the element and down into it
+   again will gently replay the fade. That's the native, accepted behavior
+   for this technique, not a bug. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-reveal {
+      animation: sp-scroll-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
+}
+@keyframes sp-scroll-reveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

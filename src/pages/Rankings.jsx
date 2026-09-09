@@ -1232,6 +1232,7 @@ function PlatformRankings({ urlPlatform }) {
                 <MotionLink
                   key={creator.id}
                   to={`/${creator.platform}/${creator.username}`}
+                  viewTransition
                   initial={{ opacity: 0, y: 8 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
