@@ -12,10 +12,11 @@ import { createContext, useContext, useState } from 'react';
 export const PILL_HEIGHT = 68;
 export const PILL_MARGIN_BOTTOM = 10; // floating gap above the safe area
 export const ORB_SIZE = 48;
-// The little collapse-trigger notch sits 12px above the pill's own top
-// edge (see the -top-3 button in MobileBottomNav) — anything stacking
-// "above the pill" needs to clear this too, not just PILL_HEIGHT.
-export const PILL_NOTCH_PROTRUSION = 12;
+// The collapse-trigger notch sits entirely above the pill's own top edge
+// (its own 26px height, flush against the border, zero overlap into the
+// icon row below — see MobileBottomNav's collapse button) — anything
+// stacking "above the pill" needs to clear this too, not just PILL_HEIGHT.
+export const PILL_NOTCH_PROTRUSION = 26;
 
 const MobileNavContext = createContext(null);
 

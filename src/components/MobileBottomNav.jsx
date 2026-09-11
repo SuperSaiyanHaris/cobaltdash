@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, PanelBottomOpen, PanelBottomClose } from 'lucide-react';
 import useRankingsHint from '../hooks/useRankingsHint';
-import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
+import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE, PILL_NOTCH_PROTRUSION } from '../contexts/MobileNavContext';
 
 // Global mobile tab bar — floating pill, redesigned 2026-09-11.
 //
@@ -97,7 +97,7 @@ export default function MobileBottomNav() {
         layout
         layoutId="mobileNavShape"
         transition={SPRING}
-        className="relative bg-white border border-neutral-200/80 pointer-events-auto"
+        className="relative bg-white border border-neutral-900 pointer-events-auto"
         style={{
           width: collapsed ? ORB_SIZE : `calc(100% - ${PILL_MARGIN_X * 2}px)`,
           height: collapsed ? ORB_SIZE : PILL_HEIGHT,
@@ -188,19 +188,25 @@ export default function MobileBottomNav() {
               </div>
 
               {pageLabel && (
-                <span className="text-[10.5px] font-bold text-neutral-400 uppercase tracking-wide">
+                <span className="text-[10.5px] font-bold text-neutral-900 uppercase tracking-wide">
                   {pageLabel}
                 </span>
               )}
 
+              {/* Sits fully above the pill's top edge (top: -26px, exactly its
+                  own height) instead of dipping into the icon row — it used
+                  to be centered at -top-3, which overlapped the Rankings
+                  icon directly beneath it since that's the middle of 5.
+                  PILL_NOTCH_PROTRUSION in MobileNavContext must match this
+                  offset so BackToTop still clears it. */}
               <button
                 type="button"
                 onClick={() => setCollapsed(true)}
                 aria-label="Hide navigation"
-                className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center justify-center bg-white rounded-full"
-                style={{ width: 26, height: 26, boxShadow: '0 2px 6px rgba(0,0,0,.1)' }}
+                className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center bg-white border border-neutral-900 rounded-full"
+                style={{ width: 26, height: 26, top: -PILL_NOTCH_PROTRUSION, boxShadow: '0 2px 6px rgba(0,0,0,.1)' }}
               >
-                <PanelBottomClose className="w-3.5 h-3.5 text-neutral-400" strokeWidth={2.25} />
+                <PanelBottomClose className="w-3.5 h-3.5 text-neutral-500" strokeWidth={2.25} />
               </button>
             </motion.div>
           )}
