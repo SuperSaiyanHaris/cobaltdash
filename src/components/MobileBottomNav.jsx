@@ -1,51 +1,37 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import useRankingsHint from '../hooks/useRankingsHint';
 
-// Global mobile tab bar — Dashboard, Compare, Rankings, Blog, Search, always
-// reachable with one tap. Desktop keeps its own center pill nav (Header.jsx's
-// CENTER_NAV); this is the mobile-only equivalent. Order was set explicitly
-// by the user 2026-09-02 (left to right: Dashboard, Compare, Rankings, Blog,
-// Search) — don't reorder or swap icons without being asked again.
+// Global mobile tab bar — floating pill, redesigned 2026-09-11.
 //
-// Curve + glow shape modeled on the PlayStation app's bottom bar (2026-09-02
-// design pass, see the mobile-nav-redesign artifact this was iterated from).
-// Both curves and every icon position below are computed from the same
-// quadratic bezier (edge y=0, control y=-40, so the visible peak sits at
-// y=-20 at the horizontal center) — the bottom curve is the identical shape
-// offset +66 on y (pushed down further on 2026-09-02 to give the larger
-// icons more breathing room), and each icon's vertical position is the
-// midpoint between the two curves at that icon's x, so the row visually
-// arcs to fit the channel instead of a flat row the curves cut across.
-// Don't hand-tune any of POSITIONS without recomputing from that same
-// curve, they'll drift out of alignment with the two <path> shapes below.
-// Edge y is 0 — not some small-but-nonzero value — so the white fill
-// touches the very top-left/top-right corners of the bar with zero gap;
-// the svg needs overflow-visible (below) since the peak goes negative,
-// above the nominal viewBox.
-const ICON_SIZE = 24; // ~10% up from the original 22px (2026-09-02)
-const POSITIONS = [
-  { xPercent: 10, top: 14, gapBefore: 12 },
-  { xPercent: 30, top: 4, gapBefore: 90 },
-  { xPercent: 50, top: 1, gapBefore: 168 },
-  { xPercent: 70, top: 4, gapBefore: 246 },
-  { xPercent: 90, top: 14, gapBefore: 324 },
-];
-const BAR_HEIGHT = 112;
-// Collapsed state (2026-09-10): tapping the grabber handle at the curve's
-// peak shrinks the bar down to just this sliver, reclaiming space on
-// content-dense pages (admin tables, long lists) without removing nav
-// access entirely — tap the sliver's own handle to expand back.
-const COLLAPSED_HEIGHT = 26;
-// The curve's peak pokes 20px above BAR_HEIGHT's own y=0 (see the bezier
-// note above). The collapse animation needs overflow-hidden on its outer
-// box, which would otherwise clip that overshoot — so the outer box always
-// reserves this much headroom above the bar content, expanded or not, and
-// the bar content renders offset down by exactly this much inside it.
-const PEAK_HEADROOM = 20;
-const TOP_CURVE = 'M0,0 Q195,-40 390,0';
-const BOTTOM_CURVE = 'M0,66 Q195,26 390,66';
+// The previous version was a full-width bar with a decorative SVG wave cut
+// into its top-center. From a distance the "curve" read fine, but the fill
+// shape was still a solid rectangle everywhere except that one dip — near
+// the edge icons (Dashboard, Search) it was full height, full opacity,
+// with real page content hidden behind it the whole time. Two rounds of
+// user feedback ("white background on the sides", "how did you not fix
+// this") both trace back to that same structural fact: there was no page
+// content to reveal at the sides because the bar was never actually
+// trimmed there, just decorated on top.
+//
+// Fix: stop trying to carve transparency out of a rectangle and use a
+// shape that's opaque by construction only where it needs to be. This bar
+// doesn't reach the screen edges at all — PILL_MARGIN_X of real page is
+// visible on both sides and PILL_MARGIN_BOTTOM below, by construction, not
+// by curve math. Nothing to "trim precisely" because there's nothing
+// there to begin with.
+const ICON_SIZE = 22;
+const PILL_HEIGHT = 68;
+const PILL_MARGIN_X = 14; // gap from each screen edge — page shows through here
+const PILL_MARGIN_BOTTOM = 10; // floating gap above the safe area
+const ORB_SIZE = 48;
+const GRADIENT = 'linear-gradient(135deg,#6366f1,#a855f7,#e879f9)';
+// One spring used for every layout/shape morph in this file (pill<->orb,
+// the sliding active-tab pill) so every motion in the bar feels like part
+// of the same physical object, not a grab-bag of separately-tuned easings.
+const SPRING = { type: 'spring', stiffness: 380, damping: 30, mass: 0.9 };
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, isActive: (p) => p === '/dashboard' },
@@ -96,154 +82,131 @@ export default function MobileBottomNav() {
 
   const items = NAV_ITEMS;
   const activeIndex = items.findIndex((item) => item.isActive(location.pathname));
-  const activePos = activeIndex >= 0 ? POSITIONS[activeIndex] : null;
   const pageLabel = PAGE_LABELS.find((entry) => entry.isActive(location.pathname))?.label ?? null;
 
   return (
+    // pointer-events-none on the full-width wrapper + pointer-events-auto on
+    // the pill itself: the wrapper still spans the viewport (so flex can
+    // center the pill/orb), but its transparent margins must let taps and
+    // scrolls on the page underneath through, not swallow them.
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 flex justify-center pointer-events-none"
+      style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${PILL_MARGIN_BOTTOM}px)` }}
       aria-label="Primary"
     >
-      {/* No bg here — the curve's own SVG fill is the only thing that should
-          paint white in this band. Giving this wrapper its own background
-          turned the headroom strip into a full-width white rectangle sitting
-          above the curve at the sides, where the original design had nothing
-          (the curve sits flush with y=0 there, no bump) — regressed the
-          smooth arch into a boxy shape with visible "shelves" at the edges.
-          Don't add a background back here; see the collapsed-sliver button
-          below for where the collapsed state gets its own white bar instead. */}
-      <div
-        className="relative overflow-hidden transition-[height] duration-300"
+      <motion.div
+        layout
+        layoutId="mobileNavShape"
+        transition={SPRING}
+        className="relative bg-white pointer-events-auto"
         style={{
-          height: PEAK_HEADROOM + (collapsed ? COLLAPSED_HEIGHT : BAR_HEIGHT),
-          transitionTimingFunction: 'cubic-bezier(0.32,0.72,0,1)',
+          width: collapsed ? ORB_SIZE : `calc(100% - ${PILL_MARGIN_X * 2}px)`,
+          height: collapsed ? ORB_SIZE : PILL_HEIGHT,
+        }}
+        animate={{
+          borderRadius: collapsed ? ORB_SIZE / 2 : 26,
+          boxShadow: collapsed
+            ? '0 10px 24px -6px rgba(99,102,241,.45), 0 2px 8px rgba(0,0,0,.12)'
+            : '0 8px 24px -8px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.06)',
         }}
       >
-        {/* Full bar content, offset down by PEAK_HEADROOM so its own -20..BAR_HEIGHT
-            drawing range (the curve's peak included) fills this box with no clipping. */}
-        <div
-          className="absolute inset-x-0 transition-opacity duration-150"
-          style={{ top: PEAK_HEADROOM, height: BAR_HEIGHT, opacity: collapsed ? 0 : 1, pointerEvents: collapsed ? 'none' : 'auto' }}
-          aria-hidden={collapsed}
-        >
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
-          viewBox={`0 0 390 ${BAR_HEIGHT}`}
-          preserveAspectRatio="none"
-          style={{ filter: 'drop-shadow(0 -3px 7px rgba(0,0,0,.08))' }}
-        >
-          <defs>
-            <linearGradient id="mbnGlow" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#6366f1" stopOpacity=".9" />
-              <stop offset="30%" stopColor="#818cf8" stopOpacity="1" />
-              <stop offset="55%" stopColor="#a855f7" stopOpacity="1" />
-              <stop offset="80%" stopColor="#d946ef" stopOpacity="1" />
-              <stop offset="100%" stopColor="#e879f9" stopOpacity=".9" />
-            </linearGradient>
-            <filter id="mbnBlur" x="-20%" y="-200%" width="140%" height="500%">
-              <feGaussianBlur stdDeviation="2.4" />
-            </filter>
-          </defs>
+        {/* Gradient fill, opacity-toggled — lives on its own layer so the
+            pill's own background can stay a plain white that never needs to
+            interpolate between a solid color and a gradient (browsers/Motion
+            can't tween between those value shapes, it would just snap). */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{ background: GRADIENT, borderRadius: 'inherit' }}
+          initial={false}
+          animate={{ opacity: collapsed ? 1 : 0 }}
+          transition={{ duration: 0.18 }}
+        />
 
-          {/* bar shape + top rim glow, bright edge to edge */}
-          <path d={`${TOP_CURVE} L390,${BAR_HEIGHT} L0,${BAR_HEIGHT} Z`} fill="#ffffff" />
-          <path d={TOP_CURVE} fill="none" stroke="url(#mbnGlow)" strokeWidth="5" strokeLinecap="round" filter="url(#mbnBlur)" opacity=".5" />
-          <path d={TOP_CURVE} fill="none" stroke="url(#mbnGlow)" strokeWidth="1.5" strokeLinecap="round" />
-
-          {/* echo curve under the icons: faint always, bright segment slides to the active tab */}
-          <path d={BOTTOM_CURVE} fill="none" stroke="#d4d4d4" strokeWidth="1.2" strokeLinecap="round" opacity=".3" />
-          {activePos && (
-            <path
-              pathLength="390"
-              d={BOTTOM_CURVE}
-              fill="none"
-              stroke="url(#mbnGlow)"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              strokeDasharray={`0 ${activePos.gapBefore} 54 9999`}
-            />
-          )}
-        </svg>
-
-        {items.map((item, i) => {
-          const active = i === activeIndex;
-          const Icon = item.icon;
-          const pos = POSITIONS[i];
-          return (
-            <Link
-              key={item.label}
-              to={item.path}
-              aria-current={active ? 'page' : undefined}
-              aria-label={item.label}
-              tabIndex={collapsed ? -1 : undefined}
-              className="absolute -translate-x-1/2"
-              style={{
-                left: `${pos.xPercent}%`,
-                top: pos.top,
-                width: ICON_SIZE,
-                height: ICON_SIZE,
-                color: active ? '#a855f7' : '#171717',
-              }}
+        <AnimatePresence initial={false}>
+          {collapsed ? (
+            <motion.button
+              key="orb"
+              type="button"
+              aria-label="Show navigation"
+              onClick={() => setCollapsed(false)}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.16 }}
+              className="absolute inset-0 flex items-center justify-center"
             >
-              <Icon className="w-full h-full" />
-              {/* First-visit attention ping — Rankings only, gone for good
-                  once the visitor has ever landed on /rankings. See
-                  useRankingsHint. Offset a full 8px clear of the icon's own
-                  24x24 box on both axes so the dot never overlaps the glyph
-                  itself (it used to sit right on the icon's corner). */}
-              {item.path === '/rankings' && showRankingsHint && (
-                <span aria-hidden="true" className="absolute -top-2 -right-2 flex h-2 w-2">
-                  <span
-                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-80"
-                    style={{ background: 'linear-gradient(90deg,#6366f1,#a855f7,#e879f9)' }}
-                  />
-                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#a855f7' }} />
+              <ChevronUp className="w-5 h-5 text-white" strokeWidth={2.5} />
+            </motion.button>
+          ) : (
+            <motion.div
+              key="pill-content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, delay: 0.07 }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-1"
+            >
+              <div className="flex items-center gap-5">
+                {items.map((item, i) => {
+                  const active = i === activeIndex;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.path}
+                      aria-current={active ? 'page' : undefined}
+                      aria-label={item.label}
+                      className="relative flex items-center justify-center"
+                      style={{ width: 38, height: 38 }}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="activeTabPill"
+                          transition={SPRING}
+                          aria-hidden="true"
+                          className="absolute inset-0 rounded-full bg-neutral-900"
+                        />
+                      )}
+                      <Icon
+                        className="relative"
+                        style={{ width: ICON_SIZE, height: ICON_SIZE, color: active ? '#ffffff' : '#171717' }}
+                      />
+                      {/* First-visit attention ping — Rankings only, gone for
+                          good once the visitor has ever landed on /rankings. */}
+                      {item.path === '/rankings' && showRankingsHint && (
+                        <span aria-hidden="true" className="absolute top-0 right-0 flex h-2 w-2">
+                          <span
+                            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-80"
+                            style={{ background: GRADIENT }}
+                          />
+                          <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#a855f7' }} />
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {pageLabel && (
+                <span className="text-[10.5px] font-bold text-neutral-400 uppercase tracking-wide">
+                  {pageLabel}
                 </span>
               )}
-            </Link>
-          );
-        })}
 
-        {pageLabel && (
-          <span
-            className="absolute -translate-x-1/2 text-[12.5px] font-bold text-neutral-900 whitespace-nowrap"
-            style={{ left: '50%', top: 74 }}
-          >
-            {pageLabel}
-          </span>
-        )}
-        </div>
-
-        {/* Collapsed sliver — this is the one piece that DOES want a solid
-            white bar (it's a plain rectangle by design, not curve-following),
-            so the background lives here rather than on the outer wrapper. */}
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          aria-label="Show navigation"
-          className="absolute inset-x-0 flex items-center justify-center bg-white transition-opacity duration-150"
-          style={{ top: PEAK_HEADROOM, height: COLLAPSED_HEIGHT, opacity: collapsed ? 1 : 0, pointerEvents: collapsed ? 'auto' : 'none' }}
-          tabIndex={collapsed ? 0 : -1}
-        >
-          <ChevronUp className="w-4 h-4 text-neutral-400" />
-        </button>
-
-        {/* Grabber handle at the curve's peak, in the headroom band above the
-            bar content. Only shown while expanded — tapping it collapses the
-            bar down to COLLAPSED_HEIGHT. */}
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={() => setCollapsed(true)}
-            aria-label="Hide navigation"
-            className="absolute -translate-x-1/2 flex items-center justify-center"
-            style={{ left: '50%', top: 0, width: 60, height: PEAK_HEADROOM }}
-          >
-            <ChevronDown className="w-4 h-4 text-neutral-400" />
-          </button>
-        )}
-      </div>
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                aria-label="Hide navigation"
+                className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center justify-center bg-white rounded-full"
+                style={{ width: 26, height: 26, boxShadow: '0 2px 6px rgba(0,0,0,.1)' }}
+              >
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </nav>
   );
 }
