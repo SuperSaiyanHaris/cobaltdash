@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search } from 'lucide-react';
+import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import useRankingsHint from '../hooks/useRankingsHint';
 
 // Global mobile tab bar — Dashboard, Compare, Rankings, Blog, Search, always
@@ -101,12 +101,20 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       aria-label="Primary"
     >
+      {/* No bg here — the curve's own SVG fill is the only thing that should
+          paint white in this band. Giving this wrapper its own background
+          turned the headroom strip into a full-width white rectangle sitting
+          above the curve at the sides, where the original design had nothing
+          (the curve sits flush with y=0 there, no bump) — regressed the
+          smooth arch into a boxy shape with visible "shelves" at the edges.
+          Don't add a background back here; see the collapsed-sliver button
+          below for where the collapsed state gets its own white bar instead. */}
       <div
-        className="relative bg-white overflow-hidden transition-[height] duration-300"
+        className="relative overflow-hidden transition-[height] duration-300"
         style={{
           height: PEAK_HEADROOM + (collapsed ? COLLAPSED_HEIGHT : BAR_HEIGHT),
           transitionTimingFunction: 'cubic-bezier(0.32,0.72,0,1)',
@@ -207,17 +215,18 @@ export default function MobileBottomNav() {
         )}
         </div>
 
-        {/* Collapsed sliver — its own tap target to expand back, sits in the
-            same headroom-offset band the bar content occupies when expanded. */}
+        {/* Collapsed sliver — this is the one piece that DOES want a solid
+            white bar (it's a plain rectangle by design, not curve-following),
+            so the background lives here rather than on the outer wrapper. */}
         <button
           type="button"
           onClick={() => setCollapsed(false)}
           aria-label="Show navigation"
-          className="absolute inset-x-0 flex items-center justify-center transition-opacity duration-150"
+          className="absolute inset-x-0 flex items-center justify-center bg-white transition-opacity duration-150"
           style={{ top: PEAK_HEADROOM, height: COLLAPSED_HEIGHT, opacity: collapsed ? 1 : 0, pointerEvents: collapsed ? 'auto' : 'none' }}
           tabIndex={collapsed ? 0 : -1}
         >
-          <span className="block rounded-full bg-neutral-300" style={{ width: 32, height: 4 }} />
+          <ChevronUp className="w-4 h-4 text-neutral-400" />
         </button>
 
         {/* Grabber handle at the curve's peak, in the headroom band above the
@@ -231,7 +240,7 @@ export default function MobileBottomNav() {
             className="absolute -translate-x-1/2 flex items-center justify-center"
             style={{ left: '50%', top: 0, width: 60, height: PEAK_HEADROOM }}
           >
-            <span className="block rounded-full bg-neutral-300 active:bg-neutral-400" style={{ width: 32, height: 4 }} />
+            <ChevronDown className="w-4 h-4 text-neutral-400" />
           </button>
         )}
       </div>
