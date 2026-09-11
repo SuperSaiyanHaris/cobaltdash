@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search } from 'lucide-react';
 import useRankingsHint from '../hooks/useRankingsHint';
@@ -32,6 +33,17 @@ const POSITIONS = [
   { xPercent: 90, top: 14, gapBefore: 324 },
 ];
 const BAR_HEIGHT = 112;
+// Collapsed state (2026-09-10): tapping the grabber handle at the curve's
+// peak shrinks the bar down to just this sliver, reclaiming space on
+// content-dense pages (admin tables, long lists) without removing nav
+// access entirely — tap the sliver's own handle to expand back.
+const COLLAPSED_HEIGHT = 26;
+// The curve's peak pokes 20px above BAR_HEIGHT's own y=0 (see the bezier
+// note above). The collapse animation needs overflow-hidden on its outer
+// box, which would otherwise clip that overshoot — so the outer box always
+// reserves this much headroom above the bar content, expanded or not, and
+// the bar content renders offset down by exactly this much inside it.
+const PEAK_HEADROOM = 20;
 const TOP_CURVE = 'M0,0 Q195,-40 390,0';
 const BOTTOM_CURVE = 'M0,66 Q195,26 390,66';
 
@@ -80,6 +92,7 @@ const PAGE_LABELS = [
 export default function MobileBottomNav() {
   const location = useLocation();
   const showRankingsHint = useRankingsHint();
+  const [collapsed, setCollapsed] = useState(false);
 
   const items = NAV_ITEMS;
   const activeIndex = items.findIndex((item) => item.isActive(location.pathname));
@@ -88,11 +101,24 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       aria-label="Primary"
     >
-      <div className="relative" style={{ height: BAR_HEIGHT }}>
+      <div
+        className="relative bg-white overflow-hidden transition-[height] duration-300"
+        style={{
+          height: PEAK_HEADROOM + (collapsed ? COLLAPSED_HEIGHT : BAR_HEIGHT),
+          transitionTimingFunction: 'cubic-bezier(0.32,0.72,0,1)',
+        }}
+      >
+        {/* Full bar content, offset down by PEAK_HEADROOM so its own -20..BAR_HEIGHT
+            drawing range (the curve's peak included) fills this box with no clipping. */}
+        <div
+          className="absolute inset-x-0 transition-opacity duration-150"
+          style={{ top: PEAK_HEADROOM, height: BAR_HEIGHT, opacity: collapsed ? 0 : 1, pointerEvents: collapsed ? 'none' : 'auto' }}
+          aria-hidden={collapsed}
+        >
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
           viewBox={`0 0 390 ${BAR_HEIGHT}`}
@@ -142,6 +168,7 @@ export default function MobileBottomNav() {
               to={item.path}
               aria-current={active ? 'page' : undefined}
               aria-label={item.label}
+              tabIndex={collapsed ? -1 : undefined}
               className="absolute -translate-x-1/2"
               style={{
                 left: `${pos.xPercent}%`,
@@ -177,6 +204,35 @@ export default function MobileBottomNav() {
           >
             {pageLabel}
           </span>
+        )}
+        </div>
+
+        {/* Collapsed sliver — its own tap target to expand back, sits in the
+            same headroom-offset band the bar content occupies when expanded. */}
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          aria-label="Show navigation"
+          className="absolute inset-x-0 flex items-center justify-center transition-opacity duration-150"
+          style={{ top: PEAK_HEADROOM, height: COLLAPSED_HEIGHT, opacity: collapsed ? 1 : 0, pointerEvents: collapsed ? 'auto' : 'none' }}
+          tabIndex={collapsed ? 0 : -1}
+        >
+          <span className="block rounded-full bg-neutral-300" style={{ width: 32, height: 4 }} />
+        </button>
+
+        {/* Grabber handle at the curve's peak, in the headroom band above the
+            bar content. Only shown while expanded — tapping it collapses the
+            bar down to COLLAPSED_HEIGHT. */}
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            aria-label="Hide navigation"
+            className="absolute -translate-x-1/2 flex items-center justify-center"
+            style={{ left: '50%', top: 0, width: 60, height: PEAK_HEADROOM }}
+          >
+            <span className="block rounded-full bg-neutral-300 active:bg-neutral-400" style={{ width: 32, height: 4 }} />
+          </button>
         )}
       </div>
     </nav>
