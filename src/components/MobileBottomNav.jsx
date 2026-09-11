@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, PanelBottomOpen, PanelBottomClose } from 'lucide-react';
+import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, PanelBottomOpen } from 'lucide-react';
 import useRankingsHint from '../hooks/useRankingsHint';
-import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE, PILL_NOTCH_PROTRUSION } from '../contexts/MobileNavContext';
+import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
 
 // Global mobile tab bar — floating pill, redesigned 2026-09-11.
 //
@@ -144,6 +144,7 @@ export default function MobileBottomNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, delay: 0.07 }}
+              onClick={() => setCollapsed(true)}
               className="absolute inset-0 flex flex-col items-center justify-center gap-1"
             >
               <div className="flex items-center gap-5">
@@ -156,6 +157,7 @@ export default function MobileBottomNav() {
                       to={item.path}
                       aria-current={active ? 'page' : undefined}
                       aria-label={item.label}
+                      onClick={(e) => e.stopPropagation()}
                       className="relative flex items-center justify-center"
                       style={{ width: 38, height: 38 }}
                     >
@@ -192,22 +194,6 @@ export default function MobileBottomNav() {
                   {pageLabel}
                 </span>
               )}
-
-              {/* Sits fully above the pill's top edge (top: -26px, exactly its
-                  own height) instead of dipping into the icon row — it used
-                  to be centered at -top-3, which overlapped the Rankings
-                  icon directly beneath it since that's the middle of 5.
-                  PILL_NOTCH_PROTRUSION in MobileNavContext must match this
-                  offset so BackToTop still clears it. */}
-              <button
-                type="button"
-                onClick={() => setCollapsed(true)}
-                aria-label="Hide navigation"
-                className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center bg-white border border-neutral-900 rounded-full"
-                style={{ width: 26, height: 26, top: -PILL_NOTCH_PROTRUSION, boxShadow: '0 2px 6px rgba(0,0,0,.1)' }}
-              >
-                <PanelBottomClose className="w-3.5 h-3.5 text-neutral-500" strokeWidth={2.25} />
-              </button>
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE, PILL_NOTCH_PROTRUSION } from '../contexts/MobileNavContext';
+import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
 
 /**
  * BackToTop - Floating button that appears when scrolling down
@@ -9,10 +9,10 @@ import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE, PILL_NOTCH_PRO
  * When the mobile bottom nav is present, this has to react to its
  * collapsed/expanded state, not just a fixed height — the floating pill
  * and the collapsed orb have very different footprints (2026-09-11). Sits
- * clear above the pill's own top edge (notch included) while expanded,
- * and drops back down near the actual bottom-right corner once the orb
- * takes over, since a tiny centered circle doesn't need anything cleared
- * on the right side at all.
+ * clear above the pill's own top edge while expanded, and drops back down
+ * near the actual bottom-right corner once the orb takes over, since a
+ * tiny centered circle doesn't need anything cleared on the right side at
+ * all.
  */
 export default function BackToTop({ hasBottomNav = false }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -42,7 +42,7 @@ export default function BackToTop({ hasBottomNav = false }) {
     });
   };
 
-  const expandedBottom = PILL_MARGIN_BOTTOM + PILL_HEIGHT + PILL_NOTCH_PROTRUSION + 14; // 14px clearance above the notch
+  const expandedBottom = PILL_MARGIN_BOTTOM + PILL_HEIGHT + 14; // 14px clearance above the pill's own top edge
   const collapsedBottom = PILL_MARGIN_BOTTOM + ORB_SIZE / 2; // orb is small + centered, no need to clear the right side
 
   return (
