@@ -5,6 +5,7 @@ import SEO from '../components/SEO';
 import NewsletterSignup from '../components/NewsletterSignup';
 import { getAllPosts, getAllCategories } from '../services/blogService';
 import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
+import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
 
 const PAGE_SIZE = 9;
 
@@ -50,6 +51,24 @@ export default function Blog() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // The floating Filters button sits at bottom-left, and the mobile bottom
+  // nav (only mounted below md, 768px) floats a near-full-width pill right
+  // over that same corner when expanded — it silently sat on top of the FAB
+  // since both are the same z-40 and the nav renders later in the tree.
+  // Track whether the nav is actually on screen (its own md:hidden
+  // breakpoint) so the FAB only pays the clearance cost where the overlap
+  // can actually happen, not on the tablet width range where the nav
+  // doesn't render at all but this FAB still does (it's lg:hidden).
+  const [hasBottomNav, setHasBottomNav] = useState(false);
+  const { collapsed: navCollapsed } = useMobileNav();
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setHasBottomNav(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -193,8 +212,17 @@ export default function Blog() {
                 </div>
               </aside>
 
-              {/* Mobile FAB */}
-              <div className="lg:hidden fixed bottom-6 left-6 z-40">
+              {/* Mobile FAB — clears the mobile bottom nav (see hasBottomNav
+                  above) when it's actually on screen, otherwise sits at the
+                  plain bottom-6 corner it always used. */}
+              <div
+                className="lg:hidden fixed left-6 z-40"
+                style={{
+                  bottom: hasBottomNav
+                    ? `calc(env(safe-area-inset-bottom) + ${navCollapsed ? PILL_MARGIN_BOTTOM + ORB_SIZE / 2 : PILL_MARGIN_BOTTOM + PILL_HEIGHT + 14}px)`
+                    : '1.5rem',
+                }}
+              >
                 <button
                   onClick={() => setMobileFiltersOpen(true)}
                   className="flex items-center gap-2 px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-full shadow-lg transition-colors"
