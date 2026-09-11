@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Scale, ChartNoAxesColumnIncreasing, BookOpen, Search, PanelBottomOpen, PanelBottomClose } from 'lucide-react';
 import useRankingsHint from '../hooks/useRankingsHint';
+import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
 
 // Global mobile tab bar — floating pill, redesigned 2026-09-11.
 //
@@ -22,11 +22,10 @@ import useRankingsHint from '../hooks/useRankingsHint';
 // visible on both sides and PILL_MARGIN_BOTTOM below, by construction, not
 // by curve math. Nothing to "trim precisely" because there's nothing
 // there to begin with.
+// PILL_HEIGHT, PILL_MARGIN_BOTTOM, and ORB_SIZE live in MobileNavContext —
+// BackToTop needs those exact numbers too, see that file for why.
 const ICON_SIZE = 22;
-const PILL_HEIGHT = 68;
 const PILL_MARGIN_X = 14; // gap from each screen edge — page shows through here
-const PILL_MARGIN_BOTTOM = 10; // floating gap above the safe area
-const ORB_SIZE = 48;
 const GRADIENT = 'linear-gradient(135deg,#6366f1,#a855f7,#e879f9)';
 // One spring used for every layout/shape morph in this file (pill<->orb,
 // the sliding active-tab pill) so every motion in the bar feels like part
@@ -78,7 +77,7 @@ const PAGE_LABELS = [
 export default function MobileBottomNav() {
   const location = useLocation();
   const showRankingsHint = useRankingsHint();
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, setCollapsed } = useMobileNav();
 
   const items = NAV_ITEMS;
   const activeIndex = items.findIndex((item) => item.isActive(location.pathname));
@@ -98,7 +97,7 @@ export default function MobileBottomNav() {
         layout
         layoutId="mobileNavShape"
         transition={SPRING}
-        className="relative bg-white pointer-events-auto"
+        className="relative bg-white border border-neutral-200/80 pointer-events-auto"
         style={{
           width: collapsed ? ORB_SIZE : `calc(100% - ${PILL_MARGIN_X * 2}px)`,
           height: collapsed ? ORB_SIZE : PILL_HEIGHT,
@@ -136,7 +135,7 @@ export default function MobileBottomNav() {
               transition={{ duration: 0.16 }}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <ChevronUp className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <PanelBottomOpen className="w-5 h-5 text-white" strokeWidth={2.25} />
             </motion.button>
           ) : (
             <motion.div
@@ -201,7 +200,7 @@ export default function MobileBottomNav() {
                 className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center justify-center bg-white rounded-full"
                 style={{ width: 26, height: 26, boxShadow: '0 2px 6px rgba(0,0,0,.1)' }}
               >
-                <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+                <PanelBottomClose className="w-3.5 h-3.5 text-neutral-400" strokeWidth={2.25} />
               </button>
             </motion.div>
           )}

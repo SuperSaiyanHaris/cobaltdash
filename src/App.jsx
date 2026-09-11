@@ -9,6 +9,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthPanel from './components/AuthPanel';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { MobileNavProvider } from './contexts/MobileNavContext';
 import { isMac } from './lib/platform';
 
 // Eagerly load the homepage (critical path)
@@ -230,7 +231,8 @@ function LayoutWrapper() {
   const isShareRoute = location.pathname.startsWith('/s/');
 
   return (
-    <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(112px+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
+    <MobileNavProvider>
+    <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
       <RouteChangeTracker />
       <ScrollToTop />
       <BackToTop hasBottomNav={!isShareRoute} />
@@ -280,6 +282,7 @@ function LayoutWrapper() {
       {!isShareRoute && <Footer />}
       {!isShareRoute && <MobileBottomNav />}
     </div>
+    </MobileNavProvider>
   );
 }
 
