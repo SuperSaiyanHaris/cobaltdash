@@ -300,16 +300,23 @@ async function getProfileContent(platform, username) {
   const count = latest ? latest.subscribers : null;
   const growth = latest && oldest ? latest.subscribers - oldest.subscribers : null;
 
-  // Thin-content gate (added 2026-08-19, see the AdSense content audit): a
-  // profile with no bio and under 1,000 subscribers/followers is close to
-  // content-free (e.g. a name and a table of the digit "1"). The page still
-  // renders normally for real visitors below; this only tells Google not to
-  // index it until the creator has a bio or clears the bar. Same threshold
-  // as get_sitemap_eligible_creators (generateSitemap.js), kept in sync
+  // Thin-content gate (raised 2026-09-14, see the AdSense content audit): the
+  // original 2026-08-19 version noindexed a page only when it had no bio AND
+  // under 1,000 subscribers/followers. That caught just 5,345 of 50,129
+  // creator pages (10.7%) because 84% of creators carry some bio text, almost
+  // always the platform's own one-line about-blurb, not anything ShinyPull
+  // wrote, so it exempted nearly everyone regardless of follower count. The
+  // site still read as ~45,000 auto-generated pages against 127 blog posts
+  // and got declined for AdSense a 4th time with this gate already live.
+  // Bio presence is no longer a factor at all: the bar is purely subscriber
+  // count, raised to 50,000, which drops indexable creator pages to 17,391
+  // (the tier with a real audience) and noindexes the other 32,738. The page
+  // still renders normally for real visitors below every threshold; this
+  // only tells Google not to index it. Same threshold as
+  // get_sitemap_eligible_creators (generateSitemap.js), kept in sync
   // deliberately so a page can't be in the sitemap yet noindexed, or vice
   // versa. Never based on existence or activity alone, only content thinness.
-  const hasBio = typeof c.description === 'string' && c.description.trim().length > 0;
-  const thin = !hasBio && (count === null || count < 1000);
+  const thin = count === null || count < 50000;
 
   // Title/description with real numbers — this is what shows in the SERP.
   const title = count !== null
