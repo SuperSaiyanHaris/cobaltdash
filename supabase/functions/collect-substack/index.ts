@@ -37,7 +37,24 @@ const CATEGORIES = [
   { id: 103, slug: "news" }, { id: 49715, slug: "fashionandbeauty" }, { id: 11, slug: "music" },
   { id: 223, slug: "faith" }, { id: 76741, slug: "health-politics" },
 ];
-const PAGES_PER_CATEGORY = 8;
+// Raised 8 -> 12 (2026-09-15, real spsummary audit finding): only publications
+// that appear somewhere in this sweep get a stats write; anyone who drops
+// below the visible window keeps last-good data forever ("pubs that drop off
+// keep last-good", by design). Measured against the live DB before this
+// change: 2,068 tracked pubs, only 77% fresh in the last 2 days, and 328 of
+// them clustered specifically in the 7-14-day-stale band, not spread evenly
+// (a smooth decay curve would look different) — consistent with pubs that
+// were visible when first discovered but have since been pushed below page 8
+// as the tracked set grew and category rankings shifted, never to be swept
+// again. +4 pages/category is a real but modest widening (112 -> 168
+// requests/run, +56, still ~50 real seconds of the 300ms inter-page sleep,
+// comfortably inside the Edge Function's 400s wall-clock budget on Pro) —
+// deliberately not doubled, since this endpoint's actual rate-limit
+// tolerance has never been measured the way the archive-fetch endpoint's
+// has (CLAUDE.md notes ~50% failure under bulk load there). If freshness is
+// still meaningfully short of ~90% after this, that's real signal the fix
+// needs to go further, not proof the theory was wrong.
+const PAGES_PER_CATEGORY = 12;
 const MAX_NEW_PER_RUN = 60; // same cap as the old Node discovery script
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const cleanText = (s: unknown) => (s ? String(s).replace(/\s+/g, " ").trim().slice(0, 500) || null : null);
