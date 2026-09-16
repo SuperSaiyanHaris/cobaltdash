@@ -265,6 +265,13 @@ async function getHubContent(hub) {
 // ---------------------------------------------------------------------------
 
 async function getProfileContent(platform, username) {
+  // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
+  // its existing profile pages no longer stay reachable either — treat it
+  // exactly like a genuinely nonexistent creator (same noindex-the-shell
+  // treatment, no real HTTP status change, matching every other notfound
+  // case here). The underlying creators/creator_stats rows are untouched.
+  if (platform === 'rumble') return { status: 'notfound' };
+
   const select = 'id,platform_id,username,display_name,description,category,country,created_at,profile_image,banner_image,verified,' +
     'latest_post_title,latest_post_url,latest_post_at,latest_post_thumbnail,latest_post_views,' +
     'creator_stats(subscribers,followers,total_views,total_posts,hours_watched_day,hours_watched_week,hours_watched_month,peak_viewers_day,avg_viewers_day,recorded_at)';
@@ -463,6 +470,11 @@ async function getProfileContent(platform, username) {
 // ---------------------------------------------------------------------------
 
 async function getRankingsContent(platform) {
+  // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
+  // its rankings page no longer stays reachable either — same notfound
+  // treatment as an unknown platform/creator elsewhere in this file.
+  if (platform === 'rumble') return { status: 'notfound' };
+
   const rows = await supabaseGet(
     `rankings_cache?platform=eq.${platform}&rank_type=eq.subscribers` +
     `&select=rank_position,username,display_name,subscribers` +

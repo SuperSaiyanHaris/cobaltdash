@@ -15,7 +15,6 @@ import { getChannelByUsername as getTwitchChannel, getLiveStreams as getTwitchLi
 import { getChannelByUsername as getKickChannel, getLiveStreams as getKickLiveStreams } from '../services/kickService';
 import { getBlueskyProfile } from '../services/blueskyService';
 import { getMastodonProfile, getMastodonLatestStatus } from '../services/mastodonService';
-import { getRumbleChannel } from '../services/rumbleService';
 import { getSubstackPublication } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
@@ -274,6 +273,17 @@ export default function CreatorProfile() {
     if (!skipLoadingFlash) setLoading(true);
     setError(null);
 
+    // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
+    // its existing profile pages no longer stay reachable either — this now
+    // renders the same "not found" state as any other unknown creator. Rule
+    // zero still applies: this is a rendering decision only, the 117 Rumble
+    // creators' rows in `creators`/`creator_stats` are untouched in the DB.
+    if (platform === 'rumble') {
+      setError('Creator not found');
+      setLoading(false);
+      return;
+    }
+
     try {
       let channelData = null;
 
@@ -422,41 +432,6 @@ export default function CreatorProfile() {
           // Lazy hydration for an unknown handle — go straight to the proxy in
           // full mode so we get profile + latest status in one round trip.
           channelData = await getMastodonProfile(username, { latest: true });
-        }
-      } else if (platform === 'rumble') {
-        // Rumble: DB-first, because Rumble's edge 403s Vercel datacenter IPs.
-        // Our daily collection (running from GitHub Actions IPs that don't get
-        // blocked) keeps the stats fresh. The /api/rumble proxy stays as a
-        // last-resort for creators not yet in the DB.
-        const dbCreator = await getCreatorByUsername('rumble', username);
-        if (dbCreator) {
-          channelData = {
-            platform: 'rumble',
-            platformId: dbCreator.platform_id,
-            username: dbCreator.username,
-            displayName: dbCreator.display_name,
-            profileImage: dbCreator.profile_image,
-            bannerImage: dbCreator.banner_image,
-            verified: dbCreator.verified,
-            description: dbCreator.description,
-            country: dbCreator.country,
-            category: dbCreator.category,
-            // subscribers/followers/totalPosts are filled in from the latest
-            // creator_stats row by the page's standard merge logic below.
-            subscribers: null,
-            followers: null,
-            totalPosts: null,
-            totalViews: null,
-            latestPost: dbCreator.latest_post_at ? {
-              publishedAt: dbCreator.latest_post_at,
-              title: dbCreator.latest_post_title,
-              url: dbCreator.latest_post_url,
-              thumbnail: dbCreator.latest_post_thumbnail,
-              views: dbCreator.latest_post_views,
-            } : null,
-          };
-        } else {
-          channelData = await getRumbleChannel(username);
         }
       } else if (platform === 'substack') {
         // Substack: DB-first. The subscriber value is an order-of-magnitude
@@ -865,12 +840,23 @@ export default function CreatorProfile() {
       ? subsGrowth / (last30Stat.subscribers || last30Stat.followers) * 100
       : 0;
 
+    // dailyAvgSubs above is a real, correctly-measured average, but it's
+    // measured across whatever the last 30 available ROWS span, not the
+    // last 30 calendar days from today. For a creator whose collection has
+    // stalled (an outage, a dead scraper) those rows can end weeks in the
+    // past, so the average describes a window that's no longer current even
+    // though the arithmetic is right. daysSinceLastUpdate lets the verdict
+    // sentence below tell the difference between "here's today's trend" and
+    // "here's what the trend was, last time we had data."
+    const daysSinceLastUpdate = Math.floor((new Date() - new Date(latest.recorded_at)) / (1000 * 60 * 60 * 24));
+
     return {
       dailyStats: dailyStats.slice(0, 14),
       last30Days: { subs: subsGrowth, views: viewsGrowth, videos: videosGrowth },
       last14Days: { subs: last14Subs, views: last14Views },
       growthRates: { sevenDay: growth7DayPercent, thirtyDay: growth30DayPercent },
       dailyAverage: { subs: dailyAvgSubs, views: dailyAvgViews },
+      daysSinceLastUpdate,
       weeklyAverage: { subs: weeklyAvgSubs, views: weeklyAvgViews },
     };
   }, [statsHistory]);
@@ -981,10 +967,6 @@ export default function CreatorProfile() {
     if (platform === 'mastodon') {
       const posts = creator.totalPosts ? ` and ${formatNumber(creator.totalPosts)} posts` : '';
       return `${name} has ${count} Mastodon followers${posts}. Track follower growth and post activity on ShinyPull.`;
-    }
-    if (platform === 'rumble') {
-      const videos = creator.totalPosts ? ` and ${formatNumber(creator.totalPosts)} videos` : '';
-      return `${name} has ${count} Rumble followers${videos}. Track follower growth and video output on ShinyPull.`;
     }
     if (platform === 'substack') {
       return `${name} has ${count} subscribers on Substack. See where this newsletter ranks across every Substack category on ShinyPull.`;
@@ -1265,8 +1247,16 @@ export default function CreatorProfile() {
                     <Clock className="w-3.5 h-3.5" />
                     <span>
                       Updated {(() => {
-                        if (!creator.updated_at) return 'recently';
-                        const updated = new Date(creator.updated_at);
+                        // creator.updated_at is never actually set anywhere in this
+                        // file (checked: no channelData branch or setCreator call
+                        // populates it, for any platform), so this always silently
+                        // fell back to the vague "recently" regardless of real
+                        // staleness. The real signal is the latest creator_stats
+                        // row we already have in statsHistory (ascending order, so
+                        // the last element is the most recent).
+                        const latestStat = statsHistory.length > 0 ? statsHistory[statsHistory.length - 1] : null;
+                        if (!latestStat?.recorded_at) return 'recently';
+                        const updated = new Date(latestStat.recorded_at);
                         const now = new Date();
                         const diffHours = Math.floor((now - updated) / (1000 * 60 * 60));
                         if (diffHours < 1) return 'less than an hour ago';
@@ -2165,6 +2155,28 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   // "flat." Distinguishing this from a genuine plateau is the whole point.
   const tooNewForTrend = (readingsCount ?? 0) < 2;
 
+  // dailyAverage.subs is measured across the last 30 available ROWS, which
+  // can span weeks further back than today if this creator's collection has
+  // stalled (an outage, a dead scraper — not hypothetical, this is exactly
+  // what happened to Rumble before it was delisted). That average is real
+  // for the window it covers, but presenting it as "currently gaining X a
+  // day" misrepresents a live rate when the data itself is old. 7 days is
+  // well outside normal collection jitter (daily collection runs 3x/day) so
+  // it only fires on a genuine stall, not routine timing noise.
+  const daysSinceLastUpdate = metrics?.daysSinceLastUpdate ?? 0;
+  const dataIsStale = !tooNewForTrend && daysSinceLastUpdate >= 7;
+
+  // metrics (and therefore daysSinceLastUpdate) is null whenever there are
+  // fewer than 2 readings, so the staleness check above can't fire for a
+  // creator stuck at 0-1 readings — found live testing a real Substack
+  // creator (mikebrock) added 2026-05-31 with exactly one reading ever: it
+  // still rendered "Just added to tracking, check back in a few days" 108
+  // days later. Falls back to how long the row has existed in our DB, the
+  // one signal that's always available even with no stats history at all.
+  const createdAt = creator?.dbCreatedAt ? new Date(creator.dbCreatedAt) : null;
+  const daysSinceCreated = createdAt ? Math.floor((new Date() - createdAt) / (1000 * 60 * 60 * 24)) : 0;
+  const stuckSinceCreation = tooNewForTrend && daysSinceCreated >= 7;
+
   // TikTok rounds large accounts in coarse steps (nearest 100 in the low
   // hundred-thousands, nearest 100,000 past ~1M — confirmed directly against
   // TikTok's own data 2026-09-06, see CLAUDE.md). A account sitting well
@@ -2180,8 +2192,12 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   return (
     <>
       {rankClause}{rankClause ? ' ' : ''}
-      {tooNewForTrend ? (
+      {stuckSinceCreation ? (
+        <>Added to tracking {daysSinceCreated} days ago, but no new data since. Last known count: <span className="font-semibold text-neutral-900">{formatNumber(primaryCount)} {noun}</span>.</>
+      ) : tooNewForTrend ? (
         <>Just added to tracking, so there's no growth trend yet. Check back in a few days.</>
+      ) : dataIsStale ? (
+        <>No new data in {daysSinceLastUpdate} days. Last known count: <span className="font-semibold text-neutral-900">{formatNumber(primaryCount)} {noun}</span>.</>
       ) : dailySubs !== 0 ? (
         <>{dailySubs > 0 ? 'Gaining' : 'Losing'} <span className={`font-semibold ${dailySubs > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{formatNumber(Math.abs(dailySubs))} {noun}</span> a day{isAllTimeHigh && dailySubs > 0 ? '; currently at an all-time high.' : '.'}</>
       ) : roundingMayHideMovement ? (
@@ -2366,12 +2382,6 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
         {(platform === 'bluesky' || platform === 'mastodon') && (
           <div className="p-4">
             <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Posts</p>
-            <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
-          </div>
-        )}
-        {platform === 'rumble' && (
-          <div className="p-4">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Videos</p>
             <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
           </div>
         )}

@@ -365,6 +365,22 @@ export default function Rankings() {
     return <RankingsOverview />;
   }
 
+  // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
+  // its existing rankings page no longer stays reachable either — same
+  // "not found" treatment as any other unsupported platform. Rule zero
+  // still applies: this is a rendering decision only, the underlying
+  // rankings_cache/creator_stats rows are untouched.
+  if (urlPlatform === 'rumble') {
+    return (
+      <div className="min-h-screen bg-neutral-50 px-4 py-8">
+        <SEO title="Rankings Not Found" noindex />
+        <div className="max-w-4xl mx-auto">
+          <FunErrorState type="notfound" message="Rankings not found" onRetry={() => navigate('/rankings')} retryText="Browse Rankings" />
+        </div>
+      </div>
+    );
+  }
+
   return <PlatformRankings urlPlatform={urlPlatform} />;
 }
 
