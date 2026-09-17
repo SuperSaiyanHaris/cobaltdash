@@ -1009,32 +1009,50 @@ export default async function middleware(request) {
   // route, else whatever index.html already carries (the home card).
   const image = (content?.status === 'ok' ? content.image : null) || ogCardFor(url.pathname);
 
-  // Inject page-specific values via string replacement
-  html = html
-    .replace(/(<title>)[^<]*(<\/title>)/, `$1${esc(title)}$2`)
-    .replace(/(<meta property="og:title" content=")[^"]*(")/,        `$1${esc(title)}$2`)
-    .replace(/(<meta property="og:description" content=")[^"]*(")/,  `$1${esc(description)}$2`)
-    .replace(/(<meta property="og:url" content=")[^"]*(")/,          `$1${canonicalUrl}$2`)
-    .replace(/(<meta name="twitter:title" content=")[^"]*(")/,       `$1${esc(title)}$2`)
-    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${esc(description)}$2`)
-    .replace(/(<meta name="description" content=")[^"]*(")/,         `$1${esc(description)}$2`)
-    .replace(/(<link rel="canonical" href=")[^"]*(")/,               `$1${canonicalUrl}$2`);
+  // Inject page-specific values via string replacement.
+  //
+  // tagReplace uses a REPLACER FUNCTION, not a replacement string, and that's
+  // load-bearing, not a style choice. String.replace(pattern, `$1${value}$2`)
+  // re-scans the whole interpolated replacement STRING for $1/$2/$&/$$-style
+  // backreference tokens, including any that happen to appear literally
+  // inside `value` itself. A title like "MrBeast Says His $10 Million Video"
+  // contains a literal "$1" (from "$10") that JS reads as a backreference to
+  // capture group 1, silently truncating the output to "...His <title>0
+  // Million Video..." — a real bug hit live on this exact post (2026-09-16).
+  // A replacer FUNCTION receives the captured groups as plain arguments and
+  // returns a plain string with no special-character reinterpretation at
+  // all, so this class of bug can't recur no matter what a title/description
+  // contains ($ amounts, %, apostrophes, whatever).
+  const tagReplace = (str, pattern, value) => str.replace(pattern, (_, p1, p2) => p1 + value + p2);
+  html = tagReplace(html, /(<title>)[^<]*(<\/title>)/, esc(title));
+  html = tagReplace(html, /(<meta property="og:title" content=")[^"]*(")/, esc(title));
+  html = tagReplace(html, /(<meta property="og:description" content=")[^"]*(")/, esc(description));
+  html = tagReplace(html, /(<meta property="og:url" content=")[^"]*(")/, canonicalUrl);
+  html = tagReplace(html, /(<meta name="twitter:title" content=")[^"]*(")/, esc(title));
+  html = tagReplace(html, /(<meta name="twitter:description" content=")[^"]*(")/, esc(description));
+  html = tagReplace(html, /(<meta name="description" content=")[^"]*(")/, esc(description));
+  html = tagReplace(html, /(<link rel="canonical" href=")[^"]*(")/, canonicalUrl);
 
   // Real post/profile image wins over the generic /api/og fallback when one exists.
   if (image) {
-    html = html
-      .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${esc(image)}$2`)
-      .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${esc(image)}$2`);
+    html = tagReplace(html, /(<meta property="og:image" content=")[^"]*(")/, esc(image));
+    html = tagReplace(html, /(<meta name="twitter:image" content=")[^"]*(")/, esc(image));
   }
 
   // Server-rendered content block into the SPA mount point. React 18's
   // createRoot().render() replaces these children on hydration.
   if (content?.status === 'ok' && content.html) {
-    html = html.replace('<div id="root"></div>', `<div id="root">${content.html}</div>`);
+    // Function replacers throughout: even with a plain-string (no capture
+    // group) pattern, String.replace still treats a literal $& or $$ inside
+    // the replacement STRING as special. A blog post body routinely contains
+    // dollar amounts and, now that title/meta injection above has shown that
+    // class of bug actually fires in practice, there's no reason to leave
+    // even the theoretical version of it sitting in the exact same function.
+    html = html.replace('<div id="root"></div>', () => `<div id="root">${content.html}</div>`);
     if (content.jsonLd) {
       html = html.replace(
         '</head>',
-        `  <script type="application/ld+json">${JSON.stringify(content.jsonLd).replace(/</g, '\\u003c')}</script>\n  </head>`
+        () => `  <script type="application/ld+json">${JSON.stringify(content.jsonLd).replace(/</g, '\\u003c')}</script>\n  </head>`
       );
     }
     // Initial data payload (creator profiles + blog posts) — see the comment
@@ -1046,7 +1064,7 @@ export default async function middleware(request) {
     if (content.initialData && content.dataId) {
       html = html.replace(
         '</head>',
-        `  <script type="application/json" id="${content.dataId}">${JSON.stringify(content.initialData).replace(/</g, '\\u003c')}</script>\n  </head>`
+        () => `  <script type="application/json" id="${content.dataId}">${JSON.stringify(content.initialData).replace(/</g, '\\u003c')}</script>\n  </head>`
       );
     }
   }
