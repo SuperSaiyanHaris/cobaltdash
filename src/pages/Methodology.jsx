@@ -203,30 +203,34 @@ export default function Methodology() {
 
           {/* Growth Grade */}
           <section>
-            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Growth Grade</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Growth Stars</h2>
             <p className="text-sm text-neutral-500 mb-6">
-              Every profile with enough history gets a letter grade, recomputed weekly. Here's exactly how it's calculated, no black box.
+              Every profile with enough history gets a 1 to 5 star rating, recomputed weekly. Here's exactly how it's calculated, no black box.
             </p>
             <div className={`${CARD} p-6 space-y-4`}>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                The grade is not a measure of size or fame. A channel with 500 million subscribers and one with 5,000 can both land anywhere on the scale. It measures momentum: how a creator's recent growth compares to their own past pace, and to other creators around their size.
+                The rating blends how big a creator is with how they're actually trending right now. Being the largest channel on a platform is a real, earned achievement and counts for a lot, but it isn't the whole story: a giant that's gone flat can rate lower than a smaller channel that's clearly accelerating.
               </p>
               <div className="border-l-2 border-neutral-200 pl-4 space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-neutral-800">Momentum (50%)</p>
-                  <p className="text-sm text-neutral-500 leading-relaxed">The last 30 days of growth compared against that creator's own trailing baseline. Accelerating scores higher than coasting, regardless of size.</p>
+                  <p className="text-sm font-medium text-neutral-800">Standing (45%)</p>
+                  <p className="text-sm text-neutral-500 leading-relaxed">Where this creator's current size ranks against everyone else on the platform, not just their size bracket.</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-neutral-800">Peer standing (30%)</p>
-                  <p className="text-sm text-neutral-500 leading-relaxed">Current growth rate ranked against other creators in the same size bracket on the same platform, never against the platform's biggest names.</p>
+                  <p className="text-sm font-medium text-neutral-800">Momentum (30%)</p>
+                  <p className="text-sm text-neutral-500 leading-relaxed">The better of two readings: recent growth as a percentage of their own trailing pace, or recent growth in raw numbers against the whole platform. A creator only needs to look good on one, since both are real signals of the same thing at different scales.</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-neutral-800">Activity (20%)</p>
+                  <p className="text-sm font-medium text-neutral-800">Peer standing (10%)</p>
+                  <p className="text-sm text-neutral-500 leading-relaxed">Current growth rate ranked against other creators in the same size bracket, never against the platform's biggest names.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-neutral-800">Activity (15%)</p>
                   <p className="text-sm text-neutral-500 leading-relaxed">Real posting or streaming activity during the window, where that signal exists for the platform.</p>
                 </div>
               </div>
               <p className="text-sm text-neutral-500 leading-relaxed">
-                The three scores combine into one number, then get graded on a curve against every other creator on that platform, so most land in the middle and A+ stays rare. A creator needs at least a week of tracked history before a grade appears at all. We never show a grade we can't back with real data.
+                The four scores combine into one number, then get placed on a curve against every other creator on that platform, so most land in the middle of the scale and a full 5 stars stays rare. A creator needs at least a week of tracked history before a rating appears at all. We never show a rating we can't back with real data.
               </p>
             </div>
           </section>

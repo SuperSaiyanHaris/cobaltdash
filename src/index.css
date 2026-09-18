@@ -300,6 +300,22 @@ h1, h2, h3, h4 {
 @keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .animate-bar-grow { transform-origin: left; animation: bar-grow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
+/* Growth Grade star rating (CreatorProfile.jsx). Each star pops in on mount,
+   staggered left-to-right via inline animation-delay — same "back out"
+   overshoot-then-settle feel as a satisfying UI confirmation, not a loop.
+   A perfect 5.0 gets one extra pass: the same light-sweep language as
+   .sp-hint-sweep above (already the established, feedback-approved way this
+   site does a "notable" accent), clipped to the star row. */
+@keyframes star-pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.animate-star-pop { animation: star-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes star-sweep {
+  0%, 15%  { transform: translateX(-150%) skewX(-20deg); }
+  55%      { transform: translateX(280%) skewX(-20deg); }
+  100%     { transform: translateX(280%) skewX(-20deg); }
+}
+.star-sweep { animation: star-sweep 2.8s ease-in-out 0.5s 1; }
+
 /* WCAG 2.3.3 — kill decorative looping animations for reduced-motion users.
    Loading spinners (animate-spin) are deliberately left alone. */
 @media (prefers-reduced-motion: reduce) {
@@ -311,7 +327,9 @@ h1, h2, h3, h4 {
   .auth-col-up,
   .auth-col-down,
   .sp-hint-sweep,
-  .animate-bar-grow {
+  .animate-bar-grow,
+  .animate-star-pop,
+  .star-sweep {
     animation: none;
   }
 }
