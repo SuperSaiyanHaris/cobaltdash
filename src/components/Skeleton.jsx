@@ -84,6 +84,28 @@ export function TableSkeleton({ rows = 5 }) {
   );
 }
 
+// Fills just the chart plot area on a creator profile (the h-56/h-64 block
+// that otherwise holds the real <AreaChart> or the "no history yet"
+// message) while stats history is still loading — see `statsReady` in
+// CreatorProfile.jsx. NOT the same as "this creator genuinely has no
+// history": showing "0 daily readings" / "just added to tracking" for an
+// established creator during a normal ~1s fetch reads as broken data, not
+// loading. The surrounding chrome (metric toggles, the hero number itself,
+// which are both available immediately from the live profile fetch) keeps
+// rendering normally around this — only the parts that actually derive from
+// stats history swap to a shimmer.
+export function ChartSkeleton() {
+  return <div className="h-full w-full bg-neutral-100 rounded-lg animate-pulse" />;
+}
+
+// Small inline bone for a single data-dependent value (the growth delta
+// badge, the "N daily readings" footer text) — same loading gate as
+// ChartSkeleton, used where only a short span of text needs to hold a place
+// rather than a whole block.
+export function TextBoneSkeleton({ className = 'h-4 w-16' }) {
+  return <div className={`${className} bg-neutral-200 rounded animate-pulse`} />;
+}
+
 // Creator profile page skeleton — replaces the blank → pop-in flash
 export function ProfileSkeleton() {
   return (

@@ -23,7 +23,7 @@ import MusicIcon from '../components/MusicIcon';
 import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getCreatorGrade } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import StarRating from '../components/StarRating';
-import { ProfileSkeleton } from '../components/Skeleton';
+import { ProfileSkeleton, ChartSkeleton, TextBoneSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
 import { followCreator, unfollowCreator, isFollowing as checkIsFollowing, getFollowedCreators } from '../services/followService';
 import { useAuth } from '../contexts/AuthContext';
@@ -160,6 +160,16 @@ export default function CreatorProfile() {
     latestPost: embeddedData.latestPost,
   } : null);
   const [statsHistory, setStatsHistory] = useState(() => embeddedData?.statsHistory || []);
+  // True once we've made a genuine attempt to fetch this creator's stats
+  // history and know the real answer (populated OR confirmed empty for a
+  // real brand-new creator) — distinct from `statsHistory.length`, which is
+  // legitimately 0 in BOTH the "still loading" and "genuinely no history
+  // yet" cases. Without this, the chart/verdict text can't tell those two
+  // apart and shows "just added to tracking" for an established creator
+  // during the ~1s fetch window. Seeded true when embedded server data is
+  // present (already a real, current answer), reset false on every
+  // subsequent load (see loadCreator below).
+  const [statsReady, setStatsReady] = useState(() => !!embeddedData);
   const [loading, setLoading] = useState(() => !embeddedData);
   const [error, setError] = useState(null);
   const [chartRange, setChartRange] = useState(30);
@@ -275,7 +285,14 @@ export default function CreatorProfile() {
   }, [dbCreatorId]);
 
   const loadCreator = async (skipLoadingFlash = false) => {
-    if (!skipLoadingFlash) setLoading(true);
+    if (!skipLoadingFlash) {
+      setLoading(true);
+      // Reset for a fresh load (a client-side nav to a different creator, or
+      // a retry) — without this, statsReady stays stuck true from whatever
+      // creator was shown before, and the new creator's chart briefly shows
+      // stale-looking "no history" text instead of a loading skeleton.
+      setStatsReady(false);
+    }
     setError(null);
 
     // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
@@ -533,11 +550,13 @@ export default function CreatorProfile() {
           setDbCreatorId(dbCreator.id);
           setStatsHistory(history || []);
         }
+        setStatsReady(true);
       } else {
         const dbCreator = await getCreatorByUsername(platform, username);
         if (dbCreator) {
           setCreator(dbCreator);
         }
+        setStatsReady(true);
         setLoading(false);
         return;
       }
@@ -675,11 +694,17 @@ export default function CreatorProfile() {
           }
         } catch (dbErr) {
           logger.warn('Failed to save to database:', dbErr);
+        } finally {
+          // Whatever happened above, we've now made the real attempt at this
+          // creator's stats history — fires whether it succeeded, partially
+          // failed, or the youtube-no-public-page branch skipped it entirely.
+          setStatsReady(true);
         }
       }
     } catch (err) {
       logger.error('Error loading creator:', err);
       setError(err.message || 'Failed to load creator');
+      setStatsReady(true);
     } finally {
       setLoading(false);
     }
@@ -1434,6 +1459,7 @@ export default function CreatorProfile() {
               <YouTubeVerdictSection
                 creator={creator}
                 statsHistory={statsHistory}
+                statsReady={statsReady}
                 metrics={metrics}
                 peakStats={peakStats}
                 rankContext={rankContext}
@@ -1447,6 +1473,7 @@ export default function CreatorProfile() {
                 platform={platform}
                 creator={creator}
                 statsHistory={statsHistory}
+                statsReady={statsReady}
                 metrics={metrics}
                 peakStats={peakStats}
                 rankContext={rankContext}
@@ -1588,7 +1615,7 @@ function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
   );
 }
 
-function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rankContext, dbCreatorId, recentVideos }) {
+function YouTubeVerdictSection({ creator, statsHistory, statsReady, metrics, peakStats, rankContext, dbCreatorId, recentVideos }) {
   const [activeTab, setActiveTab] = useState('daily'); // daily first, per standing instruction
   const [chartMetric, setChartMetric] = useState('views');
   const [chartRange, setChartRange] = useState(30);
@@ -1622,6 +1649,12 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
 
   const dailyReadingsRows = [...series].reverse();
 
+  // Distinguishes "still fetching stats, real data incoming" from "confirmed,
+  // this creator genuinely has under 2 readings" — see statsReady's comment
+  // in CreatorProfile. Only the former should show a skeleton; the latter
+  // legitimately shows the "just added to tracking" message.
+  const stillLoadingStats = !statsReady && statsHistory.length < 2;
+
   const nearestMilestone = useMemo(() => {
     const dailyGrowth = metrics?.dailyAverage?.views || 0;
     if (dailyGrowth <= 0 || !creator.totalViews) return null;
@@ -1653,9 +1686,13 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
   return (
     <div>
       {/* Verdict sentence */}
-      <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
-        {buildYouTubeVerdict({ creator, metrics, rankContext, peakStats })}
-      </p>
+      {stillLoadingStats ? (
+        <TextBoneSkeleton className="h-[15px] w-72 max-w-full" />
+      ) : (
+        <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
+          {buildYouTubeVerdict({ creator, metrics, rankContext, peakStats })}
+        </p>
+      )}
 
       {/* Chart card */}
       <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 sm:p-6 mt-6">
@@ -1691,13 +1728,19 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
         <div className="flex items-end gap-3 mt-6">
           <p className="text-3xl sm:text-[44px] font-bold tabular-nums text-neutral-900 leading-none tracking-tight">{heroValue}</p>
           <div className="pb-1">
-            <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
+            {stillLoadingStats ? (
+              <TextBoneSkeleton className="h-4 w-12 mb-1" />
+            ) : (
+              <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
+            )}
             <p className="text-xs text-neutral-500">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
           </div>
         </div>
 
         <div className="h-56 sm:h-64 mt-4 cursor-pointer md:cursor-default" onClick={() => setDrilldownOpen(true)}>
-          {relData.length >= 2 ? (
+          {stillLoadingStats ? (
+            <ChartSkeleton />
+          ) : relData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={relData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <defs>
@@ -1736,9 +1779,15 @@ function YouTubeVerdictSection({ creator, statsHistory, metrics, peakStats, rank
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-neutral-200/80 text-xs sm:text-sm text-neutral-600">
-          <span>{series.length} daily readings</span>
-          <span className="text-neutral-300">&middot;</span>
-          <span>net {fmtSigned(netGrowth)}</span>
+          {stillLoadingStats ? (
+            <TextBoneSkeleton className="h-3.5 w-40" />
+          ) : (
+            <>
+              <span>{series.length} daily readings</span>
+              <span className="text-neutral-300">&middot;</span>
+              <span>net {fmtSigned(netGrowth)}</span>
+            </>
+          )}
           <span className="flex-1" />
           {nearestMilestone && (
             <button onClick={() => setDrilldownOpen(true)} className="text-left hover:text-neutral-900 transition-colors">
@@ -2217,7 +2266,7 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   );
 }
 
-function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakStats, rankContext, musicTracks, musicAlbums }) {
+function GenericVerdictSection({ platform, creator, statsHistory, statsReady, metrics, peakStats, rankContext, musicTracks, musicAlbums }) {
   const config = GENERIC_PLATFORM_CONFIG[platform];
   const [activeTab, setActiveTab] = useState('daily');
   const [chartMetric, setChartMetric] = useState(config.chartMetrics[0].value);
@@ -2241,6 +2290,9 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
   const heroValue = formatNumber(currentMetric.dataKey === 'subscribers' ? primaryCount : creator[currentMetric.dataKey === 'views' ? 'totalViews' : 'totalPosts']);
   const netGrowth = values.length >= 2 ? values[values.length - 1] - values[0] : 0;
   const dailyReadingsRows = [...series].reverse();
+
+  // See the same const in YouTubeVerdictSection for why this exists.
+  const stillLoadingStats = !statsReady && statsHistory.length < 2;
 
   const nearestMilestone = useMemo(() => {
     if (config.noMilestone) return null;
@@ -2276,9 +2328,13 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
 
   return (
     <div>
-      <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
-        {buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel: config.primaryLabel, readingsCount: statsHistory?.length })}
-      </p>
+      {stillLoadingStats ? (
+        <TextBoneSkeleton className="h-[15px] w-72 max-w-full" />
+      ) : (
+        <p className="text-[15px] leading-relaxed text-neutral-800 max-w-2xl text-pretty">
+          {buildGenericVerdict({ platform, creator, metrics, rankContext, peakStats, primaryLabel: config.primaryLabel, readingsCount: statsHistory?.length })}
+        </p>
+      )}
 
       <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 sm:p-6 mt-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -2315,13 +2371,19 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
         <div className="flex items-end gap-3 mt-6">
           <p className="text-3xl sm:text-[44px] font-bold tabular-nums text-neutral-900 leading-none tracking-tight">{heroValue}</p>
           <div className="pb-1">
-            <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
+            {stillLoadingStats ? (
+              <TextBoneSkeleton className="h-4 w-12 mb-1" />
+            ) : (
+              <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
+            )}
             <p className="text-xs text-neutral-500">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
           </div>
         </div>
 
         <div className="h-56 sm:h-64 mt-4 cursor-pointer md:cursor-default" onClick={() => setDrilldownOpen(true)}>
-          {relData.length >= 2 ? (
+          {stillLoadingStats ? (
+            <ChartSkeleton />
+          ) : relData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={relData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <defs>
@@ -2353,9 +2415,15 @@ function GenericVerdictSection({ platform, creator, statsHistory, metrics, peakS
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-neutral-200/80 text-xs sm:text-sm text-neutral-600">
-          <span>{series.length} daily readings</span>
-          <span className="text-neutral-300">&middot;</span>
-          <span>net {fmtSigned(netGrowth)}</span>
+          {stillLoadingStats ? (
+            <TextBoneSkeleton className="h-3.5 w-40" />
+          ) : (
+            <>
+              <span>{series.length} daily readings</span>
+              <span className="text-neutral-300">&middot;</span>
+              <span>net {fmtSigned(netGrowth)}</span>
+            </>
+          )}
           <span className="flex-1" />
           {nearestMilestone && (
             <button onClick={() => setDrilldownOpen(true)} className="text-left hover:text-neutral-900 transition-colors">
