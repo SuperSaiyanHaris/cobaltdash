@@ -20,7 +20,7 @@ import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import { Music } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
-import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext } from '../services/creatorService';
+import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getCreatorGrade } from '../services/creatorService';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
@@ -101,6 +101,16 @@ const platformUrls = {
 // truth) — kept as a local alias here since this file's usages predate it.
 const platformDisplayNames = PLATFORM_DISPLAY_NAMES;
 
+// Grade badge colors follow the site's existing growth-delta convention
+// (emerald = good, red = needs improvement) rather than inventing a new
+// color language — same functional-color-only rule as everywhere else.
+function gradeBadgeClasses(grade) {
+  if (!grade) return '';
+  if (grade.startsWith('A')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (grade.startsWith('D') || grade === 'F') return 'bg-red-50 text-red-700 border-red-200';
+  return 'bg-neutral-100 text-neutral-700 border-neutral-200';
+}
+
 // middleware.js embeds a <script id="__CREATOR_DATA__"> alongside the visible
 // server-rendered content so this component's very first render already has
 // real data instead of an empty loading skeleton — see the comment on
@@ -179,6 +189,7 @@ export default function CreatorProfile() {
   const [peakStats, setPeakStats] = useState(null);
   const [rankContext, setRankContext] = useState(null);
   const [nearbyCreators, setNearbyCreators] = useState([]);
+  const [grade, setGrade] = useState(null);
   const shareRef = useRef(null);
   // True only for the very first loadCreator() call of the very first
   // profile this component instance renders, and only when that first call
@@ -201,14 +212,16 @@ export default function CreatorProfile() {
     let cancelled = false;
     (async () => {
       try {
-        const [peak, rank] = await Promise.all([
+        const [peak, rank, creatorGrade] = await Promise.all([
           getCreatorPeakStats(dbCreatorId),
           getCreatorRankContext(dbCreatorId, platform),
+          getCreatorGrade(dbCreatorId),
         ]);
         if (cancelled) return;
         setPeakStats(peak);
         setRankContext(rank);
         setNearbyCreators(rank?.nearby || []);
+        setGrade(creatorGrade);
       } catch (err) {
         logger.warn('Failed to load record/rank context:', err);
       }
@@ -1237,6 +1250,14 @@ export default function CreatorProfile() {
                     {creator.country && (
                       <span className="px-2 sm:px-2.5 py-1 bg-neutral-100 rounded-lg text-xs sm:text-sm text-neutral-700 font-medium">
                         {creator.country}
+                      </span>
+                    )}
+                    {grade?.grade && (
+                      <span
+                        title="Growth grade: how this creator's recent momentum compares to peers their size. Not a measure of total size or fame. Recomputed weekly."
+                        className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold border ${gradeBadgeClasses(grade.grade)}`}
+                      >
+                        {grade.grade}
                       </span>
                     )}
                   </div>

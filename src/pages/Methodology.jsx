@@ -201,6 +201,36 @@ export default function Methodology() {
             </div>
           </section>
 
+          {/* Growth Grade */}
+          <section>
+            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Growth Grade</h2>
+            <p className="text-sm text-neutral-500 mb-6">
+              Every profile with enough history gets a letter grade, recomputed weekly. Here's exactly how it's calculated, no black box.
+            </p>
+            <div className={`${CARD} p-6 space-y-4`}>
+              <p className="text-sm text-neutral-600 leading-relaxed">
+                The grade is not a measure of size or fame. A channel with 500 million subscribers and one with 5,000 can both land anywhere on the scale. It measures momentum: how a creator's recent growth compares to their own past pace, and to other creators around their size.
+              </p>
+              <div className="border-l-2 border-neutral-200 pl-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-neutral-800">Momentum (50%)</p>
+                  <p className="text-sm text-neutral-500 leading-relaxed">The last 30 days of growth compared against that creator's own trailing baseline. Accelerating scores higher than coasting, regardless of size.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-neutral-800">Peer standing (30%)</p>
+                  <p className="text-sm text-neutral-500 leading-relaxed">Current growth rate ranked against other creators in the same size bracket on the same platform, never against the platform's biggest names.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-neutral-800">Activity (20%)</p>
+                  <p className="text-sm text-neutral-500 leading-relaxed">Real posting or streaming activity during the window, where that signal exists for the platform.</p>
+                </div>
+              </div>
+              <p className="text-sm text-neutral-500 leading-relaxed">
+                The three scores combine into one number, then get graded on a curve against every other creator on that platform, so most land in the middle and A+ stays rare. A creator needs at least a week of tracked history before a grade appears at all. We never show a grade we can't back with real data.
+              </p>
+            </div>
+          </section>
+
           {/* Footer CTA */}
           <div className={`${CARD} p-8 text-center`}>
             <h2 className="text-base font-medium text-neutral-900 mb-1.5">Questions about the data?</h2>
