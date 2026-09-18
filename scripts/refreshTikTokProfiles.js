@@ -124,17 +124,40 @@ async function refreshTikTokProfiles() {
       if (!profileData.followers) {
         console.log(`   ⚠️  ${creator.display_name}: Skipping stats — scraper returned 0 followers`);
       } else {
-        // Upsert today's stats
-        await supabase
+        // Second guard: never overwrite an established real count with an
+        // implausible crash. `stats.followerCount || 0` in the scraper can
+        // silently turn a malformed/blocked page read into a small but
+        // nonzero number, which the falsy check above doesn't catch. Found
+        // 2026-09-18: a real 35.9M-follower creator got written as 3, then 5,
+        // on two separate refreshes, sandwiched between correct 35.9M
+        // readings on either side — each one individually looked like "a
+        // real number" to the check above. Only fires when there's an
+        // established count (10K+) to compare against and the new value
+        // drops below 10% of it; a brand-new or genuinely small account
+        // swinging around is normal and untouched by this.
+        const { data: lastStat } = await supabase
           .from('creator_stats')
-          .upsert({
-            creator_id: creator.id,
-            recorded_at: today,
-            subscribers: profileData.followers,
-            followers: profileData.followers,
-            total_views: profileData.totalLikes || 0,
-            total_posts: profileData.totalPosts,
-          }, { onConflict: 'creator_id,recorded_at' });
+          .select('followers')
+          .eq('creator_id', creator.id)
+          .order('recorded_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lastStat?.followers >= 10000 && profileData.followers < lastStat.followers * 0.1) {
+          console.log(`   ⚠️  ${creator.display_name}: Skipping stats — ${profileData.followers} looks like a bad scrape (was ${lastStat.followers})`);
+        } else {
+          // Upsert today's stats
+          await supabase
+            .from('creator_stats')
+            .upsert({
+              creator_id: creator.id,
+              recorded_at: today,
+              subscribers: profileData.followers,
+              followers: profileData.followers,
+              total_views: profileData.totalLikes || 0,
+              total_posts: profileData.totalPosts,
+            }, { onConflict: 'creator_id,recorded_at' });
+        }
       }
 
       const followers = (profileData.followers / 1000000).toFixed(1);
