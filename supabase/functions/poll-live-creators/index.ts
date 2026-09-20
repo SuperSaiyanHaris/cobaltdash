@@ -111,26 +111,50 @@ Deno.serve(async (req) => {
   }
 
   // Only the open sessions -- this is the whole point, never the full roster.
-  const { data: openSessions, error: openErr } = await sb
-    .from("stream_sessions")
-    .select("id, creator_id, peak_viewers")
-    .is("ended_at", null);
-  if (openErr) {
-    return new Response(JSON.stringify({ ok: false, error: openErr.message }), { status: 500 });
+  // Paginated: PostgREST silently caps any single response at 1000 rows
+  // regardless of the requested range, and open-session count has grown well
+  // past that (3,800+ as of 2026-09), so a plain .select() was quietly only
+  // ever seeing the first 1000 and leaving the rest unsampled every run.
+  const openSessions: { id: string; creator_id: string; peak_viewers: number }[] = [];
+  {
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await sb
+        .from("stream_sessions")
+        .select("id, creator_id, peak_viewers")
+        .is("ended_at", null)
+        .order("id")
+        .range(from, from + PAGE - 1);
+      if (error) {
+        return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
+      }
+      openSessions.push(...data);
+      if (data.length < PAGE) break;
+    }
   }
-  if (!openSessions?.length) {
+  if (!openSessions.length) {
     return new Response(JSON.stringify({ ok: true, open: 0, samples: 0, finalized: 0 }), {
       headers: { "Content-Type": "application/json" },
     });
   }
 
+  // Chunked for the same reason: with thousands of open sessions, a single
+  // .in("id", creatorIds) call serializes every UUID into the request's
+  // query string. At current volume that string is well past the ~8KB a
+  // request line can carry through the gateway, so the query was failing
+  // outright with a generic "Bad Request" -- this is what was actually
+  // breaking the function, the row cap above was silent by comparison.
   const creatorIds = [...new Set(openSessions.map((s) => s.creator_id))];
-  const { data: creators, error: creatorErr } = await sb
-    .from("creators")
-    .select("id, platform, platform_id, username")
-    .in("id", creatorIds);
-  if (creatorErr) {
-    return new Response(JSON.stringify({ ok: false, error: creatorErr.message }), { status: 500 });
+  const creators: { id: string; platform: string; platform_id: string; username: string }[] = [];
+  for (const idBatch of chunk(creatorIds, 200)) {
+    const { data, error: creatorErr } = await sb
+      .from("creators")
+      .select("id, platform, platform_id, username")
+      .in("id", idBatch);
+    if (creatorErr) {
+      return new Response(JSON.stringify({ ok: false, error: creatorErr.message }), { status: 500 });
+    }
+    creators.push(...data);
   }
   const creatorById = new Map(creators.map((c) => [c.id, c]));
 

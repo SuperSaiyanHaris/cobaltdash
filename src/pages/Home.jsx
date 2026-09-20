@@ -1047,7 +1047,7 @@ export default function Home() {
         {/* ============== CINEMATIC HERO ==============
             Full-bleed hero — section min-height ensures the bg image + left stack always have room.
             Hard bottom edge (no gradient fade) per project preference. */}
-        <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white min-h-[680px] md:min-h-[760px] flex flex-col">
+        <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white min-h-[520px] sm:min-h-[680px] md:min-h-[760px] flex flex-col">
           {/* Bespoke background — no stock photography, no gradient glow washes.
               Flat dark base plus a faint engineering dot-grid for texture only.
               Content (headline, search, focal card) carries all the visual weight. */}
