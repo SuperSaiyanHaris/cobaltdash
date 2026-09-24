@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { ExternalLink, Clock, Radio, Star, Share2, Scale } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
@@ -764,7 +764,7 @@ export default function CreatorProfile() {
   const embedCode = `<iframe src="${shareUrl}" width="520" height="400" frameborder="0" style="border-radius:16px;border:1px solid #e5e5e5" allowfullscreen></iframe>`;
   // Live SVG badge served by the edge — the anchor makes every embed a backlink.
   const badgeUrl = `https://shinypull.com/badge/${platform}/${encodeURIComponent(creator?.username || username)}`;
-  const badgeEmbed = `<a href="${profileUrl}?utm_source=badge"><img src="${badgeUrl}" width="240" height="64" alt="${(creator?.display_name || username)} ${platformDisplayNames[platform] || platform} stats on ShinyPull"></a>`;
+  const badgeEmbed = `<a href="${profileUrl}?utm_source=badge"><img src="${badgeUrl}" width="240" height="64" alt="${(creator?.displayName || username)} ${platformDisplayNames[platform] || platform} stats on ShinyPull"></a>`;
   // Share + embed are free for everyone — kept variable for minimal blast radius.
   const isMod = true;
 
@@ -1186,7 +1186,7 @@ export default function CreatorProfile() {
                           src={badgeUrl}
                           width="240"
                           height="64"
-                          alt={`${creator?.display_name || username} stats badge`}
+                          alt={`${creator?.displayName || username} stats badge`}
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       </a>
@@ -1205,7 +1205,7 @@ export default function CreatorProfile() {
                           {copiedBadge ? 'Copied!' : 'Copy'}
                         </button>
                       </div>
-                      <p className="text-xs text-neutral-400">A live badge for your website or blog. The count updates automatically and links back to this page.</p>
+                      <p className="text-xs text-neutral-400">A live badge for your website or blog. The count updates automatically and links back to this page. <Link to="/badge" className="underline hover:text-neutral-600">Markdown and more options</Link>.</p>
                     </div>
                   )}
 

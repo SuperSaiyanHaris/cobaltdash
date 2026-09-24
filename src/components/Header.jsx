@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone } from 'lucide-react';
+import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
 import useRankingsHint from '../hooks/useRankingsHint';
@@ -16,6 +16,8 @@ const moreLinks = [
   { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
   { path: '/milestones', label: 'Milestones', description: 'Real threshold crossings', icon: Milestone, tint: 'text-indigo-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
+  { path: '/kick/earnings', label: 'Kick Earnings', description: 'Top streamers\' sub income', icon: Calculator, tint: 'text-green-600' },
+  { path: '/badge', label: 'Stats Badge', description: 'Live count for your site', icon: BadgeCheck, tint: 'text-indigo-500' },
   { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },
   { path: '/blog', label: 'Blog', description: 'Creator economy insights', icon: BookOpen, tint: 'text-cyan-500' },
   { path: '/support', label: 'Support', description: 'Get help from our team', icon: Heart, tint: 'text-rose-500' },

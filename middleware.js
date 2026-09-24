@@ -295,15 +295,8 @@ async function getProfileContent(platform, username) {
   // the runner-up's latest count; the real channel vs a fan channel is
   // typically 1000x+), which is also the row the client's live-API lookup
   // lands on. Genuinely close collisions still fall back to the shell.
-  let c = rows[0];
-  if (rows.length > 1) {
-    const latestCount = (r) => r.creator_stats?.[0]?.subscribers ?? 0;
-    const sorted = [...rows].sort((x, y) => latestCount(y) - latestCount(x));
-    const top = latestCount(sorted[0]);
-    const second = latestCount(sorted[1]);
-    if (!top || top < second * 10) return { status: 'error' };
-    c = sorted[0];
-  }
+  const c = pickCreatorRow(rows);
+  if (!c) return { status: 'error' };
 
   const stats = (c.creator_stats || []).filter(s => s.subscribers !== null && s.subscribers !== undefined);
   const platformName = PLATFORM_NAMES[platform];
@@ -857,6 +850,22 @@ function badgeSvg({ name, count, metric, platform }) {
 </svg>`;
 }
 
+/**
+ * Resolve a username lookup that may match several rows (copycat channels can
+ * share our derived username, see getProfileContent). Returns the only row,
+ * or the row whose latest count is 10x+ the runner-up's, else null (ambiguous).
+ * Rows must embed creator_stats ordered newest first.
+ */
+function pickCreatorRow(rows) {
+  if (!rows || !rows.length) return null;
+  if (rows.length === 1) return rows[0];
+  const latestCount = (r) => r.creator_stats?.[0]?.subscribers ?? 0;
+  const sorted = [...rows].sort((x, y) => latestCount(y) - latestCount(x));
+  const top = latestCount(sorted[0]);
+  if (!top || top < latestCount(sorted[1]) * 10) return null;
+  return sorted[0];
+}
+
 async function handleBadge(platform, username) {
   const select = 'username,display_name,creator_stats(subscribers,recorded_at)';
   const rows = await supabaseGet(
@@ -866,10 +875,11 @@ async function handleBadge(platform, username) {
     `&order=updated_at.desc&limit=5`
   );
 
-  // limit=2 above so an ambiguous username (see isUsernameAmbiguous in
-  // creatorService.js — copycat/fan channels can collide with a real one)
-  // is caught here instead of silently badging the wrong creator's count.
-  if (!rows || rows.length !== 1) {
+  // An ambiguous username (copycat/fan channels colliding with a real one)
+  // resolves only when one row clearly dominates, same rule as profile pages,
+  // instead of silently badging the wrong creator's count.
+  const c = pickCreatorRow(rows);
+  if (!c) {
     // Unknown creator (or DB hiccup): neutral brand badge, short cache, 404
     // so crawlers/embedders know it's not a real resource.
     return new Response(
@@ -878,7 +888,6 @@ async function handleBadge(platform, username) {
     );
   }
 
-  const c = rows[0];
   const latest = (c.creator_stats || [])[0];
   const svg = badgeSvg({
     name: c.display_name || c.username,
@@ -1022,6 +1031,13 @@ function getMeta(pathname, searchParams) {
     return {
       title: 'Search Creators - ShinyPull',
       description: `Search for any creator across ${ALL_PLATFORM_LIST}. Live profile lookup and instant stats.`,
+    };
+  }
+
+  if (pathname === '/badge') {
+    return {
+      title: 'Free Live Stats Badge for Your Channel or Stream - ShinyPull',
+      description: 'Add a free, always-up-to-date follower and subscriber count badge for YouTube, Twitch, Kick, TikTok, Bluesky and more to your website, GitHub or stream panels.',
     };
   }
 
