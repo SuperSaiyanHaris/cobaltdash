@@ -1397,6 +1397,10 @@ function PlatformRankings({ urlPlatform }) {
                       <h3 className="font-semibold text-neutral-900 mb-1">How are Kick rankings different from Twitch?</h3>
                       <p>Kick rankings are based on paid subscriber counts rather than free followers. This makes the numbers smaller but more meaningful in terms of direct creator support.</p>
                     </div>
+                    <div>
+                      <h3 className="font-semibold text-neutral-900 mb-1">How much do Kick streamers make?</h3>
+                      <p>Each paid sub is worth up to about $4.74 a month to the streamer ($4.99 with Kick's 95% share). See the <Link to="/kick/earnings" className="underline hover:text-neutral-900">Kick earnings leaderboard</Link> for estimated monthly sub income for the top 100.</p>
+                    </div>
                   </>
                 )}
                 {selectedPlatform === 'bluesky' && (

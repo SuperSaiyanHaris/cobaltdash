@@ -18,6 +18,7 @@ const FEATURE_LINKS = [
   ['/milestones',                'Milestones'],
   ['/compare',                   'Compare Creators'],
   ['/youtube/money-calculator',  'Money Calculator'],
+  ['/kick/earnings',             'Kick Earnings'],
   ['/blog',                      'Blog'],
 ];
 

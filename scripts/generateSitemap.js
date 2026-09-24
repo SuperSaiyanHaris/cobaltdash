@@ -56,6 +56,7 @@ const staticPages = [
   { url: '/trending', lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/milestones', lastmod: TODAY, changefreq: 'daily', priority: 0.85 },
   { url: '/youtube/money-calculator', lastmod: TODAY, changefreq: 'monthly', priority: 0.8 },
+  { url: '/kick/earnings', lastmod: TODAY, changefreq: 'daily', priority: 0.8 },
   { url: '/search', lastmod: TODAY, changefreq: 'weekly', priority: 0.7 },
   { url: '/about', lastmod: TODAY, changefreq: 'monthly', priority: 0.6 },
   { url: '/contact', lastmod: TODAY, changefreq: 'monthly', priority: 0.5 },

@@ -383,7 +383,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
                 </div>
               )}
             </div>
-            <p className="text-xs text-neutral-500 mt-4 leading-relaxed">Subscriptions only, at the US price. Tips, sponsorships, and incentive payouts aren't public, and regional pricing, payment fees, and taxes can lower the real figure. Gifted subs are included in the count.</p>
+            <p className="text-xs text-neutral-500 mt-4 leading-relaxed">Subscriptions only, at the US price. Tips, sponsorships, and incentive payouts aren't public, and regional pricing, payment fees, and taxes can lower the real figure. Gifted subs are included in the count. <Link to="/kick/earnings" className="underline hover:text-neutral-800">Compare with the top 100 Kick streamers</Link>.</p>
           </div>
         );
       })()}

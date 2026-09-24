@@ -36,6 +36,7 @@ const QUICK_LINKS = [
   { label: 'Milestones',       to: '/milestones',                Icon: Milestone,       color: 'text-indigo-400'  },
   { label: 'Compare Creators', to: '/compare',                   Icon: Scale,           color: 'text-violet-400'  },
   { label: 'YouTube Earnings', to: '/youtube/money-calculator',  Icon: Calculator,      color: 'text-emerald-400' },
+  { label: 'Kick Earnings',    to: '/kick/earnings',             Icon: Calculator,      color: 'text-green-500'   },
   { label: 'Blog',             to: '/blog',                      Icon: BookOpen,        color: 'text-sky-400'     },
   { label: 'Dashboard',        to: '/dashboard',                 Icon: LayoutDashboard, color: 'text-indigo-400'  },
   { label: 'Account',          to: '/account',                   Icon: Settings,        color: 'text-neutral-500'    },

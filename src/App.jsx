@@ -56,6 +56,7 @@ const AdminUserDetail = lazyWithRetry(() => import('./pages/AdminUserDetail'));
 const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'));
 const AuthPage = lazyWithRetry(() => import('./pages/AuthPage'));
 const Calculator = lazyWithRetry(() => import('./pages/Calculator'));
+const KickEarnings = lazyWithRetry(() => import('./pages/KickEarnings'));
 const Support = lazyWithRetry(() => import('./pages/Support'));
 const Account = lazyWithRetry(() => import('./pages/Account'));
 const Promote = lazyWithRetry(() => import('./pages/Promote'));
@@ -249,6 +250,7 @@ function LayoutWrapper() {
           <Route path="/best/:slug" element={<HubPage />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/youtube/money-calculator" element={<Calculator />} />
+          <Route path="/kick/earnings" element={<KickEarnings />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/milestones" element={<Milestones />} />
           <Route path="/live/:platform/:username" element={<LiveCount />} />

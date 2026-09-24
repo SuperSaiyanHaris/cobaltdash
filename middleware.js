@@ -625,6 +625,49 @@ async function getRankingsContent(platform) {
 // wise, so it's worth its own server-rendered content rather than meta-only.
 // ---------------------------------------------------------------------------
 
+async function getKickEarningsContent() {
+  // Server-rendered copy of src/pages/KickEarnings.jsx. Same constants:
+  // $4.99 sub, 95% creator share.
+  const rows = await supabaseGet(
+    'rankings_cache?platform=eq.kick&rank_type=eq.subscribers' +
+    '&select=username,display_name,subscribers,rank_position,computed_at&order=rank_position.asc&limit=100'
+  );
+  if (!rows || !rows.length) return { status: 'error' };
+  const perSub = 4.99 * 0.95;
+  const money = (n) => n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : `$${Math.round(n).toLocaleString('en-US')}`;
+  const title = `How Much Do Kick Streamers Make? Estimated Sub Earnings (${new Date().getFullYear()}) - ShinyPull`;
+  const top = rows[0];
+  const description = `Estimated monthly Kick subscription earnings for the top 100 Kick streamers. ${top.display_name || top.username} leads with ${top.subscribers.toLocaleString('en-US')} paid subs, up to about ${money(top.subscribers * perSub)} a month.`;
+
+  let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
+  html += `<h1 style="font-size:1.5rem;font-weight:600">How much do Kick streamers make?</h1>`;
+  html += `<p>Kick publishes each channel's active paid subscriber count. A sub costs $4.99 and Kick passes 95% to the streamer, so each active sub is worth up to about $${perSub.toFixed(2)} a month. The figures below are ceilings for subscription income only: payment fees and taxes lower them, and tips, sponsorships and incentive payouts are not included.</p>`;
+  html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">Top 100 Kick streamers by estimated sub earnings</h2>`;
+  html += `<table style="border-collapse:collapse;width:100%"><thead><tr><th style="text-align:left;padding:6px 12px 6px 0">#</th><th style="text-align:left;padding:6px 12px">Streamer</th><th style="text-align:right;padding:6px 12px">Paid subs</th><th style="text-align:right;padding:6px 0 6px 12px">Est. per month</th></tr></thead><tbody>`;
+  for (const r of rows) {
+    html += `<tr><td style="padding:4px 12px 4px 0;border-top:1px solid #e5e5e5">${r.rank_position}</td>` +
+      `<td style="padding:4px 12px;border-top:1px solid #e5e5e5"><a href="/kick/${encodeURIComponent(r.username)}" style="color:#171717">${esc(r.display_name || r.username)}</a></td>` +
+      `<td style="text-align:right;padding:4px 12px;border-top:1px solid #e5e5e5">${r.subscribers.toLocaleString('en-US')}</td>` +
+      `<td style="text-align:right;padding:4px 0 4px 12px;border-top:1px solid #e5e5e5">${money(r.subscribers * perSub)}</td></tr>`;
+  }
+  html += `</tbody></table>`;
+  html += `<p style="margin-top:1.5rem"><a href="/rankings/kick" style="color:#171717">Kick rankings</a> · <a href="/methodology" style="color:#171717">Methodology</a> · <a href="/" style="color:#171717">ShinyPull</a></p></div>`;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Top Kick streamers by estimated subscription earnings',
+    numberOfItems: rows.length,
+    itemListElement: rows.slice(0, 25).map((r) => ({
+      '@type': 'ListItem',
+      position: r.rank_position,
+      url: `${SITE_URL}/kick/${encodeURIComponent(r.username)}`,
+      name: r.display_name || r.username,
+    })),
+  };
+  return { status: 'ok', title, description, html, jsonLd };
+}
+
 async function getMilestonesContent() {
   const rows = await supabaseGet(
     `creator_milestones?select=platform,threshold,metric_value,crossed_at,creators(username,display_name)` +
@@ -876,6 +919,7 @@ const OG_CARDS = [
   [/^\/promote(\/|$)/,             'promote'],
   [/^\/blog(\/|$)/,                'blog'],
   [/^\/youtube\/money-calculator/, 'calculator'],
+  [/^\/kick\/earnings$/,           'calculator'],
 ];
 
 function ogCardFor(pathname) {
@@ -981,6 +1025,13 @@ function getMeta(pathname, searchParams) {
     };
   }
 
+  if (pathname === '/kick/earnings') {
+    return {
+      title: 'How Much Do Kick Streamers Make? Estimated Sub Earnings - ShinyPull',
+      description: 'Estimated monthly Kick subscription earnings for the top 100 Kick streamers, from real paid subscriber counts. Updated daily.',
+    };
+  }
+
   // /youtube/money-calculator (specific tool)
   if (pathname === '/youtube/money-calculator') {
     return {
@@ -1078,11 +1129,14 @@ export default async function middleware(request) {
       content = await getRankingsContent(rankingsMatch[1]);
     } else if (url.pathname === '/milestones') {
       content = await getMilestonesContent();
+    } else if (url.pathname === '/kick/earnings') {
+      content = await getKickEarningsContent();
     } else if (blogMatch && blogMatch[1] !== 'admin') {
       content = await getBlogContent(decodeURIComponent(blogMatch[1]));
     } else if (
       profileMatch && PLATFORM_NAMES[profileMatch[1]] &&
-      url.pathname !== '/youtube/money-calculator'
+      url.pathname !== '/youtube/money-calculator' &&
+      url.pathname !== '/kick/earnings'
     ) {
       content = await getProfileContent(profileMatch[1], decodeURIComponent(profileMatch[2]));
     }
