@@ -2135,9 +2135,13 @@ function formatEarningsSingle(n) {
 // field referenced here is real (creator/metrics/rankContext/peakStats, the
 // same objects the rest of the page already computes) — no platform gets a
 // stat cell, a chart metric, a revenue estimate, or a third tab it doesn't
-// have real data for. Notably: no platform except YouTube gets a revenue
-// estimate (no CPM methodology exists for the others in this codebase, and
-// inventing one would be fabricating a number) or a "recent items" tab
+// have real data for. Notably: no platform except YouTube and Kick gets a
+// revenue estimate (no CPM methodology exists for the others in this
+// codebase, and inventing one would be fabricating a number). Kick is the
+// exception because its tracked number IS the paid subscriber count, and the
+// sub price ($4.99 US) and creator split (95/5) are public — so subs x price x
+// split is arithmetic, not a guess. It's labelled a ceiling ("up to") since
+// regional pricing, fees and taxes can only push it down. No "recent items" tab
 // unless it has one real item to show (a single latest post for Rumble/
 // Mastodon/Substack, real top tracks for Music) — never a fabricated list.
 // ============================================================================
@@ -2156,6 +2160,9 @@ const GENERIC_PLATFORM_CONFIG = {
     hasLiveCount: true,
     liveLabel: 'Live paid subscriber count',
     thirdTab: null,
+    // Kick's public US sub price and creator share (95/5 split). See the
+    // comment above GENERIC_PLATFORM_CONFIG for why Kick gets an estimate.
+    subRevenue: { price: 4.99, creatorShare: 0.95 },
   },
   tiktok: {
     primaryLabel: 'Followers',
@@ -2490,6 +2497,35 @@ function GenericVerdictSection({ platform, creator, statsHistory, statsReady, me
           <p className="text-xs text-neutral-500 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
         </div>
       </div>
+
+      {/* Sub revenue estimate — Kick only (see subRevenue in GENERIC_PLATFORM_CONFIG) */}
+      {config.subRevenue && (() => {
+        const perSub = config.subRevenue.price * config.subRevenue.creatorShare;
+        const monthly = primaryCount * perSub;
+        const delta30 = metrics?.last30Days?.subs;
+        return (
+          <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6 mt-6">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Estimated sub revenue</p>
+              <span className="flex-1" />
+              <p className="text-xs text-neutral-500">{formatNumber(primaryCount)} subs &times; ${config.subRevenue.price.toFixed(2)} &times; {Math.round(config.subRevenue.creatorShare * 100)}% creator share</p>
+            </div>
+            <div className="flex flex-wrap items-end gap-6 mt-3">
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold tabular-nums text-neutral-900 leading-none">up to {formatEarningsSingle(monthly)}</p>
+                <p className="text-xs text-neutral-500 mt-1.5">per month &middot; {formatEarningsSingle(monthly * 12)} per year</p>
+              </div>
+              {delta30 != null && delta30 !== 0 && (
+                <div>
+                  <p className={`text-base font-semibold tabular-nums ${delta30 > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{delta30 > 0 ? '+' : '-'}{formatEarningsSingle(Math.abs(delta30) * perSub)}/mo</p>
+                  <p className="text-xs text-neutral-500 mt-1">change over last 30 days</p>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-neutral-500 mt-4 leading-relaxed">Subscriptions only, at the US price. Tips, sponsorships, and incentive payouts aren't public, and regional pricing, payment fees, and taxes can lower the real figure. Gifted subs are included in the count.</p>
+          </div>
+        );
+      })()}
 
       {/* Live count row — only for platforms where numbers move fast enough to matter */}
       {config.hasLiveCount && (

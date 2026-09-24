@@ -48,9 +48,10 @@ const platforms = [
     icon: KickIcon,
     name: 'Kick',
     tint: 'text-green-600',
-    metrics: ['Paid subscriber count', 'Hours watched (daily, weekly, monthly)', 'Peak and average viewers'],
+    metrics: ['Paid subscriber count', 'Estimated sub revenue', 'Hours watched (daily, weekly, monthly)', 'Peak and average viewers'],
     notes: [
       'On Kick, the publicly available number is the paid subscriber count rather than total free followers, so that is the figure we show.',
+      'Estimated sub revenue is paid subscribers × $4.99 (the US sub price) × 95% (Kick\'s public creator share). It is a ceiling covering subscriptions only: regional pricing, payment fees, and taxes can lower it, and tips, sponsorships, and incentive payouts are not included.',
     ],
   },
   {
