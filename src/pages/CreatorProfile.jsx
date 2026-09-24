@@ -200,11 +200,6 @@ export default function CreatorProfile() {
   // subsequent call (a client-side nav to a different creator, a retry, etc).
   const isFirstLoadRef = useRef(true);
 
-  useEffect(() => {
-    loadCreator(isFirstLoadRef.current && !!embeddedData);
-    isFirstLoadRef.current = false;
-  }, [platform, username]);
-
   // Record/rank context is purely supplementary — fetched separately so a
   // failure here never blocks the main profile load. Rank and the neighbouring
   // creators arrive together from one RPC; fetching nearby creators separately
@@ -709,6 +704,13 @@ export default function CreatorProfile() {
       setLoading(false);
     }
   };
+
+  // Declared after loadCreator so the effect never reads it before its
+  // declaration (react-hooks/immutability).
+  useEffect(() => {
+    loadCreator(isFirstLoadRef.current && !!embeddedData);
+    isFirstLoadRef.current = false;
+  }, [platform, username]);
 
   // Check follow status when user and creator are available
   useEffect(() => {
@@ -1516,6 +1518,27 @@ export default function CreatorProfile() {
 // chart metric, or tab it has real data for (see that section's own comment).
 // ============================================================================
 
+// Next round-number milestone (1-9 x 10^n) above `current` and when it lands
+// at `dailyGrowth` per day. Null when there's no growth to project. Cheap
+// (at most 27 iterations), so callers compute it inline rather than memoizing.
+function findNextMilestone(current, dailyGrowth) {
+  if (!dailyGrowth || dailyGrowth <= 0 || !current) return null;
+  const startPow = Math.floor(Math.log10(Math.max(current, 1)));
+  for (let pow = startPow; pow < startPow + 3; pow++) {
+    const decade = Math.pow(10, pow);
+    for (let digit = 1; digit <= 9; digit++) {
+      const m = digit * decade;
+      if (m > current) {
+        const days = Math.ceil((m - current) / dailyGrowth);
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+        return { milestone: m, days, date };
+      }
+    }
+  }
+  return null;
+}
+
 function fmtSigned(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return '—';
   return (n >= 0 ? '+' : '') + formatNumber(n);
@@ -1655,24 +1678,7 @@ function YouTubeVerdictSection({ creator, statsHistory, statsReady, metrics, pea
   // legitimately shows the "just added to tracking" message.
   const stillLoadingStats = !statsReady && statsHistory.length < 2;
 
-  const nearestMilestone = useMemo(() => {
-    const dailyGrowth = metrics?.dailyAverage?.views || 0;
-    if (dailyGrowth <= 0 || !creator.totalViews) return null;
-    const startPow = Math.floor(Math.log10(Math.max(creator.totalViews, 1)));
-    for (let pow = startPow; pow < startPow + 3; pow++) {
-      const decade = Math.pow(10, pow);
-      for (let digit = 1; digit <= 9; digit++) {
-        const m = digit * decade;
-        if (m > creator.totalViews) {
-          const days = Math.ceil((m - creator.totalViews) / dailyGrowth);
-          const date = new Date();
-          date.setDate(date.getDate() + days);
-          return { milestone: m, days, date };
-        }
-      }
-    }
-    return null;
-  }, [creator.totalViews, metrics]);
+  const nearestMilestone = findNextMilestone(creator.totalViews, metrics?.dailyAverage?.views);
 
   const CPM_MEDIAN = 3.4;
   const monthlyRevenue = (metrics?.last30Days?.views || 0) / 1000 * cpm;
@@ -2301,26 +2307,7 @@ function GenericVerdictSection({ platform, creator, statsHistory, statsReady, me
   // See the same const in YouTubeVerdictSection for why this exists.
   const stillLoadingStats = !statsReady && statsHistory.length < 2;
 
-  const nearestMilestone = useMemo(() => {
-    if (config.noMilestone) return null;
-    const dailyGrowth = metrics?.dailyAverage?.subs || 0;
-    const current = primaryCount;
-    if (dailyGrowth <= 0 || !current) return null;
-    const startPow = Math.floor(Math.log10(Math.max(current, 1)));
-    for (let pow = startPow; pow < startPow + 3; pow++) {
-      const decade = Math.pow(10, pow);
-      for (let digit = 1; digit <= 9; digit++) {
-        const m = digit * decade;
-        if (m > current) {
-          const days = Math.ceil((m - current) / dailyGrowth);
-          const date = new Date();
-          date.setDate(date.getDate() + days);
-          return { milestone: m, days, date };
-        }
-      }
-    }
-    return null;
-  }, [primaryCount, metrics, config.noMilestone]);
+  const nearestMilestone = config.noMilestone ? null : findNextMilestone(primaryCount, metrics?.dailyAverage?.subs);
 
   const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
   const hasThirdTabContent = config.thirdTab === 'latestPost' ? !!creator.latestPost
