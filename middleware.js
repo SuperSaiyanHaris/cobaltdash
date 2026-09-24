@@ -274,12 +274,13 @@ async function getProfileContent(platform, username) {
 
   const select = 'id,platform_id,username,display_name,description,category,country,created_at,profile_image,banner_image,verified,' +
     'latest_post_title,latest_post_url,latest_post_at,latest_post_thumbnail,latest_post_views,' +
-    'creator_stats(subscribers,followers,total_views,total_posts,hours_watched_day,hours_watched_week,hours_watched_month,peak_viewers_day,avg_viewers_day,recorded_at)';
+    'creator_stats(subscribers,followers,total_views,total_posts,hours_watched_day,hours_watched_week,hours_watched_month,peak_viewers_day,avg_viewers_day,recorded_at),' +
+    'rankings_cache(rank_type,rank_position)';
   const rows = await supabaseGet(
     `creators?platform=eq.${platform}&username=ilike.${encodeURIComponent(username)}` +
     `&select=${encodeURIComponent(select)}` +
     `&creator_stats.order=recorded_at.desc&creator_stats.limit=31` +
-    `&order=updated_at.desc&limit=2`
+    `&order=updated_at.desc&limit=5`
   );
   if (rows === null) return { status: 'error' };          // fetch failed — fall back silently
   if (!rows.length) return { status: 'notfound' };        // real 404 — noindex the shell
@@ -288,14 +289,22 @@ async function getProfileContent(platform, username) {
   // on the real platform — a copycat/fan channel can collide with the real
   // one in our username column (confirmed 2026-08-31: 60 colliding groups
   // across 218 rows on YouTube alone, see isUsernameAmbiguous in
-  // creatorService.js). limit=2 above lets us detect that case: if a second
-  // row came back, `order=updated_at.desc` can't be trusted to have picked
-  // the right one, so don't inject possibly-wrong SEO content — fall back
-  // silently and let the client resolve it via the live platform API, which
-  // has the real authority CreatorProfile.jsx already checks against.
-  if (rows.length > 1) return { status: 'error' };
+  // creatorService.js). Copycats cluster around the biggest names, so bailing
+  // on every collision left exactly the most-searched pages (/youtube/mrbeast)
+  // as empty shells. Resolve it instead when one row clearly dominates (10x
+  // the runner-up's latest count; the real channel vs a fan channel is
+  // typically 1000x+), which is also the row the client's live-API lookup
+  // lands on. Genuinely close collisions still fall back to the shell.
+  let c = rows[0];
+  if (rows.length > 1) {
+    const latestCount = (r) => r.creator_stats?.[0]?.subscribers ?? 0;
+    const sorted = [...rows].sort((x, y) => latestCount(y) - latestCount(x));
+    const top = latestCount(sorted[0]);
+    const second = latestCount(sorted[1]);
+    if (!top || top < second * 10) return { status: 'error' };
+    c = sorted[0];
+  }
 
-  const c = rows[0];
   const stats = (c.creator_stats || []).filter(s => s.subscribers !== null && s.subscribers !== undefined);
   const platformName = PLATFORM_NAMES[platform];
   const metric = METRIC_LABELS[platform] || 'followers';
@@ -323,7 +332,18 @@ async function getProfileContent(platform, username) {
   // get_sitemap_eligible_creators (generateSitemap.js), kept in sync
   // deliberately so a page can't be in the sitemap yet noindexed, or vice
   // versa. Never based on existence or activity alone, only content thinness.
-  const thin = count === null || count < 50000;
+  //
+  // Per-platform head (2026-09-24): a flat 50,000 can't mean the same thing on
+  // every platform. Kick's metric is PAID subs (its #500 has ~217, xQc ~1.3K),
+  // so the flat bar noindexed every Kick page on the site while sitemap-top
+  // was submitting its top 500 — the same conflict for Mastodon (#500 ~4.8K)
+  // and most of Bluesky/Substack. A page is now indexable when the creator is
+  // in its platform's top TOP_TIER_RANK_LIMIT by subscribers (exactly the set
+  // sitemap-top.xml lists) OR clears 50,000 (the tail rule above, unchanged).
+  const TOP_TIER_RANK_LIMIT = 500; // keep in sync with generateSitemap.js
+  const subsRank = (c.rankings_cache || []).find((r) => r.rank_type === 'subscribers')?.rank_position ?? null;
+  const inHead = subsRank !== null && subsRank <= TOP_TIER_RANK_LIMIT;
+  const thin = count === null || (!inHead && count < 50000);
 
   // Title/description with real numbers — this is what shows in the SERP.
   const title = count !== null
@@ -720,7 +740,7 @@ async function handleBadge(platform, username) {
     `creators?platform=eq.${platform}&username=ilike.${encodeURIComponent(username)}` +
     `&select=${encodeURIComponent(select)}` +
     `&creator_stats.order=recorded_at.desc&creator_stats.limit=1` +
-    `&order=updated_at.desc&limit=2`
+    `&order=updated_at.desc&limit=5`
   );
 
   // limit=2 above so an ambiguous username (see isUsernameAmbiguous in

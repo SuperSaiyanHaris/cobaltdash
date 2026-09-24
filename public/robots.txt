@@ -24,9 +24,10 @@ Disallow: /reset-password
 Disallow: /auth
 Disallow: /signin
 Disallow: /signup
-Disallow: /live/
 
-# Live counter pages are transient real-time views — not useful in search.
-# Middleware also injects noindex on these for the meta-tag level.
+# Live counter pages (/live/...) are transient real-time views, kept out of
+# search by the noindex tag middleware injects. They are deliberately NOT
+# disallowed here: a robots.txt block stops Google fetching the page, so it
+# never sees that noindex and can still index the bare URL from links.
 
 Sitemap: https://shinypull.com/sitemap.xml

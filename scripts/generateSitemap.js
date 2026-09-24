@@ -166,7 +166,7 @@ async function generateSitemap() {
   // badge is a real, wanted feature — this tier just needs its own notion
   // of "the head" again, independent of how many rows the table now holds.
   console.log('🏆 Fetching ranked creators (priority tier)...');
-  const TOP_TIER_RANK_LIMIT = 500;
+  const TOP_TIER_RANK_LIMIT = 500; // keep in sync with middleware.js thin-content gate
   const topKeys = new Set();
   const topUrls = [];
   {
@@ -188,6 +188,9 @@ async function generateSitemap() {
       }
       (rows || []).forEach(r => {
         if (!r.username) return;
+        // Rumble is delisted (2026-09-04): its profile pages return the
+        // not-found shell, so submitting them only burns crawl budget.
+        if (r.platform === 'rumble') return;
         const key = `${r.platform}/${r.username.toLowerCase()}`;
         if (topKeys.has(key)) return;
         topKeys.add(key);
@@ -251,6 +254,7 @@ async function generateSitemap() {
   {
     const seen = new Set();
     allCreators.forEach(creator => {
+      if (creator.platform === 'rumble') return; // delisted, see top tier
       const key = `${creator.platform}/${creator.username.toLowerCase()}`;
       if (seen.has(key) || topKeys.has(key)) return;
       seen.add(key);
