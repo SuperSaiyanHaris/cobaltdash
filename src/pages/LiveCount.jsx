@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ExternalLink, Share2, AlertCircle } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
@@ -29,7 +29,6 @@ const platformConfig = {
     badgeText: 'text-red-700',
     badgeBorder: 'border-red-200',
     label: 'subscribers',
-    avgGrowthPerSecond: 2.5,
   },
   twitch: {
     icon: TwitchIcon,
@@ -37,7 +36,6 @@ const platformConfig = {
     badgeText: 'text-purple-700',
     badgeBorder: 'border-purple-200',
     label: 'followers',
-    avgGrowthPerSecond: 0.8,
   },
   kick: {
     icon: KickIcon,
@@ -45,7 +43,6 @@ const platformConfig = {
     badgeText: 'text-green-700',
     badgeBorder: 'border-green-200',
     label: 'paid subscribers',
-    avgGrowthPerSecond: 0.3,
   },
   music: {
     icon: MusicIcon,
@@ -53,7 +50,6 @@ const platformConfig = {
     badgeText: 'text-amber-700',
     badgeBorder: 'border-amber-200',
     label: 'monthly listeners',
-    avgGrowthPerSecond: 1.0,
   },
 };
 
@@ -65,182 +61,101 @@ const platformUrls = {
   music: (username) => `https://www.last.fm/music/${encodeURIComponent(username.replace(/-/g, '+'))}`,
 };
 
-// Helper function to generate realistic random offset based on channel size
-// Offsets are small enough to only affect last 3-4 digits, keeping the displayed count consistent
-const getRandomOffset = (count) => {
-  let maxOffset = 0;
+// How often the counter re-reads the real number. The platform proxies are
+// CDN-cached for 60-120s, so polling faster would only re-read the same value.
+const POLL_MS = 60 * 1000;
 
-  // Keep offsets small - only vary the last few digits so count looks consistent with profile
-  if (count > 100000000) maxOffset = 5000;       // 100M+: ±5k (affects 5th digit at most)
-  else if (count > 50000000) maxOffset = 3000;   // 50M-100M: ±3k
-  else if (count > 10000000) maxOffset = 1500;   // 10M-50M: ±1.5k
-  else if (count > 1000000) maxOffset = 800;     // 1M-10M: ±800
-  else if (count > 100000) maxOffset = 300;      // 100k-1M: ±300
-  else if (count > 10000) maxOffset = 100;       // 10k-100k: ±100
-  else maxOffset = 50;                           // <10k: ±50
+// Only real, fetched counts are ever displayed; the Odometer animates between
+// consecutive real readings. (This page previously added random offsets and
+// simulated ticks between fetches, which showed numbers that never existed.)
+async function fetchCount(platform, username) {
+  if (platform === 'youtube') return getYouTubeChannel(username);
+  if (platform === 'twitch') return getTwitchChannel(username);
+  if (platform === 'kick') return getKickChannel(username);
+  if (platform === 'music') {
+    const MBID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const dbCreator = await getCreatorByUsername('music', username);
+    if (!dbCreator?.platform_id) return null;
+    return MBID_RE.test(dbCreator.platform_id)
+      ? getArtistByMbid(dbCreator.platform_id)
+      : getArtistByName(dbCreator.display_name || username);
+  }
+  return null;
+}
 
-  // Return random offset between -maxOffset and +maxOffset
-  return Math.floor(Math.random() * (maxOffset * 2 + 1)) - maxOffset;
-};
+function formatAgo(ms) {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 5) return 'just now';
+  if (s < 60) return `${s}s ago`;
+  return `${Math.floor(s / 60)}m ago`;
+}
 
 export default function LiveCount() {
   const { platform, username } = useParams();
-  const [creator, setCreator] = useState(null);
-  const [baseCount, setBaseCount] = useState(null);
-  const [estimatedCount, setEstimatedCount] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // One result per route; `loading` is simply "no result for this route yet",
+  // so navigating between counters never shows the previous creator's number.
+  const routeKey = `${platform}/${username}`;
+  const [result, setResult] = useState({ key: null, creator: null, error: null });
+  const [count, setCount] = useState(null);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
+  const loading = result.key !== routeKey;
+  const creator = loading ? null : result.creator;
+  const error = loading ? null : result.error;
 
   const config = platformConfig[platform] || platformConfig.youtube;
   const Icon = config.icon;
   const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
-  const intervalRef = useRef(null);
 
-  // Fetch creator data
+  // Initial load
   useEffect(() => {
-    const fetchCreator = async () => {
-      setLoading(true);
-      setError(null);
-
+    let cancelled = false;
+    (async () => {
       try {
-        let data = null;
-        if (platform === 'youtube') {
-          data = await getYouTubeChannel(username);
-        } else if (platform === 'twitch') {
-          data = await getTwitchChannel(username);
-        } else if (platform === 'kick') {
-          data = await getKickChannel(username);
-        } else if (platform === 'music') {
-          const MBID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          const dbCreator = await getCreatorByUsername('music', username);
-          if (dbCreator?.platform_id) {
-            data = MBID_RE.test(dbCreator.platform_id)
-              ? await getArtistByMbid(dbCreator.platform_id)
-              : await getArtistByName(dbCreator.display_name || username);
-          }
-        }
-
-        if (data) {
-          setCreator(data);
-          const count = data.subscribers || data.followers || 0;
-          setBaseCount(count);
-          
-          // Track live count view
-          analytics.viewLiveCount(platform, username, data.displayName, count);
-          
-          // Check localStorage for previous count to make refresh more realistic
-          const storageKey = `livecount_${platform}_${username}`;
-          const stored = localStorage.getItem(storageKey);
-          
-          if (stored) {
-            try {
-              const { count: lastCount, timestamp } = JSON.parse(stored);
-              const now = Date.now();
-              const hoursSince = (now - timestamp) / (1000 * 60 * 60);
-              
-              // If data is less than 24 hours old, calculate estimated growth
-              if (hoursSince < 24) {
-                // Calculate growth multiplier based on subscriber count
-                let growthMultiplier = 1;
-                if (count > 100000000) growthMultiplier = 3;
-                else if (count > 50000000) growthMultiplier = 2.5;
-                else if (count > 10000000) growthMultiplier = 2;
-                else if (count > 1000000) growthMultiplier = 1.5;
-                else if (count > 100000) growthMultiplier = 1;
-                else growthMultiplier = 0.5;
-                
-                const baseGrowthPerSecond = config.avgGrowthPerSecond * growthMultiplier;
-                const secondsSince = hoursSince * 3600;
-                const estimatedGrowth = Math.round(baseGrowthPerSecond * secondsSince);
-                
-                // Start from last known count plus estimated growth, but don't exceed API count + reasonable buffer
-                const estimatedStart = Math.min(
-                  lastCount + estimatedGrowth,
-                  count + (baseGrowthPerSecond * 3600) // Max 1 hour ahead of API
-                );
-                
-                setEstimatedCount(Math.max(count, estimatedStart));
-              } else {
-                // Add random offset for fresh start
-                const randomOffset = getRandomOffset(count);
-                setEstimatedCount(count + randomOffset);
-              }
-            } catch (e) {
-              const randomOffset = getRandomOffset(count);
-              setEstimatedCount(count + randomOffset);
-            }
-          } else {
-            // Add random offset for first-time load
-            const randomOffset = getRandomOffset(count);
-            setEstimatedCount(count + randomOffset);
-          }
-        } else {
-          setError('Creator not found');
-        }
+        const data = await fetchCount(platform, username);
+        if (cancelled) return;
+        if (!data) { setResult({ key: routeKey, creator: null, error: 'Creator not found' }); return; }
+        const value = data.subscribers || data.followers || 0;
+        setCount(value);
+        setUpdatedAt(Date.now());
+        setResult({ key: routeKey, creator: data, error: null });
+        analytics.viewLiveCount(platform, username, data.displayName, value);
       } catch (err) {
+        if (cancelled) return;
         logger.error('Fetch error:', err);
-        setError(err.message || 'Failed to load creator');
-      } finally {
-        setLoading(false);
+        setResult({ key: routeKey, creator: null, error: err.message || 'Failed to load creator' });
       }
-    };
+    })();
+    return () => { cancelled = true; };
+  }, [platform, username, routeKey]);
 
-    fetchCreator();
-  }, [platform, username, config.avgGrowthPerSecond]);
-
-  // Simulate live count changes
+  // Re-read the real count while the tab is visible
   useEffect(() => {
-    if (!baseCount || !creator) return;
-
-    const subscribers = baseCount;
-    let growthMultiplier = 1;
-
-    // Larger channels grow faster
-    if (subscribers > 100000000) growthMultiplier = 3;
-    else if (subscribers > 50000000) growthMultiplier = 2.5;
-    else if (subscribers > 10000000) growthMultiplier = 2;
-    else if (subscribers > 1000000) growthMultiplier = 1.5;
-    else if (subscribers > 100000) growthMultiplier = 1;
-    else growthMultiplier = 0.5;
-
-    const baseGrowthPerSecond = config.avgGrowthPerSecond * growthMultiplier;
-
-    const updateInterval = () => {
-      const interval = 100 + Math.random() * 400;
-
-      intervalRef.current = setTimeout(() => {
-        setEstimatedCount(prev => {
-          // Random change: mostly positive, occasionally negative
-          const direction = Math.random() > 0.15 ? 1 : -1;
-          // Increase multiplier for larger, more realistic changes
-          const magnitudeMultiplier = subscribers > 10000000 ? 100 : subscribers > 1000000 ? 50 : 10;
-          const magnitude = Math.random() * baseGrowthPerSecond * (interval / 1000) * magnitudeMultiplier;
-          const change = Math.round(direction * magnitude);
-          
-          const newCount = Math.max(0, prev + change);
-          
-          // Save to localStorage on each update
-          const storageKey = `livecount_${platform}_${username}`;
-          localStorage.setItem(storageKey, JSON.stringify({
-            count: newCount,
-            timestamp: Date.now()
-          }));
-
-          return newCount;
-        });
-
-        updateInterval();
-      }, interval);
-    };
-
-    updateInterval();
-
-    return () => {
-      if (intervalRef.current) {
-        clearTimeout(intervalRef.current);
+    if (!creator) return;
+    let cancelled = false;
+    const refresh = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const data = await fetchCount(platform, username);
+        if (cancelled || !data) return;
+        const value = data.subscribers || data.followers;
+        if (value) setCount(value);
+        setUpdatedAt(Date.now());
+      } catch {
+        // Keep showing the last real reading
       }
     };
-  }, [baseCount, creator, config.avgGrowthPerSecond]);
+    const poll = setInterval(refresh, POLL_MS);
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      clearInterval(tick);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [creator, platform, username]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -250,7 +165,7 @@ export default function LiveCount() {
       try {
         await navigator.share({ title: text, url });
         analytics.share(platform, username, creator?.displayName, 'native');
-      } catch (e) {
+      } catch {
         // User cancelled
       }
     } else {
@@ -295,7 +210,7 @@ export default function LiveCount() {
     <>
       <SEO
         title={`${creator.displayName} Live ${config.label.charAt(0).toUpperCase() + config.label.slice(1)} Count`}
-        description={`Watch ${creator.displayName}'s ${platformName} ${config.label} count update in real-time. Estimated live counter.`}
+        description={`Watch ${creator.displayName}'s ${platformName} ${config.label} count update in real-time. Refreshed from the platform every minute.`}
       />
 
       <div className="relative isolate min-h-screen grain-dark bg-[#0a0a0f] flex flex-col overflow-hidden">
@@ -347,12 +262,16 @@ export default function LiveCount() {
                 className={`text-5xl sm:text-6xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black ${config.accent} tracking-tighter leading-none`}
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
-                {estimatedCount !== null && (
-                  <Odometer value={estimatedCount} duration={300} />
+                {count !== null && (
+                  <Odometer value={count} duration={800} />
                 )}
               </div>
               <p className="text-base sm:text-lg md:text-xl text-neutral-500 mt-5 font-semibold uppercase tracking-[0.3em]">
                 {config.label}
+              </p>
+              <p className="text-xs sm:text-sm text-neutral-500 mt-3">
+                {updatedAt ? `Updated ${formatAgo(now - updatedAt)}` : ''} &middot; refreshes every minute
+                {platform === 'youtube' && count >= 1000 && <span className="block mt-1 text-neutral-600">YouTube rounds public subscriber counts to 3 significant figures</span>}
               </p>
             </div>
 
