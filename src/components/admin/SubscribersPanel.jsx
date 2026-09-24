@@ -19,10 +19,6 @@ export default function SubscribersPanel() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   async function fetchData() {
     try {
       setLoading(true);
@@ -36,6 +32,11 @@ export default function SubscribersPanel() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
 
   function showSuccess(message) {
     setSuccess(message);

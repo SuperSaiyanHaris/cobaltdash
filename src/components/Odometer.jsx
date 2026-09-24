@@ -1,32 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-
-// Single digit column that scrolls through 0-9
+// Single digit column that scrolls through 0-9. The column's position is
+// derived straight from `digit`; the CSS transition does the animation, so a
+// new value starts moving immediately instead of after a state round-trip.
 function OdometerDigit({ digit, duration = 500 }) {
-  const [currentDigit, setCurrentDigit] = useState(digit);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const prevDigit = useRef(digit);
-
-  useEffect(() => {
-    if (digit !== prevDigit.current) {
-      setIsAnimating(true);
-
-      // Animate to new digit
-      const timeout = setTimeout(() => {
-        setCurrentDigit(digit);
-        setIsAnimating(false);
-        prevDigit.current = digit;
-      }, duration);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [digit, duration]);
-
-  const numericDigit = parseInt(digit, 10);
-  const prevNumericDigit = parseInt(prevDigit.current, 10);
-
-  // Calculate direction and steps
-  const goingUp = numericDigit > prevNumericDigit ||
-    (prevNumericDigit === 9 && numericDigit === 0);
+  const currentDigit = parseInt(digit, 10) || 0;
 
   return (
     <div
@@ -82,7 +58,7 @@ export default function Odometer({ value, duration = 500, className = '' }) {
         }
         return (
           <OdometerDigit
-            key={`digit-${index}-${characters.length}`}
+            key={`digit-${characters.length - index}`}
             digit={char}
             duration={duration}
           />

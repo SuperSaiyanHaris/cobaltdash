@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'framer-motion';
@@ -350,10 +349,9 @@ function buildInlineMarkdownComponents(base) {
 }
 
 export default function BlogContent({ content, category }) {
-  // H2 counter — increments once per H2 mount, reset on each BlogContent render
-  const h2Counter = useRef(0);
-  h2Counter.current = 0;
-  const getH2Index = () => ++h2Counter.current;
+  // H2 counter — increments once per H2 rendered, fresh on each BlogContent render
+  let h2Count = 0;
+  const getH2Index = () => ++h2Count;
 
   if (!content) return null;
   const theme = getCategoryTheme(category);

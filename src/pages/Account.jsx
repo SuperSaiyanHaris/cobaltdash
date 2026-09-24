@@ -247,7 +247,7 @@ export default function Account() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start checkout');
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (err) {
       showToast(err.message || 'Could not start checkout.', 'error');
       setPurchasingListing(false);
@@ -272,7 +272,7 @@ export default function Account() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start checkout');
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (err) {
       showToast(err.message || 'Could not start checkout.', 'error');
       setPurchasingPremiumListing(false);
@@ -293,7 +293,7 @@ export default function Account() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not open billing portal');
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (err) {
       showToast(err.message || 'Could not open billing portal.', 'error');
       setOpeningBillingPortal(false);

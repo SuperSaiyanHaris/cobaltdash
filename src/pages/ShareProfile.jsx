@@ -56,10 +56,6 @@ export default function ShareProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, [platform, username]);
-
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -75,6 +71,11 @@ export default function ShareProfile() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [platform, username]);
+
 
   const Icon = platformIcons[platform];
   const colors = platformColors[platform] || platformColors.youtube;

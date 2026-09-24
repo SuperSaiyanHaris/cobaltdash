@@ -110,12 +110,6 @@ export default function ReportsPanel() {
   const [showSavedDropdown, setShowSavedDropdown] = useState(false);
   const [reportError, setReportError] = useState(null);
 
-  /* ─── load saved reports ─── */
-  useEffect(() => {
-    if (user) loadSavedReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
   async function loadSavedReports() {
     try {
       const { data } = await supabase
@@ -128,6 +122,13 @@ export default function ReportsPanel() {
       // silent
     }
   }
+
+  /* ─── load saved reports ─── */
+  useEffect(() => {
+    if (user) loadSavedReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
 
   /* ─── creator search (debounced) ─── */
   const handleSearch = useCallback((q) => {

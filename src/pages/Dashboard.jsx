@@ -98,14 +98,6 @@ export default function Dashboard() {
     }
   }, [user, authLoading]);
 
-  useEffect(() => {
-    if (user) {
-      loadFollowedCreators();
-      loadSavedCompares();
-    }
-    setRecentlyViewed(getRecentlyViewed());
-  }, [user]);
-
   async function loadFollowedCreators() {
     setLoadingCreators(true);
     try {
@@ -165,6 +157,15 @@ export default function Dashboard() {
       setLoadingCompares(false);
     }
   }
+
+  useEffect(() => {
+    if (user) {
+      loadFollowedCreators();
+      loadSavedCompares();
+    }
+    setRecentlyViewed(getRecentlyViewed());
+  }, [user]);
+
 
   async function handleDeleteCompare(id) {
     try {

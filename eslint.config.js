@@ -4,8 +4,8 @@
 // - missing useEffect deps
 // - leftover dark-theme classes (warned via no-restricted-syntax)
 //
-// Run: npx eslint src/ scripts/ api/
-// Pre-commit hook is the next step; for now this is opt-in.
+// Run: npm run lint (src/ + api/ + middleware.js). CI runs it on every push to
+// main (.github/workflows/ci.yml) and fails on any error.
 
 import js from '@eslint/js';
 import globals from 'globals';
@@ -38,6 +38,11 @@ export default [
       'react/prop-types': 'off',          // not using prop-types
       'react/no-unescaped-entities': 'off',
       'react-hooks/exhaustive-deps': 'warn',
+      // React Compiler performance advice ("setState in an effect can cascade
+      // renders"). This project doesn't run the compiler, and the flagged
+      // effects are the standard fetch-on-mount pattern; rewriting ~30 of them
+      // buys no user-visible change. Kept visible as a warning, not a CI gate.
+      'react-hooks/set-state-in-effect': 'warn',
 
       // a11y
       'jsx-a11y/alt-text': 'error',       // <img> without alt has been a real bug

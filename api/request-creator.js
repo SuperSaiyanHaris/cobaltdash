@@ -87,7 +87,7 @@ export default async function handler(req, res) {
         if (parts.length === 2) { user = parts[0]; instance = parts[1]; }
       }
       user = (user || '').replace(/[^A-Za-z0-9_.]/g, '').slice(0, 60);
-      instance = (instance || '').toLowerCase().replace(/[^a-z0-9.\-]/g, '').slice(0, 100);
+      instance = (instance || '').toLowerCase().replace(/[^a-z0-9.-]/g, '').slice(0, 100);
       // Instance must be a real domain (has a dot) and a non-numeric TLD — reject
       // IP literals like 127.0.0.1 / 169.254.169.254 so the off-platform fetch in
       // the processor can't be pointed at internal/metadata addresses (SSRF).

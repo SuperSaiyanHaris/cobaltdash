@@ -35,8 +35,9 @@ export default function UsersPanel() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Captured once per mount so render stays pure.
+  const [weekAgo] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
   const stats = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     return {
       total: users.length,
       newThisWeek: users.filter(u => new Date(u.createdAt).getTime() >= weekAgo).length,

@@ -356,6 +356,13 @@ function createRankingListSchema(rankings, platform, topCount) {
   };
 }
 
+function SortIcon({ column, sortColumn, sortDirection }) {
+  if (sortColumn !== column) return <ArrowUpDown className="w-3 h-3 text-neutral-300" />;
+  return sortDirection === 'desc'
+    ? <ArrowDown className="w-3 h-3 text-neutral-900" />
+    : <ArrowUp className="w-3 h-3 text-neutral-900" />;
+}
+
 export default function Rankings() {
   const { platform: urlPlatform } = useParams();
   const navigate = useNavigate();
@@ -728,10 +735,6 @@ function PlatformRankings({ urlPlatform }) {
   }, [urlPlatform]);
 
   useEffect(() => {
-    loadRankings();
-  }, [selectedPlatform, selectedRankType, topCount]);
-
-  useEffect(() => {
     getFeaturedListings(selectedPlatform)
       .then(setSponsoredListings)
       .catch(() => setSponsoredListings([]));
@@ -760,6 +763,11 @@ function PlatformRankings({ urlPlatform }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadRankings();
+  }, [selectedPlatform, selectedRankType, topCount]);
+
 
   // Reset column sort when rank type or platform changes
   useEffect(() => {
@@ -895,13 +903,6 @@ function PlatformRankings({ urlPlatform }) {
     const timer = setTimeout(() => setHighlightListingId(null), 2200);
     return () => clearTimeout(timer);
   }, [loading, displayList, location.hash]);
-
-  const SortIcon = ({ column }) => {
-    if (sortColumn !== column) return <ArrowUpDown className="w-3 h-3 text-neutral-300" />;
-    return sortDirection === 'desc'
-      ? <ArrowDown className="w-3 h-3 text-neutral-900" />
-      : <ArrowUp className="w-3 h-3 text-neutral-900" />;
-  };
 
   const handlePlatformChange = (platformId) => {
     if (!platformId) return;
@@ -1098,7 +1099,7 @@ function PlatformRankings({ urlPlatform }) {
                 className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-900 transition-colors cursor-pointer uppercase tracking-[0.14em]"
               >
                 <span>{followerLabel}</span>
-                <SortIcon column="subscribers" />
+                <SortIcon column="subscribers" sortColumn={sortColumn} sortDirection={sortDirection} />
               </button>
               <div className="col-span-2 text-right">30-Day Trend</div>
               {secondaryCol && (
@@ -1108,7 +1109,7 @@ function PlatformRankings({ urlPlatform }) {
                     className="col-span-2 flex items-center justify-end gap-1 text-right hover:text-neutral-900 transition-colors cursor-pointer uppercase tracking-[0.14em]"
                   >
                     <span>{secondaryCol.label}</span>
-                    <SortIcon column={secondaryCol.sortKey} />
+                    <SortIcon column={secondaryCol.sortKey} sortColumn={sortColumn} sortDirection={sortDirection} />
                   </button>
                 ) : (
                   <div className="col-span-2 text-right">{secondaryCol.label}</div>
@@ -1119,7 +1120,7 @@ function PlatformRankings({ urlPlatform }) {
                 className="col-span-1 flex items-center justify-end gap-1.5 text-right hover:text-neutral-900 transition-colors cursor-pointer group uppercase tracking-[0.14em]"
               >
                 <span>Growth</span>
-                <SortIcon column="growth" />
+                <SortIcon column="growth" sortColumn={sortColumn} sortDirection={sortDirection} />
                 <div className="relative">
                   <Info className="w-3 h-3 text-neutral-300 cursor-help" />
                   <div className="absolute right-0 top-6 w-48 p-2 bg-neutral-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 pointer-events-none normal-case tracking-normal font-normal">

@@ -123,11 +123,11 @@ function FilterDropdown({ label, options, value, onChange }) {
 // "peanut butter gamer" matches "peanutbuttergamer", etc.
 function searchScore(creator, query) {
   const q = query.toLowerCase();
-  const qn = q.replace(/[\s_\-]/g, '');
+  const qn = q.replace(/[\s_-]/g, '');
   const uname = (creator.username || '').toLowerCase();
   const dname = (creator.displayName || '').toLowerCase();
-  const unamen = uname.replace(/[\s_\-]/g, '');
-  const dnamen = dname.replace(/[\s_\-]/g, '');
+  const unamen = uname.replace(/[\s_-]/g, '');
+  const dnamen = dname.replace(/[\s_-]/g, '');
   const count = creator.subscribers || creator.followers || 0;
   let bonus = 0;
   if (uname === q || dname === q || unamen === qn || dnamen === qn) {
@@ -300,14 +300,6 @@ export default function Search() {
       .slice(0, 30);                 // max 30 chars
   };
 
-  useEffect(() => {
-    const q = searchParams.get('q');
-    if (q) {
-      setQuery(q);
-      performSearch(q);
-    }
-  }, [searchParams, selectedPlatform]);
-
   const handlePlatformChange = (platformId) => {
     setSelectedPlatform(platformId);
     setResults([]);
@@ -420,6 +412,15 @@ export default function Search() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) {
+      setQuery(q);
+      performSearch(q);
+    }
+  }, [searchParams, selectedPlatform]);
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
