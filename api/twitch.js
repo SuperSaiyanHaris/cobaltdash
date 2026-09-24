@@ -9,7 +9,7 @@ const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 let cachedToken = null;
 let tokenExpiry = 0;
 
-async function getAccessToken() {
+export async function getAccessToken() {
   // Return cached token if still valid
   if (cachedToken && Date.now() < tokenExpiry) {
     return cachedToken;

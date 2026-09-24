@@ -86,7 +86,7 @@ async function kickFetch(endpoint) {
   return response.json();
 }
 
-async function getChannelBySlug(slug) {
+export async function getChannelBySlug(slug) {
   // Get channel info by slug
   const channelData = await kickFetch(`/channels?slug=${encodeURIComponent(slug)}`);
   const channels = channelData.data || [];

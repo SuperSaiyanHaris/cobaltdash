@@ -16,7 +16,7 @@ async function searchArtists(query, limit = 10) {
   return Array.isArray(matches) ? matches : [matches];
 }
 
-async function getArtist(name, mbid) {
+export async function getArtist(name, mbid) {
   const param = mbid ? `mbid=${encodeURIComponent(mbid)}` : `artist=${encodeURIComponent(name)}&autocorrect=1`;
   const url = `${BASE}?method=artist.getinfo&${param}&api_key=${LASTFM_API_KEY}&format=json`;
   const res = await fetch(url);

@@ -118,7 +118,7 @@ async function searchChannels(query, maxResults = 25) {
 /**
  * Get channel details by ID
  */
-async function getChannel(channelId) {
+export async function getChannel(channelId) {
   if (!YOUTUBE_API_KEY) {
     throw new Error('Missing YouTube API key');
   }

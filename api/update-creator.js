@@ -1,10 +1,18 @@
 // Server-side API endpoint to handle creator upserts during live-search hydration.
-// Uses the service role key (bypasses RLS), so input is treated as untrusted:
-//   - profile_image is accepted only when it points at a known platform avatar CDN
-//   - stats are NOT writable here (only server collection writes creator_stats),
-//     which removes the chart-corruption vector from this public endpoint.
+// Uses the service role key (bypasses RLS), so the request is treated as a
+// hint only: it names WHICH creator was viewed ({platform, platformId,
+// username}), and every field written comes from the platform itself via
+// fetchVerifiedProfile (api/_verifiedProfile.js). A forged request can at most
+// make us refresh a real creator with that creator's real data.
+//   - profile_image is additionally restricted to known platform avatar CDNs
+//   - stats are NOT writable here (only server collection writes creator_stats)
+//   - an existing row is refreshed at most once per REFRESH_INTERVAL_MS, which
+//     also caps the upstream API cost of repeat profile views
 
 import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
+import { fetchVerifiedProfile, VERIFIABLE_PLATFORMS } from './_verifiedProfile.js';
+
+const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 // Known platform avatar CDNs. An image URL from anywhere else is dropped (stored
 // as null) rather than trusted, so this endpoint can't be used to point creator
@@ -71,114 +79,106 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { creatorData } = req.body;
+    const { creatorData } = req.body || {};
+    const platform = creatorData?.platform;
+    const platformId = creatorData?.platformId != null ? String(creatorData.platformId) : '';
+    if (!platform || !platformId || platformId.length > 200) {
+      return res.status(400).json({ error: 'Invalid creator data' });
+    }
+    if (!VERIFIABLE_PLATFORMS.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+    const ids = {
+      platformId,
+      username: typeof creatorData.username === 'string' ? creatorData.username.slice(0, 200) : null,
+      displayName: typeof creatorData.displayName === 'string' ? creatorData.displayName.slice(0, 200) : null,
+    };
 
-    // Import Supabase client with service role key
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY // Server-side only
     );
 
-    let creator = null;
+    const { data: existing } = await supabase
+      .from('creators')
+      .select('*')
+      .eq('platform', platform)
+      .eq('platform_id', platformId)
+      .maybeSingle();
 
-    // If creatorData provided, upsert the creator
-    if (creatorData) {
-      // Validate required fields for creator upsert
-      if (!creatorData.platform || !creatorData.platformId) {
-        return res.status(400).json({ error: 'Invalid creator data' });
-      }
+    // Fresh enough: no upstream call, no write.
+    if (existing && Date.now() - new Date(existing.updated_at || 0).getTime() < REFRESH_INTERVAL_MS) {
+      return res.status(200).json({ success: true, creator: existing });
+    }
 
-      // Validate platform is a known value
-      const validPlatforms = ['youtube', 'twitch', 'kick', 'tiktok', 'bluesky', 'music', 'mastodon', 'substack'];
-      if (!validPlatforms.includes(creatorData.platform)) {
-        return res.status(400).json({ error: 'Invalid platform' });
-      }
+    let profile;
+    try {
+      profile = await fetchVerifiedProfile(platform, ids);
+    } catch (err) {
+      console.warn(`update-creator: ${platform} lookup failed:`, err.message);
+      if (existing) return res.status(200).json({ success: true, creator: existing });
+      return res.status(502).json({ error: 'Platform lookup failed' });
+    }
 
-      // Validate field lengths
-      if (creatorData.displayName && creatorData.displayName.length > 200) {
-        return res.status(400).json({ error: 'Display name too long' });
-      }
-      if (creatorData.username && creatorData.username.length > 200) {
-        return res.status(400).json({ error: 'Username too long' });
-      }
+    if (!profile) {
+      // The platform doesn't know this id. Never create a row for it, and never
+      // blank an existing row over a single miss.
+      if (existing) return res.status(200).json({ success: true, creator: existing });
+      return res.status(404).json({ error: 'Creator not found on platform' });
+    }
 
-      // Check if creator already exists
-      const { data: existingCreator } = await supabase
+    if (existing) {
+      // Only overwrite with real values: categories/countries set by our own
+      // classifiers must survive a platform that doesn't report one. username
+      // stays put, it's the profile URL (renames are handled by collection).
+      const updateFields = { updated_at: new Date().toISOString() };
+      if (profile.displayName) updateFields.display_name = profile.displayName;
+      if (profile.description != null) updateFields.description = profile.description;
+      if (profile.country) updateFields.country = profile.country;
+      if (profile.category) updateFields.category = profile.category;
+      const img = sanitizeImageUrl(profile.profileImage);
+      if (img) updateFields.profile_image = img;
+
+      const { data: updated, error: updateError } = await supabase
         .from('creators')
-        .select('id')
-        .eq('platform', creatorData.platform)
-        .eq('platform_id', creatorData.platformId)
+        .update(updateFields)
+        .eq('id', existing.id)
+        .select()
         .single();
-
-      if (existingCreator) {
-        // SECURITY: For existing creators, only update safe fields.
-        // display_name and username are NOT updatable from the frontend —
-        // only server-side collection scripts may change those.
-        const sanitizedImage = sanitizeImageUrl(creatorData.profileImage);
-        const updateFields = {
-          description: creatorData.description,
-          country: creatorData.country,
-          category: creatorData.category,
-          updated_at: new Date().toISOString(),
-        };
-        // Only include profile_image when we have a valid sanitized URL.
-        // If the CDN isn't on the allowlist we skip the field entirely —
-        // never overwrite a good DB avatar with null.
-        if (sanitizedImage !== null) {
-          updateFields.profile_image = sanitizedImage;
-        }
-
-        const { data: updatedCreator, error: updateError } = await supabase
-          .from('creators')
-          .update(updateFields)
-          .eq('id', existingCreator.id)
-          .select()
-          .single();
-
-        if (updateError) {
-          console.error('Creator update error:', updateError);
-          return res.status(500).json({ error: 'Failed to update creator' });
-        }
-        creator = updatedCreator;
-      } else {
-        // New creator — allow full insert
-        const { data: newCreator, error: insertError } = await supabase
-          .from('creators')
-          .insert({
-            platform: creatorData.platform,
-            platform_id: creatorData.platformId,
-            username: creatorData.username,
-            display_name: creatorData.displayName,
-            profile_image: sanitizeImageUrl(creatorData.profileImage),
-            description: creatorData.description,
-            country: creatorData.country,
-            category: creatorData.category,
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Creator insert error:', insertError);
-          return res.status(500).json({ error: 'Failed to save creator' });
-        }
-        creator = newCreator;
+      if (updateError) {
+        console.error('Creator update error:', updateError);
+        return res.status(200).json({ success: true, creator: existing });
       }
+      return res.status(200).json({ success: true, creator: updated });
+    }
+
+    const { data: created, error: insertError } = await supabase
+      .from('creators')
+      .insert({
+        platform,
+        platform_id: profile.platformId,
+        username: profile.username,
+        display_name: profile.displayName,
+        profile_image: sanitizeImageUrl(profile.profileImage),
+        description: profile.description,
+        country: profile.country,
+        category: profile.category,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Creator insert error:', insertError);
+      return res.status(500).json({ error: 'Failed to save creator' });
     }
 
     // NOTE: creator_stats are intentionally NOT writable from this endpoint.
-    // This is a public route gated only by an Origin header (forgeable by non-
-    // browser clients), so allowing arbitrary stats writes would let anyone
-    // inject fake subscriber numbers and corrupt the historical charts. Stats
-    // are written exclusively by the server-side daily collection, which pulls
-    // real numbers from the platforms. A creator added here gets its first data
-    // point on the next collection run.
-
-    return res.status(200).json({
-      success: true,
-      creator: creator
-    });
+    // Stats are written exclusively by the server-side daily collection, which
+    // pulls real numbers from the platforms. A creator added here gets its
+    // first data point on the next collection run.
+    return res.status(200).json({ success: true, creator: created });
 
   } catch (error) {
     console.error('Update creator API error:', error);
