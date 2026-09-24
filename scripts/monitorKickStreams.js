@@ -18,10 +18,10 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { pathToFileURL } from 'url';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_KEY) { console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY is not set. Refusing to run without it.'); process.exit(1); }
 const KICK_CLIENT_ID = process.env.KICK_CLIENT_ID;
 const KICK_CLIENT_SECRET = process.env.KICK_CLIENT_SECRET;
 
@@ -29,14 +29,16 @@ const BATCH_SIZE = 50;   // Kick allows up to 50 slugs per request
 const CONCURRENCY = 6;   // conservative: Kick publishes no documented limit
 const PAGE = 1000;       // PostgREST caps any single response at 1000 rows
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false },
-});
+// Created lazily so importing this module (the Vercel cron endpoint does)
+// never throws before the handler can report a missing key.
+let supabase = null;
 
 let kickAccessToken = null;
+let kickAccessTokenExpiry = 0;
 
 async function getKickAccessToken() {
-  if (kickAccessToken) return kickAccessToken;
+  // Cached across runs in a warm serverless instance, so honour expiry.
+  if (kickAccessToken && Date.now() < kickAccessTokenExpiry) return kickAccessToken;
   const response = await fetch('https://id.kick.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -50,6 +52,7 @@ async function getKickAccessToken() {
   const data = await response.json();
   if (!data.access_token) throw new Error('Kick token response had no access_token');
   kickAccessToken = data.access_token;
+  kickAccessTokenExpiry = Date.now() + Math.max(60, (data.expires_in || 3600) - 300) * 1000;
   return kickAccessToken;
 }
 
@@ -101,14 +104,15 @@ async function fetchAll(table, select, applyFilters) {
   return all;
 }
 
-async function monitorStreams() {
+export async function monitorStreams() {
   const t0 = Date.now();
+  if (!SUPABASE_KEY || !SUPABASE_URL) throw new Error('SUPABASE_SERVICE_ROLE_KEY / SUPABASE_URL not set');
+  supabase ||= createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
   console.log('🎮 Kick stream monitor');
   console.log(`   Time: ${new Date().toISOString()}\n`);
 
   if (!KICK_CLIENT_ID || !KICK_CLIENT_SECRET) {
-    console.error('❌ Kick credentials not configured');
-    process.exit(1);
+    throw new Error('Kick credentials not configured');
   }
 
   const token = await getKickAccessToken();
@@ -281,9 +285,13 @@ async function monitorStreams() {
   console.log(`   📊 Samples recorded:  ${samplesRecorded}`);
   console.log(`   ⬆️  Peaks updated:     ${peaksUpdated}`);
   console.log(`   ⏱️  Total: ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  return { sessionsStarted, sessionsEnded, samplesRecorded, peaksUpdated, seconds: +((Date.now() - t0) / 1000).toFixed(1) };
 }
 
-monitorStreams().catch((err) => {
-  console.error('❌ Monitor failed:', err.message);
-  process.exit(1);
-});
+// CLI entry (npm run monitor:*). Skipped when imported by api/cron/stream-monitor.js.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  monitorStreams().catch((err) => {
+    console.error('❌ Monitor failed:', err.message);
+    process.exit(1);
+  });
+}
