@@ -1,7 +1,7 @@
 // Vercel Serverless Function for YouTube API
 // Keeps API key secure on server-side
 
-import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
+import { guardProxy, allowExpensive, cdnCache } from './_guard.js';
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
@@ -291,34 +291,7 @@ async function getRecentVideos(channelId, count = 5) {
  * Main handler for Vercel serverless function
  */
 export default async function handler(req, res) {
-  // Enable CORS - Allow production and localhost
-  const allowedOrigins = [
-    'https://shinypull.com',
-    'https://www.shinypull.com',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Rate limiting: 30 requests per minute (protect YouTube API quota)
-  const clientId = getClientIdentifier(req);
-  const rateLimit = checkRateLimit(`youtube:${clientId}`, 30, 60000);
-  if (!rateLimit.allowed) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-  }
+  if (!guardProxy(req, res, { name: 'youtube', limit: 60 })) return;
 
   try {
     const { action, id, username, query, maxResults, channelId } = req.query;
@@ -334,7 +307,10 @@ export default async function handler(req, res) {
         if (!query) {
           return res.status(400).json({ error: 'Missing query parameter' });
         }
-        result = await searchChannels(query, maxResults ? parseInt(maxResults, 10) : 25);
+        // 100 quota units per call (the whole daily quota is 10,000).
+        if (!allowExpensive(req, res, 'youtube-search', 8)) return;
+        result = await searchChannels(String(query).slice(0, 100), Math.min(parseInt(maxResults, 10) || 25, 25));
+        cdnCache(res, 3600);
         break;
 
       case 'getChannel':
@@ -342,13 +318,18 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Missing id parameter' });
         }
         result = await getChannel(id);
+        cdnCache(res, 120);
         break;
 
       case 'getChannelByUsername':
         if (!username) {
           return res.status(400).json({ error: 'Missing username parameter' });
         }
-        result = await getChannelByUsername(username);
+        // A handle miss falls back to a 100-unit search, so this shares a
+        // tighter budget than plain id lookups.
+        if (!allowExpensive(req, res, 'youtube-lookup', 20)) return;
+        result = await getChannelByUsername(String(username).slice(0, 100));
+        cdnCache(res, 120);
         break;
 
       case 'getRecentVideos':
@@ -356,6 +337,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Missing channelId parameter' });
         }
         result = await getRecentVideos(channelId);
+        cdnCache(res, 1800);
         break;
 
       default:

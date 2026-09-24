@@ -1,7 +1,7 @@
 // Vercel Serverless Function for Twitch API
 // Keeps client secret secure on server-side
 
-import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
+import { guardProxy, allowExpensive, cdnCache } from './_guard.js';
 
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
@@ -237,41 +237,15 @@ async function getLiveStreams(usernames) {
 }
 
 export default async function handler(req, res) {
-  // Enable CORS - Allow production and localhost
-  const allowedOrigins = [
-    'https://shinypull.com',
-    'https://www.shinypull.com',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Rate limiting: 60 requests per minute
-  const clientId = getClientIdentifier(req);
-  const rateLimit = checkRateLimit(`twitch:${clientId}`, 60, 60000);
-
-  if (!rateLimit.allowed) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-  }
+  if (!guardProxy(req, res, { name: 'twitch', limit: 60 })) return;
 
   const { action, query, username, maxResults } = req.query;
 
   try {
     if (action === 'search' && query) {
-      const results = await searchChannels(query, maxResults ? parseInt(maxResults, 10) : 25);
+      if (!allowExpensive(req, res, 'twitch-search', 20)) return;
+      const results = await searchChannels(String(query).slice(0, 100), Math.min(parseInt(maxResults, 10) || 25, 25));
+      cdnCache(res, 3600);
       return res.status(200).json({ data: results });
     }
 
@@ -280,6 +254,7 @@ export default async function handler(req, res) {
       if (!channel) {
         return res.status(404).json({ error: 'Channel not found' });
       }
+      cdnCache(res, 60);
       return res.status(200).json({ data: channel });
     }
 
@@ -288,8 +263,9 @@ export default async function handler(req, res) {
       if (!usernames) {
         return res.status(400).json({ error: 'Missing usernames parameter' });
       }
-      const usernameList = usernames.split(',').map(u => u.trim()).filter(Boolean);
+      const usernameList = usernames.split(',').map(u => u.trim()).filter(Boolean).slice(0, 100);
       const streams = await getLiveStreams(usernameList);
+      cdnCache(res, 30);
       return res.status(200).json({ data: streams });
     }
 

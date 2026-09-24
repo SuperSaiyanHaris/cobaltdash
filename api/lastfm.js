@@ -1,7 +1,7 @@
 // Vercel Serverless Function for Last.fm API
 // Keeps API key secure on server-side
 
-import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
+import { guardProxy, cdnCache } from './_guard.js';
 
 const LASTFM_API_KEY = process.env.LASTFM_CLIENT_ID;
 const BASE = 'https://ws.audioscrobbler.com/2.0/';
@@ -55,33 +55,16 @@ async function getTopAlbums(name, mbid, limit = 6) {
 }
 
 export default async function handler(req, res) {
-  const allowedOrigins = [
-    'https://shinypull.com',
-    'https://www.shinypull.com',
-    'http://localhost:3000',
-    'http://localhost:3001',
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!guardProxy(req, res, { name: 'lastfm', limit: 60 })) return;
 
   if (!LASTFM_API_KEY) {
     return res.status(500).json({ error: 'Last.fm API key not configured' });
   }
 
-  const clientId = getClientIdentifier(req);
-  const rateLimit = checkRateLimit(`lastfm:${clientId}`, 60, 60000);
-  if (!rateLimit.allowed) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-  }
-
   const { action, query, artist, mbid, page, limit } = req.query;
+
+  // Artist metadata and charts change slowly; let the CDN absorb repeat views.
+  cdnCache(res, 3600);
 
   try {
     if (action === 'search' && query) {
@@ -91,7 +74,7 @@ export default async function handler(req, res) {
 
     if (action === 'artist' && (artist || mbid)) {
       const result = await getArtist(artist, mbid);
-      if (!result) return res.status(404).json({ error: 'Artist not found' });
+      if (!result) { res.setHeader('Cache-Control', 'public, s-maxage=300'); return res.status(404).json({ error: 'Artist not found' }); }
       return res.status(200).json({ data: result });
     }
 
@@ -115,6 +98,7 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'Invalid action. Use ?action=search&query=..., ?action=artist&artist=..., ?action=top, ?action=toptracks&artist=..., or ?action=topalbums&artist=...' });
   } catch (error) {
+    res.setHeader('Cache-Control', 'no-store');
     console.error('Last.fm API error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
