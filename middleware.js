@@ -403,6 +403,74 @@ async function getProfileContent(platform, username) {
     html += `</tbody></table>`;
   }
 
+  // --- Analysis ----------------------------------------------------------------
+  // Everything below is derived from the same rows fetched above (latest vs
+  // oldest reading in the window, the platform rank, the latest stream stats),
+  // so it is original analysis of real data rather than filler. It also answers
+  // the questions people actually search ("how much does X make", "is X
+  // growing") in plain text a crawler can read.
+  const faq = [];
+  const days = oldest ? Math.max(1, Math.round((new Date(latest.recorded_at) - new Date(oldest.recorded_at)) / 86400000)) : 0;
+  const analysis = [];
+  if (subsRank !== null) {
+    analysis.push(`${esc(name)} ranks <strong>#${subsRank.toLocaleString('en-US')}</strong> among the ${platformName} creators ShinyPull tracks by ${metric}.`);
+  }
+  if (growth !== null && oldest && oldest.subscribers > 0 && days >= 7) {
+    const pct = (growth / oldest.subscribers) * 100;
+    const perDay = growth / days;
+    const trend = Math.abs(pct) < 0.05 ? 'holding steady' : growth > 0 ? 'growing' : 'shrinking';
+    const noun = { youtube: 'channel', twitch: 'channel', kick: 'channel', music: 'artist', substack: 'publication' }[platform] || 'account';
+    analysis.push(`Over the last ${days} days the ${noun} has been <strong>${trend}</strong>: ${growth >= 0 ? '+' : ''}${pct.toFixed(2)}% (${perDay >= 0 ? '+' : ''}${Math.round(perDay).toLocaleString('en-US')} ${metric} per day on average).`);
+    faq.push([`Is ${name} growing on ${platformName}?`, `${name} ${growth > 0 ? 'gained' : growth < 0 ? 'lost' : 'held'} ${Math.abs(growth).toLocaleString('en-US')} ${metric} over the last ${days} days (${growth >= 0 ? '+' : ''}${pct.toFixed(2)}%).`]);
+    if (perDay > 0 && count) {
+      const pow = Math.pow(10, Math.floor(Math.log10(count)));
+      let target = Math.ceil(count / pow) * pow;
+      if (target === count) target += pow;
+      const eta = Math.ceil((target - count) / perDay);
+      if (eta <= 3650) {
+        const when = new Date(Date.now() + eta * 86400000);
+        analysis.push(`At that pace ${esc(name)} would reach <strong>${formatNumber(target).replace(/\.0+([BMK])$/, '$1')} ${metric}</strong> in about ${eta.toLocaleString('en-US')} days (around ${formatDate(when.toISOString())}).`);
+      }
+    }
+  }
+  if (count !== null) {
+    faq.unshift([`How many ${metric} does ${name} have on ${platformName}?`, `${name} has ${count.toLocaleString('en-US')} ${metric} on ${platformName} as of ${formatDate(latest.recorded_at)}.`]);
+  }
+  if ((platform === 'twitch' || platform === 'kick') && latest) {
+    const bits = [];
+    if (latest.hours_watched_month) bits.push(`${Math.round(latest.hours_watched_month).toLocaleString('en-US')} hours watched in the last 30 days`);
+    if (latest.peak_viewers_day) bits.push(`a peak of ${latest.peak_viewers_day.toLocaleString('en-US')} concurrent viewers on the latest stream day`);
+    if (bits.length) analysis.push(`Streaming: ${bits.join(' and ')}.`);
+  }
+
+  // Earnings: only where a published formula exists (see Methodology page).
+  let earnings = null;
+  if (platform === 'kick' && count) {
+    const monthly = count * 4.99 * 0.95;
+    earnings = `Kick pays creators 95% of each $4.99 subscription, so ${count.toLocaleString('en-US')} active paid subscribers works out to <strong>up to about $${Math.round(monthly).toLocaleString('en-US')} per month</strong> (about $${Math.round(monthly * 12).toLocaleString('en-US')} a year) from subscriptions. That is a ceiling: regional pricing, payment fees and taxes lower it, and tips, sponsorships and Kick's incentive payouts are not included.`;
+    faq.push([`How much does ${name} make on Kick?`, `Up to about $${Math.round(monthly).toLocaleString('en-US')} per month from ${count.toLocaleString('en-US')} paid subscribers at $4.99 with Kick's 95% creator share, before fees and taxes, not counting tips or sponsorships.`]);
+  } else if (platform === 'youtube' && oldest && latest.total_views != null && oldest.total_views != null && days >= 7) {
+    const views30 = ((latest.total_views - oldest.total_views) / days) * 30;
+    if (views30 > 0) {
+      const lo = (views30 / 1000) * 2, hi = (views30 / 1000) * 5;
+      const money = (n) => n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3).toLocaleString('en-US')}K` : `$${Math.round(n)}`;
+      earnings = `${esc(name)} has been getting about <strong>${formatNumber(Math.round(views30))} views a month</strong>. At typical YouTube ad rates of $2 to $5 per 1,000 views, that suggests roughly <strong>${money(lo)} to ${money(hi)} per month</strong> from AdSense. Sponsorships, merchandise and memberships usually add more and are not public.`;
+      faq.push([`How much does ${name} make on YouTube?`, `Roughly ${money(lo)} to ${money(hi)} per month from YouTube ads, estimated from about ${formatNumber(Math.round(views30))} monthly views at $2 to $5 per 1,000 views. Sponsorships and other income are not included.`]);
+    }
+  }
+
+  if (analysis.length || earnings) {
+    html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">${esc(name)} ${platformName} Analysis</h2>`;
+    for (const a of analysis) html += `<p>${a}</p>`;
+    if (earnings) {
+      html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">How much does ${esc(name)} make?</h2><p>${earnings}</p>`;
+    }
+  }
+  if (faq.length) {
+    html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">${esc(name)} ${platformName} FAQ</h2>`;
+    for (const [q, a] of faq) html += `<h3 style="font-size:1rem;font-weight:600;margin-top:1rem">${esc(q)}</h3><p>${esc(a)}</p>`;
+  }
+
   html += `<p style="margin-top:1.5rem">` +
     `<a href="/rankings/${platform}" style="color:#171717">Top ${platformName} creators</a> · ` +
     `<a href="/compare" style="color:#171717">Compare creators</a> · ` +
@@ -410,8 +478,7 @@ async function getProfileContent(platform, username) {
   html += `</div>`;
 
   // --- JSON-LD ----------------------------------------------------------------
-  const jsonLd = {
-    '@context': 'https://schema.org',
+  const profileLd = {
     '@type': 'ProfilePage',
     ...(latest ? { dateModified: toISODateTime(latest.recorded_at) } : {}),
     mainEntity: {
@@ -430,6 +497,19 @@ async function getProfileContent(platform, username) {
       } : {}),
     },
   };
+
+  const jsonLd = faq.length
+    ? {
+        '@context': 'https://schema.org',
+        '@graph': [
+          profileLd,
+          {
+            '@type': 'FAQPage',
+            mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+          },
+        ],
+      }
+    : { '@context': 'https://schema.org', ...profileLd };
 
   // --- Initial data payload ---------------------------------------------------
   // Embedded alongside the HTML so CreatorProfile.jsx can seed its first render
