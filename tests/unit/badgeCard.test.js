@@ -56,6 +56,11 @@ describe('renderCard', () => {
     }
   });
 
+  it('can leave out the platform logo (for rotated/faded placements)', () => {
+    expect(renderCard({ ...base, showMark: false })).not.toContain('<g transform="translate(214 20)"');
+    expect(renderCard(base)).toContain('<g transform="translate(214 20)"');
+  });
+
   it('truncates very long names', () => {
     expect(renderCard({ ...base, name: 'A'.repeat(60) })).toContain('A'.repeat(19) + '…');
   });

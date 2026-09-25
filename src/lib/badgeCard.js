@@ -68,6 +68,8 @@ function fit(s, max) {
  * @param {number|null} c.rank  platform rank by subscribers
  * @param {number|null} c.total creators tracked on the platform
  * @param {string|null} c.avatar data: URI or null
+ * @param {boolean} [c.showMark=true] draw the platform logo (off where the
+ *   card is shown rotated/faded, which platform brand rules don't allow)
  */
 export function renderCard(c) {
   const p = CARD_PLATFORMS[c.platform] || CARD_PLATFORMS.youtube;
@@ -104,7 +106,7 @@ export function renderCard(c) {
 <rect x="18" y="18" width="${t.name.length * 8.4 + 32}" height="20" rx="10" fill="${t.a}" fill-opacity=".14" stroke="${t.a}" stroke-opacity=".6"/>
 <path transform="translate(24 21.5) scale(.5)" d="M12 1.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.6 5.6 21.1 7 14l-5.3-5 7.2-.9z" fill="${t.a}"/>
 <text x="40" y="32.5" font-family="${FONT}" font-size="9.5" font-weight="800" letter-spacing="1.6" fill="${t.a}">${t.name}</text>
-<g transform="translate(${W - 36} 20)" fill="${p.color}">${p.glyph}</g>
+${c.showMark === false ? '' : `<g transform="translate(${W - 36} 20)" fill="${p.color}">${p.glyph}</g>`}
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="#12121A"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}art)"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}holo)"/>

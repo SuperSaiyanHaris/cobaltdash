@@ -956,7 +956,7 @@ async function platformTotal(platform) {
   }
 }
 
-async function handleCard(platform, username) {
+async function handleCard(platform, username, { showMark = true } = {}) {
   const select = 'username,display_name,profile_image,creator_stats(subscribers,recorded_at),rankings_cache(rank_type,rank_position)';
   const [rows, total] = await Promise.all([
     supabaseGet(
@@ -990,6 +990,7 @@ async function handleCard(platform, username) {
     rank,
     total,
     avatar: await inlineAvatar(c.profile_image),
+    showMark,
   });
 
   return new Response(svg, {
@@ -1219,7 +1220,9 @@ export default async function middleware(request) {
   // some embed targets want an extension.
   const cardMatch = url.pathname.match(/^\/card\/(\w+)\/([^/]+?)(?:\.svg)?$/);
   if (cardMatch && PLATFORM_NAMES[cardMatch[1]]) {
-    return handleCard(cardMatch[1], decodeURIComponent(cardMatch[2]));
+    // ?mark=0 drops the platform logo (the home page fans cards out rotated
+    // and faded, which YouTube's brand rules don't allow on their logo).
+    return handleCard(cardMatch[1], decodeURIComponent(cardMatch[2]), { showMark: url.searchParams.get('mark') !== '0' });
   }
 
   const badgeMatch = url.pathname.match(/^\/badge\/(\w+)\/([^/]+)$/);

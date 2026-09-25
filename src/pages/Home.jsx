@@ -194,8 +194,6 @@ const HeroMarquee = memo(function HeroMarquee({ creators }) {
   );
 });
 
-// Platform icon + tint lookup, reused from the hero's platform-icon row.
-const PLATFORM_LOOKUP = Object.fromEntries(PLATFORMS.map((p) => [p.id, p]));
 
 // Champions — the #1 creator on every platform, fanned out coverflow-style
 // (Ripit.co's homepage card-fan carousel is the reference) instead of a plain
@@ -268,7 +266,7 @@ function ChampionsGrid({ tops }) {
       </div>
 
       <motion.div
-        className="relative h-[340px] sm:h-[380px] flex items-center justify-center touch-pan-y cursor-grab active:cursor-grabbing"
+        className="relative h-[360px] sm:h-[420px] flex items-center justify-center touch-pan-y cursor-grab active:cursor-grabbing"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         drag="x"
@@ -290,64 +288,33 @@ function ChampionsGrid({ tops }) {
           if (abs > 3) return null;
 
           const isActive = offset === 0;
-          const meta = PLATFORM_LOOKUP[top.platform];
-          const Icon = meta?.Icon;
 
-          const cardClassName = `group flex flex-col items-center w-full overflow-hidden bg-white border rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-colors cursor-pointer ${
-            isActive ? 'border-neutral-300 hover:border-neutral-400' : 'border-neutral-200 hover:border-neutral-300'
+          // The creator's live holographic card (middleware.js -> /card/...).
+          // mark=0: no platform logo, since receded cards are rotated, scaled
+          // and faded, which YouTube's brand guidelines don't allow on their
+          // logo (see the note that used to sit here). The card still names
+          // the platform in text. draggable=false so the browser's native
+          // image drag doesn't fight the fan's swipe gesture.
+          const cardClassName = `block w-full rounded-2xl transition-[filter] cursor-pointer ${
+            isActive ? 'drop-shadow-[0_18px_30px_rgba(0,0,0,0.28)] hover:brightness-110' : 'drop-shadow-[0_10px_18px_rgba(0,0,0,0.18)]'
           }`;
 
           const cardInner = (
-            <>
-              <div className="h-[3px] w-full flex-shrink-0" style={{ backgroundColor: meta?.accent }} />
-
-              <div className="flex flex-col items-center w-full px-5 sm:px-6 pt-5 pb-6">
-                {/* Brand mark only on the centered card. Every other card in
-                    the fan is rotated (up to 14deg), scaled down to 0.74, and
-                    faded to 0.4 — YouTube's brand guidelines allow none of
-                    those on their logo, and the scale alone drops the mark
-                    under the required 20dp height. The centered card is the
-                    only one at rotate 0 / scale 1 / opacity 1. Receded cards
-                    still name the platform in the label beside it, so nothing
-                    is lost. Don't move this icon back onto every card. */}
-                <div className="flex items-center gap-1.5 mb-5">
-                  {Icon && isActive && <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.accent }} />}
-                  {/* neutral-500 (4.74:1 on white) still tripped Lighthouse's
-                      contrast audit in production -- right at the WCAG AA
-                      edge isn't safe margin. neutral-600 (~7.5:1) clears it
-                      with real headroom. */}
-                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-600">{top._platformLabel}</span>
-                </div>
-
-                <div className="relative mb-4">
-                  <CreatorAvatar
-                    src={top.profile_image}
-                    name={top.display_name}
-                    size="xl"
-                    rounded="rounded-2xl"
-                    className="ring-1 ring-neutral-200"
-                  />
-                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-900 text-white text-[10px] font-bold ring-2 ring-white">
-                    1
-                  </span>
-                </div>
-
-                <p className="font-bold text-neutral-900 text-sm text-center truncate max-w-full">{top.display_name}</p>
-
-                <div className="w-8 h-px bg-neutral-200 my-4 flex-shrink-0" />
-
-                <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums leading-none text-center">
-                  {formatNumber(top.subscribers || 0)}
-                </p>
-                <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 text-center">{top._metricLabel}</p>
-              </div>
-            </>
+            <img
+              src={`/card/${top.platform}/${encodeURIComponent(top.username)}?mark=0`}
+              width="250"
+              height="350"
+              alt={`${top.display_name}, #1 on ${top._platformLabel}: ${formatNumber(top.subscribers || 0)} ${top._metricLabel}`}
+              draggable="false"
+              loading={abs <= 1 ? 'eager' : 'lazy'}
+              className="w-full h-auto select-none"
+            />
           );
 
           return (
             <motion.div
               key={top.platform}
-              className="absolute w-[230px] sm:w-[270px]"
+              className="absolute w-[220px] sm:w-[250px]"
               animate={{
                 x: offset * (reduceMotion ? 0 : 120),
                 y: abs * 12,

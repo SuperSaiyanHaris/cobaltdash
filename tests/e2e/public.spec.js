@@ -78,3 +78,14 @@ test('live counter shows a real count and refresh note', async ({ page }) => {
   await expect(page.getByText(/refreshes every minute/)).toBeVisible();
   await expect(page.getByText(/^Updated /)).toBeVisible();
 });
+
+test('home "#1 on every platform" carousel shows live creator cards', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('section', { hasText: 'The #1 on every platform' });
+  await section.scrollIntoViewIfNeeded();
+  const active = section.locator('a img[src^="/card/"]').first();
+  await expect(active).toBeVisible();
+  await expect.poll(() => active.evaluate((img) => img.naturalWidth)).toBe(250);
+  await section.getByRole('button', { name: /^Next/ }).click();
+  await expect(section.locator('a img[src^="/card/"]').first()).not.toHaveAttribute('src', await active.getAttribute('src'));
+});
