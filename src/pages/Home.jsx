@@ -481,7 +481,7 @@ export default function Home() {
         }));
       setTopByPlatform(tops);
 
-      setYoutubeTop(yt.slice(0, 7));
+      setYoutubeTop(yt.slice(0, 10));
       const top5 = yt.slice(0, 5);
       setTopCreators(top5);
 
@@ -644,7 +644,6 @@ export default function Home() {
         <HomeProductBento
           youtubeTop={youtubeTop}
           topHistory={topHistory}
-          twitchTop={topByPlatform.find((c) => c.platform === 'twitch')}
           liveStats={liveStats}
         />
 

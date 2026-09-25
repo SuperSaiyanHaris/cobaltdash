@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChartNoAxesColumnIncreasing, DollarSign, LineChart, Radio, Scale } from 'lucide-react';
+import { ArrowRight, ChartNoAxesColumnIncreasing, DollarSign, LineChart, Scale } from 'lucide-react';
 import YouTubeIcon from './YouTubeIcon';
 import TwitchIcon from './TwitchIcon';
 import KickIcon from './KickIcon';
@@ -20,6 +20,10 @@ const RANK_TABS = [
   { id: 'twitch', name: 'Twitch', Icon: TwitchIcon, growthUnit: 'followers' },
   { id: 'kick', name: 'Kick', Icon: KickIcon, growthUnit: 'paid subs' },
 ];
+
+// Rows in the rankings tile: enough to match the height of the three tiles
+// stacked beside it on desktop.
+const RANK_ROWS = 10;
 
 const TILE = 'group relative min-w-0 flex flex-col bg-white border border-neutral-200/80 rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-neutral-300 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.18)] transition-[border-color,box-shadow]';
 
@@ -59,7 +63,7 @@ function RankingsTile({ youtubeTop }) {
   useEffect(() => {
     if (tab === 'youtube' || lists[tab]) return;
     let cancelled = false;
-    getRankedCreators(tab, 'subscribers', 7)
+    getRankedCreators(tab, 'subscribers', RANK_ROWS)
       .then((rows) => { if (!cancelled) setLists((l) => ({ ...l, [tab]: rows || [] })); })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -72,7 +76,7 @@ function RankingsTile({ youtubeTop }) {
   const updatedAt = rows[0]?.computedAt;
 
   return (
-    <div className={`${TILE} lg:col-span-2 lg:row-span-2`}>
+    <div className={`${TILE} lg:col-span-2 lg:row-span-3`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <TileHead Icon={ChartNoAxesColumnIncreasing} tint="bg-amber-50 text-amber-600" title="Live rankings" blurb="Every platform's top creators, re-ranked every day." />
         <div role="tablist" aria-label="Rankings platform" className="flex gap-1 p-1 bg-neutral-100 rounded-xl">
@@ -91,9 +95,10 @@ function RankingsTile({ youtubeTop }) {
         </div>
       </div>
 
-      <ol className="mt-4 space-y-0.5">
-        {(rows.length ? rows.slice(0, 7) : Array(7).fill(null)).map((c, i) => (
-          <li key={c?.id || i}>
+      <ol className="mt-4 space-y-0.5 lg:flex-1 lg:flex lg:flex-col lg:justify-between">
+        {(rows.length ? rows.slice(0, RANK_ROWS) : Array(RANK_ROWS).fill(null)).map((c, i) => (
+          // Top 5 on phones, where the tile stacks and has no column to match.
+          <li key={c?.id || i} className={i >= 5 ? 'hidden lg:block' : undefined}>
             {c ? (
               <Link to={`/${c.platform}/${c.username}`} className="flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-neutral-50 transition-colors">
                 <span className={`w-5 text-center text-sm font-extrabold tabular-nums ${i === 0 ? 'text-amber-500' : 'text-neutral-400'}`}>{i + 1}</span>
@@ -153,7 +158,7 @@ function Sparkline({ values, color }) {
   );
 }
 
-export default function HomeProductBento({ youtubeTop, topHistory, twitchTop, liveStats }) {
+export default function HomeProductBento({ youtubeTop, topHistory, liveStats }) {
   const mr = youtubeTop?.[0];
   const second = youtubeTop?.[1];
 
@@ -241,30 +246,6 @@ export default function HomeProductBento({ youtubeTop, topHistory, twitchTop, li
           <TileLink to={mr && second ? `/compare?creators=youtube:${mr.username},youtube:${second.username}` : '/compare'}>Compare creators</TileLink>
         </div>
 
-        <div className={`${TILE} lg:col-span-2`}>
-          <TileHead Icon={Radio} tint="bg-rose-50 text-rose-600" title="Live counts" blurb="Follower counts that update in real time, not once a day." />
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              {twitchTop && <CreatorAvatar src={twitchTop.profile_image} name={twitchTop.display_name} size="md" />}
-              <div className="min-w-0">
-                <p className="text-sm text-neutral-600 truncate">
-                  <span className="font-semibold text-neutral-900">{twitchTop?.display_name || 'Twitch'}</span> · Twitch followers
-                </p>
-                <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums tracking-tight">
-                  {twitchTop?.subscribers ? twitchTop.subscribers.toLocaleString('en-US') : '—'}
-                </p>
-              </div>
-            </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-rose-600">
-              <span className="relative flex w-2 h-2">
-                <span className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-60" />
-                <span className="relative w-2 h-2 rounded-full bg-rose-500" />
-              </span>
-              Live
-            </span>
-          </div>
-          <TileLink to={twitchTop ? `/live/twitch/${twitchTop.username}` : '/rankings/twitch'}>Watch the live count</TileLink>
-        </div>
       </div>
     </section>
   );
