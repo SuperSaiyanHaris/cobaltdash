@@ -11,8 +11,12 @@ on:
     - cron: '17 */3 * * *'
   workflow_dispatch:
 
+# One group per deployment environment (schedule/manual runs get their own).
+# Vercel reports a Production and a Preview deployment for the same commit
+# seconds apart; with a single shared group the (skipped) Preview run
+# cancelled the real Production check.
 concurrency:
-  group: live-checks
+  group: live-checks-${{ github.event.deployment.environment || github.event_name }}
   cancel-in-progress: true
 
 jobs:
