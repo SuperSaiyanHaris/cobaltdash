@@ -31,6 +31,35 @@ const SITE_URL = 'https://shinypull.com';
 const TODAY = new Date().toISOString().split('T')[0];
 const CHUNK_SIZE = 10000;
 
+// Build-time queries run on the anon key, whose statement timeout is short,
+// so a busy database (e.g. during the daily stats collection) can time a
+// page out. Retry with backoff before giving up on a segment.
+async function withRetry(label, fn, attempts = 4) {
+  for (let i = 1; ; i++) {
+    const { data, error } = await fn();
+    if (!error) return data;
+    if (i >= attempts) throw new Error(`${label}: ${error.message || error}`);
+    console.warn(`   ⚠️ ${label} failed (${error.message || error}), retry ${i}/${attempts - 1}`);
+    await new Promise((r) => setTimeout(r, 1500 * 2 ** (i - 1)));
+  }
+}
+
+// Last resort when the tail can't be fetched: reuse the long-tail sitemaps
+// currently live on the site, so a database hiccup never ships a sitemap
+// missing tens of thousands of creator pages. Returns [{ file, xml }].
+async function fetchLiveTailSitemaps() {
+  const res = await fetch(`${SITE_URL}/sitemap.xml`, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`live sitemap index: HTTP ${res.status}`);
+  const files = [...(await res.text()).matchAll(/<loc>[^<]*\/(sitemap-creators-\d+\.xml)<\/loc>/g)].map((m) => m[1]);
+  if (!files.length) throw new Error('live sitemap index lists no long-tail files');
+  return Promise.all(files.map(async (file) => {
+    const r = await fetch(`${SITE_URL}/${file}`, { signal: AbortSignal.timeout(30000) });
+    const xml = await r.text();
+    if (!r.ok || !xml.includes('<urlset')) throw new Error(`${file}: HTTP ${r.status}`);
+    return { file, xml };
+  }));
+}
+
 // Static pages with their priority and change frequency
 const staticPages = [
   { url: '/', lastmod: TODAY, changefreq: 'daily', priority: 1.0 },
@@ -176,18 +205,17 @@ async function generateSitemap() {
     const pageSize = 1000;
     let more = true;
     while (more) {
-      const { data: rows, error } = await supabase
+      // A failure here throws and fails the build: without the head tier
+      // the sitemap would be badly incomplete, and a failed build keeps the
+      // last good deployment (and its sitemaps) live.
+      const rows = await withRetry('rankings_cache', () => supabase
         .from('rankings_cache')
         .select('platform, username, rank_position')
         .eq('rank_type', 'subscribers')
         .lte('rank_position', TOP_TIER_RANK_LIMIT)
         .order('platform', { ascending: true })
         .order('rank_position', { ascending: true })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-      if (error) {
-        console.error('❌ Error fetching rankings_cache:', error);
-        break;
-      }
+        .range(page * pageSize, (page + 1) * pageSize - 1));
       (rows || []).forEach(r => {
         if (!r.username) return;
         // Rumble is delisted (2026-09-04): its profile pages return the
@@ -223,8 +251,10 @@ async function generateSitemap() {
   console.log('👤 Fetching indexable creator profiles...');
   let allCreators = [];
   let afterId = null;
-  const creatorPageSize = 1000;
+  // 250 per page keeps each call well under the anon statement timeout.
+  const creatorPageSize = 250;
   let hasMoreCreators = true;
+  let tailFailed = null;
 
   // Keyset pagination (id > afterId), not OFFSET: OFFSET forces Postgres to
   // evaluate the LATERAL join in get_sitemap_eligible_creators for every
@@ -232,14 +262,16 @@ async function generateSitemap() {
   // timeout around row 20000 in testing. Seeking off the last-seen id via
   // the primary key index keeps every page equally fast regardless of depth.
   while (hasMoreCreators) {
-    const { data: creators, error: creatorsError } = await supabase
-      .rpc('get_sitemap_eligible_creators', {
-        p_limit: creatorPageSize,
-        p_after_id: afterId,
-      });
-
-    if (creatorsError) {
-      console.error('❌ Error fetching creators:', creatorsError);
+    let creators;
+    try {
+      creators = await withRetry('get_sitemap_eligible_creators', () => supabase
+        .rpc('get_sitemap_eligible_creators', {
+          p_limit: creatorPageSize,
+          p_after_id: afterId,
+        }));
+    } catch (err) {
+      tailFailed = err;
+      console.error(`❌ ${err.message}`);
       break;
     }
 
@@ -279,10 +311,21 @@ async function generateSitemap() {
   writeFileSync('public/sitemap-top.xml', generateSitemapXML(topUrls));
   files.push('sitemap-top.xml');
 
-  for (let i = 0; i < tailUrls.length; i += CHUNK_SIZE) {
-    const n = Math.floor(i / CHUNK_SIZE) + 1;
-    writeFileSync(`public/sitemap-creators-${n}.xml`, generateSitemapXML(tailUrls.slice(i, i + CHUNK_SIZE)));
-    files.push(`sitemap-creators-${n}.xml`);
+  if (tailFailed) {
+    // Never ship a truncated tail: reuse what's live. If even that fails,
+    // this throws and the build fails, keeping the last good deployment.
+    console.warn('   ⚠️ Long-tail fetch failed, reusing the live long-tail sitemaps');
+    for (const { file, xml } of await fetchLiveTailSitemaps()) {
+      writeFileSync(`public/${file}`, xml);
+      files.push(file);
+    }
+    console.warn(`   ⚠️ Reused ${files.length - 2} live long-tail sitemap(s)`);
+  } else {
+    for (let i = 0; i < tailUrls.length; i += CHUNK_SIZE) {
+      const n = Math.floor(i / CHUNK_SIZE) + 1;
+      writeFileSync(`public/sitemap-creators-${n}.xml`, generateSitemapXML(tailUrls.slice(i, i + CHUNK_SIZE)));
+      files.push(`sitemap-creators-${n}.xml`);
+    }
   }
 
   writeFileSync('public/sitemap.xml', generateIndexXML(files));
@@ -293,4 +336,7 @@ async function generateSitemap() {
   console.log(`   Submit to Google Search Console: ${SITE_URL}/sitemap.xml`);
 }
 
-generateSitemap().catch(console.error);
+generateSitemap().catch((err) => {
+  console.error('❌ Sitemap generation failed:', err.message || err);
+  process.exit(1);
+});
