@@ -584,3 +584,14 @@ h1, h2, h3, h4 {
           background-clip: text;
   color: transparent;
 }
+
+/* Auth page focal card: a gentle vertical float (no rotation, so the
+   platform logo on it is never tilted). */
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+.auth-float { animation: auth-float 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .auth-float { animation: none; }
+}

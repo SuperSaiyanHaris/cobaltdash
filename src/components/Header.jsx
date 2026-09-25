@@ -46,6 +46,17 @@ export default function Header() {
   const openAuth = () => window.dispatchEvent(new CustomEvent('openAuthPanel'));
   const mobileMenuRef = useRef(null);
 
+  // No divider line while the page sits at the top (it read as a hard seam
+  // against dark heroes and panels); the soft shadow appears once content
+  // scrolls under the header.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   // Close menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -86,7 +97,7 @@ export default function Header() {
   const isMoreActive = moreLinks.some(link => isActive(link.path));
 
   return (
-    <header ref={mobileMenuRef} className="bg-white/85 backdrop-blur-md sticky top-0 z-50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+    <header ref={mobileMenuRef} className={`bg-white/85 backdrop-blur-md sticky top-0 z-50 transition-shadow duration-200 ${scrolled ? 'shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_-12px_rgba(0,0,0,0.12)]' : ''}`}>
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
 

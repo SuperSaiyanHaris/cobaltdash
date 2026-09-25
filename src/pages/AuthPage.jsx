@@ -1,69 +1,41 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import MusicIcon from '../components/MusicIcon';
 import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
-import CreatorAvatar from '../components/CreatorAvatar';
-import YouTubeIcon from '../components/YouTubeIcon';
-import TwitchIcon from '../components/TwitchIcon';
-import KickIcon from '../components/KickIcon';
-import TikTokIcon from '../components/TikTokIcon';
-import BlueskyIcon from '../components/BlueskyIcon';
 import SEO from '../components/SEO';
 import { getShowcaseCreators } from '../services/creatorService';
-import { formatNumber } from '../lib/utils';
-import { PLATFORM_ACCENTS, PLATFORM_COUNT } from '../lib/constants';
+import { PLATFORM_COUNT } from '../lib/constants';
+import { cardImageUrl } from '../lib/cardUrl';
+import { CARD_PLATFORMS } from '../lib/badgeCard';
 
-const PLATFORM_ICONS = {
-  youtube: YouTubeIcon, twitch: TwitchIcon, kick: KickIcon, tiktok: TikTokIcon,
-  bluesky: BlueskyIcon, music: MusicIcon,
-};
-const PLATFORM_TINT = {
-  youtube: '', twitch: '', kick: 'text-green-600',
-  tiktok: 'text-pink-500', bluesky: 'text-sky-500', music: 'text-amber-500',
-};
-const METRIC = {
-  youtube: 'subscribers', twitch: 'followers', kick: 'paid subs', tiktok: 'followers',
-  bluesky: 'followers', music: 'monthly listeners',
-};
+// Right-hand showcase: a slanted wall of real holographic creator cards
+// drifting in columns, with one upright "focal" card floating in front.
+// The wall is rotated in 3D, so it uses the markless card render (brand
+// rules forbid rotating platform logos); the focal card stays upright and
+// only bobs vertically, so it keeps its logo.
+const WALL_COLUMNS = 4;
+const PER_COLUMN = 6;
+const COLUMN_SPEEDS = ['75s', '60s', '85s', '68s'];
 
-function ShowcaseCard({ c }) {
-  const Icon = PLATFORM_ICONS[c.platform] || YouTubeIcon;
-  const accent = PLATFORM_ACCENTS[c.platform];
+function WallColumn({ creators, index }) {
+  if (!creators.length) return null;
+  const down = index % 2 === 1;
   return (
     <div
-      className="bg-white/[0.04] border border-white/10 border-l-2 rounded-xl p-3 flex items-center gap-3 w-full"
-      style={accent ? { borderLeftColor: `${accent}B3` } : undefined}
+      className={`flex flex-col gap-5 w-[200px] flex-shrink-0 ${down ? 'auth-col-down' : 'auth-col-up'}`}
+      style={{ animationDuration: COLUMN_SPEEDS[index % COLUMN_SPEEDS.length] }}
     >
-      {/* Left-edge accent matches the same platform-tinted treatment used on
-          the home hero's marquee cards (2026-08-02), kept consistent across
-          both showcase surfaces. B3 suffix ≈ 70% opacity, same softness. */}
-      <CreatorAvatar
-        src={c.profile_image}
-        name={c.display_name}
-        rounded="rounded-lg"
-        className="!w-11 !h-11 flex-shrink-0"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${PLATFORM_TINT[c.platform] || 'text-neutral-400'}`} />
-          <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
-        </div>
-        <p className="text-xs text-neutral-400 tabular-nums mt-0.5">
-          {c.subscribers != null ? `${formatNumber(c.subscribers)} ${METRIC[c.platform] || 'followers'}` : c.platform}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// One vertically-drifting column. Cards are duplicated so the -50% loop is seamless.
-function ShowcaseColumn({ creators, direction, className }) {
-  if (!creators.length) return null;
-  return (
-    <div className={`flex flex-col gap-3 ${direction === 'down' ? 'auth-col-down' : 'auth-col-up'} ${className}`}>
       {[...creators, ...creators].map((c, i) => (
-        <ShowcaseCard key={`${c.id}-${i}`} c={c} />
+        <img
+          key={`${c.id}-${i}`}
+          src={cardImageUrl(c.platform, c.username, { mark: false })}
+          alt=""
+          width="250"
+          height="350"
+          loading={i < 3 ? 'eager' : 'lazy'}
+          draggable="false"
+          className="w-full h-auto select-none rounded-2xl shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]"
+        />
       ))}
     </div>
   );
@@ -86,14 +58,20 @@ export default function AuthPage({ initialMode = 'signin' }) {
 
   useEffect(() => {
     getShowcaseCreators(8).then((data) => {
-      if (data?.length) setCreators([...data].sort(() => Math.random() - 0.5));
+      const usable = (data || []).filter((c) => c.username && CARD_PLATFORMS[c.platform]);
+      for (let i = usable.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [usable[i], usable[j]] = [usable[j], usable[i]];
+      }
+      if (usable.length) setCreators(usable);
     }).catch(() => {});
   }, []);
 
-  // Split the shuffled creators into 3 columns.
+  // The first creator is the focal card; the next ones fill the wall.
+  const focal = creators[0];
   const columns = useMemo(() => {
-    const cols = [[], [], []];
-    creators.forEach((c, i) => cols[i % 3].push(c));
+    const cols = Array.from({ length: WALL_COLUMNS }, () => []);
+    creators.slice(1, 1 + WALL_COLUMNS * PER_COLUMN).forEach((c, i) => cols[i % WALL_COLUMNS].push(c));
     return cols;
   }, [creators]);
 
@@ -105,7 +83,7 @@ export default function AuthPage({ initialMode = 'signin' }) {
         noindex
       />
 
-      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#fafaf9]">
+      <div className="min-h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-2 bg-white">
         {/* Left — the form */}
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16">
           <div className="w-full max-w-sm mx-auto">
@@ -129,23 +107,51 @@ export default function AuthPage({ initialMode = 'signin' }) {
           </div>
         </div>
 
-        {/* Right — live creator showcase (desktop only) */}
-        <div className="relative hidden lg:block overflow-hidden bg-[#0a0a0f]">
-          {/* soft brand glow, no blur on the cards themselves */}
-          <div aria-hidden="true" className="absolute inset-0 opacity-60"
-               style={{ background: 'radial-gradient(60% 50% at 80% 15%, rgba(99,102,241,0.18), transparent 60%), radial-gradient(50% 50% at 15% 85%, rgba(217,70,239,0.15), transparent 60%)' }} />
+        {/* Right — holographic card showcase (desktop only) */}
+        <div className="relative hidden lg:block overflow-hidden bg-[#0a0a0f] isolate">
+          <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
 
-          <div className="absolute top-10 left-10 right-10 z-10">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-300">Live across {PLATFORM_COUNT} platforms</p>
-            <p className="mt-2 text-2xl font-bold text-white leading-snug max-w-sm">The creators everyone is watching, updated every day.</p>
+          {/* The slanted, drifting card wall. */}
+          <div aria-hidden="true" className="absolute inset-0 [perspective:1600px] pointer-events-none">
+            <div
+              className="absolute left-1/2 top-1/2 flex gap-5 opacity-70"
+              style={{ transform: 'translate(-50%, -50%) rotateX(22deg) rotateY(-16deg) rotateZ(-10deg)', transformStyle: 'preserve-3d' }}
+            >
+              {columns.map((col, i) => (
+                <div key={i} style={{ marginTop: `${(i % 2) * -140}px` }}>
+                  <WallColumn creators={col} index={i} />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* three drifting columns, edge-faded top and bottom */}
-          <div aria-hidden="true" className="absolute inset-0 flex gap-3 px-6 pt-2"
-               style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)', maskImage: 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)' }}>
-            <ShowcaseColumn creators={columns[0]} direction="up"   className="flex-1" />
-            <ShowcaseColumn creators={columns[1]} direction="down" className="flex-1 mt-[-3rem]" />
-            <ShowcaseColumn creators={columns[2]} direction="up"   className="flex-1 mt-[-6rem]" />
+          {/* Scrims: dark edges so the wall melts into the panel and the copy stays legible. */}
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(70% 60% at 60% 55%, transparent 0%, rgba(10,10,15,0.55) 70%, #0a0a0f 100%)' }} />
+          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-72 pointer-events-none bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/85 to-transparent" />
+
+          {/* Focal card: upright, floating, with its platform logo. */}
+          {focal && (
+            <div className="absolute right-[12%] top-[14%] [@media(max-height:760px)]:top-[8%] auth-float" aria-hidden="true">
+              <div className="absolute -inset-10 rounded-full blur-3xl opacity-50 pointer-events-none" style={{ backgroundColor: CARD_PLATFORMS[focal.platform]?.color || '#a855f7' }} />
+              <img
+                src={cardImageUrl(focal.platform, focal.username)}
+                alt=""
+                width="250"
+                height="350"
+                draggable="false"
+                className="relative w-[230px] xl:w-[250px] [@media(max-height:760px)]:w-[180px] h-auto select-none rounded-2xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)]"
+              />
+            </div>
+          )}
+
+          <div className="absolute left-10 right-10 bottom-10 z-10 xl:left-14 xl:bottom-14">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-300">Live across {PLATFORM_COUNT} platforms</p>
+            <p className="mt-3 text-3xl xl:text-4xl font-extrabold text-white leading-[1.1] tracking-tight max-w-md text-balance">
+              Every creator has a card. Follow the ones you care about.
+            </p>
+            <p className="mt-3 text-sm text-white/55 max-w-sm">
+              Live counts, growth and rank for 50,000+ creators, updated every day.
+            </p>
           </div>
         </div>
       </div>
