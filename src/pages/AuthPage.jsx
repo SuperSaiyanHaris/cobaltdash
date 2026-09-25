@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
 import SEO from '../components/SEO';
-import { getShowcaseCreators } from '../services/creatorService';
+import { getCardsByRarity } from '../services/creatorService';
 import { PLATFORM_COUNT } from '../lib/constants';
 import { cardImageUrl } from '../lib/cardUrl';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
@@ -11,6 +11,7 @@ import { CARD_PLATFORMS } from '../lib/badgeCard';
 // Page backdrop (desktop): a slanted wall of real holographic creator cards
 // drifting in columns. The wall is rotated in 3D, so it uses the markless
 // card render (brand rules forbid rotating platform logos).
+const WALL_PLATFORMS = ['youtube', 'twitch', 'kick', 'tiktok', 'bluesky', 'music'];
 const WALL_COLUMNS = 10;
 const PER_COLUMN = 5;
 const COLUMN_SPEEDS = ['75s', '62s', '84s', '68s', '79s', '64s', '88s', '70s', '81s', '66s'];
@@ -58,7 +59,9 @@ export default function AuthPage({ initialMode = 'signin' }) {
   }, [isAuthenticated, returnTo, navigate]);
 
   useEffect(() => {
-    getShowcaseCreators(8).then((data) => {
+    // Every rarity gets love here: per platform, 2 Legendary, 2 Epic,
+    // 2 Rare and 3 Common cards, shuffled into the wall.
+    getCardsByRarity(WALL_PLATFORMS, { legendary: 2, epic: 2, rare: 2, common: 3 }).then((data) => {
       const usable = (data || []).filter((c) => c.username && CARD_PLATFORMS[c.platform]);
       for (let i = usable.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

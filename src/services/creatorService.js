@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { withErrorHandling } from '../lib/errorHandler';
+import { rarityBands } from '../lib/badgeCard';
 
 /**
  * Save or update a creator and stats via server-side API
@@ -647,22 +648,67 @@ export const getHubCreators = withErrorHandling(
   'creatorService.getHubCreators'
 );
 
+// --- Creator cards by rarity ---
+// A card's rarity comes from the creator's subscribers rank against the
+// platform's creator count (cardTier in src/lib/badgeCard.js, rendered by
+// middleware.js), so picking rank positions inside each tier's band yields
+// cards of that rarity. Used by the home hero and the auth-page card wall.
+const _platformCountCache = new Map(); // platform -> count
+async function _platformCreatorCount(platform) {
+  if (_platformCountCache.has(platform)) return _platformCountCache.get(platform);
+  const { count, error } = await supabase
+    .from('creators')
+    .select('id', { count: 'exact', head: true })
+    .eq('platform', platform);
+  if (error) throw error;
+  _platformCountCache.set(platform, count || 0);
+  return count || 0;
+}
+
+function _randomRanks([lo, hi], n) {
+  const span = hi - lo + 1;
+  if (span <= n) return Array.from({ length: span }, (_, i) => lo + i);
+  const picks = new Set();
+  while (picks.size < n) picks.add(lo + Math.floor(Math.random() * span));
+  return [...picks];
+}
+
 /**
- * Creators for the auth-page showcase wall: top ranks across the popular
- * platforms, enough to fill a few floating columns. Read-only, anon-safe.
+ * Random creators for card showcases, a set number per rarity tier per
+ * platform, e.g. { legendary: 2, epic: 2, rare: 2 }. Only creators with an
+ * avatar, so every card has art. Returns rows with a `tier` field.
  */
-export const getShowcaseCreators = withErrorHandling(
-  async (perPlatform = 8) => {
-    const { data, error } = await supabase
-      .from('rankings_cache')
-      .select('creator_id, platform, username, display_name, profile_image, subscribers')
-      .eq('rank_type', 'subscribers')
-      .in('platform', ['youtube', 'twitch', 'tiktok', 'kick', 'bluesky', 'music'])
-      .lte('rank_position', perPlatform);
-    if (error) throw error;
-    return (data || []).map((c) => ({ ...c, id: c.creator_id }));
+export const getCardsByRarity = withErrorHandling(
+  async (platforms, perTier) => {
+    const perPlatform = await Promise.all(platforms.map(async (platform) => {
+      const total = await _platformCreatorCount(platform);
+      if (!total) return [];
+      const bands = rarityBands(total);
+      const wanted = Object.entries(perTier).filter(([tier, n]) => n > 0 && bands[tier]);
+      // Over-sample (dead ranks, missing avatars), then trim per tier.
+      const rankTier = new Map();
+      for (const [tier, n] of wanted) {
+        for (const r of _randomRanks(bands[tier], n * 3)) rankTier.set(r, tier);
+      }
+      if (!rankTier.size) return [];
+      const { data, error } = await supabase
+        .from('rankings_cache')
+        .select('creator_id, platform, username, display_name, profile_image, subscribers, rank_position')
+        .eq('platform', platform)
+        .eq('rank_type', 'subscribers')
+        .in('rank_position', [...rankTier.keys()]);
+      if (error) throw error;
+      const byTier = {};
+      for (const row of data || []) {
+        if (!row.username || !row.profile_image) continue;
+        const tier = rankTier.get(row.rank_position);
+        (byTier[tier] ||= []).push({ ...row, id: row.creator_id, tier });
+      }
+      return wanted.flatMap(([tier, n]) => (byTier[tier] || []).slice(0, n));
+    }));
+    return perPlatform.flat();
   },
-  'creatorService.getShowcaseCreators'
+  'creatorService.getCardsByRarity'
 );
 
 export const getTopCreatorsByPlatform = withErrorHandling(

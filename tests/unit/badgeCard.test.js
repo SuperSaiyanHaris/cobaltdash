@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderCard, cardTier, compactCount, TIERS, CARD_PLATFORMS, MARK_HEIGHT, renderMarkOverlay } from '../../src/lib/badgeCard.js';
+import { renderCard, cardTier, compactCount, TIERS, CARD_PLATFORMS, MARK_HEIGHT, renderMarkOverlay, rarityBands } from '../../src/lib/badgeCard.js';
 
 const base = { platform: 'twitch', name: 'KaiCenat', username: 'kaicenat', count: 21_772_129, delta30: 74_298, rank: 1, total: 28_504, avatar: null };
 
@@ -109,6 +109,23 @@ describe('renderMarkOverlay (flat logo layer for the home hero)', () => {
       const mark = overlay.match(/<g data-mark="[^"]+"[\s\S]*<\/g>/)[0];
       expect(overlay).toMatch(/^<svg [^>]*viewBox="0 0 250 350"/);
       expect(card).toContain(mark);
+    }
+  });
+});
+
+describe('rarityBands (inverse of cardTier)', () => {
+  it('every rank in a band gets that band\'s rarity, bands tile 1..total', () => {
+    for (const total of [7880, 28504, 3621, 3156, 1690, 1460, 500, 50, 10]) {
+      const bands = rarityBands(total);
+      let next = 1;
+      for (const [tier, [lo, hi]] of Object.entries(bands)) {
+        expect(lo).toBe(next);
+        for (const r of [lo, Math.floor((lo + hi) / 2), hi]) {
+          expect(cardTier(r, total).name.toLowerCase()).toBe(tier);
+        }
+        next = hi + 1;
+      }
+      expect(next).toBe(total + 1);
     }
   });
 });

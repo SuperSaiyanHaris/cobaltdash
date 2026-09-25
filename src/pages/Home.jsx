@@ -13,7 +13,7 @@ import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { getAllPosts } from '../services/blogService';
 import {
-  getRankedCreators, getTopCreatorsByPlatform, getCreatorStats,
+  getRankedCreators, getTopCreatorsByPlatform, getCreatorStats, getCardsByRarity,
 } from '../services/creatorService';
 import { supabase } from '../lib/supabase';
 import { formatNumber } from '../lib/utils';
@@ -51,6 +51,9 @@ const HEADLINE_ROTATIONS = [
   { word: 'Mastodon poster',  color: PLATFORM_ACCENTS.mastodon },
   { word: 'Substack writer',  color: PLATFORM_ACCENTS.substack },
 ];
+
+// Platforms the hero card hand draws Legendary/Epic/Rare cards from.
+const HERO_CARD_PLATFORMS = ['youtube', 'twitch', 'kick', 'tiktok', 'bluesky', 'music'];
 
 // Display order + labels for the rotating #1-per-platform hero card.
 const TOP_CARD_META = [
@@ -452,18 +455,18 @@ export default function Home() {
     }).catch(() => {});
   }, []);
 
-  // Hero card hand = YouTube + Twitch top 20 plus every other platform's #1,
-  // shuffled so each visit pulls a different run of cards. The #1-per-platform
-  // cards come from a single rankings_cache query. We also fetch the top
-  // YouTuber's stats history for the earnings estimate.
+  // Hero card hand: every platform's #1 plus a random draw of Legendary,
+  // Epic and Rare cards per platform (no Commons here; the sign-in page's
+  // wall shows every rarity), shuffled so each visit pulls a different run.
+  // The YouTube top 10 feeds the rankings, podium and earnings sections.
   useEffect(() => {
     Promise.all([
-      getRankedCreators('youtube', 'subscribers', 20),
-      getRankedCreators('twitch', 'subscribers', 20),
+      getRankedCreators('youtube', 'subscribers', 10),
       getTopCreatorsByPlatform(),
-    ]).then(([yt, tw, top1s]) => {
+      getCardsByRarity(HERO_CARD_PLATFORMS, { legendary: 1, epic: 2, rare: 2 }).catch(() => []),
+    ]).then(([yt, top1s, drawn]) => {
       const seen = new Set();
-      const pool = [...yt, ...tw, ...(top1s || [])].filter((c) => {
+      const pool = [...(top1s || []), ...(drawn || [])].filter((c) => {
         const key = `${c?.platform}/${c?.username}`;
         if (!c?.username || !c?.display_name || !CARD_PLATFORMS[c.platform] || seen.has(key)) return false;
         seen.add(key);

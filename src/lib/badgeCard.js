@@ -54,6 +54,25 @@ export function cardTier(rank, total) {
   return TIERS.COMMON;
 }
 
+/**
+ * The rank range for each rarity on a platform with `total` creators,
+ * as { tier: [firstRank, lastRank] }, the inverse of cardTier(). Tiers that
+ * are empty on small platforms are left out. Used to pick showcase cards of
+ * a given rarity (creatorService.getCardsByRarity).
+ */
+export function rarityBands(total) {
+  const legendary = Math.max(10, Math.floor(total * 0.001));
+  const epic = Math.floor(total * 0.01);
+  const rare = Math.floor(total * 0.1);
+  const bands = {
+    legendary: [1, Math.min(legendary, total)],
+    epic: [legendary + 1, epic],
+    rare: [Math.max(legendary, epic) + 1, rare],
+    common: [Math.max(legendary, rare) + 1, total],
+  };
+  return Object.fromEntries(Object.entries(bands).filter(([, [lo, hi]]) => hi >= lo));
+}
+
 export function escapeXml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
