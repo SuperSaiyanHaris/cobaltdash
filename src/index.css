@@ -577,14 +577,6 @@ h1, h2, h3, h4 {
   .sponsor-shine { display: none; }
 }
 
-/* Footer sign-off wordmark: brand gradient fading out toward the page edge. */
-.footer-wordmark {
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.10) 55%, rgba(217, 70, 239, 0) 100%);
-  -webkit-background-clip: text;
-          background-clip: text;
-  color: transparent;
-}
-
 /* Auth page focal card: a gentle vertical float (no rotation, so the
    platform logo on it is never tilted). */
 @keyframes auth-float {
