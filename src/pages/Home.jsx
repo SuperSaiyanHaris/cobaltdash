@@ -1,9 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, ChartNoAxesColumnIncreasing,
-  LineChart, ChevronLeft, ChevronRight, Megaphone,
-} from 'lucide-react';
+import { Search, ArrowRight, ChevronLeft, ChevronRight, Megaphone } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import YouTubeIcon from '../components/YouTubeIcon';
@@ -21,7 +18,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { formatNumber } from '../lib/utils';
 import { cardImageUrl } from '../lib/cardUrl';
-import FeaturedListingPreview from '../components/FeaturedListingPreview';
+import HomeSponsorBand from '../components/HomeSponsorBand';
 import HeroCardStage from '../components/HeroCardStage';
 import HomeProductBento from '../components/HomeProductBento';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
@@ -331,95 +328,102 @@ function ChampionsGrid({ tops }) {
 
 // posts === null → loading skeletons (space reserved, no layout shift when
 // data lands); [] → nothing to show, hide the section.
+// Blog teaser as a magazine spread: the newest post as a big lead story with
+// its title over the image, the next two as compact stories beside it.
+function blogDate(dateStr) {
+  if (!dateStr) return '';
+  // published_at is a bare DATE; local noon keeps it on the right day in
+  // every timezone (same fix as Blog.jsx's formatDate).
+  const d = dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`;
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function BlogMeta({ post, className = '' }) {
+  const parts = [blogDate(post.published_at), post.read_time].filter(Boolean);
+  if (!parts.length) return null;
+  return <p className={`text-xs tabular-nums ${className}`}>{parts.join(' · ')}</p>;
+}
+
 const BlogTeaser = memo(function BlogTeaser({ posts }) {
   if (posts !== null && posts.length === 0) return null;
+  const [lead, ...rest] = posts || [];
 
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-24">
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
       <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-2">From the blog</p>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">Latest in creator economy</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-2">From the blog</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900">The creator economy, in numbers</h2>
         </div>
         <Link to="/blog" className="inline-flex items-center gap-1 text-sm font-semibold text-neutral-900 hover:gap-2 transition-all">
-          View all <ArrowRight className="w-4 h-4" />
+          All posts <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
 
       {posts === null ? (
-        <div className="grid md:grid-cols-3 gap-5">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
-              <div className="aspect-[16/9] bg-neutral-100 animate-pulse" />
-              <div className="p-5 space-y-3">
-                <div className="h-4 w-24 bg-neutral-100 rounded animate-pulse" />
-                <div className="h-4 w-full bg-neutral-100 rounded animate-pulse" />
-                <div className="h-4 w-2/3 bg-neutral-100 rounded animate-pulse" />
-              </div>
-            </div>
-          ))}
+        <div className="grid lg:grid-cols-[1.35fr,1fr] gap-5">
+          <div className="aspect-[16/10] rounded-3xl bg-neutral-200/70 animate-pulse" />
+          <div className="grid gap-5">
+            {[0, 1, 2].map((i) => <div key={i} className="h-32 rounded-2xl bg-neutral-200/70 animate-pulse" />)}
+          </div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-3 gap-5">
-          {posts.map((post, i) => (
-            <motion.div
-              key={post.slug}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-            >
+        <div className="grid lg:grid-cols-[1.35fr,1fr] gap-5">
+          <Link
+            to={`/blog/${lead.slug}`}
+            className="group relative block overflow-hidden rounded-3xl bg-neutral-900 aspect-[4/5] sm:aspect-[16/10] lg:aspect-auto lg:min-h-[440px]"
+          >
+            {lead.image && (
+              <img
+                src={resizedBlogImageUrl(lead.image, 1200, 675)}
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/0" />
+            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+              {lead.category && (
+                <span className="inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white bg-white/15 backdrop-blur border border-white/20 rounded-full mb-3">
+                  {lead.category}
+                </span>
+              )}
+              <h3 className="text-xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight line-clamp-3 text-balance">{lead.title}</h3>
+              {lead.description && <p className="hidden sm:block mt-3 text-sm sm:text-base text-white/70 line-clamp-2 max-w-2xl">{lead.description}</p>}
+              <BlogMeta post={lead} className="mt-3 text-white/50" />
+            </div>
+          </Link>
+
+          <div className="grid gap-4 lg:grid-rows-3">
+            {rest.slice(0, 3).map((post) => (
               <Link
+                key={post.slug}
                 to={`/blog/${post.slug}`}
-                className="group block bg-white border border-neutral-200 rounded-2xl overflow-hidden hover:border-neutral-300 transition-colors duration-200"
+                className="group flex items-center gap-4 p-3 sm:p-4 bg-white border border-neutral-200/80 rounded-2xl hover:border-neutral-300 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.18)] transition-[border-color,box-shadow]"
               >
                 {post.image && (
-                  <div className="aspect-[16/9] overflow-hidden bg-neutral-100">
+                  <div className="w-32 sm:w-40 flex-shrink-0 aspect-[16/10] rounded-xl overflow-hidden bg-neutral-100">
                     <img
                       src={resizedBlogImageUrl(post.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
-                      alt={post.title}
+                      alt=""
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 )}
-                <div className="p-5">
-                  {post.category && (
-                    <span className="inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full mb-3">
-                      {post.category}
-                    </span>
-                  )}
-                  <h3 className="text-base font-bold text-neutral-900 mb-1.5 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-sm text-neutral-600 line-clamp-2 leading-relaxed">{post.description}</p>
+                <div className="min-w-0">
+                  {post.category && <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">{post.category}</p>}
+                  <h3 className="mt-1 text-sm sm:text-[15px] font-bold text-neutral-900 leading-snug line-clamp-3 group-hover:text-indigo-600 transition-colors">{post.title}</h3>
+                  <BlogMeta post={post} className="mt-1.5 text-neutral-400" />
                 </div>
               </Link>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </section>
   );
 });
-
-const FEATURES = [
-  { Icon: ChartNoAxesColumnIncreasing, title: 'Live Rankings', body: 'Updated daily, every platform', to: '/rankings', accent: 'amber' },
-  { Icon: Search,     title: 'Universal Search',    body: 'Find any creator instantly', bodyDesktop: `${IS_MAC ? '⌘K' : 'Ctrl K'} from anywhere`, to: '/search', accent: 'indigo' },
-  { Icon: Scale,      title: 'Head-to-Head Compare',body: 'Stack any two creators',                to: '/compare',                  accent: 'violet' },
-  { Icon: TrendingUp, title: 'Trending This Month',  body: 'Catch growth before it peaks',          to: '/trending',                 accent: 'emerald' },
-  { Icon: Calculator, title: 'Earnings Estimator',   body: 'Estimate YouTube ad revenue',           to: '/youtube/money-calculator', accent: 'green' },
-  { Icon: LineChart,  title: 'Daily Growth History', body: 'Charts, deltas, milestones',            to: '/milestones',               accent: 'sky' },
-];
-
-const FEATURE_COLORS = {
-  amber:   'bg-amber-50 text-amber-600 border-amber-200',
-  indigo:  'bg-indigo-50 text-indigo-600 border-indigo-200',
-  violet:  'bg-violet-50 text-violet-600 border-violet-200',
-  emerald: 'bg-emerald-50 text-emerald-600 border-emerald-200',
-  green:   'bg-green-50 text-green-600 border-green-200',
-  sky:     'bg-sky-50 text-sky-600 border-sky-200',
-};
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -492,7 +496,7 @@ export default function Home() {
   // Latest blog posts — null means loading (skeletons), [] means hide section
   useEffect(() => {
     getAllPosts()
-      .then(posts => setLatestPosts(posts.slice(0, 3)))
+      .then(posts => setLatestPosts(posts.slice(0, 4)))
       .catch(() => setLatestPosts([]));
   }, []);
 
@@ -650,71 +654,8 @@ export default function Home() {
         {/* ============== CHAMPIONS ============== */}
         <ChampionsGrid tops={topByPlatform} />
 
-        {/* ============== FEATURES ============== */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="scroll-reveal text-center mb-12 sm:mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-3">What you can do</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
-              Track creators like a pro
-            </h2>
-            <p className="mt-4 text-base sm:text-lg text-neutral-600">
-              No paywalls. Just data.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {FEATURES.map((feat, i) => (
-              <motion.div
-                key={feat.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-10%' }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-              >
-                <Link
-                  to={feat.to}
-                  className="group flex items-center gap-4 h-full bg-white border border-neutral-200 rounded-2xl p-5 hover:border-neutral-300 hover:bg-neutral-50/50 transition-colors duration-200"
-                >
-                  <div className={`w-11 h-11 rounded-xl border ${FEATURE_COLORS[feat.accent]} flex items-center justify-center flex-shrink-0`}>
-                    <feat.Icon className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-bold text-neutral-900">{feat.title}</h3>
-                    <p className="text-sm text-neutral-500 mt-0.5">
-                      {feat.bodyDesktop ? (
-                        <>
-                          <span className="sm:hidden">{feat.body}</span>
-                          <span className="hidden sm:inline">{feat.bodyDesktop}</span>
-                        </>
-                      ) : feat.body}
-                    </p>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-neutral-300 group-hover:text-neutral-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0" />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* ============== FEATURED LISTINGS — LIVE PREVIEW ============== */}
-        {/* Reuses <FeaturedListingPreview /> so this view stays identical to the
-            one on /promote. The "how it works" numbered tiles live on /promote
-            only — this section is just the visual sell. */}
-        <section className="relative pb-16 sm:pb-24">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="scroll-reveal text-center mb-10 sm:mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-600 mb-3">For brands & creators</p>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
-                Show up at the top.
-              </h2>
-              <p className="mt-3 text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto">
-                Sponsored placement inside the live rankings tables. Here's exactly what your slot looks like.
-              </p>
-            </div>
-
-            <FeaturedListingPreview topCreators={topCreators} />
-          </div>
-        </section>
+        {/* ============== SPONSORED PLACEMENT ============== */}
+        <HomeSponsorBand topCreators={topCreators} />
 
         {/* ============== BLOG TEASER ============== */}
         <BlogTeaser posts={latestPosts} />

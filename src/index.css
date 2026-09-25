@@ -548,3 +548,31 @@ h1, h2, h3, h4 {
   .hero-flip, .hero-tilt { transition: none; }
   .hero-burst { display: none; }
 }
+
+/* Home "Show up at the top" band: the sponsored row's gold foil edge and a
+   slow shine sweep (src/components/HomeSponsorBand.jsx). */
+.sponsor-foil {
+  background: linear-gradient(115deg, #fde68a, #f59e0b, #fff7d6, #d97706, #fde68a);
+  background-size: 300% 300%;
+  animation: sponsor-foil 6s ease-in-out infinite;
+}
+@keyframes sponsor-foil {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.sponsor-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(253, 230, 138, 0.18) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: sponsor-shine 4.5s ease-in-out 1s infinite;
+}
+@keyframes sponsor-shine {
+  0%   { transform: translateX(-100%); }
+  45%, 100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-foil, .sponsor-shine { animation: none; }
+  .sponsor-shine { display: none; }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChartNoAxesColumnIncreasing, DollarSign, LineChart, Scale } from 'lucide-react';
+import { ArrowRight, ChartNoAxesColumnIncreasing, DollarSign, Flame, IdCard, LineChart, Scale, Search, Trophy } from 'lucide-react';
 import YouTubeIcon from './YouTubeIcon';
 import TwitchIcon from './TwitchIcon';
 import KickIcon from './KickIcon';
@@ -9,6 +9,7 @@ import { getRankedCreators } from '../services/creatorService';
 import { formatNumber, formatRelativeTimeShort } from '../lib/utils';
 import { youtubeAdEarnings } from '../lib/earnings';
 import { PLATFORM_ACCENTS, PLATFORM_COUNT } from '../lib/constants';
+import { isMac } from '../lib/platform';
 
 // "What's inside" section under the home hero: one bento grid that shows
 // every core feature at once, each tile a live slice of the real thing and a
@@ -24,6 +25,16 @@ const RANK_TABS = [
 // Rows in the rankings tile: enough to match the height of the three tiles
 // stacked beside it on desktop.
 const RANK_ROWS = 10;
+
+// Pages with no tile of their own, as one quiet row under the grid (replaced
+// the separate "Track creators like a pro" feature grid, which mostly
+// repeated the tiles above).
+const MORE_LINKS = [
+  { Icon: Flame, label: 'Trending this month', to: '/trending' },
+  { Icon: Trophy, label: 'Milestones', to: '/milestones' },
+  { Icon: DollarSign, label: 'Kick earnings', to: '/kick/earnings' },
+  { Icon: IdCard, label: 'Creator cards', to: '/badge' },
+];
 
 const TILE = 'group relative min-w-0 flex flex-col bg-white border border-neutral-200/80 rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-neutral-300 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.18)] transition-[border-color,box-shadow]';
 
@@ -247,6 +258,25 @@ export default function HomeProductBento({ youtubeTop, topHistory, liveStats }) 
         </div>
 
       </div>
+
+      <nav aria-label="More on ShinyPull" className="mt-6 flex flex-wrap items-center justify-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mr-1">More</span>
+        {MORE_LINKS.map(({ Icon, label, to }) => (
+          <Link key={to} to={to} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-neutral-200 text-[13px] font-medium text-neutral-700 hover:border-neutral-300 hover:text-neutral-900 transition-colors">
+            <Icon className="w-3.5 h-3.5 text-neutral-400" />
+            {label}
+          </Link>
+        ))}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-neutral-200 text-[13px] font-medium text-neutral-700 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
+        >
+          <Search className="w-3.5 h-3.5 text-neutral-400" />
+          Search anything
+          <kbd className="hidden sm:inline text-[10px] font-semibold text-neutral-400">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+        </button>
+      </nav>
     </section>
   );
 }
