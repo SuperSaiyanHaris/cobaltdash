@@ -422,13 +422,16 @@ const _rankingsCache = new Map(); // key → { data, ts }
 const RANKINGS_TTL = 10 * 60 * 1000; // 10 minutes
 
 async function _fetchRankings(platform, rankType, limit) {
-  const { data, error } = await supabase
+  // 'watched' (Twitch/Kick "Most Watched") reuses the subscribers rows, which
+  // already carry hours_watched_month, ordered by that instead of rank.
+  const base = supabase
     .from('rankings_cache')
     .select('creator_id, platform, username, display_name, profile_image, platform_id, subscribers, total_views, total_posts, growth_30d, hours_watched_day, hours_watched_week, hours_watched_month, rank_position, computed_at')
-    .eq('platform', platform)
-    .eq('rank_type', rankType)
-    .order('rank_position', { ascending: true })
-    .limit(limit);
+    .eq('platform', platform);
+  const { data, error } = rankType === 'watched'
+    ? await base.eq('rank_type', 'subscribers').gt('hours_watched_month', 0)
+      .order('hours_watched_month', { ascending: false }).limit(limit)
+    : await base.eq('rank_type', rankType).order('rank_position', { ascending: true }).limit(limit);
   if (error) throw error;
   const rows = data || [];
 
@@ -473,8 +476,10 @@ async function _fetchRankings(platform, rankType, limit) {
       },
       totalViews: creator.total_views,
       totalPosts: creator.total_posts,
+      hoursWatchedMonth: creator.hours_watched_month,
       growth30d: creator.growth_30d,
       sortValue: rankType === 'views' ? creator.total_views
+        : rankType === 'watched' ? creator.hours_watched_month
         : rankType === 'growth' ? creator.growth_30d
         : creator.subscribers,
     };

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Eye, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
+import { TrendingUp, Users, Eye, Clock, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -236,6 +236,7 @@ function getSeoData(platform, rankType, topCount) {
   const countLabel = `Top ${topCount}`;
 
   const metricLabel = rankType === 'views' ? 'Most Viewed' :
+    rankType === 'watched' ? 'Most Watched' :
     rankType === 'growth' ? 'Fastest Growing' :
     pid === 'tiktok' || pid === 'twitch' || pid === 'bluesky' || pid === 'mastodon' || pid === 'rumble' ? 'Most Followed' :
     pid === 'music' ? 'Most Listeners' :
@@ -254,7 +255,7 @@ function getSeoData(platform, rankType, topCount) {
     rumble: 'Rumble Channels',
     substack: 'Substack Newsletters',
   }[pid] || `${p} Creators`;
-  const title = `${countLabel} ${rankType === 'growth' ? 'Fastest Growing ' : rankType === 'views' ? 'Most Viewed ' : ''}${platformNoun} (2026) - Live Rankings`;
+  const title = `${countLabel} ${rankType === 'growth' ? 'Fastest Growing ' : rankType === 'views' ? 'Most Viewed ' : rankType === 'watched' ? 'Most Watched ' : ''}${platformNoun} (2026) - Live Rankings`;
 
   const descriptions = {
     youtube: `The ${countLabel.toLowerCase()} most subscribed YouTubers ranked by subscribers, views, and growth. Updated daily with live stats. See who has the most YouTube subscribers in 2026.`,
@@ -723,8 +724,10 @@ function PlatformRankings({ urlPlatform }) {
 
   const rankTypes = [
     { id: 'subscribers', name: selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Top Followers' : selectedPlatform === 'music' ? 'Top Listeners' : selectedPlatform === 'kick' ? 'Top Paid Subs' : 'Top Subscribers', icon: Users },
-    // Hide views for platforms whose APIs don't expose view data
-    ...(selectedPlatform !== 'kick' && selectedPlatform !== 'tiktok' && selectedPlatform !== 'bluesky' && selectedPlatform !== 'music' && selectedPlatform !== 'mastodon' && selectedPlatform !== 'rumble' && selectedPlatform !== 'substack' ? [{ id: 'views', name: 'Most Views', icon: Eye }] : []),
+    // Views only where the platform publishes a real total (YouTube). Twitch
+    // retired public view counts in 2022, so Twitch/Kick rank by hours watched.
+    ...(selectedPlatform === 'youtube' ? [{ id: 'views', name: 'Most Views', icon: Eye }] : []),
+    ...(selectedPlatform === 'twitch' || selectedPlatform === 'kick' ? [{ id: 'watched', name: 'Most Watched', icon: Clock }] : []),
     { id: 'growth', name: 'Fastest Growing', icon: TrendingUp },
   ];
 
@@ -794,6 +797,7 @@ function PlatformRankings({ urlPlatform }) {
       switch (sortColumn) {
         case 'subscribers': return creator.subscribers || 0;
         case 'views': return creator.totalViews || 0;
+        case 'watched': return creator.hoursWatchedMonth || 0;
         case 'growth': return creator.growth30d || 0;
         default: return 0;
       }
@@ -908,8 +912,8 @@ function PlatformRankings({ urlPlatform }) {
     if (!platformId) return;
     setSelectedPlatform(platformId);
     // Reset rank type if switching to a platform that doesn't support it
-    const noViews = platformId === 'kick' || platformId === 'tiktok' || platformId === 'bluesky' || platformId === 'music' || platformId === 'mastodon' || platformId === 'rumble' || platformId === 'substack';
-    if (selectedRankType === 'views' && noViews) setSelectedRankType('subscribers');
+    if (selectedRankType === 'views' && platformId !== 'youtube') setSelectedRankType('subscribers');
+    if (selectedRankType === 'watched' && platformId !== 'twitch' && platformId !== 'kick') setSelectedRankType('subscribers');
     navigate(`/rankings/${platformId}`);
     analytics.switchPlatform('rankings', platformId);
   };
@@ -918,13 +922,16 @@ function PlatformRankings({ urlPlatform }) {
   // Optional secondary stat column shown between the sparkline and Growth.
   // Each platform maps to the one extra public metric worth showing (or none).
   // `key` is the field on the ranking row; `sortKey` is the sortable column id.
-  // Platforms with no meaningful second metric (twitch/kick use hours-watched
-  // via the growth tab; substack has only subscribers) show no column and give
-  // the Creator column the extra span so the row fills the grid evenly.
+  // Twitch/Kick show 30-day hours watched (the metric their "Most Watched" tab
+  // ranks by). Platforms with no meaningful second metric (substack has only
+  // subscribers) show no column and give the Creator column the extra span so
+  // the row fills the grid evenly.
   const SECONDARY_COLUMN = {
     youtube:  { label: 'Views',  key: 'totalViews', sortKey: 'views' },
     tiktok:   { label: 'Likes',  key: 'totalViews', sortKey: 'views' },
     music:    { label: 'Plays',  key: 'totalViews', sortKey: 'views' },
+    twitch:   { label: 'Hours (30d)', key: 'hoursWatchedMonth', sortKey: 'watched' },
+    kick:     { label: 'Hours (30d)', key: 'hoursWatchedMonth', sortKey: 'watched' },
     rumble:   { label: 'Videos', key: 'totalPosts', sortKey: null },
     mastodon: { label: 'Posts',  key: 'totalPosts', sortKey: null },
     bluesky:  { label: 'Posts',  key: 'totalPosts', sortKey: null },
@@ -1383,7 +1390,7 @@ function PlatformRankings({ urlPlatform }) {
                     </div>
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">Which Twitch streamer has the most watch hours?</h3>
-                      <p>We track hours watched for every Twitch streamer in our database. Sort by growth to see which streamers are pulling the most watch hours over the last 30 days.</p>
+                      <p>We track hours watched for every Twitch streamer in our database. Switch to the Most Watched tab to rank streamers by hours watched over the last 30 days, the metric the streaming industry uses to compare channel size.</p>
                     </div>
                   </>
                 )}
