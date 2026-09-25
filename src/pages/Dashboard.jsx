@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Star, Users, Loader2,
-  Scale, Clock, ChevronRight, ChevronLeft, Check, X, Trash2,
-  Lock, Settings, TrendingUp,
+  Star, Users, Loader2, Scale, Clock, ChevronRight, Check, X, Trash2,
+  Settings, TrendingUp, Search, LayoutGrid, List,
 } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
@@ -12,6 +11,7 @@ import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import SubstackIcon from '../components/SubstackIcon';
+import MusicIcon from '../components/MusicIcon';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import CreatorAvatar from '../components/CreatorAvatar';
@@ -22,8 +22,18 @@ import { getCreatorStats } from '../services/creatorService';
 import { getLiveStreams as getTwitchLiveStreams } from '../services/twitchService';
 import { getLiveStreams as getKickLiveStreams } from '../services/kickService';
 import { getRecentlyViewed, clearRecentlyViewed } from '../lib/recentlyViewed';
+import { PLATFORM_IDS, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
+import { cardImageUrl } from '../lib/cardUrl';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
+
+/**
+ * Dashboard, redesigned 2026-09-25 as "your collection": a dark band with a
+ * fanned hand of the cards you follow and who's live, then light content
+ * with high-contrast pill tabs. Following is a binder of holographic cards
+ * (or a list), saved compares and recently viewed are shown as cards too.
+ * No faint gray text or buttons: labels are neutral-600 at the lightest.
+ */
 
 const platformIcons = {
   youtube: YouTubeIcon,
@@ -31,23 +41,20 @@ const platformIcons = {
   twitch: TwitchIcon,
   kick: KickIcon,
   bluesky: BlueskyIcon,
+  music: MusicIcon,
   mastodon: MastodonIcon,
   substack: SubstackIcon,
 };
 
-// Platform identity lives in the icon tint alone — no colored chips or paint.
 const platformTint = {
   youtube: 'text-red-500',
-  tiktok: 'text-pink-500',
+  tiktok: 'text-neutral-900',
   twitch: 'text-purple-500',
   kick: 'text-green-600',
   bluesky: 'text-sky-500',
+  music: 'text-amber-500',
   mastodon: 'text-violet-500',
   substack: 'text-orange-500',
-};
-
-const PLATFORM_LABELS = {
-  youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', substack: 'Substack',
 };
 
 const METRIC_LABEL = {
@@ -56,13 +63,64 @@ const METRIC_LABEL = {
   twitch: 'followers',
   kick: 'paid subs',
   bluesky: 'followers',
+  music: 'listeners',
   mastodon: 'followers',
   substack: 'subscribers',
 };
 
-// Typographic backbone: hairline cards on paper, micro-labels, tabular numerals
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
-const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+const VIEW_KEY = 'sp-dashboard-view';
+const CARD_RADIUS = 'rounded-[6.4%/4.571%]';
+const PANEL = 'bg-white border border-neutral-200 rounded-2xl';
+const SAMPLE_HAND = [
+  { platform: 'twitch', username: 'kaicenat' },
+  { platform: 'tiktok', username: 'charlidamelio' },
+  { platform: 'youtube', username: 'mrbeast' },
+  { platform: 'music', username: 'coldplay' },
+  { platform: 'kick', username: 'adinross' },
+];
+
+const isStreamer = (c) => c.platform === 'twitch' || c.platform === 'kick';
+const primaryField = (c) => (c.platform === 'youtube' ? 'subscribers' : 'followers');
+
+function DotGrid() {
+  return <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />;
+}
+
+/**
+ * A fanned hand of up to five cards. Rotated cards are the markless render
+ * (platform logos may not be shown rotated).
+ */
+function CardHand({ cards }) {
+  const hand = cards.slice(0, 5);
+  const n = hand.length;
+  if (!n) return null;
+  const mid = (n - 1) / 2;
+  return (
+    <div aria-hidden="true" className="relative h-[210px] sm:h-[260px] w-full max-w-[420px] mx-auto">
+      {hand.map((c, i) => {
+        const off = i - mid;
+        return (
+          <img
+            key={`${c.platform}/${c.username}`}
+            src={cardImageUrl(c.platform, c.username, { mark: false })}
+            alt=""
+            width="250"
+            height="350"
+            draggable="false"
+            onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            className={`absolute left-1/2 bottom-0 w-[120px] sm:w-[150px] h-auto ${CARD_RADIUS} select-none opacity-0 transition-opacity duration-500 shadow-[0_24px_40px_-14px_rgba(0,0,0,0.85)]`}
+            style={{
+              transform: `translateX(calc(-50% + ${off * 46}px)) translateY(${Math.abs(off) * 10}px) rotate(${off * 8}deg)`,
+              transformOrigin: '50% 120%',
+              zIndex: 10 - Math.abs(Math.round(off)),
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -84,7 +142,13 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('live');
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState([]);
-  const [recentlyViewedIndex, setRecentlyViewedIndex] = useState(0);
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'cards'; } catch { return 'cards'; }
+  });
+  const changeView = (v) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* private mode */ }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -97,7 +161,8 @@ export default function Dashboard() {
   async function loadFollowedCreators() {
     setLoadingCreators(true);
     try {
-      const creators = await getFollowedCreators(user.id);
+      const all = await getFollowedCreators(user.id);
+      const creators = all.filter((c) => isActivePlatform(c.platform));
       setFollowedCreators(creators);
       setLoadingCreators(false);
 
@@ -159,9 +224,9 @@ export default function Dashboard() {
       loadFollowedCreators();
       loadSavedCompares();
     }
-    setRecentlyViewed(getRecentlyViewed());
+    setRecentlyViewed(getRecentlyViewed().filter((c) => isActivePlatform(c.platform)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
 
   async function handleDeleteCompare(id) {
     try {
@@ -175,7 +240,6 @@ export default function Dashboard() {
   function handleClearHistory() {
     clearRecentlyViewed();
     setRecentlyViewed([]);
-    setRecentlyViewedIndex(0);
   }
 
   const getGrowth = (creatorId, field) => {
@@ -183,6 +247,8 @@ export default function Dashboard() {
     if (!stat?.current || !stat?.previous) return null;
     return (stat.current[field] || 0) - (stat.previous[field] || 0);
   };
+  const countOf = (c) => creatorStats[c.id]?.current?.subscribers || creatorStats[c.id]?.current?.followers || 0;
+  const isLive = (c) => isStreamer(c) && liveStreamers.has(c.username.toLowerCase());
 
   if (authLoading) {
     return (
@@ -194,92 +260,46 @@ export default function Dashboard() {
   }
 
   if (!user) {
+    const openAuth = () => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to access your dashboard' } }));
     return (
       <>
-        <SEO title="Dashboard" description="Track your followed creators and see their latest stats in one place." />
+        <SEO title="Dashboard" description="Follow creators, track their numbers every day, and keep your matchups in one place." />
         <div className="min-h-screen bg-[#fafaf9]">
-          <div className="max-w-4xl mx-auto px-4 pt-20 pb-32">
-
-            <div className="text-center mb-12">
-              <p className={`${MICRO} mb-4`}>Free with an account</p>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">
-                Your Dashboard
-              </h1>
-              <p className="text-base text-neutral-500 max-w-xl mx-auto">
-                Follow creators, track their stats, and see everything in one place. Free to sign up.
-              </p>
-            </div>
-
-            {/* Blurred preview */}
-            <div className="relative">
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#fafaf9]/70 backdrop-blur-sm rounded-xl">
-                <Lock className="w-6 h-6 text-neutral-400 mb-4" />
-                <p className="text-base font-medium text-neutral-900 mb-1">Sign in to continue</p>
-                <p className="text-sm text-neutral-500 mb-6 max-w-sm text-center">
-                  Create a free account to follow creators and track their stats.
+          <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+            <DotGrid />
+            <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 grid lg:grid-cols-2 gap-10 items-center">
+              <div className="text-center lg:text-left">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Free with an account</p>
+                <h1 className="mt-3 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.05] text-balance">Build your creator collection.</h1>
+                <p className="mt-5 text-base sm:text-lg text-white/70 max-w-lg mx-auto lg:mx-0 text-pretty">
+                  Follow any creator and their card lands in your collection, with their numbers, daily moves and live status in one place.
                 </p>
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to access your dashboard' } }))}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-sm font-medium transition-colors"
+                  onClick={openAuth}
+                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors"
                 >
-                  Sign Up / Sign In
-                  <ChevronRight className="w-4 h-4" />
+                  Start your collection <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Fake preview */}
-              <div className="pointer-events-none select-none opacity-50">
-                <div className={`${CARD} p-5 mb-4 flex items-center gap-4`}>
-                  <div className="w-11 h-11 rounded-lg bg-neutral-100 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="h-4 w-32 bg-neutral-100 rounded mb-2" />
-                    <div className="flex gap-3">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="h-3 w-20 bg-neutral-100 rounded" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`${CARD} overflow-hidden`}>
-                  <div className="flex border-b border-neutral-100 px-4">
-                    {['Following', 'Saved Compares', 'Recently Viewed'].map((t, i) => (
-                      <div key={t} className={`px-4 py-3 text-sm ${i === 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>{t}</div>
-                    ))}
-                  </div>
-                  <div className="divide-y divide-neutral-100">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-                        <div className="w-9 h-9 rounded-lg bg-neutral-100 flex-shrink-0" />
-                        <div className="flex-1">
-                          <div className="h-3.5 w-28 bg-neutral-100 rounded mb-1.5" />
-                          <div className="h-3 w-16 bg-neutral-100 rounded" />
-                        </div>
-                        <div className="h-4 w-16 bg-neutral-100 rounded" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <CardHand cards={SAMPLE_HAND} />
+            </div>
+          </section>
+          <div className="max-w-4xl mx-auto px-4 py-14 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+            {[
+              'Follow creators on every platform',
+              'See who gained or lost followers today',
+              'Know the moment a streamer goes live',
+              'Save matchups and reopen them anytime',
+              'Pick creators straight into Compare',
+              'Free, no credit card',
+            ].map(f => (
+              <div key={f} className="flex items-start gap-3 text-[15px] font-medium text-neutral-800">
+                <span className="mt-0.5 flex items-center justify-center w-5 h-5 rounded-full bg-neutral-900 flex-shrink-0">
+                  <Check className="w-3 h-3 text-white" />
+                </span>
+                {f}
               </div>
-            </div>
-
-            {/* Feature list */}
-            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 max-w-2xl mx-auto">
-              {[
-                'Follow creators across all platforms',
-                'See follower counts and daily changes',
-                'Save compare setups for quick access',
-                'Track recently viewed profiles',
-                'Compare creators side by side',
-                'Free forever, no credit card needed',
-              ].map(f => (
-                <div key={f} className="flex items-start gap-2.5 text-sm text-neutral-500">
-                  <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-neutral-400" />
-                  {f}
-                </div>
-              ))}
-            </div>
-
+            ))}
           </div>
         </div>
       </>
@@ -288,574 +308,470 @@ export default function Dashboard() {
 
   const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
 
-  const liveCount = followedCreators.filter(c =>
-    (c.platform === 'twitch' || c.platform === 'kick') && liveStreamers.has(c.username.toLowerCase())
-  ).length;
+  const liveCreatorsList = followedCreators.filter(isLive).sort((a, b) => countOf(b) - countOf(a));
+  const liveCount = liveCreatorsList.length;
 
-  const platformCounts = {
-    youtube:  followedCreators.filter(c => c.platform === 'youtube').length,
-    tiktok:   followedCreators.filter(c => c.platform === 'tiktok').length,
-    twitch:   followedCreators.filter(c => c.platform === 'twitch').length,
-    kick:     followedCreators.filter(c => c.platform === 'kick').length,
-    bluesky:  followedCreators.filter(c => c.platform === 'bluesky').length,
-    mastodon: followedCreators.filter(c => c.platform === 'mastodon').length,
-    substack: followedCreators.filter(c => c.platform === 'substack').length,
-  };
+  const platformCounts = Object.fromEntries(PLATFORM_IDS.map((p) => [p, followedCreators.filter(c => c.platform === p).length]));
 
   const filteredCreators = selectedPlatform === 'all'
     ? followedCreators
     : selectedPlatform === 'live'
-    ? followedCreators.filter(c => (c.platform === 'twitch' || c.platform === 'kick') && liveStreamers.has(c.username.toLowerCase()))
+    ? liveCreatorsList
     : followedCreators.filter(c => c.platform === selectedPlatform);
 
   const sortedCreators = [...filteredCreators].sort((a, b) => {
     if (sortBy === 'live') {
-      const aLive = (a.platform === 'twitch' || a.platform === 'kick') && liveStreamers.has(a.username.toLowerCase()) ? 1 : 0;
-      const bLive = (b.platform === 'twitch' || b.platform === 'kick') && liveStreamers.has(b.username.toLowerCase()) ? 1 : 0;
-      if (aLive !== bLive) return bLive - aLive;
-      const aCount = creatorStats[a.id]?.current?.subscribers || creatorStats[a.id]?.current?.followers || 0;
-      const bCount = creatorStats[b.id]?.current?.subscribers || creatorStats[b.id]?.current?.followers || 0;
-      return bCount - aCount;
+      const d = (isLive(b) ? 1 : 0) - (isLive(a) ? 1 : 0);
+      return d || countOf(b) - countOf(a);
     }
     if (sortBy === 'growth') {
-      const aGrowth = getGrowth(a.id, a.platform === 'youtube' ? 'subscribers' : 'followers') ?? -Infinity;
-      const bGrowth = getGrowth(b.id, b.platform === 'youtube' ? 'subscribers' : 'followers') ?? -Infinity;
-      return bGrowth - aGrowth;
+      return (getGrowth(b.id, primaryField(b)) ?? -Infinity) - (getGrowth(a.id, primaryField(a)) ?? -Infinity);
     }
-    if (sortBy === 'followers') {
-      const aCount = creatorStats[a.id]?.current?.subscribers || creatorStats[a.id]?.current?.followers || 0;
-      const bCount = creatorStats[b.id]?.current?.subscribers || creatorStats[b.id]?.current?.followers || 0;
-      return bCount - aCount;
-    }
-    if (sortBy === 'name') {
-      return (a.display_name || a.username).localeCompare(b.display_name || b.username);
-    }
+    if (sortBy === 'followers') return countOf(b) - countOf(a);
+    if (sortBy === 'name') return (a.display_name || a.username).localeCompare(b.display_name || b.username);
     return 0;
   });
 
-  const byCount = (a, b) => {
-    const av = creatorStats[a.id]?.current?.subscribers || creatorStats[a.id]?.current?.followers || 0;
-    const bv = creatorStats[b.id]?.current?.subscribers || creatorStats[b.id]?.current?.followers || 0;
-    return bv - av;
+  const topMover = followedCreators
+    .map(c => ({ c, g: getGrowth(c.id, primaryField(c)) }))
+    .filter(x => x.g !== null && x.g > 0)
+    .sort((a, b) => b.g - a.g)[0] || null;
+
+  const hand = [...followedCreators].sort((a, b) => countOf(b) - countOf(a)).slice(0, 5)
+    .map(c => ({ platform: c.platform, username: c.username }));
+
+  const toggleSelect = (id) => {
+    setSelectedForCompare(prev => prev.includes(id)
+      ? prev.filter(x => x !== id)
+      : prev.length < 3 ? [...prev, id] : prev);
+  };
+  const compareHref = `/compare?creators=${selectedForCompare.map(id => {
+    const c = followedCreators.find(fc => fc.id === id);
+    return c ? `${c.platform}:${c.username}` : '';
+  }).filter(Boolean).join(',')}`;
+
+  const growthLine = (c, dark = false) => {
+    const g = getGrowth(c.id, primaryField(c));
+    if (g === null) return <span className={dark ? 'text-white/50' : 'text-neutral-500'}>No change yet</span>;
+    if (g === 0) return <span className={dark ? 'text-white/60' : 'text-neutral-600'}>No change today</span>;
+    return (
+      <span className={g > 0 ? (dark ? 'text-emerald-400' : 'text-emerald-700') : (dark ? 'text-red-400' : 'text-red-600')}>
+        {g > 0 ? '+' : ''}{formatNumber(g)} today
+      </span>
+    );
   };
 
-  const liveCreatorsList = followedCreators.filter(c =>
-    (c.platform === 'twitch' || c.platform === 'kick') && liveStreamers.has(c.username.toLowerCase())
-  );
-  const topGrowthList = followedCreators
-    .map(c => ({ c, g: getGrowth(c.id, c.platform === 'youtube' ? 'subscribers' : 'followers') }))
-    .filter(x => x.g !== null && x.g > 0)
-    .sort((a, b) => b.g - a.g);
-
-  const spotlightCreator = liveCreatorsList.length > 0
-    ? [...liveCreatorsList].sort(byCount)[0]
-    : topGrowthList.length > 0
-    ? topGrowthList[0].c
-    : followedCreators.length > 0
-    ? [...followedCreators].sort(byCount)[0]
-    : null;
-
-  const spotlightStats = spotlightCreator ? creatorStats[spotlightCreator.id] : null;
-  const spotlightIsLive = spotlightCreator && (spotlightCreator.platform === 'twitch' || spotlightCreator.platform === 'kick') && liveStreamers.has(spotlightCreator.username.toLowerCase());
-  const spotlightGrowth = spotlightCreator ? getGrowth(spotlightCreator.id, spotlightCreator.platform === 'youtube' ? 'subscribers' : 'followers') : null;
-
-  const renderCreatorCard = (creator) => {
-    const PlatformIcon = platformIcons[creator.platform] || Users;
-    const tint = platformTint[creator.platform] || 'text-neutral-400';
-    const stats = creatorStats[creator.id];
-    const isLive = (creator.platform === 'twitch' || creator.platform === 'kick') && liveStreamers.has(creator.username.toLowerCase());
-    const growth = getGrowth(creator.id, creator.platform === 'youtube' ? 'subscribers' : 'followers');
-    const isSelected = selectedForCompare.includes(creator.id);
-    const metricLabel = METRIC_LABEL[creator.platform] || 'followers';
-
-    const cardContent = (
-      <div className="flex items-center gap-3.5">
-        {compareMode && (
-          <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${
-            isSelected ? 'bg-neutral-900 border-neutral-900' : 'border-neutral-300'
-          }`}>
-            {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-          </div>
-        )}
-        <CreatorAvatar
-          src={creator.profile_image}
-          name={creator.display_name}
-          size="lg"
-          rounded="rounded-lg"
-          className="!w-11 !h-11 flex-shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-neutral-900 truncate text-sm">{creator.display_name}</p>
-            {isLive && (
-              <span className="inline-flex items-center gap-1 flex-shrink-0">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-semibold tracking-[0.1em] text-red-600">LIVE</span>
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-            <PlatformIcon className={`w-3 h-3 flex-shrink-0 ${tint}`} />
-            <p className="text-xs text-neutral-600 truncate">@{creator.username}</p>
-          </div>
+  /* One creator in the binder: their upright card (with logo), live badge,
+     today's move. In compare mode the card becomes a toggle. */
+  const renderCardTile = (creator) => {
+    const selected = selectedForCompare.includes(creator.id);
+    const full = selectedForCompare.length >= 3 && !selected;
+    const live = isLive(creator);
+    const inner = (
+      <>
+        <div className="relative">
+          <img
+            src={cardImageUrl(creator.platform, creator.username)}
+            alt={`${creator.display_name} card`}
+            width="250"
+            height="350"
+            loading="lazy"
+            draggable="false"
+            onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+            className={`w-full h-auto ${CARD_RADIUS} select-none bg-[#15151c] opacity-0 transition-opacity duration-500 shadow-[0_14px_28px_-14px_rgba(0,0,0,0.55)] ${selected ? 'ring-4 ring-neutral-900 ring-offset-2 ring-offset-[#fafaf9]' : ''}`}
+          />
+          {live && (
+            <span className="absolute -top-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+            </span>
+          )}
+          {compareMode && (
+            <span className={`absolute top-2 right-2 flex items-center justify-center w-7 h-7 rounded-full border-2 ${selected ? 'bg-neutral-900 border-white' : 'bg-white/90 border-neutral-300'}`}>
+              {selected && <Check className="w-4 h-4 text-white" />}
+            </span>
+          )}
         </div>
-        <div className="text-right flex-shrink-0 min-w-[84px]">
-          <div className="flex items-baseline justify-end gap-1.5">
-            <p className="text-[15px] font-semibold text-neutral-900 tabular-nums leading-none">
-              {stats?.current ? formatNumber(stats.current.subscribers || stats.current.followers) : '–'}
-            </p>
-          </div>
-          <p className={`${MICRO} mt-0.5`}>{metricLabel}</p>
-          <p className={`mt-1 text-xs tabular-nums ${
-            growth !== null && growth !== 0
-              ? growth > 0 ? 'text-emerald-600' : 'text-red-600'
-              : 'text-neutral-300'
-          }`}>
-            {growth !== null && growth !== 0
-              ? `${growth > 0 ? '+' : ''}${formatNumber(growth)} today`
-              : growth === 0 ? 'no change' : '–'}
-          </p>
-        </div>
-      </div>
+        <p className="mt-2.5 text-center text-xs font-semibold tabular-nums">{growthLine(creator)}</p>
+      </>
     );
-
     return compareMode ? (
-      <button
-        key={creator.id}
-        onClick={() => {
-          if (isSelected) {
-            setSelectedForCompare(prev => prev.filter(id => id !== creator.id));
-          } else if (selectedForCompare.length < 3) {
-            setSelectedForCompare(prev => [...prev, creator.id]);
-          }
-        }}
-        className={`w-full text-left ${CARD} p-4 transition-colors ${isSelected ? 'bg-neutral-50 border-neutral-300' : 'hover:border-neutral-300'} ${selectedForCompare.length >= 3 && !isSelected ? 'opacity-40' : ''}`}
-      >
-        {cardContent}
+      <button key={creator.id} type="button" onClick={() => toggleSelect(creator.id)} disabled={full} className={`block text-left ${full ? 'opacity-40' : ''}`}>
+        {inner}
       </button>
     ) : (
-      <Link
-        key={creator.id}
-        to={`/${creator.platform}/${creator.username}`}
-        className={`block ${CARD} p-4 hover:border-neutral-300 transition-colors`}
-      >
-        {cardContent}
+      <Link key={creator.id} to={`/${creator.platform}/${creator.username}`} className="block">
+        {inner}
       </Link>
     );
   };
 
+  const renderRow = (creator) => {
+    const PlatformIcon = platformIcons[creator.platform] || Users;
+    const selected = selectedForCompare.includes(creator.id);
+    const full = selectedForCompare.length >= 3 && !selected;
+    const live = isLive(creator);
+    const inner = (
+      <div className="flex items-center gap-3.5">
+        {compareMode && (
+          <span className={`flex items-center justify-center w-5 h-5 rounded-full border-2 flex-shrink-0 ${selected ? 'bg-neutral-900 border-neutral-900' : 'border-neutral-400'}`}>
+            {selected && <Check className="w-3 h-3 text-white" />}
+          </span>
+        )}
+        <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-xl" className="!w-12 !h-12 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-bold text-neutral-900 truncate text-[15px]">{creator.display_name}</p>
+            {live && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-white flex-shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+              </span>
+            )}
+          </div>
+          <p className="flex items-center gap-1.5 mt-0.5 text-sm text-neutral-600 min-w-0">
+            <PlatformIcon className={`w-3.5 h-3.5 flex-shrink-0 ${platformTint[creator.platform]}`} />
+            <span className="truncate">@{creator.username}</span>
+          </p>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-lg font-extrabold text-neutral-900 tabular-nums leading-none">{creatorStats[creator.id]?.current ? formatNumber(countOf(creator)) : '–'}</p>
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-600">{METRIC_LABEL[creator.platform] || 'followers'}</p>
+          <p className="mt-1 text-xs font-semibold tabular-nums">{growthLine(creator)}</p>
+        </div>
+      </div>
+    );
+    const cls = `block w-full text-left ${PANEL} p-4 transition-colors ${selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'hover:border-neutral-400'} ${full ? 'opacity-40' : ''}`;
+    return compareMode ? (
+      <button key={creator.id} type="button" onClick={() => toggleSelect(creator.id)} disabled={full} className={cls}>{inner}</button>
+    ) : (
+      <Link key={creator.id} to={`/${creator.platform}/${creator.username}`} className={cls}>{inner}</Link>
+    );
+  };
+
+  const renderCollection = (list) => view === 'cards' ? (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-7">
+      {list.map(renderCardTile)}
+    </div>
+  ) : (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {list.map(renderRow)}
+    </div>
+  );
+
   const tabs = [
-    { id: 'following', label: 'Following', shortLabel: 'Following', icon: Star, count: followedCreators.length },
-    { id: 'compares', label: 'Saved Compares', shortLabel: 'Compares', icon: Scale, count: savedCompares.length },
-    { id: 'recent', label: 'Recently Viewed', shortLabel: 'Recent', icon: Clock, count: recentlyViewed.length },
+    { id: 'following', label: 'Following', icon: Star, count: followedCreators.length },
+    { id: 'compares', label: 'Saved compares', icon: Scale, count: savedCompares.length },
+    { id: 'recent', label: 'Recently viewed', icon: Clock, count: recentlyViewed.length },
   ];
+
+  const pill = (active) => `inline-flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+    active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-800 border border-neutral-300 hover:border-neutral-900'
+  }`;
+  const chip = (active) => `inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+    active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-800 border border-neutral-300 hover:border-neutral-900'
+  }`;
 
   return (
     <>
-      <SEO
-        title="My Dashboard"
-        description="Track your favorite creators and see their latest statistics."
-      />
+      <SEO title="My Dashboard" description="Track your favorite creators and see their latest statistics." />
 
       <div className="min-h-screen bg-[#fafaf9]">
 
-        {/* Page header */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Welcome back{displayName ? `, ${displayName}` : ''}.
-            </h1>
-            <p className="mt-2 text-sm text-neutral-500">
-              Track creators you follow, see who's live, and revisit your saved comparisons.
-            </p>
-          </div>
-        </div>
+        {/* ── Dark band: welcome, stats, your hand ── */}
+        <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+          <DotGrid />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-10 sm:pb-14 grid lg:grid-cols-[1.15fr,0.85fr] gap-10 items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Your collection</p>
+              <h1 className="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] text-balance">
+                Welcome back, {displayName}.
+              </h1>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-          {/* Identity card */}
-          <div className={`${CARD} p-5 sm:p-6 mb-6 flex items-center gap-4`}>
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-neutral-900 text-white flex items-center justify-center text-lg sm:text-xl font-semibold flex-shrink-0">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-neutral-900 truncate">{displayName}</p>
-              <p className="text-sm text-neutral-600 truncate">{user.email}</p>
-              <p className="sm:hidden mt-1 text-xs text-neutral-500 tabular-nums">
-                {followedCreators.length} following · {savedCompares.length} saved compares
-              </p>
-            </div>
-            <div className="hidden sm:flex items-center gap-6 flex-shrink-0">
-              <div className="text-right">
-                <p className={MICRO}>Following</p>
-                <p className="text-xl font-semibold text-neutral-900 tabular-nums leading-none mt-1">{followedCreators.length}</p>
-              </div>
-              <div className="w-px h-8 bg-neutral-200/80" />
-              <div className="text-right">
-                <p className={MICRO}>Saved compares</p>
-                <p className="text-xl font-semibold text-neutral-900 tabular-nums leading-none mt-1">{savedCompares.length}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Spotlight — the single most relevant followed creator right now */}
-          {activeTab === 'following' && !compareMode && !loadingCreators && spotlightCreator && (
-            <Link
-              to={`/${spotlightCreator.platform}/${spotlightCreator.username}`}
-              className={`${CARD} block p-5 sm:p-6 mb-6 hover:border-neutral-300 transition-colors ${
-                spotlightIsLive ? 'border-t-2 border-t-red-500' : spotlightGrowth > 0 ? 'border-t-2 border-t-emerald-500' : ''
-              }`}
-            >
-              <div className="flex items-center gap-1.5 mb-3">
-                {spotlightIsLive ? (
-                  <>
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-bold tracking-[0.12em] text-red-600">LIVE NOW</span>
-                  </>
-                ) : spotlightGrowth > 0 ? (
-                  <>
-                    <TrendingUp className="w-3 h-3 text-emerald-600" />
-                    <span className="text-[10px] font-bold tracking-[0.12em] text-emerald-600">TOP GROWTH TODAY</span>
-                  </>
-                ) : (
-                  <span className={MICRO}>Most followed</span>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                <CreatorAvatar
-                  src={spotlightCreator.profile_image}
-                  name={spotlightCreator.display_name}
-                  size="xl"
-                  rounded="rounded-xl"
-                  className="!w-14 !h-14 sm:!w-16 sm:!h-16 flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">{spotlightCreator.display_name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {(() => {
-                      const SIcon = platformIcons[spotlightCreator.platform] || Users;
-                      return <SIcon className={`w-3.5 h-3.5 flex-shrink-0 ${platformTint[spotlightCreator.platform] || 'text-neutral-400'}`} />;
-                    })()}
-                    <p className="text-sm text-neutral-600 truncate">{PLATFORM_LABELS[spotlightCreator.platform]} · @{spotlightCreator.username}</p>
+              <div className="mt-7 grid grid-cols-3 gap-3 max-w-md">
+                {[
+                  { label: 'Following', value: followedCreators.length },
+                  { label: 'Live now', value: liveCount, live: liveCount > 0 },
+                  { label: 'Saved matchups', value: savedCompares.length },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-2xl bg-white/[0.06] border border-white/10 px-4 py-3">
+                    <p className="text-2xl sm:text-3xl font-extrabold tabular-nums leading-none flex items-center gap-2">
+                      {s.live && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+                      {s.value}
+                    </p>
+                    <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">{s.label}</p>
                   </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-xl sm:text-2xl font-bold text-neutral-900 tabular-nums leading-none">
-                    {formatNumber(spotlightStats?.current?.subscribers || spotlightStats?.current?.followers || 0)}
-                  </p>
-                  {spotlightGrowth > 0 && (
-                    <p className="mt-1 text-xs font-medium text-emerald-600 tabular-nums">+{formatNumber(spotlightGrowth)} today</p>
+                ))}
+              </div>
+
+              {/* Live now + today's biggest mover */}
+              {!loadingCreators && (liveCount > 0 || topMover) && (
+                <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                  {liveCreatorsList.slice(0, 4).map((c) => (
+                    <Link key={c.id} to={`/${c.platform}/${c.username}`} className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/15 hover:border-white/40 pl-1 pr-3 py-1 transition-colors">
+                      <CreatorAvatar src={c.profile_image} name={c.display_name} size="xs" rounded="rounded-full" />
+                      <span className="text-sm font-semibold">{c.display_name}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.12em] text-red-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Live
+                      </span>
+                    </Link>
+                  ))}
+                  {topMover && (
+                    <Link to={`/${topMover.c.platform}/${topMover.c.username}`} className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/15 hover:border-white/40 pl-1 pr-3 py-1 transition-colors">
+                      <CreatorAvatar src={topMover.c.profile_image} name={topMover.c.display_name} size="xs" rounded="rounded-full" />
+                      <span className="text-sm font-semibold">{topMover.c.display_name}</span>
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 tabular-nums">
+                        <TrendingUp className="w-3.5 h-3.5" /> +{formatNumber(topMover.g)} today
+                      </span>
+                    </Link>
                   )}
                 </div>
-              </div>
-            </Link>
-          )}
+              )}
 
-          {/* Underline tab nav */}
-          <div className="flex items-center gap-6 border-b border-neutral-200/80 mb-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link to="/search" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors">
+                  <Search className="w-4 h-4" /> Find creators
+                </Link>
+                <Link to="/compare" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/25 hover:border-white/60 text-white text-sm font-bold transition-colors">
+                  <Scale className="w-4 h-4" /> Compare
+                </Link>
+                <Link to="/account" className="inline-flex items-center gap-1.5 px-2 py-2.5 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+                  <Settings className="w-4 h-4" /> Account
+                </Link>
+              </div>
+            </div>
+
+            <div className="hidden sm:block">
+              {hand.length > 0 ? <CardHand cards={hand} /> : <CardHand cards={SAMPLE_HAND} />}
+            </div>
+          </div>
+        </section>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+          {/* Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabs.map(tab => {
-              const isActive = activeTab === tab.id;
               const Icon = tab.icon;
+              const active = activeTab === tab.id;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 flex items-center gap-2 pb-3 -mb-px border-b-2 text-sm font-medium transition-colors ${
-                    isActive ? 'border-neutral-900 text-neutral-900' : 'border-transparent text-neutral-400 hover:text-neutral-700'
-                  }`}
-                >
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={pill(active)}>
                   <Icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.shortLabel}</span>
-                  {tab.count > 0 && <span className="text-xs text-neutral-600 tabular-nums">{tab.count}</span>}
+                  {tab.label}
+                  <span className={`tabular-nums ${active ? 'text-white/80' : 'text-neutral-600'}`}>{tab.count}</span>
                 </button>
               );
             })}
-            <div className="flex-1" />
-            <Link
-              to="/account"
-              className="hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 pb-3 text-sm text-neutral-400 hover:text-neutral-900 transition-colors"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              Account Settings
-            </Link>
           </div>
 
-          {/* Content */}
-          <div>
-
-              {/* ── FOLLOWING TAB ── */}
-              {activeTab === 'following' && (
-                <div>
-                  {/* Compare mode banner */}
-                  {compareMode && (
-                    <div className={`mb-4 ${CARD} p-4`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-medium text-neutral-900">Compare mode</span>
-                          <span className="text-xs text-neutral-600 tabular-nums">{selectedForCompare.length}/3 selected</span>
-                        </div>
-                        <button
-                          onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
-                          className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-900 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
+          {/* ── FOLLOWING ── */}
+          {activeTab === 'following' && (
+            <div className="mt-6">
+              {!loadingCreators && followedCreators.length > 0 && (
+                <div className="flex flex-col gap-3 mb-7">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <button onClick={() => setSelectedPlatform('all')} className={chip(selectedPlatform === 'all')}>
+                      All <span className="tabular-nums opacity-80">{followedCreators.length}</span>
+                    </button>
+                    {liveCount > 0 && (
+                      <button onClick={() => setSelectedPlatform('live')} className={chip(selectedPlatform === 'live')}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Live <span className="tabular-nums opacity-80">{liveCount}</span>
+                      </button>
+                    )}
+                    {PLATFORM_IDS.filter(p => platformCounts[p]).map(p => {
+                      const Icon = platformIcons[p];
+                      const active = selectedPlatform === p;
+                      return (
+                        <button key={p} onClick={() => setSelectedPlatform(p)} className={chip(active)}>
+                          {Icon && <Icon className={`w-3.5 h-3.5 ${active ? 'text-white' : platformTint[p]}`} />}
+                          {PLATFORM_DISPLAY_NAMES[p]} <span className="tabular-nums opacity-80">{platformCounts[p]}</span>
                         </button>
-                      </div>
-                      <p className="text-xs text-neutral-500 mb-3">Tap creators from the list to select them</p>
-                      <Link
-                        to={`/compare?creators=${selectedForCompare.map(id => {
-                          const c = followedCreators.find(fc => fc.id === id);
-                          return c ? `${c.platform}:${c.username}` : '';
-                        }).filter(Boolean).join(',')}`}
-                        onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
-                        className={`flex items-center justify-center gap-2 w-full py-2 text-sm font-medium rounded-lg transition-colors ${
-                          selectedForCompare.length >= 2
-                            ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-                            : 'bg-neutral-100 text-neutral-400 pointer-events-none'
-                        }`}
-                      >
-                        {selectedForCompare.length >= 2
-                          ? `Compare ${selectedForCompare.length} creators`
-                          : 'Select at least 2 creators'}
-                      </Link>
-                    </div>
-                  )}
-
-                  {/* Toolbar: platform filter + sort + compare + export */}
-                  {!compareMode && !loadingCreators && followedCreators.length > 0 && (
-                    <div className="flex items-center gap-2 mb-6 flex-wrap">
-                      <select
-                        value={selectedPlatform}
-                        onChange={e => setSelectedPlatform(e.target.value)}
-                        className="text-sm bg-white border border-neutral-200 text-neutral-700 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400 cursor-pointer"
-                      >
-                        <option value="all">All platforms ({followedCreators.length})</option>
-                        {liveCount > 0 && <option value="live">Live now ({liveCount})</option>}
-                        {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'substack']).map(p => (
-                          platformCounts[p] ? (
-                            <option key={p} value={p}>{PLATFORM_LABELS[p]} ({platformCounts[p]})</option>
-                          ) : null
-                        ))}
-                      </select>
-
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-800">
+                      Sort
                       <select
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
-                        className="text-sm bg-white border border-neutral-200 text-neutral-700 rounded-lg px-3 py-2 focus:outline-none focus:border-neutral-400 cursor-pointer"
+                        className="h-9 text-sm font-semibold bg-white border border-neutral-300 text-neutral-900 rounded-full px-3 focus:outline-none focus:border-neutral-900 cursor-pointer"
                       >
                         <option value="live">Live first</option>
-                        <option value="growth">Top growth</option>
+                        <option value="growth">Top growth today</option>
                         <option value="followers">Most followed</option>
                         <option value="name">Name A-Z</option>
                       </select>
-
-                      <div className="ml-auto flex items-center gap-2">
-                        {followedCreators.length >= 2 && (
-                          <button
-                            onClick={() => setCompareMode(true)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-300 text-xs rounded-lg transition-colors"
-                          >
-                            <Scale className="w-3 h-3" />
-                            Compare
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Creator list */}
-                  {loadingCreators ? (
-                    <div className={`${CARD} flex items-center justify-center p-12`}>
-                      <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
-                    </div>
-                  ) : sortedCreators.length === 0 ? (
-                    <div className={`${CARD} text-center p-14`}>
-                      {selectedPlatform === 'all' ? (
-                        <>
-                          <Star className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
-                          <p className="text-neutral-900 font-medium mb-1">No creators followed yet</p>
-                          <p className="text-neutral-500 text-sm mb-6">Find creators to follow and track their growth.</p>
-                          <Link
-                            to="/search"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 transition-colors text-sm"
-                          >
-                            Find Creators
-                          </Link>
-                        </>
-                      ) : (
-                        <p className="text-neutral-500 text-sm">
-                          {selectedPlatform === 'live' ? 'No one is live right now.' : `No ${PLATFORM_LABELS[selectedPlatform]} creators followed.`}
-                        </p>
-                      )}
-                    </div>
-                  ) : selectedPlatform === 'all' ? (
-                    <div className="space-y-8">
-                      {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'substack']).map(p => {
-                        const group = sortedCreators.filter(c => c.platform === p);
-                        if (group.length === 0) return null;
-                        const Icon = platformIcons[p];
-                        return (
-                          <div key={p}>
-                            <div className="flex items-center gap-2 mb-3">
-                              <Icon className={`w-3.5 h-3.5 ${platformTint[p]}`} />
-                              <p className={MICRO}>{PLATFORM_LABELS[p]} · {group.length}</p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {group.map(creator => renderCreatorCard(creator))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {sortedCreators.map(creator => renderCreatorCard(creator))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── SAVED COMPARES TAB ── */}
-              {activeTab === 'compares' && (
-                <div>
-                  {loadingCompares ? (
-                    <div className="flex items-center justify-center py-16">
-                      <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
-                    </div>
-                  ) : savedCompares.length === 0 ? (
-                    <div className={`${CARD} p-14 text-center`}>
-                      <Scale className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
-                      <p className="text-neutral-900 font-medium mb-1">No saved comparisons</p>
-                      <p className="text-neutral-500 text-sm mb-6">Head to the Compare page, set up a comparison, and hit "Save comparison".</p>
-                      <Link
-                        to="/compare"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 transition-colors text-sm"
-                      >
-                        Go to Compare
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className={`${CARD} divide-y divide-neutral-100 overflow-hidden`}>
-                      {savedCompares.map(compare => {
-                        const entries = compare.creators_param.split(',').map(e => {
-                          const [platform, username] = e.split(':');
-                          return { platform, username };
-                        });
-                        return (
-                          <div key={compare.id} className="flex items-center gap-3 px-4 py-3.5 group hover:bg-neutral-50 transition-colors">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-neutral-900 text-sm mb-1">{compare.name}</p>
-                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                {entries.map((e, i) => {
-                                  const Icon = platformIcons[e.platform];
-                                  const tint = platformTint[e.platform] || 'text-neutral-400';
-                                  return (
-                                    <span key={i} className="inline-flex items-center gap-1.5 text-xs text-neutral-500">
-                                      {Icon && <Icon className={`w-3 h-3 ${tint}`} />}
-                                      {e.username}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <button
-                                onClick={() => handleDeleteCompare(compare.id)}
-                                className="p-2 rounded-md text-neutral-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                              <Link
-                                to={`/compare?creators=${compare.creators_param}`}
-                                className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-900 transition-colors px-2"
-                              >
-                                Open <ChevronRight className="w-3.5 h-3.5" />
-                              </Link>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── RECENTLY VIEWED TAB ── */}
-              {activeTab === 'recent' && (
-                <div>
-                  {recentlyViewed.length === 0 ? (
-                    <div className={`${CARD} p-14 text-center`}>
-                      <Clock className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
-                      <p className="text-neutral-900 font-medium mb-1">Nothing here yet</p>
-                      <p className="text-neutral-500 text-sm">Creators you visit will show up here.</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between mb-4">
-                        {recentlyViewed.length > 8 ? (
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setRecentlyViewedIndex(Math.max(0, recentlyViewedIndex - 8))}
-                              disabled={recentlyViewedIndex === 0}
-                              className="p-1.5 rounded-md bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <ChevronLeft className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="text-xs text-neutral-600 tabular-nums">{Math.floor(recentlyViewedIndex / 8) + 1} / {Math.ceil(recentlyViewed.length / 8)}</span>
-                            <button
-                              onClick={() => setRecentlyViewedIndex(Math.min(recentlyViewed.length - 8, recentlyViewedIndex + 8))}
-                              disabled={recentlyViewedIndex >= recentlyViewed.length - 8}
-                              className="p-1.5 rounded-md bg-white border border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : <div />}
-                        <button
-                          onClick={handleClearHistory}
-                          className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
-                        >
-                          Clear all
+                    </label>
+                    <div className="ml-auto flex items-center gap-2">
+                      {followedCreators.length >= 2 && !compareMode && (
+                        <button onClick={() => setCompareMode(true)} className={chip(false)}>
+                          <Scale className="w-4 h-4" /> Pick to compare
                         </button>
+                      )}
+                      <div className="inline-flex rounded-full border border-neutral-300 bg-white p-0.5">
+                        {[{ id: 'cards', Icon: LayoutGrid, label: 'Cards' }, { id: 'list', Icon: List, label: 'List' }].map(({ id, Icon, label }) => (
+                          <button
+                            key={id}
+                            onClick={() => changeView(id)}
+                            aria-label={`${label} view`}
+                            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-semibold transition-colors ${view === id ? 'bg-neutral-900 text-white' : 'text-neutral-800 hover:text-neutral-950'}`}
+                          >
+                            <Icon className="w-4 h-4" /><span className="hidden sm:inline">{label}</span>
+                          </button>
+                        ))}
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                        {recentlyViewed.slice(recentlyViewedIndex, recentlyViewedIndex + 8).map((creator, idx) => {
-                          const PlatformIcon = platformIcons[creator.platform] || Users;
-                          const tint = platformTint[creator.platform] || 'text-neutral-400';
-                          return (
-                            <Link
-                              key={`${creator.platform}-${creator.username}-${idx}`}
-                              to={`/${creator.platform}/${creator.username}`}
-                              className={`${CARD} p-4 hover:border-neutral-300 transition-colors`}
-                            >
-                              <CreatorAvatar
-                                src={creator.profileImage}
-                                name={creator.displayName}
-                                size="xl"
-                                rounded="rounded-lg"
-                                className="!w-12 !h-12 mx-auto mb-3"
-                              />
-                              <div className="text-center">
-                                <p className="font-medium text-neutral-900 text-[13px] truncate">{creator.displayName}</p>
-                                <div className="flex items-center justify-center gap-1.5 mt-1">
-                                  <PlatformIcon className={`w-3 h-3 ${tint}`} />
-                                  <span className="text-xs text-neutral-600 tabular-nums">
-                                    {formatNumber(creator.subscribers || creator.followers || 0)}
-                                  </span>
-                                </div>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
               )}
 
-          </div>
+              {loadingCreators ? (
+                <div className={`${PANEL} flex items-center justify-center p-14`}>
+                  <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
+                </div>
+              ) : sortedCreators.length === 0 ? (
+                <div className={`${PANEL} text-center p-14`}>
+                  {selectedPlatform === 'all' ? (
+                    <>
+                      <p className="text-xl font-extrabold text-neutral-900">Your collection is empty.</p>
+                      <p className="mt-2 text-[15px] text-neutral-700">Follow a creator and their card shows up here.</p>
+                      <Link to="/search" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors text-sm">
+                        <Search className="w-4 h-4" /> Find creators
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="text-[15px] font-semibold text-neutral-800">
+                      {selectedPlatform === 'live' ? 'Nobody you follow is live right now.' : `You don't follow anyone on ${PLATFORM_DISPLAY_NAMES[selectedPlatform]} yet.`}
+                    </p>
+                  )}
+                </div>
+              ) : renderCollection(sortedCreators)}
+
+              {/* Compare picker bar */}
+              {compareMode && (
+                <div className="sticky bottom-20 md:bottom-6 z-40 mt-8">
+                  <div className="mx-auto max-w-xl flex items-center gap-3 rounded-2xl bg-neutral-950 text-white px-4 py-3 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.6)]">
+                    <div className="flex -space-x-2">
+                      {selectedForCompare.map(id => {
+                        const c = followedCreators.find(fc => fc.id === id);
+                        return c ? <CreatorAvatar key={id} src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-full" className="ring-2 ring-neutral-950" /> : null;
+                      })}
+                    </div>
+                    <p className="flex-1 text-sm font-semibold">
+                      {selectedForCompare.length < 2 ? `Pick ${2 - selectedForCompare.length} more` : `${selectedForCompare.length} of 3 picked`}
+                    </p>
+                    <Link
+                      to={compareHref}
+                      onClick={() => { setCompareMode(false); setSelectedForCompare([]); }}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${selectedForCompare.length >= 2 ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'bg-white/15 text-white/60 pointer-events-none'}`}
+                    >
+                      Compare <ChevronRight className="w-4 h-4" />
+                    </Link>
+                    <button onClick={() => { setCompareMode(false); setSelectedForCompare([]); }} aria-label="Cancel" className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── SAVED COMPARES ── */}
+          {activeTab === 'compares' && (
+            <div className="mt-6">
+              {loadingCompares ? (
+                <div className={`${PANEL} flex items-center justify-center p-14`}>
+                  <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
+                </div>
+              ) : savedCompares.length === 0 ? (
+                <div className={`${PANEL} p-14 text-center`}>
+                  <p className="text-xl font-extrabold text-neutral-900">No saved matchups yet.</p>
+                  <p className="mt-2 text-[15px] text-neutral-700">Put two creators head to head on Compare and hit Save.</p>
+                  <Link to="/compare" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors text-sm">
+                    <Scale className="w-4 h-4" /> Go to Compare
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {savedCompares.map(compare => {
+                    const entries = compare.creators_param.split(',').map(e => {
+                      const [platform, username] = e.split(':');
+                      return { platform, username };
+                    }).filter(e => e.platform && e.username);
+                    const shown = entries.slice(0, 3);
+                    const mid = (shown.length - 1) / 2;
+                    return (
+                      <div key={compare.id} className={`${PANEL} overflow-hidden`}>
+                        <Link to={`/compare?creators=${compare.creators_param}`} className="block">
+                          <div className="relative h-[150px] bg-[#0a0a0f] overflow-hidden">
+                            <DotGrid />
+                            {shown.map((e, i) => (
+                              <img
+                                key={`${e.platform}/${e.username}`}
+                                src={cardImageUrl(e.platform, e.username, { mark: false })}
+                                alt="" width="250" height="350" loading="lazy" draggable="false"
+                                onLoad={(ev) => ev.currentTarget.classList.remove('opacity-0')}
+                                className={`absolute left-1/2 top-4 w-[82px] h-auto ${CARD_RADIUS} select-none opacity-0 transition-opacity duration-500 shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)]`}
+                                style={{ transform: `translateX(calc(-50% + ${(i - mid) * 58}px)) rotate(${(i - mid) * 8}deg)` }}
+                              />
+                            ))}
+                          </div>
+                          <div className="px-4 pt-3.5">
+                            <p className="font-bold text-[15px] text-neutral-900 truncate">{compare.name}</p>
+                            <p className="mt-0.5 text-sm text-neutral-600 truncate">{entries.map(e => e.username).join(' vs ')}</p>
+                          </div>
+                        </Link>
+                        <div className="flex items-center justify-between px-4 pb-3.5 pt-3">
+                          <button
+                            onClick={() => handleDeleteCompare(compare.id)}
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-700 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete
+                          </button>
+                          <Link to={`/compare?creators=${compare.creators_param}`} className="inline-flex items-center gap-1 text-sm font-bold text-neutral-900 hover:underline">
+                            Open <ChevronRight className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── RECENTLY VIEWED ── */}
+          {activeTab === 'recent' && (
+            <div className="mt-6">
+              {recentlyViewed.length === 0 ? (
+                <div className={`${PANEL} p-14 text-center`}>
+                  <p className="text-xl font-extrabold text-neutral-900">Nothing here yet.</p>
+                  <p className="mt-2 text-[15px] text-neutral-700">Creators you visit show up here.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-5">
+                    <p className="text-sm font-semibold text-neutral-800">Your last {recentlyViewed.length} visits</p>
+                    <button onClick={handleClearHistory} className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-700 hover:text-red-600 transition-colors">
+                      <Trash2 className="w-4 h-4" /> Clear history
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-x-3 gap-y-5">
+                    {recentlyViewed.slice(0, 18).map((creator, idx) => (
+                      <Link key={`${creator.platform}-${creator.username}-${idx}`} to={`/${creator.platform}/${creator.username}`} className="block">
+                        <img
+                          src={cardImageUrl(creator.platform, creator.username)}
+                          alt={`${creator.displayName} card`}
+                          width="250" height="350" loading="lazy" draggable="false"
+                          onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+                          className={`w-full h-auto ${CARD_RADIUS} select-none bg-[#15151c] opacity-0 transition-opacity duration-500 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.5)]`}
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

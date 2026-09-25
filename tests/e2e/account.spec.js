@@ -22,7 +22,7 @@ test('sign in, follow a creator, see it on the dashboard, unfollow', async ({ pa
   await follow.click();
   await expect(follow).toHaveText('Following');
 
-  await page.goto('/dashboard');
+  await expect(page.getByRole('link', { name: /xQc/ }).first()).toBeVisible();
   await expect(page.getByText(/xQc/).first()).toBeVisible();
 
   await page.goto('/kick/xqc');
