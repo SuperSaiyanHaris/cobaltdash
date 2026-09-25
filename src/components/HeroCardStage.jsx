@@ -16,7 +16,7 @@ import { CARD_PLATFORMS, renderMarkOverlay } from '../lib/badgeCard';
 // ever rotated or skewed. It fades out during a flip and back in once the
 // card is face up and still.
 //
-// Reduced motion: no auto-pull, no tilt, no burst; the button just swaps
+// Reduced motion: no auto-pull and no tilt; the button just swaps
 // the card.
 
 const PULL_EVERY_MS = 5500;
@@ -41,7 +41,6 @@ export default function HeroCardStage({ creators }) {
   const reduceMotion = useReducedMotion();
   const [idx, setIdx] = useState(0);
   const [faceUp, setFaceUp] = useState(false);
-  const [burstKey, setBurstKey] = useState(0);
   const tiltRef = useRef(null);
   const busyRef = useRef(false);
   const timerRef = useRef(null);
@@ -62,7 +61,6 @@ export default function HeroCardStage({ creators }) {
     preload(cardImageUrl(current.platform, current.username, { mark: false })).then(() => {
       if (cancelled) return;
       setFaceUp(true);
-      if (!reduceMotion) setBurstKey((k) => k + 1);
     });
     return () => { cancelled = true; };
     // Only for the very first card; later pulls run through pull().
@@ -83,7 +81,6 @@ export default function HeroCardStage({ creators }) {
     await Promise.all([preload(nextSrc), new Promise((r) => setTimeout(r, FLIP_MS))]);
     setIdx(next);
     setFaceUp(true);
-    setBurstKey((k) => k + 1);
     setTimeout(() => { busyRef.current = false; }, FLIP_MS);
   }, [creators, idx, n, reduceMotion]);
 
@@ -107,7 +104,6 @@ export default function HeroCardStage({ creators }) {
     if (tiltRef.current) tiltRef.current.style.transform = '';
   };
 
-  const accent = current ? (CARD_PLATFORMS[current.platform]?.color || '#a855f7') : '#a855f7';
   const left = n >= 3 ? creators[(idx - 1 + n) % n] : null;
   const right = n >= 3 ? creators[(idx + 1) % n] : null;
   const platformName = current ? (CARD_PLATFORMS[current.platform]?.name || current.platform) : '';
@@ -119,12 +115,6 @@ export default function HeroCardStage({ creators }) {
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
       >
-        {/* Platform-tinted aura; background-color transitions smoothly. */}
-        <div
-          aria-hidden="true"
-          className="absolute w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] rounded-full opacity-30 blur-[70px] transition-colors duration-1000 pointer-events-none"
-          style={{ backgroundColor: accent }}
-        />
 
         {left && (
           <img
@@ -151,7 +141,6 @@ export default function HeroCardStage({ creators }) {
           />
         )}
 
-        {!reduceMotion && burstKey > 0 && <span key={burstKey} aria-hidden="true" className="hero-burst" />}
 
         <Link
           to={current ? `/${current.platform}/${current.username}` : '/badge'}

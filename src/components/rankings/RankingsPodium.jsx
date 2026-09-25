@@ -25,7 +25,6 @@ export default function RankingsPodium({ creators }) {
             aria-label={`#${i + 1} ${c.display_name}`}
           >
             <div className="relative">
-              {first && <div aria-hidden="true" className="absolute -inset-8 sm:-inset-12 rounded-full bg-amber-400/25 blur-3xl pointer-events-none" />}
               <img
                 src={cardImageUrl(c.platform, c.username)}
                 alt=""

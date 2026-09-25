@@ -14,10 +14,10 @@ function AdCard({ premium, price }) {
         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-400/15 border border-amber-400/40 text-amber-300">Ad</span>
         <span className="text-[11px] font-semibold text-amber-300/80">{premium ? 'Premium' : 'Featured'}</span>
       </div>
-      <div className={`rounded-[6.4%/4.571%] p-[3px] aspect-[250/350] ${premium ? 'sponsor-foil shadow-[0_20px_50px_-12px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-br from-amber-300/70 via-amber-500/50 to-amber-700/60'}`}>
+      <div className={`rounded-[6.4%/4.571%] p-[3px] aspect-[250/350] ${premium ? 'sponsor-foil shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]' : 'bg-gradient-to-br from-amber-300/70 via-amber-500/50 to-amber-700/60'}`}>
         <div className="relative h-full rounded-[5.2%/3.7%] bg-[#15110a] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
           <span aria-hidden="true" className="sponsor-shine" />
-          <div className={`relative ${premium ? 'w-16 h-16 sm:w-20 sm:h-20 text-3xl' : 'w-14 h-14 text-2xl'} rounded-full bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center font-black text-neutral-900 shadow-[0_0_40px_rgba(251,191,36,0.45)]`}>★</div>
+          <div className={`relative ${premium ? 'w-16 h-16 sm:w-20 sm:h-20 text-3xl' : 'w-14 h-14 text-2xl'} rounded-full bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center font-black text-neutral-900`}>★</div>
           <p className="relative mt-4 text-base sm:text-lg font-extrabold text-white">Your card here</p>
           <p className="relative mt-1 text-[11px] sm:text-xs text-white/55 leading-snug">
             {premium ? 'A featured slot near the top of this ranking.' : 'A featured slot in this ranking.'}

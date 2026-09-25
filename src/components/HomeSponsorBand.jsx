@@ -32,7 +32,6 @@ export default function HomeSponsorBand({ topCreators = [] }) {
   return (
     <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
-      <div aria-hidden="true" className="absolute -right-24 top-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full bg-amber-500/20 blur-[110px] pointer-events-none" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 grid lg:grid-cols-[0.95fr,1.05fr] gap-10 lg:gap-14 items-center">
         <div className="scroll-reveal text-center lg:text-left">
@@ -58,7 +57,7 @@ export default function HomeSponsorBand({ topCreators = [] }) {
           </div>
 
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
-            <Link to="/promote" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-sm font-bold transition-colors shadow-[0_10px_30px_-10px_rgba(251,191,36,0.6)]">
+            <Link to="/promote" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-sm font-bold transition-colors">
               Claim a slot
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -75,7 +74,7 @@ export default function HomeSponsorBand({ topCreators = [] }) {
           <div className="space-y-2 [mask-image:linear-gradient(to_bottom,#000_70%,transparent)]">
             {rows.slice(0, 3).map((c, i) => <Row key={c?.id || i} rank={i + 1} creator={c} />)}
 
-            <div className="sponsor-foil relative rounded-2xl p-[1.5px] my-3 scale-[1.04] shadow-[0_20px_50px_-12px_rgba(251,191,36,0.45)]">
+            <div className="sponsor-foil relative rounded-2xl p-[1.5px] my-3 scale-[1.04] shadow-[0_20px_40px_-16px_rgba(0,0,0,0.8)]">
               <div className="relative flex items-center gap-3 px-4 py-4 rounded-[calc(1rem-1.5px)] bg-[#17130a] overflow-hidden">
                 <span className="sponsor-shine" />
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-400/15 border border-amber-400/40 text-amber-300">Ad</span>

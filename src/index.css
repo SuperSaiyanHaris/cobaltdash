@@ -381,22 +381,6 @@ h1, h2, h3, h4 {
 /* =========================================================================
    Background patterns
    ========================================================================= */
-.dot-grid {
-  background-color: var(--bg-page);
-  background-image:
-    radial-gradient(circle at 25% 0%, rgb(79 70 229 / 0.05), transparent 50%),
-    radial-gradient(rgb(0 0 0 / 0.06) 1px, transparent 1px);
-  background-size: auto, 24px 24px;
-}
-
-/* Hero gradient mesh — used on /promote and other marketing pages */
-.hero-mesh {
-  background:
-    radial-gradient(circle at 0% 0%, rgb(79 70 229 / 0.08), transparent 40%),
-    radial-gradient(circle at 100% 0%, rgb(168 85 247 / 0.06), transparent 40%),
-    radial-gradient(circle at 50% 100%, rgb(14 165 233 / 0.05), transparent 40%);
-}
-
 /* Subtle noise texture for added depth on white sections (optional, disabled by default) */
 .noise::before {
   content: '';
@@ -509,7 +493,7 @@ h1, h2, h3, h4 {
   overflow: hidden;
   -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 60px rgba(167, 139, 250, 0.22);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55);
 }
 .hero-face-front { transform: rotateY(180deg); }
 .hero-glare {
@@ -525,32 +509,15 @@ h1, h2, h3, h4 {
   background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255, 255, 255, 0.55), transparent 45%);
 }
 .hero-stage:hover .hero-glare { opacity: 1; }
-.hero-burst {
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  border-radius: 9999px;
-  pointer-events: none;
-  z-index: 5;
-  opacity: 0;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(253, 230, 138, 0.35) 25%, transparent 60%);
-  animation: hero-burst 0.9s ease-out 0.35s;
-}
-@keyframes hero-burst {
-  0%   { opacity: 0; transform: scale(0.3); }
-  25%  { opacity: 0.9; }
-  100% { opacity: 0; transform: scale(1.4); }
-}
 .hero-pull-btn {
   background: linear-gradient(90deg, #fde68a, #f0abfc, #67e8f9);
-  box-shadow: 0 8px 30px rgba(240, 171, 252, 0.35);
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.hero-pull-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 36px rgba(240, 171, 252, 0.5); }
+.hero-pull-btn:hover { transform: translateY(-1px); }
 .hero-pull-btn:active { transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) {
   .hero-flip, .hero-tilt { transition: none; }
-  .hero-burst { display: none; }
 }
 
 /* Home "Show up at the top" band: the sponsored row's gold foil edge and a

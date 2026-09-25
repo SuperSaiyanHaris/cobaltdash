@@ -8,3 +8,13 @@
   how.
 - Deploy by pushing straight to `main` in small batches (Vercel deploys it);
   no pull requests unless asked.
+
+# Design rules (hard rules)
+
+- NEVER use glowing orbs or colored glow blobs: no blurred colored circles
+  (`rounded-full ... blur-[…]`, `blur-3xl` backgrounds), no colored radial
+  "aura"/"mesh" washes, no light-burst flashes, and no colored glow
+  shadows (e.g. `shadow-[0_0_40px_rgba(amber…)]`, box-shadow in a brand
+  color). The owner considers them sloppy "AI slop". Dark sections are a
+  flat dark base plus the faint `hero-dot-grid` texture only; shadows are
+  neutral black/gray for depth, never colored light.

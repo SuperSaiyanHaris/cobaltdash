@@ -45,8 +45,6 @@ export default function NewsletterSignup({ variant = 'card', className = '' }) {
     return (
       <div className={`relative isolate overflow-hidden rounded-3xl bg-[#0a0a0f] text-white px-6 py-8 sm:px-10 sm:py-10 ${className}`}>
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
-        <div aria-hidden="true" className="absolute -left-20 -top-24 w-80 h-80 rounded-full bg-violet-600/30 blur-[90px] pointer-events-none" />
-        <div aria-hidden="true" className="absolute -right-16 -bottom-28 w-72 h-72 rounded-full bg-fuchsia-500/20 blur-[90px] pointer-events-none" />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-12">
           <div className="flex-1 min-w-0">

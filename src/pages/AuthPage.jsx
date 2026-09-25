@@ -125,7 +125,6 @@ export default function AuthPage({ initialMode = 'signin' }) {
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 85% 80% at 50% 50%, transparent 55%, rgba(10,10,15,0.85) 100%)' }} />
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0a0a0f]/80 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0a0a0f] to-transparent" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] rounded-full bg-violet-600/15 blur-[140px]" />
         </div>
 
         <div className="relative flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-6 py-10 sm:px-10 lg:py-12 [@media(max-height:820px)]:lg:py-6">

@@ -26,7 +26,7 @@ import CountUp from '../components/CountUp';
 import RankingsPodium from '../components/rankings/RankingsPodium';
 import RankingsCardGrid from '../components/rankings/RankingsCardGrid';
 import { cardImageUrl } from '../lib/cardUrl';
-import { CARD_PLATFORMS, cardTier } from '../lib/badgeCard';
+import { cardTier } from '../lib/badgeCard';
 import logger from '../lib/logger';
 
 // Platform identity is the icon tint plus a thin hover rule — no colored
@@ -501,7 +501,6 @@ function RankingsOverview() {
         {/* Header — the same dark stage as the per-platform pages. */}
         <div className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
           <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
-          <div aria-hidden="true" className="absolute -top-24 left-1/3 w-[720px] h-[420px] rounded-full bg-violet-600/20 blur-[130px] pointer-events-none" />
           <div className="relative w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
             {/* Masthead row. Title and stat strip sit side by side from lg up
                 instead of stacking, which is what left the right two thirds of
@@ -608,7 +607,7 @@ function RankingsOverview() {
                           const c = advertiser?.creators;
                           items.push(
                             <div key={slotKey} className="px-3 py-2">
-                              <div className="sponsor-foil rounded-xl p-[1.5px] shadow-[0_10px_28px_-14px_rgba(245,158,11,0.6)]">
+                              <div className="sponsor-foil rounded-xl p-[1.5px]">
                                 <Link
                                   to={advertiser ? `/${c?.platform}/${c?.username}` : '/promote'}
                                   className="relative flex items-center gap-3 rounded-[10px] bg-gradient-to-r from-amber-50 via-white to-amber-50 px-3 py-2.5 overflow-hidden group"
@@ -1010,7 +1009,6 @@ function PlatformRankings({ urlPlatform }) {
             intro moved below the table (still on the page for SEO). */}
         <div className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
           <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
-          <div aria-hidden="true" className="absolute left-1/2 -translate-x-1/2 top-24 w-[720px] h-[480px] rounded-full blur-[130px] opacity-25 pointer-events-none" style={{ backgroundColor: CARD_PLATFORMS[selectedPlatform]?.color || '#a855f7' }} />
           <div className="relative w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
               Rankings{updatedAgo ? <> · Updated {updatedAgo}</> : null}
@@ -1259,7 +1257,7 @@ function PlatformRankings({ urlPlatform }) {
                     onMouseEnter={() => { clearTimeout(hoverTimer.current); setHoverCard(null); }}
                     className="relative z-30 px-3 sm:px-4 py-2 border-b border-neutral-100"
                   >
-                    <div className={`rounded-2xl p-[1.5px] transition-shadow duration-700 ${isPremium ? 'sponsor-foil shadow-[0_14px_40px_-16px_rgba(245,158,11,0.6)]' : 'bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200'} ${isHighlighted ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}>
+                    <div className={`rounded-2xl p-[1.5px] transition-shadow duration-700 ${isPremium ? 'sponsor-foil' : 'bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200'} ${isHighlighted ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}>
                       <Link
                         id={`listing-${creator.listingId}`}
                         to={rowHref}
@@ -1273,7 +1271,7 @@ function PlatformRankings({ urlPlatform }) {
                           Ad
                         </span>
                         {isGhost ? (
-                          <span className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center text-neutral-900 font-black flex-shrink-0 shadow-[0_4px_14px_-4px_rgba(245,158,11,0.7)]">★</span>
+                          <span className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center text-neutral-900 font-black flex-shrink-0">★</span>
                         ) : (
                           <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-xl" className="relative !w-10 !h-10" />
                         )}
