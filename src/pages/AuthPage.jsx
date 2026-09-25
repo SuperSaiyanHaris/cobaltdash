@@ -9,10 +9,8 @@ import { cardImageUrl } from '../lib/cardUrl';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
 
 // Page backdrop (desktop): a slanted wall of real holographic creator cards
-// drifting in columns, with one upright "focal" card floating in front.
-// The wall is rotated in 3D, so it uses the markless card render (brand
-// rules forbid rotating platform logos); the focal card stays upright and
-// only bobs vertically, so it keeps its logo.
+// drifting in columns. The wall is rotated in 3D, so it uses the markless
+// card render (brand rules forbid rotating platform logos).
 const WALL_COLUMNS = 7;
 const PER_COLUMN = 5;
 const COLUMN_SPEEDS = ['75s', '60s', '85s', '68s', '80s', '64s', '72s'];
@@ -67,11 +65,9 @@ export default function AuthPage({ initialMode = 'signin' }) {
     }).catch(() => {});
   }, []);
 
-  // The first creator is the focal card; the next ones fill the wall.
-  const focal = creators[0];
   const columns = useMemo(() => {
     const cols = Array.from({ length: WALL_COLUMNS }, () => []);
-    creators.slice(1, 1 + WALL_COLUMNS * PER_COLUMN).forEach((c, i) => cols[i % WALL_COLUMNS].push(c));
+    creators.slice(0, WALL_COLUMNS * PER_COLUMN).forEach((c, i) => cols[i % WALL_COLUMNS].push(c));
     return cols;
   }, [creators]);
 
@@ -111,21 +107,6 @@ export default function AuthPage({ initialMode = 'signin' }) {
           <div className="absolute inset-0" style={{ background: 'radial-gradient(90% 80% at 65% 45%, transparent 40%, rgba(10,10,15,0.75) 100%)' }} />
           <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/80 to-transparent" />
           <div className="absolute -left-40 top-1/3 w-[520px] h-[520px] rounded-full bg-violet-600/20 blur-[120px]" />
-
-          {/* Focal card: upright, floating, with its platform logo. */}
-          {focal && (
-            <div className="absolute right-[9%] top-[12%] [@media(max-height:760px)]:top-[7%] auth-float">
-              <div className="absolute -inset-10 rounded-full blur-3xl opacity-50" style={{ backgroundColor: CARD_PLATFORMS[focal.platform]?.color || '#a855f7' }} />
-              <img
-                src={cardImageUrl(focal.platform, focal.username)}
-                alt=""
-                width="250"
-                height="350"
-                draggable="false"
-                className="relative w-[230px] xl:w-[250px] [@media(max-height:760px)]:w-[180px] h-auto select-none rounded-2xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)]"
-              />
-            </div>
-          )}
         </div>
 
         <div className="relative grid lg:grid-cols-2 min-h-[calc(100vh-4rem)]">
