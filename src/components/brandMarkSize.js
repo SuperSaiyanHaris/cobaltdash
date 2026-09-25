@@ -16,7 +16,7 @@
  *   YouTube  28.5701 x 20  -> 31.4 x 22
  *   Bluesky  320 x 286     -> 24.6 x 22
  *   TikTok   2250 x 2545   -> 19.5 x 22
- *   Twitch / Kick / Mastodon / Rumble / Substack / Music (24 x 24) -> 22 x 22
+ *   Twitch / Kick / Mastodon / Substack / Music (24 x 24) -> 22 x 22
  *
  * 22 rather than YouTube's bare 20dp minimum: at exactly 20 the browser rounds
  * YouTube's fractional 28.5701px width down to 28.56px, which drags its painted

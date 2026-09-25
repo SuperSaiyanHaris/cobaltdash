@@ -1,5 +1,4 @@
 import { config } from 'dotenv';
-import { parseChannelHtml as parseRumbleHtml } from '../src/services/rumbleService.js';
 config();
 import { createClient } from '@supabase/supabase-js';
 
@@ -216,90 +215,6 @@ async function fetchBlueskyBatch(handles) {
     });
   });
   return statsMap;
-}
-
-// ========== RUMBLE HELPERS (HTML scrape, no API) ==========
-// Rumble channels live at `/c/{slug}` or `/user/{slug}`. We store the kind in
-// `platform_id` (`c:slug` / `user:slug`) so we know which URL to fetch. ~1 req/sec
-// to be polite — Rumble doesn't publish a rate limit but we're conservative.
-const RUMBLE_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
-  'Accept-Language': 'en-US,en;q=0.9',
-};
-
-function rumbleParseAbbreviated(str) {
-  if (!str) return 0;
-  const cleaned = String(str).replace(/,/g, '').trim();
-  const match = cleaned.match(/^(\d+(?:\.\d+)?)\s*([KMB])?$/i);
-  if (!match) {
-    const direct = parseInt(cleaned, 10);
-    return Number.isNaN(direct) ? 0 : direct;
-  }
-  const num = parseFloat(match[1]);
-  const suffix = (match[2] || '').toUpperCase();
-  if (suffix === 'K') return Math.round(num * 1_000);
-  if (suffix === 'M') return Math.round(num * 1_000_000);
-  if (suffix === 'B') return Math.round(num * 1_000_000_000);
-  return Math.round(num);
-}
-
-// Rumble doesn't print a total video count on the channel page (loaded by JS).
-// The /videos tab is server-paginated 50/page so we can derive it by hitting
-// the first page, finding the largest linked page number, fetching that page,
-// and counting items on it: total = (lastPage - 1) * 50 + itemsOnLastPage.
-async function fetchRumbleVideoCount(kind, slug) {
-  try {
-    const r1 = await fetch(`https://rumble.com/${kind}/${slug}/videos`, { headers: RUMBLE_HEADERS, signal: AbortSignal.timeout(15000) });
-    const h1 = await r1.text();
-    const pages = [...h1.matchAll(/[?&]page=(\d+)/g)].map(m => parseInt(m[1], 10)).filter(Number.isFinite);
-    const firstCount = (h1.match(/data-video-id=/g) || []).length;
-    if (pages.length === 0) return firstCount;
-    const lastPage = Math.max(...pages);
-    if (lastPage <= 1) return firstCount;
-    const r2 = await fetch(`https://rumble.com/${kind}/${slug}/videos?page=${lastPage}`, { headers: RUMBLE_HEADERS, signal: AbortSignal.timeout(15000) });
-    const h2 = await r2.text();
-    const lastCount = (h2.match(/data-video-id=/g) || []).length;
-    const morePages = [...h2.matchAll(/[?&]page=(\d+)/g)].map(m => parseInt(m[1], 10)).filter(Number.isFinite);
-    const trueLast = morePages.length ? Math.max(lastPage, ...morePages) : lastPage;
-    return (trueLast - 1) * 50 + lastCount;
-  } catch {
-    return 0;
-  }
-}
-
-async function fetchRumbleChannel(platformId) {
-  // platformId is `c:slug` or `user:slug` (legacy rows might just be a slug — default to `c:`)
-  let kind = 'c';
-  let slug = platformId;
-  if (platformId && platformId.includes(':')) {
-    [kind, slug] = platformId.split(':');
-  }
-  const url = `https://rumble.com/${kind}/${slug}`;
-  const res = await fetch(url, { headers: RUMBLE_HEADERS, signal: AbortSignal.timeout(15000) });
-  if (!res.ok) return null;
-  const html = await res.text();
-
-  // Use the shared rumbleService parser (single source of truth) for followers /
-  // avatar / banner / verified / latest post. It handles BOTH the legacy plural
-  // "Followers" template and the newer "<span>N Follower(s)</span>" template, so
-  // /user/ channels (and newer /c/ pages) parse correctly. The video count from
-  // the page is unreliable for large channels, so we override it with the
-  // paginator-derived total below.
-  const prof = parseRumbleHtml(html, { slug, kind, profileUrl: url });
-  if (!prof) return null;
-
-  const totalPosts = await fetchRumbleVideoCount(kind, slug);
-
-  return {
-    followers: prof.followers,
-    totalPosts: totalPosts || prof.totalPosts || null,
-    displayName: prof.displayName,
-    profileImage: prof.profileImage,
-    bannerImage: prof.bannerImage,
-    verified: prof.verified,
-    latestPost: prof.latestPost,
-  };
 }
 
 // ========== MASTODON API HELPERS ==========
@@ -536,13 +451,13 @@ async function collectDailyStats() {
   }
 
   // Platform selection.
-  //  - rumble.com and substack.com HARD-BLOCK GitHub Actions datacenter IPs
-  //    (every fetch 403s), so collecting them from CI silently yields nothing.
-  //    They are skipped in CI and collected from a non-datacenter IP via a local
-  //    scheduled task (scripts/local/collect-rumble-substack.bat) instead.
-  //  - COLLECT_ONLY="rumble,substack" restricts this run to just those platforms
-  //    (used by that local task). Empty = run everything allowed in this env.
-  const IP_BLOCKED_IN_CI = ['rumble', 'substack'];
+  //  - substack.com HARD-BLOCKS GitHub Actions datacenter IPs (every fetch
+  //    403s), so it is skipped in CI; the collect-substack Edge Function
+  //    collects it instead.
+  //  - COLLECT_ONLY="youtube" (etc.) restricts a run to those platforms (the
+  //    daily workflow runs one job per platform). Empty = run everything
+  //    allowed in this env.
+  const IP_BLOCKED_IN_CI = ['substack'];
   const onlyList = (process.env.COLLECT_ONLY || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   const inCI = process.env.GITHUB_ACTIONS === 'true';
   const wants = (platform) => {
@@ -558,12 +473,11 @@ async function collectDailyStats() {
   const blueskyCreators = pick('bluesky');
   const musicCreators = pick('music');
   const mastodonCreators = pick('mastodon');
-  const rumbleCreators = pick('rumble');
   const substackCreators = pick('substack');
   // TikTok is handled by refreshTikTokProfiles.js via separate GitHub Actions workflow
 
   if (inCI && !onlyList.length) {
-    console.log('ℹ️  Running in CI — Rumble + Substack are skipped here (their sites block datacenter IPs); collected via the local scheduled task.');
+    console.log('ℹ️  Running in CI — Substack is skipped here (its site blocks datacenter IPs); the collect-substack Edge Function collects it.');
   }
 
   console.log(`Found ${creators.length} creators to update`);
@@ -573,7 +487,6 @@ async function collectDailyStats() {
   console.log(`   Bluesky: ${blueskyCreators.length}`);
   console.log(`   Music: ${musicCreators.length}`);
   console.log(`   Mastodon: ${mastodonCreators.length}`);
-  console.log(`   Rumble: ${rumbleCreators.length}`);
   console.log(`   Substack: ${substackCreators.length}\n`);
 
   let successCount = 0;
@@ -875,66 +788,6 @@ async function collectDailyStats() {
   }
 
   await flush('Mastodon');
-
-  // ========== RUMBLE (HTML scrape, sequential ~1 req/sec) ==========
-  // No public API. Each fetch is a full HTML page (~50-100KB). For 1K creators
-  // that's ~10-15 minutes at the polite delay. Skip writes when followers=0.
-  if (rumbleCreators.length > 0) {
-    console.log('\n🎬 Processing Rumble creators...');
-    console.log(`   ${rumbleCreators.length} channels (sequential)\n`);
-
-    for (const creator of rumbleCreators) {
-      try {
-        const stats = await fetchRumbleChannel(creator.platform_id);
-        if (stats && stats.followers > 0) {
-          statsToUpsert.push({
-            creator_id: creator.id,
-            recorded_at: today,
-            subscribers: stats.followers,
-            followers: stats.followers,
-            total_views: null,
-            total_posts: stats.totalPosts || null,
-          });
-          const rumbleUpd = {
-            id: creator.id,
-            banner_image: stats.bannerImage,
-            verified: !!stats.verified,
-            latest_post_at: stats.latestPost?.publishedAt || null,
-            latest_post_title: stats.latestPost?.title || null,
-            latest_post_url: stats.latestPost?.url || null,
-            latest_post_thumbnail: stats.latestPost?.thumbnail || null,
-            latest_post_views: stats.latestPost?.views || null,
-          };
-          // Keep the avatar fresh (only when we actually parsed one — never null
-          // out an existing image on a parse miss).
-          if (stats.profileImage) rumbleUpd.profile_image = stats.profileImage;
-          // Self-heal display names: update only when we parsed a REAL name that
-          // differs from the slug (username) and from what's stored. This fixes
-          // any slug-style names and tracks channel renames, but never clobbers a
-          // good name with a slug fallback (parse miss returns the slug).
-          if (stats.displayName && stats.displayName !== creator.username && stats.displayName !== creator.display_name) {
-            rumbleUpd.display_name = stats.displayName;
-          }
-          creatorUpdates.push(rumbleUpd);
-          console.log(`   ✅ ${creator.display_name}: ${stats.followers.toLocaleString()} followers`);
-          successCount++;
-        } else if (stats && stats.followers === 0) {
-          console.log(`   ⚠️  ${creator.display_name}: Skipping — page returned 0 followers (parse miss or removed)`);
-          errorCount++;
-        } else {
-          console.log(`   ❌ ${creator.display_name}: Channel not found`);
-          errorCount++;
-        }
-      } catch (error) {
-        console.error(`   ❌ ${creator.display_name}: ${error.message}`);
-        errorCount++;
-      }
-      // 800ms pacing = ~1.25 req/s. For 1K creators that's ~13 min.
-      await new Promise((r) => setTimeout(r, 800));
-    }
-  }
-
-  await flush('Rumble');
 
   // ========== SUBSTACK (one leaderboard sweep, match by publication id) ==========
   // Substack data is a single bulk fetch of the category leaderboards, not a

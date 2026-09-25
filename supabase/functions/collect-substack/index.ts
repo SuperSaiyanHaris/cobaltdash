@@ -2,8 +2,7 @@
 //
 // WHY EDGE: substack.com blocks GitHub Actions / Vercel datacenter IPs, but NOT
 // Supabase's egress (verified). So Substack is collected here, on a daily
-// pg_cron schedule, instead of in the Node daily-stats workflow. (Rumble can't
-// use this path — Cloudflare challenges Supabase's IPs for rumble.com too.)
+// pg_cron schedule, instead of in the Node daily-stats workflow.
 //
 // Also does discovery and creator-request resolution in the same pass, since
 // all three need the identical full-category leaderboard sweep. Before this,

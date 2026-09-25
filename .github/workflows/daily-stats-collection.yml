@@ -6,8 +6,8 @@ name: Daily Stats Collection
 # refreshes the rankings cache, even if a platform job failed, so the others'
 # fresh numbers still reach the site.
 #
-# Rumble (delisted) and Substack (collected by the collect-substack edge
-# function) are intentionally not in the matrix.
+# Substack (collected by the collect-substack edge function) is
+# intentionally not in the matrix.
 
 # Started by Vercel Cron at 06:00, 14:00 and 22:00 UTC (1-2 AM, 9-10 AM and
 # 5-6 PM ET) through api/cron/dispatch.js. No `schedule:` here on purpose:

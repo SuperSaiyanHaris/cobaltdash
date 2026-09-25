@@ -70,7 +70,6 @@ const PLATFORM_LABELS = {
   bluesky:  'Bluesky',
   music:    'Music',
   mastodon: 'Mastodon',
-  rumble:   'Rumble',
   substack: 'Substack',
 };
 
@@ -82,7 +81,6 @@ const PLATFORM_COLORS = {
   bluesky:  '#0ea5e9',
   music:    '#f59e0b',
   mastodon: '#7c3aed',
-  rumble:   '#65a30d',
   substack: '#ea580c',
 };
 

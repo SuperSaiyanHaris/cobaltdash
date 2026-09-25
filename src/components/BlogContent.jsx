@@ -13,7 +13,6 @@ import KickIcon from './KickIcon';
 import TikTokIcon from './TikTokIcon';
 import BlueskyIcon from './BlueskyIcon';
 import MastodonIcon from './MastodonIcon';
-import RumbleIcon from './RumbleIcon';
 import SubstackIcon from './SubstackIcon';
 import MusicIcon from './MusicIcon';
 import { getCategoryTheme } from '../lib/blogTheme';
@@ -31,7 +30,6 @@ const PLATFORM_META = {
   kick:    { Icon: KickIcon,   color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-200'  },
   bluesky: { Icon: BlueskyIcon,color: 'text-sky-600',    bg: 'bg-sky-50',    border: 'border-sky-200'    },
   mastodon:{ Icon: MastodonIcon, color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200' },
-  rumble:  { Icon: RumbleIcon,   color: 'text-lime-700',   bg: 'bg-lime-50',   border: 'border-lime-200'   },
   substack:{ Icon: SubstackIcon, color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200' },
   music:   { Icon: MusicIcon,    color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-200'  },
 };

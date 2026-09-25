@@ -19,6 +19,7 @@ import { createClient } from '@supabase/supabase-js';
 import { writeFileSync } from 'fs';
 import { config } from 'dotenv';
 import { HUBS } from '../src/lib/hubs.js';
+import { isActivePlatform } from '../src/lib/constants.js';
 
 config();
 
@@ -218,9 +219,9 @@ async function generateSitemap() {
         .range(page * pageSize, (page + 1) * pageSize - 1));
       (rows || []).forEach(r => {
         if (!r.username) return;
-        // Rumble is delisted (2026-09-04): its profile pages return the
-        // not-found shell, so submitting them only burns crawl budget.
-        if (r.platform === 'rumble') return;
+        // Only platforms the site supports (old rows for a removed platform
+        // can linger in the database).
+        if (!isActivePlatform(r.platform)) return;
         const key = `${r.platform}/${r.username.toLowerCase()}`;
         if (topKeys.has(key)) return;
         topKeys.add(key);
@@ -288,7 +289,7 @@ async function generateSitemap() {
   {
     const seen = new Set();
     allCreators.forEach(creator => {
-      if (creator.platform === 'rumble') return; // delisted, see top tier
+      if (!isActivePlatform(creator.platform)) return; // see top tier
       const key = `${creator.platform}/${creator.username.toLowerCase()}`;
       if (seen.has(key) || topKeys.has(key)) return;
       seen.add(key);

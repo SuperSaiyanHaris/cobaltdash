@@ -23,7 +23,7 @@ import { KICK_SUB_PRICE, KICK_CREATOR_SHARE } from '../../lib/earnings';
 // sub price ($4.99 US) and creator split (95/5) are public — so subs x price x
 // split is arithmetic, not a guess. It's labelled a ceiling ("up to") since
 // regional pricing, fees and taxes can only push it down. No "recent items" tab
-// unless it has one real item to show (a single latest post for Rumble/
+// unless it has one real item to show (a single latest post for
 // Mastodon/Substack, real top tracks for Music) — never a fabricated list.
 // ============================================================================
 
@@ -63,12 +63,6 @@ export const GENERIC_PLATFORM_CONFIG = {
     hasLiveCount: false,
     thirdTab: null,
   },
-  rumble: {
-    primaryLabel: 'Followers',
-    chartMetrics: [{ value: 'subscribers', label: 'Followers', dataKey: 'subscribers' }, { value: 'videos', label: 'Videos', dataKey: 'videos' }],
-    hasLiveCount: false,
-    thirdTab: 'latestPost',
-  },
   substack: {
     primaryLabel: 'Subscribers',
     chartMetrics: [{ value: 'subscribers', label: 'Subscriber Reach', dataKey: 'subscribers' }],
@@ -102,8 +96,7 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
 
   // dailyAverage.subs is measured across the last 30 available ROWS, which
   // can span weeks further back than today if this creator's collection has
-  // stalled (an outage, a dead scraper — not hypothetical, this is exactly
-  // what happened to Rumble before it was delisted). That average is real
+  // stalled (an outage, a dead scraper). That average is real
   // for the window it covers, but presenting it as "currently gaining X a
   // day" misrepresents a live rate when the data itself is old. 7 days is
   // well outside normal collection jitter (daily collection runs 3x/day) so

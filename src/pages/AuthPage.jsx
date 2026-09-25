@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthForm from '../components/AuthForm';
 import SEO from '../components/SEO';
 import { getCardsByRarity } from '../services/creatorService';
-import { PLATFORM_COUNT } from '../lib/constants';
+import { PLATFORM_COUNT, isActivePlatform } from '../lib/constants';
 import { cardImageUrl } from '../lib/cardUrl';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
 
@@ -73,7 +73,7 @@ export default function AuthPage({ initialMode = 'signin' }) {
     // Every rarity gets love here: per platform, 2 Legendary, 2 Epic,
     // 2 Rare and 3 Common cards, shuffled into the wall.
     getCardsByRarity(WALL_PLATFORMS, { legendary: 2, epic: 2, rare: 2, common: 3 }).then((data) => {
-      const usable = (data || []).filter((c) => c.username && CARD_PLATFORMS[c.platform]);
+      const usable = (data || []).filter((c) => c.username && isActivePlatform(c.platform) && CARD_PLATFORMS[c.platform]);
       for (let i = usable.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [usable[i], usable[j]] = [usable[j], usable[i]];

@@ -7,7 +7,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import FunErrorState from '../components/FunErrorState';
 import { getChannelByUsername as getYouTubeChannel, getChannelById as getYouTubeChannelById, getRecentVideos as getYouTubeRecentVideos } from '../services/youtubeService';
 import { getChannelByUsername as getTwitchChannel, getLiveStreams as getTwitchLiveStreams } from '../services/twitchService';
@@ -33,7 +32,7 @@ import { formatNumber } from '../lib/utils';
 import { addRecentlyViewed } from '../lib/recentlyViewed';
 import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
-import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
+import { PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
 import { computeProfileMetrics } from '../lib/profileMetrics';
 import { cardImageUrl } from '../lib/cardUrl';
 import GenericVerdictSection, { GENERIC_PLATFORM_CONFIG } from '../components/profile/GenericVerdictSection';
@@ -59,7 +58,6 @@ const platformIcons = {
   bluesky: BlueskyIcon,
   music: MusicIcon,
   mastodon: MastodonIcon,
-  rumble: RumbleIcon,
   substack: SubstackIcon,
 };
 
@@ -71,7 +69,6 @@ const platformColors = {
   bluesky:  { bg: 'bg-sky-500',    light: 'bg-sky-50',    text: 'text-sky-700',    border: 'border-sky-200' },
   music:    { bg: 'bg-amber-600',  light: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200' },
   mastodon: { bg: 'bg-violet-600', light: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
-  rumble:   { bg: 'bg-lime-600',   light: 'bg-lime-50',   text: 'text-lime-700',   border: 'border-lime-200'   },
   substack: { bg: 'bg-orange-600', light: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
 };
 
@@ -86,16 +83,6 @@ const platformUrls = {
   mastodon: (username) => {
     const [u, instance] = (username || '').split('@');
     return instance ? `https://${instance}/@${u}` : `https://mastodon.social/@${u}`;
-  },
-  // Rumble platform_id holds `c:slug` or `user:slug`. If we don't have it (called
-  // with just username), default to /c/ — the /user/ fallback is handled by the
-  // service when actually fetching.
-  rumble: (username, platformId) => {
-    if (platformId && platformId.includes(':')) {
-      const [kind, slug] = platformId.split(':');
-      return `https://rumble.com/${kind}/${slug}`;
-    }
-    return `https://rumble.com/c/${username}`;
   },
   // Substack username is the subdomain slug; the subdomain URL always resolves
   // (redirects to a custom domain if the publication uses one).
@@ -294,12 +281,10 @@ export default function CreatorProfile() {
     }
     setError(null);
 
-    // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
-    // its existing profile pages no longer stay reachable either — this now
-    // renders the same "not found" state as any other unknown creator. Rule
-    // zero still applies: this is a rendering decision only, the 117 Rumble
-    // creators' rows in `creators`/`creator_stats` are untouched in the DB.
-    if (platform === 'rumble') {
+    // Only supported platforms have profile pages. Anything else (a platform
+    // we dropped, or a typo) renders the same "not found" state as an unknown
+    // creator, even if old rows for it are still in the database.
+    if (!isActivePlatform(platform)) {
       setError('Creator not found');
       setLoading(false);
       return;
@@ -312,7 +297,7 @@ export default function CreatorProfile() {
       // if the platform API is down, rate-limited, or a key is invalid, render
       // the profile from our own stored data instead of failing the whole page.
       // Counts stay null here — the standard merge logic below fills them from
-      // the latest creator_stats row (same mechanism Rumble uses).
+      // the latest creator_stats row (same mechanism the DB-first platforms use).
       const buildDbFallback = async () => {
         const dbCreator = await getCreatorByUsername(platform, username);
         if (!dbCreator) return null;
@@ -633,7 +618,7 @@ export default function CreatorProfile() {
             setCreator(prev => ({ ...prev, dbCreatedAt: dbCreator.created_at }));
 
             // Save stats first, then fetch history. Skip when channelData has
-            // null counts (Rumble synthesized-from-DB case) — the daily
+            // null counts (built from the DB) — the daily
             // collection script keeps stats fresh from the right IP range.
             // Non-fatal: a failed stats write must never block the read-only
             // history fetch below.
@@ -661,8 +646,8 @@ export default function CreatorProfile() {
             if (results[0].status === 'fulfilled') {
               const history = results[0].value || [];
               setStatsHistory(history);
-              // For platforms where we didn't live-fetch current stats (Rumble:
-              // edge 403s our IPs), populate the displayed counts from the
+              // For platforms where we didn't live-fetch current stats (DB-first
+              // platforms), populate the displayed counts from the
               // most recent stats row. getCreatorStats returns ASCENDING order,
               // so the latest row is the LAST element (history[0] was showing
               // 90-day-old counts on every DB-first profile).
@@ -897,7 +882,7 @@ export default function CreatorProfile() {
   }
 
   const primaryCount = creator.subscribers || creator.followers || 0;
-  const primaryLabel = platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble' ? 'followers' : platform === 'music' ? 'listeners' : 'subscribers';
+  const primaryLabel = platform === 'twitch' || platform === 'bluesky' || platform === 'mastodon' ? 'followers' : platform === 'music' ? 'listeners' : 'subscribers';
 
   const platformName = platformDisplayNames[platform] || platform.charAt(0).toUpperCase() + platform.slice(1);
   const seoTitle = primaryCount > 0

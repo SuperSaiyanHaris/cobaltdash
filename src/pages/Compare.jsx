@@ -8,7 +8,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import MusicIcon from '../components/MusicIcon';
 import { CompareCardSkeleton } from '../components/Skeleton';
@@ -59,7 +58,6 @@ const platformConfig = {
   bluesky: { icon: BlueskyIcon, color: 'text-sky-500', label: 'Bluesky' },
   music: { icon: MusicIcon, color: 'text-amber-500', label: 'Music' },
   mastodon: { icon: MastodonIcon, color: 'text-violet-500', label: 'Mastodon' },
-  rumble: { icon: RumbleIcon, color: 'text-lime-600', label: 'Rumble' },
   substack: { icon: SubstackIcon, color: 'text-orange-500', label: 'Substack' },
 };
 
@@ -82,7 +80,7 @@ function accentFor(i) { return ACCENT_COLORS[i % ACCENT_COLORS.length]; }
  * else. Calling it plain "Subs" would read as the same thing YouTube's
  * free subscriber count means, it isn't. */
 function metricLabel(platform) {
-  if (platform === 'twitch' || platform === 'tiktok' || platform === 'bluesky' || platform === 'mastodon' || platform === 'rumble') return 'Followers';
+  if (platform === 'twitch' || platform === 'tiktok' || platform === 'bluesky' || platform === 'mastodon') return 'Followers';
   if (platform === 'music') return 'Listeners';
   if (platform === 'kick') return 'Paid Subs';
   return 'Subs';
@@ -116,7 +114,7 @@ async function hydrateCreator(platform, username) {
         ? await getArtistByMbid(dbCreator.platform_id)
         : await getArtistByName(dbCreator.display_name || username);
     }
-    // tiktok / mastodon / rumble / substack: DB-first hydration
+    // tiktok / mastodon / substack: DB-first hydration
     const dbCreator = await getCreatorByUsername(platform, username);
     if (!dbCreator) return null;
     const { data: stats } = await supabase
@@ -1184,7 +1182,7 @@ function GrowthChart({ filledCreators, growthData, chartMetric, setChartMetric, 
 // Engagement volume: the "how much got watched/liked/played" number. Every
 // platform here means something different (a view, a like, an hour), which
 // is exactly why the row's label is built from whichever are in play rather
-// than a single fixed word. Bluesky/Mastodon/Rumble/Substack have no such
+// than a single fixed word. Bluesky/Mastodon/Substack have no such
 // concept at all (no per-item engagement figure we track), so a lineup that
 // includes any of them drops this row entirely rather than showing a real
 // number next to a dash.
@@ -1206,7 +1204,6 @@ const VIEWERS_PLATFORM = { twitch: true, kick: true };
 const CONTENT_UNIT = {
   youtube: 'Videos',
   tiktok: 'Videos',
-  rumble: 'Videos',
   mastodon: 'Posts',
   bluesky: 'Posts',
 };

@@ -89,8 +89,13 @@ const checks = [
     expect(idx.status === 200 && n >= 3, `sitemap index: status ${idx.status}, ${n} children`);
     const core = await get('/sitemap-core.xml');
     expect(core.text.includes('/kick/earnings') && core.text.includes('/badge<'), 'core sitemap missing new pages');
-    const top = await get('/sitemap-top.xml');
-    expect(!top.text.includes('/rumble/'), 'delisted Rumble pages in sitemap');
+
+  }],
+  ['removed platforms redirect away (Rumble)', async () => {
+    for (const path of ['/rumble/Bongino', '/rankings/rumble']) {
+      const r = await get(path);
+      expect([301, 308].includes(r.status), `${path} -> ${r.status}, expected a permanent redirect`);
+    }
   }],
   ['robots.txt', async () => {
     const r = await get('/robots.txt');

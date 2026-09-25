@@ -42,7 +42,7 @@ describe('POST /api/update-creator', () => {
     expect((await call({ creatorData: { platform: 'youtube', platformId: 'x' } }, 'https://evil.example')).status).toBe(403);
   });
 
-  it('rejects unknown platforms', async () => {
+  it('rejects unknown and removed platforms', async () => {
     expect((await call({ creatorData: { platform: 'rumble', platformId: '1' } })).status).toBe(400);
   });
 

@@ -12,6 +12,26 @@
       "source": "/gear",
       "destination": "/blog",
       "statusCode": 301
+    },
+    {
+      "source": "/rumble/:path*",
+      "destination": "/rankings",
+      "statusCode": 301
+    },
+    {
+      "source": "/rankings/rumble",
+      "destination": "/rankings",
+      "statusCode": 301
+    },
+    {
+      "source": "/live/rumble/:path*",
+      "destination": "/rankings",
+      "statusCode": 301
+    },
+    {
+      "source": "/s/rumble/:path*",
+      "destination": "/rankings",
+      "statusCode": 301
     }
   ],
   "headers": [

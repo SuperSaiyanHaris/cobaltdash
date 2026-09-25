@@ -36,7 +36,7 @@ async function size(url) {
   }
 }
 
-const platforms = ['youtube', 'twitch', 'tiktok', 'kick', 'bluesky', 'substack', 'rumble', 'mastodon', 'music'];
+const platforms = ['youtube', 'twitch', 'tiktok', 'kick', 'bluesky', 'substack', 'mastodon', 'music'];
 let failures = 0;
 let totalBefore = 0;
 let totalAfter = 0;

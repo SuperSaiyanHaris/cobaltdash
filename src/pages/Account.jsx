@@ -18,7 +18,6 @@ import KickIcon from '../components/KickIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MusicIcon from '../components/MusicIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 
 const TABS = [
@@ -29,10 +28,10 @@ const TABS = [
 
 const LISTING_PLATFORMS = ['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
 const TIER_PRICE = { basic: 49, premium: 149 };
-const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
+const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', substack: 'Substack' };
 const PLATFORM_ICONS = {
   youtube: YouTubeIcon, tiktok: TikTokIcon, twitch: TwitchIcon, kick: KickIcon, bluesky: BlueskyIcon,
-  music: MusicIcon, mastodon: MastodonIcon, rumble: RumbleIcon, substack: SubstackIcon,
+  music: MusicIcon, mastodon: MastodonIcon, substack: SubstackIcon,
 };
 
 // Typographic backbone shared with the dashboard

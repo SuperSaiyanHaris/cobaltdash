@@ -21,7 +21,7 @@ import StructuredData from '../components/StructuredData';
 import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
 import { supabase } from '../lib/supabase';
-import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES } from '../lib/constants';
+import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
 import CountUp from '../components/CountUp';
 import RankingsPodium from '../components/rankings/RankingsPodium';
 import RankingsCardGrid from '../components/rankings/RankingsCardGrid';
@@ -267,7 +267,7 @@ function getSeoData(platform, rankType, topCount) {
   const metricLabel = rankType === 'views' ? 'Most Viewed' :
     rankType === 'watched' ? 'Most Watched' :
     rankType === 'growth' ? 'Fastest Growing' :
-    pid === 'tiktok' || pid === 'twitch' || pid === 'bluesky' || pid === 'mastodon' || pid === 'rumble' ? 'Most Followed' :
+    pid === 'tiktok' || pid === 'twitch' || pid === 'bluesky' || pid === 'mastodon' ? 'Most Followed' :
     pid === 'music' ? 'Most Listeners' :
     pid === 'kick' ? 'Most Subscribed' : 'Most Subscribed';
 
@@ -281,7 +281,6 @@ function getSeoData(platform, rankType, topCount) {
     bluesky: 'Bluesky Accounts',
     music: 'Music Artists',
     mastodon: 'Mastodon Accounts',
-    rumble: 'Rumble Channels',
     substack: 'Substack Newsletters',
   }[pid] || `${p} Creators`;
   const title = `${countLabel} ${rankType === 'growth' ? 'Fastest Growing ' : rankType === 'views' ? 'Most Viewed ' : rankType === 'watched' ? 'Most Watched ' : ''}${platformNoun} (2026) - Live Rankings`;
@@ -294,7 +293,6 @@ function getSeoData(platform, rankType, topCount) {
     bluesky: `${countLabel} most followed Bluesky accounts ranked by followers and growth. Updated daily. See who has the most Bluesky followers in 2026.`,
     music: `${countLabel} most listened music artists ranked by monthly listeners and total plays. Updated daily. See who has the most listeners in 2026.`,
     mastodon: `${countLabel} most followed Mastodon accounts ranked by followers and posts. Updated daily across the fediverse. See who has the most Mastodon followers in 2026.`,
-    rumble: `${countLabel} most followed Rumble channels ranked by followers and video count. Updated daily. See the biggest creators on Rumble in 2026.`,
     substack: `${countLabel} top Substack newsletters ranked by subscriber reach across every category. Updated daily. See the biggest Substack writers in 2026.`,
   };
 
@@ -306,7 +304,6 @@ function getSeoData(platform, rankType, topCount) {
     bluesky: `top bluesky accounts, top ${topCount} bluesky creators, most followed bluesky, biggest bluesky accounts 2026, bluesky rankings, bluesky statistics`,
     music: `top music artists, top ${topCount} artists, most listened artists, monthly listeners ranking, biggest music artists 2026, music artist rankings`,
     mastodon: `top mastodon accounts, top ${topCount} mastodon, most followed mastodon, fediverse rankings, biggest mastodon accounts 2026, mastodon statistics`,
-    rumble: `top rumble channels, top ${topCount} rumble, most followed rumble, biggest rumble channels 2026, rumble rankings, rumble statistics`,
     substack: `top substack newsletters, top ${topCount} substack, best substack writers, most popular substack 2026, substack leaderboard, substack rankings`,
   };
 
@@ -327,7 +324,6 @@ function getH1Text(platform, topCount) {
     bluesky: `Top ${topCount} Bluesky Accounts`,
     music: `Top ${topCount} Music Artists`,
     mastodon: `Top ${topCount} Mastodon Accounts`,
-    rumble: `Top ${topCount} Rumble Channels`,
     substack: `Top ${topCount} Substack Newsletters`,
   };
   return labels[pid] || `Top ${topCount} ${platform?.name} Creators`;
@@ -343,7 +339,6 @@ function getSubheading(platform) {
     bluesky: 'Ranked by followers and growth. Updated daily.',
     music: 'Ranked by monthly listeners and total plays. Updated daily.',
     mastodon: 'Ranked by followers and posts across the fediverse. Updated daily.',
-    rumble: 'Ranked by followers and video output. Updated daily.',
     substack: 'Ranked by subscriber reach across every Substack category. Updated daily.',
   };
   return subs[pid] || 'Ranked by stats and growth. Updated daily.';
@@ -361,7 +356,6 @@ export function getPlatformIntro(platform) {
     bluesky: "Bluesky is one of the newest platforms tracked here, and its follower numbers are still growing fast as people migrate over from older social apps. Growth tends to come in waves tied to those migrations rather than a steady daily climb.",
     music: "This ranking uses monthly listeners, the standard way the music industry measures an artist's active audience rather than lifetime plays. It rewards artists who are getting played right now, so a big playlist placement can move an artist up the list fast, even without a new release.",
     mastodon: "Mastodon is federated, meaning accounts live on independent servers instead of one central platform, so a follower count here reflects an account's full reach across the network, not just its home server. Growth tends to be steadier and less viral than on centralized platforms.",
-    rumble: "Rumble rankings track follower counts and video output for one of YouTube's biggest video alternatives. Growth here often tracks political and independent media news cycles more than entertainment trends, since a large share of Rumble's biggest channels sit in that space.",
     substack: "Substack publishes subscriber counts as approximate ranges for most newsletters rather than exact numbers, so this ranking uses the most precise figure available for each publication and falls back to that range as a floor when it isn't. Growth here tends to be slower and steadier than on video or social platforms, built on people opting into recurring email rather than a single viral moment.",
   };
   return intros[pid] || null;
@@ -402,12 +396,10 @@ export default function Rankings() {
     return <RankingsOverview />;
   }
 
-  // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
-  // its existing rankings page no longer stays reachable either — same
-  // "not found" treatment as any other unsupported platform. Rule zero
-  // still applies: this is a rendering decision only, the underlying
-  // rankings_cache/creator_stats rows are untouched.
-  if (urlPlatform === 'rumble') {
+  // Only supported platforms have rankings. Anything else (a platform we
+  // dropped, or a typo) gets the "not found" state, even if old rows for it
+  // are still in the database.
+  if (!isActivePlatform(urlPlatform)) {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-8">
         <SEO title="Rankings Not Found" noindex />
@@ -572,7 +564,7 @@ function RankingsOverview() {
               {platforms.map((platform) => {
                 const Icon = platform.icon;
                 const creators = platformData[platform.id] || [];
-                const follLabel = platform.id === 'tiktok' || platform.id === 'twitch' || platform.id === 'bluesky' || platform.id === 'mastodon' || platform.id === 'rumble' ? 'followers' : platform.id === 'music' ? 'listeners' : platform.id === 'kick' ? 'paid subs' : 'subscribers';
+                const follLabel = platform.id === 'tiktok' || platform.id === 'twitch' || platform.id === 'bluesky' || platform.id === 'mastodon' ? 'followers' : platform.id === 'music' ? 'listeners' : platform.id === 'kick' ? 'paid subs' : 'subscribers';
 
                 return (
                   <motion.div
@@ -752,7 +744,7 @@ function PlatformRankings({ urlPlatform }) {
   const hoverTimer = useRef(null);
 
   const rankTypes = [
-    { id: 'subscribers', name: selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Top Followers' : selectedPlatform === 'music' ? 'Top Listeners' : selectedPlatform === 'kick' ? 'Top Paid Subs' : 'Top Subscribers', icon: Users },
+    { id: 'subscribers', name: selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' ? 'Top Followers' : selectedPlatform === 'music' ? 'Top Listeners' : selectedPlatform === 'kick' ? 'Top Paid Subs' : 'Top Subscribers', icon: Users },
     // Views only where the platform publishes a real total (YouTube). Twitch
     // retired public view counts in 2022, so Twitch/Kick rank by hours watched.
     ...(selectedPlatform === 'youtube' ? [{ id: 'views', name: 'Most Views', icon: Eye }] : []),
@@ -952,7 +944,7 @@ function PlatformRankings({ urlPlatform }) {
     analytics.switchPlatform('rankings', platformId);
   };
 
-  const followerLabel = selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Followers' : selectedPlatform === 'music' ? 'Listeners' : selectedPlatform === 'kick' ? 'Paid Subs' : 'Subscribers';
+  const followerLabel = selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' ? 'Followers' : selectedPlatform === 'music' ? 'Listeners' : selectedPlatform === 'kick' ? 'Paid Subs' : 'Subscribers';
   // Optional secondary stat column shown between the sparkline and Growth.
   // Each platform maps to the one extra public metric worth showing (or none).
   // `key` is the field on the ranking row; `sortKey` is the sortable column id.
@@ -966,7 +958,6 @@ function PlatformRankings({ urlPlatform }) {
     music:    { label: 'Plays',  key: 'totalViews', sortKey: 'views' },
     twitch:   { label: 'Hours (30d)', key: 'hoursWatchedMonth', sortKey: 'watched' },
     kick:     { label: 'Hours (30d)', key: 'hoursWatchedMonth', sortKey: 'watched' },
-    rumble:   { label: 'Videos', key: 'totalPosts', sortKey: null },
     mastodon: { label: 'Posts',  key: 'totalPosts', sortKey: null },
     bluesky:  { label: 'Posts',  key: 'totalPosts', sortKey: null },
   };
@@ -974,10 +965,7 @@ function PlatformRankings({ urlPlatform }) {
   // Full literal class strings (not interpolated) so Tailwind's JIT emits them.
   const creatorColSpanHeader = secondaryCol ? 'col-span-4' : 'col-span-5';
   const creatorColSpanRow = secondaryCol ? 'md:col-span-4' : 'md:col-span-5';
-  // Delisted platforms (currently just Rumble) are removed from the `platforms`
-  // tab array so they're not clickable/promoted, but their existing rankings
-  // page is deliberately still reachable by direct URL with real (if frozen)
-  // data — so this falls back to a minimal object instead of leaving
+  // Defensive: if the platform isn't in the tab array this falls back to a minimal object instead of leaving
   // currentPlatform undefined, which would otherwise render "undefined"
   // strings into the H1/FAQ and silently mismatch SEO copy to another platform.
   const currentPlatform = platforms.find(p => p.id === selectedPlatform) || (selectedPlatform ? {
@@ -1541,18 +1529,6 @@ function PlatformRankings({ urlPlatform }) {
                     <div>
                       <h3 className="font-semibold text-neutral-900 mb-1">How do Mastodon handles work?</h3>
                       <p>Mastodon is decentralized, so every account belongs to an instance and the handle includes it (for example, user@mastodon.social).</p>
-                    </div>
-                  </>
-                )}
-                {selectedPlatform === 'rumble' && (
-                  <>
-                    <div>
-                      <h3 className="font-semibold text-neutral-900 mb-1">Who has the most Rumble followers?</h3>
-                      <p>{rankings[0]?.display_name} leads the Rumble rankings with {formatNumber(rankings[0]?.subscribers)} followers. We track follower counts and video output for major channels, updated daily.</p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-neutral-900 mb-1">What do Rumble rankings track?</h3>
-                      <p>We track follower count and video output for major Rumble channels using publicly available information, updated daily.</p>
                     </div>
                   </>
                 )}

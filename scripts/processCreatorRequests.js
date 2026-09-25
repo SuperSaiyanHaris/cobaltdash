@@ -11,16 +11,10 @@
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { scrapeTikTokProfile, closeBrowser as closeTikTokBrowser } from '../src/services/tiktokScraper.js';
-import { parseChannelHtml } from '../src/services/rumbleService.js';
 import { SUBSTACK_CATEGORIES, normalizePublication } from '../src/services/substackService.js';
 
 dotenv.config();
 
-const RUMBLE_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
-  'Accept-Language': 'en-US,en;q=0.9',
-};
 const JSON_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   'Accept': 'application/json',
@@ -42,79 +36,6 @@ function getTodayLocal() {
   const month = String(nyDate.getMonth() + 1).padStart(2, '0');
   const day = String(nyDate.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-/**
- * Process a Rumble request. Rumble has no API — we fetch the public channel
- * page server-side (GitHub Actions IPs aren't edge-blocked like Vercel's) and
- * parse it. The slug's case is preserved (Rumble URLs are case-sensitive) and
- * we try the `/user/` form first, then `/c/`. We never write a 0-follower row
- * (that's the data-integrity rule), so a brand-new 0-follower channel is asked
- * to come back once it has at least one follower.
- */
-async function processRumbleRequest(request) {
-  const slug = request.username; // case preserved by the API for Rumble
-  // rumble.com Cloudflare-challenges every datacenter IP we've tried (GitHub
-  // Actions, Vercel, Supabase Edge) — same block documented for collection and
-  // discovery. Attempting this here can't distinguish "genuinely no such
-  // channel" from "we're blocked," so a real request would get wrongly
-  // tombstoned as failed. Leave it pending; scripts/local/rumble-auto.bat runs
-  // this same processor with a platform filter from the one connection that
-  // actually reaches rumble.com.
-  if (process.env.GITHUB_ACTIONS === 'true') {
-    console.log(`[rumble/${slug}] ⏭️  Skipped in CI (Rumble is IP-blocked here) — left pending for the local runner`);
-    return { success: false, username: slug, error: 'skipped in CI', skipped: true };
-  }
-  console.log(`[rumble/${slug}] Fetching channel page...`);
-  await supabase.from('creator_requests').update({ status: 'processing' }).eq('id', request.id);
-
-  let prof = null;
-  // Try /c/ first then /user/ (same order as getRumbleChannel) so an account
-  // that lives at /c/ doesn't get mis-stored under a user: platform_id.
-  for (const kind of ['c', 'user']) {
-    const profileUrl = `https://rumble.com/${kind}/${slug}`;
-    try {
-      const res = await fetch(profileUrl, { headers: RUMBLE_HEADERS, signal: AbortSignal.timeout(20000) });
-      if (!res.ok) continue;
-      const parsed = parseChannelHtml(await res.text(), { slug, kind, profileUrl });
-      if (parsed && parsed.followers > 0) { prof = parsed; break; }
-    } catch { /* try next kind */ }
-  }
-
-  if (!prof) {
-    await supabase.from('creator_requests')
-      .update({ status: 'failed', error_message: 'No Rumble channel found (or it has no followers yet)' })
-      .eq('id', request.id);
-    console.log(`[rumble/${slug}] ❌ Not found / 0 followers — marked failed`);
-    return { success: false, username: slug, error: 'not found' };
-  }
-
-  const { data: existing } = await supabase
-    .from('creators').select('id').eq('platform', 'rumble').eq('platform_id', prof.platformId).maybeSingle();
-  let creatorId;
-  if (existing) {
-    creatorId = existing.id;
-  } else {
-    const { data: created, error } = await supabase.from('creators').insert({
-      platform: 'rumble', platform_id: prof.platformId, username: prof.username,
-      display_name: prof.displayName, profile_image: prof.profileImage, description: prof.description,
-      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    }).select('id').single();
-    if (error) {
-      await supabase.from('creator_requests').update({ status: 'failed', error_message: error.message }).eq('id', request.id);
-      return { success: false, username: slug, error: error.message };
-    }
-    creatorId = created.id;
-  }
-  await supabase.from('creators').update({ last_verified_at: new Date().toISOString() }).eq('id', creatorId);
-  await supabase.from('creator_stats').upsert({
-    creator_id: creatorId, recorded_at: getTodayLocal(),
-    followers: prof.followers, subscribers: prof.followers,
-    total_posts: prof.totalPosts || null, total_views: null,
-  }, { onConflict: 'creator_id,recorded_at' });
-  await supabase.from('creator_requests').delete().eq('id', request.id);
-  console.log(`[rumble/${slug}] ✅ Tracked ${prof.displayName} (${prof.followers} followers, ${prof.totalPosts} videos)`);
-  return { success: true, username: prof.username };
 }
 
 /**
@@ -217,8 +138,8 @@ async function processMastodonRequest(request) {
  */
 async function processSubstackRequest(request) {
   const slug = request.username.toLowerCase();
-  // substack.com blocks GitHub Actions datacenter IPs the same way it blocks
-  // Rumble's (Supabase Edge is the one runtime that gets through). The
+  // substack.com blocks GitHub Actions datacenter IPs (Supabase Edge is the
+  // one runtime that gets through). The
   // supabase/functions/collect-substack Edge Function already resolves
   // pending Substack requests every day as part of its category sweep —
   // attempting it again here would just fail the same blocked way and, worse,
@@ -269,7 +190,6 @@ async function processRequest(request) {
   console.log(`\n[${request.platform}/${request.username}] Processing request...`);
 
   // Non-TikTok platforms each have their own fetch + parse path.
-  if (request.platform === 'rumble') return await processRumbleRequest(request);
   if (request.platform === 'mastodon') return await processMastodonRequest(request);
   if (request.platform === 'substack') return await processSubstackRequest(request);
 

@@ -20,10 +20,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Rumble was delisted 2026-09-04 (permanently Cloudflare-blocked, see CLAUDE.md)
-// and dropped from here — no reason to keep spending a refresh cycle on a
-// platform with no UI path to it. Its rankings_cache rows just go stale in
-// place; harmless, since nothing but a direct-URL visit reads them anymore.
+// YouTube and Twitch are refreshed only by the refresh-rankings-heavy-platforms
+// pg_cron job (they exceed the REST path's ~60s limit); see CLAUDE.md.
 const PLATFORMS = ['tiktok', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
 
 console.log('🏆 Refreshing rankings cache (per-platform)...');

@@ -120,7 +120,7 @@ export function normalizePublication(pub, globalRank = null) {
 }
 
 /**
- * Browser search path. DB-only (same as Mastodon/Rumble) — the live
+ * Browser search path. DB-only (same as Mastodon) — the live
  * leaderboard API can't do free-text lookup, and we have a seeded catalog.
  * Search.jsx performs the actual DB fuzzy match via searchCreators().
  */
@@ -132,7 +132,7 @@ export async function searchSubstack() {
  * Fetch the latest published post for a Substack publication via its public
  * archive API (`{slug}.substack.com/api/v1/archive`). Returns the post's
  * title, canonical URL, publish date, and engagement counts. Used to render
- * the "Latest post" card on the profile (same shape as Rumble/Mastodon).
+ * the "Latest post" card on the profile (same shape as Mastodon).
  */
 export async function getSubstackLatestPost(slug) {
   if (!slug) return null;

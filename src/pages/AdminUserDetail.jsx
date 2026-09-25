@@ -17,16 +17,15 @@ import KickIcon from '../components/KickIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MusicIcon from '../components/MusicIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 
-const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack' };
+const PLATFORM_LABELS = { youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', music: 'Music', mastodon: 'Mastodon', substack: 'Substack' };
 const PLATFORM_ICONS = {
   youtube: YouTubeIcon, tiktok: TikTokIcon, twitch: TwitchIcon, kick: KickIcon, bluesky: BlueskyIcon,
-  music: MusicIcon, mastodon: MastodonIcon, rumble: RumbleIcon, substack: SubstackIcon,
+  music: MusicIcon, mastodon: MastodonIcon, substack: SubstackIcon,
 };
 
 function Section({ title, subtitle, count, children }) {

@@ -230,7 +230,7 @@ async function run() {
       // Paced deliberately: an unpaced loop hit "Rate limit exceeded" after
       // ~40 sequential calls (2026-07-27 live test). Kick publishes no
       // documented limit for this endpoint, so 350ms is a conservative
-      // starting point, same spirit as the 800ms Rumble scrape pacing.
+      // starting point.
       await sleep(350);
     }
     console.log(`   Created ${kickCreated}, failed ${kickFailed}`);

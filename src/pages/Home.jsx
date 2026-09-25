@@ -22,7 +22,7 @@ import HomeSponsorBand from '../components/HomeSponsorBand';
 import HeroCardStage from '../components/HeroCardStage';
 import HomeProductBento from '../components/HomeProductBento';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
-import { PLATFORM_COUNT, PLATFORM_ACCENTS } from '../lib/constants';
+import { PLATFORM_COUNT, PLATFORM_ACCENTS, isActivePlatform } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
 import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
 
@@ -468,7 +468,7 @@ export default function Home() {
       const seen = new Set();
       const pool = [...(top1s || []), ...(drawn || [])].filter((c) => {
         const key = `${c?.platform}/${c?.username}`;
-        if (!c?.username || !c?.display_name || !CARD_PLATFORMS[c.platform] || seen.has(key)) return false;
+        if (!c?.username || !c?.display_name || !isActivePlatform(c.platform) || !CARD_PLATFORMS[c.platform] || seen.has(key)) return false;
         seen.add(key);
         return true;
       });

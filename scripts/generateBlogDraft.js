@@ -514,7 +514,7 @@ async function researchAgent(articles, postData) {
   // Extract proper nouns from all titles as an entity-level exclusion signal
   const entityBlacklist = [...new Set(
     allTitles.flatMap(t =>
-      (t.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*|YouTube|TikTok|Twitch|Kick|Instagram|Netflix|Meta|Spotify|Bluesky|Mastodon|Rumble|MrBeast|BuzzFeed)\b/g) || [])
+      (t.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*|YouTube|TikTok|Twitch|Kick|Instagram|Netflix|Meta|Spotify|Bluesky|Mastodon|MrBeast|BuzzFeed)\b/g) || [])
     )
   )].slice(0, 80);
 

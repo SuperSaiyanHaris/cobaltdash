@@ -10,7 +10,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import { getRecentMilestones } from '../services/creatorService';
 import { formatNumber, formatRelativeTime } from '../lib/utils';
@@ -28,13 +27,7 @@ const PLATFORMS = [
   { id: 'mastodon', name: 'Mastodon', icon: MastodonIcon, tint: 'text-violet-500', metric: 'followers' },
   { id: 'substack', name: 'Substack', icon: SubstackIcon, tint: 'text-orange-600', metric: 'subscribers' },
 ];
-// Includes delisted platforms (Rumble) so an already-recorded milestone row
-// for one still renders with a real icon/label instead of nothing — this is
-// a rendering lookup for existing events, not the filter tab list above.
-const PLATFORM_LOOKUP = {
-  ...Object.fromEntries(PLATFORMS.map((p) => [p.id, p])),
-  rumble: { id: 'rumble', name: 'Rumble', icon: RumbleIcon, tint: 'text-lime-600', metric: 'followers' },
-};
+const PLATFORM_LOOKUP = Object.fromEntries(PLATFORMS.map((p) => [p.id, p]));
 
 export default function Milestones() {
   const [activePlatform, setActivePlatform] = useState(null); // null = all

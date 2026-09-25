@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { withErrorHandling } from '../lib/errorHandler';
 import { rarityBands } from '../lib/badgeCard';
+import { PLATFORM_IDS, isActivePlatform } from '../lib/constants';
 
 /**
  * Save or update a creator and stats via server-side API
@@ -71,9 +72,8 @@ const _creatorByUsernameCache = new Map();
 const CREATOR_PROFILE_TTL = 5 * 60 * 1000; // 5 minutes
 
 async function _fetchCreatorByUsername(platform, username) {
-  // Case-insensitive exact match. Most platforms store usernames lowercase, but
-  // Rumble preserves the original case (Bongino vs bongino are both valid URL
-  // forms for the same channel). ILIKE without wildcards behaves as exact
+  // Case-insensitive exact match, so a URL typed with different casing still
+  // finds the creator. ILIKE without wildcards behaves as exact
   // case-insensitive equality.
   const { data, error } = await supabase
     .from('creators')
@@ -373,7 +373,7 @@ export const searchCreators = withErrorHandling(
     });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).filter((c) => isActivePlatform(c.platform));
   },
   'creatorService.searchCreators'
 );
@@ -541,6 +541,7 @@ export async function validateFeaturedCreatorUrl(urlOrPath) {
   const parts = path.split('/');
   if (parts.length < 2) return null;
   const [platform, username] = parts;
+  if (!isActivePlatform(platform.toLowerCase())) return null;
   const { data } = await supabase
     .from('creators')
     .select('id, platform, username, display_name, profile_image')
@@ -588,7 +589,8 @@ async function _fetchTopByPlatform() {
     .from('rankings_cache')
     .select('creator_id, platform, username, display_name, profile_image, subscribers, growth_30d, computed_at')
     .eq('rank_type', 'subscribers')
-    .eq('rank_position', 1);
+    .eq('rank_position', 1)
+    .in('platform', PLATFORM_IDS);
   if (error) throw error;
   return (data || []).map((c) => ({ ...c, id: c.creator_id, computedAt: c.computed_at }));
 }
@@ -785,7 +787,7 @@ async function _fetchMilestones(platform, limit) {
     .order('crossed_at', { ascending: false })
     .order('metric_value', { ascending: false })
     .limit(limit);
-  if (platform) query = query.eq('platform', platform);
+  query = platform ? query.eq('platform', platform) : query.in('platform', PLATFORM_IDS);
   const { data, error } = await query;
   if (error) throw error;
   return (data || []).map((m) => ({

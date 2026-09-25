@@ -123,15 +123,11 @@ export const BLOG_CATEGORIES = [
 // hardcoding 6/7/8/etc. Stale counts have shipped to production three times
 // because the number was hardcoded in two separate places.
 //
-// Rumble was removed from this list 2026-09-04 (delisted from nav/search/
-// discovery — its data collection is permanently Cloudflare-blocked from
-// every runtime we have, see CLAUDE.md). It deliberately stays OUT of this
-// array so PLATFORM_COUNT and every "active platform" grid/tab drop to 8.
-// It deliberately stays IN the three lookup maps below (display name, accent
-// color, legacy enum) because those are consumed with `|| platform` fallbacks
-// by pages rendering the 117 already-tracked Rumble creators' existing
-// profile/share pages, which are intentionally left live and should still
-// show a real "Rumble" label, not a raw lowercase id.
+// Anything that lists, picks, draws or collects platforms must be limited to
+// this list (see isActivePlatform). A platform that isn't here must not show
+// up anywhere on the site, even if old rows for it are still in the
+// database. Rumble was removed from the site and the codebase entirely on
+// 2026-09-25 after being delisted on 2026-09-04.
 export const PLATFORM_IDS = [
   'youtube',
   'tiktok',
@@ -145,6 +141,10 @@ export const PLATFORM_IDS = [
 
 export const PLATFORM_COUNT = PLATFORM_IDS.length;
 
+const ACTIVE_PLATFORMS = new Set(PLATFORM_IDS);
+/** True only for platforms the site currently supports. */
+export const isActivePlatform = (platform) => ACTIVE_PLATFORMS.has(platform);
+
 // Correctly-cased brand names — single source of truth. Never derive a
 // platform's display name by capitalizing the id string (`platform.charAt(0)
 // .toUpperCase() + platform.slice(1)`); that mangles YouTube -> "Youtube" and
@@ -157,7 +157,6 @@ export const PLATFORM_DISPLAY_NAMES = {
   bluesky: 'Bluesky',
   music: 'Music',
   mastodon: 'Mastodon',
-  rumble: 'Rumble',
   substack: 'Substack',
 };
 
@@ -177,7 +176,6 @@ export const PLATFORM_ACCENTS = {
   bluesky: '#1180f4',
   music: '#ed9b0b',
   mastodon: '#6263f7',
-  rumble: '#82bf41',
   substack: '#f96819',
 };
 
@@ -190,6 +188,5 @@ export const PLATFORMS = {
   BLUESKY: 'bluesky',
   MUSIC: 'music',
   MASTODON: 'mastodon',
-  RUMBLE: 'rumble',
   SUBSTACK: 'substack',
 };

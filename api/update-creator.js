@@ -24,10 +24,9 @@ const ALLOWED_IMAGE_HOSTS = new Set([
   'cdn.bsky.app',                    // Bluesky
   'i.scdn.co',                       // Spotify
   'lastfm.freetls.fastly.net',       // Last.fm
-  'hugh.cdn.rumble.cloud',           // Rumble
   'substackcdn.com',                 // Substack
 ]);
-const ALLOWED_IMAGE_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com', '.cdn.rumble.cloud'];
+const ALLOWED_IMAGE_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com'];
 
 function sanitizeImageUrl(url) {
   if (!url || typeof url !== 'string') return null;

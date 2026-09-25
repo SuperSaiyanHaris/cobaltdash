@@ -360,9 +360,8 @@ export default function Search() {
         channels = await searchBluesky(searchQuery, 25);
       } else if (platform === 'music') {
         channels = await searchMusic(searchQuery, 25);
-      } else if (platform === 'mastodon' || platform === 'rumble' || platform === 'substack') {
-        // All DB-first (live Mastodon federated search requires auth,
-        // Rumble is Cloudflare-blocked from our IPs). The fuzzy search RPC
+      } else if (platform === 'mastodon' || platform === 'substack') {
+        // DB-first (live Mastodon federated search requires auth). The fuzzy search RPC
         // returns rows from the `creators` table only — it doesn't include
         // follower counts (those live in `creator_stats`). Hydrate each
         // result with its latest stats row so the result cards show real
@@ -399,7 +398,7 @@ export default function Search() {
       // Pre-fill normalized username for TikTok request flow
       if (platform === 'tiktok') {
         setNormalizedUsername(normalizeToUsername(searchQuery));
-      } else if (platform === 'rumble' || platform === 'mastodon' || platform === 'substack') {
+      } else if (platform === 'mastodon' || platform === 'substack') {
         // DB-only platforms: keep the raw query (case-sensitive handles / URLs)
         // so the creator can paste their exact handle or link to self-add.
         setNormalizedUsername(searchQuery.trim());
@@ -681,9 +680,8 @@ export default function Search() {
 
               {/* DB-only platforms (no live search): let the creator add themselves.
                   Queued and processed off-platform by GitHub Actions. */}
-              {['rumble', 'mastodon', 'substack'].includes(selectedPlatform) && (() => {
+              {['mastodon', 'substack'].includes(selectedPlatform) && (() => {
                 const cfg = {
-                  rumble:   { noun: 'Rumble channel',   placeholder: 'rumble.com/user/YourName  or  YourName' },
                   mastodon: { noun: 'Mastodon account', placeholder: 'yourname@mastodon.social' },
                   substack: { noun: 'Substack',         placeholder: 'yourname.substack.com' },
                 }[selectedPlatform];
@@ -707,7 +705,7 @@ export default function Search() {
                           className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-neutral-900 hover:bg-neutral-800"
                         >
                           <Clock className="w-4 h-4" />
-                          Track this {selectedPlatform === 'rumble' ? 'channel' : selectedPlatform === 'substack' ? 'newsletter' : 'account'}
+                          Track this {selectedPlatform === 'substack' ? 'newsletter' : 'account'}
                         </button>
                         <p className="text-xs text-neutral-600 mt-3">
                           We'll add it within 24 hours, then build daily stats automatically.
@@ -750,7 +748,7 @@ export default function Search() {
               {/* Standard platforms: Standard message. Skipped when live search
                   was the thing that failed — "check your spelling" is wrong
                   advice when we never actually got to check. */}
-              {!['tiktok', 'rumble', 'mastodon', 'substack'].includes(selectedPlatform) && !liveSearchUnavailable && (
+              {!['tiktok', 'mastodon', 'substack'].includes(selectedPlatform) && !liveSearchUnavailable && (
                 <p className="text-sm text-neutral-600">
                   Try searching for a different name or check the spelling
                 </p>
@@ -815,7 +813,7 @@ export default function Search() {
                       <div className="text-right flex-shrink-0 flex items-baseline gap-2">
                         <p className="text-[15px] font-semibold text-neutral-900 tabular-nums">{formatNumber(creator.subscribers || creator.followers)}</p>
                         <p className={MICRO}>
-                          {creator.platform === 'twitch' || creator.platform === 'tiktok' || creator.platform === 'bluesky' || creator.platform === 'mastodon' || creator.platform === 'rumble' ? 'followers' :
+                          {creator.platform === 'twitch' || creator.platform === 'tiktok' || creator.platform === 'bluesky' || creator.platform === 'mastodon' ? 'followers' :
                            creator.platform === 'kick' ? 'paid subs' :
                            creator.platform === 'music' ? 'listeners' : 'subscribers'}
                         </p>

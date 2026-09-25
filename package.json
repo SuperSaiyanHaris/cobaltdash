@@ -17,8 +17,6 @@
     "seed:music": "node scripts/seedTopMusicArtists.js",
     "seed:mastodon": "node scripts/seedTopMastodonCreators.js",
     "discover:mastodon": "node scripts/discoverMastodonCreators.js",
-    "seed:rumble": "node scripts/seedTopRumbleCreators.js",
-    "discover:rumble": "node scripts/discoverRumbleCreators.js",
     "aggregate:hours-watched": "node scripts/aggregateHoursWatched.js",
     "seed:blog": "node scripts/seedBlogPosts.js",
     "delete:fake-data": "node scripts/deleteFakeData.js",

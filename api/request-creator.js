@@ -61,20 +61,7 @@ export default async function handler(req, res) {
     }
 
     let normalized;
-    if (platform === 'rumble') {
-      // Rumble slugs are CASE-SENSITIVE and may contain hyphens, so we can't
-      // lowercase/strip like the handle platforms. Accept a full channel URL,
-      // a `c:`/`user:` prefix, or a bare slug, and keep the slug verbatim.
-      let raw = String(username).trim();
-      const urlMatch = raw.match(/rumble\.com\/(?:c|user)\/([^/?#\s]+)/i);
-      const prefixMatch = raw.match(/^(?:c|user):(.+)$/i);
-      if (urlMatch) raw = urlMatch[1];
-      else if (prefixMatch) raw = prefixMatch[1];
-      normalized = raw.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 50);
-      if (!normalized || normalized.length < 2) {
-        return res.status(400).json({ error: 'Enter your Rumble channel URL or handle (e.g. rumble.com/user/YourName).' });
-      }
-    } else if (platform === 'mastodon') {
+    if (platform === 'mastodon') {
       // Mastodon handles are `user@instance.tld`. Accept that, an `@user@instance`
       // form, or a profile URL `https://instance/@user`. Store as `user@instance`
       // (instance lowercased; username kept as-is).

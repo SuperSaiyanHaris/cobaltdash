@@ -18,7 +18,7 @@
  *   - TikTok is deliberately absent. Its `~tplv-...cropcenter:1080:1080` path
  *     is covered by the `x-signature` query param, so rewriting the size 403s.
  *     Verified. Resizing TikTok would require proxying through our own origin.
- *   - Rumble (1a-1791.com) and Mastodon expose no size variants either.
+ *   - Mastodon exposes no size variants either.
  */
 
 // yt4 is included because YouTube rotates avatar hosts.

@@ -1,12 +1,6 @@
 # Local Automation
 
-Everything now runs in the cloud. Rumble used to be the one platform that had
-to run locally (rumble.com hard-blocked every datacenter IP we tried, and
-eventually blocked the residential IP too), but Rumble was **delisted from the
-site 2026-09-04** — permanently Cloudflare-blocked with no free fix left, so
-we stopped collecting/discovering/serving it. `rumble-auto.bat` and
-`collect-rumble.bat` were deleted along with it. See CLAUDE.md's "RUMBLE
-DELISTED" section for the full history if this ever needs revisiting.
+Everything runs in the cloud now.
 
 Substack is fully cloud too: the Supabase Edge Function `collect-substack`
 runs daily via pg_cron — Substack doesn't block Supabase's IPs. Nothing to do

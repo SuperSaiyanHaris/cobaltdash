@@ -11,7 +11,6 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import RumbleIcon from '../components/RumbleIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,7 +32,6 @@ const platformIcons = {
   kick: KickIcon,
   bluesky: BlueskyIcon,
   mastodon: MastodonIcon,
-  rumble: RumbleIcon,
   substack: SubstackIcon,
 };
 
@@ -45,12 +43,11 @@ const platformTint = {
   kick: 'text-green-600',
   bluesky: 'text-sky-500',
   mastodon: 'text-violet-500',
-  rumble: 'text-lime-600',
   substack: 'text-orange-500',
 };
 
 const PLATFORM_LABELS = {
-  youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', rumble: 'Rumble', substack: 'Substack',
+  youtube: 'YouTube', tiktok: 'TikTok', twitch: 'Twitch', kick: 'Kick', bluesky: 'Bluesky', mastodon: 'Mastodon', substack: 'Substack',
 };
 
 const METRIC_LABEL = {
@@ -60,7 +57,6 @@ const METRIC_LABEL = {
   kick: 'paid subs',
   bluesky: 'followers',
   mastodon: 'followers',
-  rumble: 'followers',
   substack: 'subscribers',
 };
 
@@ -303,7 +299,6 @@ export default function Dashboard() {
     kick:     followedCreators.filter(c => c.platform === 'kick').length,
     bluesky:  followedCreators.filter(c => c.platform === 'bluesky').length,
     mastodon: followedCreators.filter(c => c.platform === 'mastodon').length,
-    rumble:   followedCreators.filter(c => c.platform === 'rumble').length,
     substack: followedCreators.filter(c => c.platform === 'substack').length,
   };
 
@@ -637,7 +632,7 @@ export default function Dashboard() {
                       >
                         <option value="all">All platforms ({followedCreators.length})</option>
                         {liveCount > 0 && <option value="live">Live now ({liveCount})</option>}
-                        {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble', 'substack']).map(p => (
+                        {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'substack']).map(p => (
                           platformCounts[p] ? (
                             <option key={p} value={p}>{PLATFORM_LABELS[p]} ({platformCounts[p]})</option>
                           ) : null
@@ -696,7 +691,7 @@ export default function Dashboard() {
                     </div>
                   ) : selectedPlatform === 'all' ? (
                     <div className="space-y-8">
-                      {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'rumble', 'substack']).map(p => {
+                      {(['youtube', 'tiktok', 'twitch', 'kick', 'bluesky', 'mastodon', 'substack']).map(p => {
                         const group = sortedCreators.filter(c => c.platform === p);
                         if (group.length === 0) return null;
                         const Icon = platformIcons[p];

@@ -38,12 +38,12 @@ export const config = {
     // Usernames containing dots (Bluesky handles, Mastodon instances, TikTok/YouTube
     // handles with periods) are excluded by the pattern above, so match profile and
     // live-count routes explicitly. :username matches any non-slash chars incl. dots.
-    '/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
-    '/live/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
+    '/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)/:username',
+    '/live/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)/:username',
     // Embeddable SVG stats badge (served straight from the edge, no Vercel function)
-    '/badge/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
+    '/badge/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)/:username',
     // Holographic trading card (SVG image), same data as the badge
-    '/card/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)/:username',
+    '/card/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)/:username',
   ],
 };
 
@@ -55,7 +55,6 @@ const PLATFORM_NAMES = {
   bluesky:  'Bluesky',
   music:    'Music',
   mastodon: 'Mastodon',
-  rumble:   'Rumble',
   substack: 'Substack',
 };
 
@@ -68,7 +67,6 @@ const METRIC_LABELS = {
   bluesky:  'followers',
   music:    'monthly listeners',
   mastodon: 'followers',
-  rumble:   'followers',
   substack: 'subscribers',
 };
 
@@ -84,7 +82,6 @@ const PLATFORM_INTROS = {
   bluesky: "Bluesky is one of the newest platforms tracked here, and its follower numbers are still growing fast as people migrate over from older social apps. Growth tends to come in waves tied to those migrations rather than a steady daily climb.",
   music: "This ranking uses monthly listeners, the standard way the music industry measures an artist's active audience rather than lifetime plays. It rewards artists who are getting played right now, so a big playlist placement can move an artist up the list fast, even without a new release.",
   mastodon: "Mastodon is federated, meaning accounts live on independent servers instead of one central platform, so a follower count here reflects an account's full reach across the network, not just its home server. Growth tends to be steadier and less viral than on centralized platforms.",
-  rumble: "Rumble rankings track follower counts and video output for one of YouTube's biggest video alternatives. Growth here often tracks political and independent media news cycles more than entertainment trends, since a large share of Rumble's biggest channels sit in that space.",
   substack: "Substack publishes subscriber counts as approximate ranges for most newsletters rather than exact numbers, so this ranking uses the most precise figure available for each publication and falls back to that range as a floor when it isn't. Growth here tends to be slower and steadier than on video or social platforms, built on people opting into recurring email rather than a single viral moment.",
 };
 
@@ -94,7 +91,6 @@ const SECONDARY_METRICS = {
   tiktok:   ['total_views', 'total likes'],
   bluesky:  ['total_posts', 'posts'],
   mastodon: ['total_posts', 'posts'],
-  rumble:   ['total_posts', 'videos'],
   music:    ['total_views', 'total plays'],
 };
 
@@ -270,13 +266,6 @@ async function getHubContent(hub) {
 // ---------------------------------------------------------------------------
 
 async function getProfileContent(platform, username) {
-  // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
-  // its existing profile pages no longer stay reachable either — treat it
-  // exactly like a genuinely nonexistent creator (same noindex-the-shell
-  // treatment, no real HTTP status change, matching every other notfound
-  // case here). The underlying creators/creator_stats rows are untouched.
-  if (platform === 'rumble') return { status: 'notfound' };
-
   const select = 'id,platform_id,username,display_name,description,category,country,created_at,profile_image,banner_image,verified,' +
     'latest_post_title,latest_post_url,latest_post_at,latest_post_thumbnail,latest_post_views,' +
     'creator_stats(subscribers,followers,total_views,total_posts,hours_watched_day,hours_watched_week,hours_watched_month,peak_viewers_day,avg_viewers_day,recorded_at),' +
@@ -566,11 +555,6 @@ async function getProfileContent(platform, username) {
 // ---------------------------------------------------------------------------
 
 async function getRankingsContent(platform) {
-  // Rumble is delisted (2026-09-04) and, per direct 2026-09-15 instruction,
-  // its rankings page no longer stays reachable either — same notfound
-  // treatment as an unknown platform/creator elsewhere in this file.
-  if (platform === 'rumble') return { status: 'notfound' };
-
   const rows = await supabaseGet(
     `rankings_cache?platform=eq.${platform}&rank_type=eq.subscribers` +
     `&select=rank_position,username,display_name,subscribers` +
@@ -835,7 +819,7 @@ async function getBlogContent(slug) {
 
 const BADGE_TINTS = {
   youtube: '#ef4444', tiktok: '#ec4899', twitch: '#a855f7', kick: '#16a34a',
-  bluesky: '#0ea5e9', music: '#f59e0b', mastodon: '#7c3aed', rumble: '#65a30d',
+  bluesky: '#0ea5e9', music: '#f59e0b', mastodon: '#7c3aed',
   substack: '#ea580c',
 };
 
@@ -1035,7 +1019,7 @@ function ogCardFor(pathname) {
   }
   // Creator profiles are /:platform/:username. Matched last and by an explicit
   // platform list so it cannot swallow unrelated two-segment routes.
-  if (/^\/(youtube|tiktok|twitch|kick|bluesky|music|mastodon|rumble|substack)\/[^/]+$/.test(pathname)) {
+  if (/^\/(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)\/[^/]+$/.test(pathname)) {
     return `${SITE_URL}/og/profile.jpg`;
   }
   return null;
