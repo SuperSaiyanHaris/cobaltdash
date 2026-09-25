@@ -1,10 +1,10 @@
 name: Twitch Stream Monitor
 
 on:
-  schedule:
-    # Run every 5 minutes (288x daily) — public repo has unlimited minutes
-    - cron: '*/5 * * * *'
-  workflow_dispatch: # Allow manual trigger
+  # Scheduled runs moved to Vercel Cron (api/cron/stream-monitor.js, every 5
+  # min) on 2026-09-25: GitHub throttled this */5 schedule to ~5 runs a day.
+  # Kept as a manual fallback only.
+  workflow_dispatch:
 
 jobs:
   monitor-streams:
