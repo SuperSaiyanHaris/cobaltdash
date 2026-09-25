@@ -524,3 +524,6 @@ h1, h2, h3, h4 {
   .sponsor-shine { display: none; }
 }
 
+
+/* Hide the floating mobile bottom nav while the header's mobile menu is open. */
+body[data-mobile-menu="open"] nav[aria-label="Primary"] { display: none; }

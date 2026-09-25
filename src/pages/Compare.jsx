@@ -563,7 +563,7 @@ function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, si
   const inTray = (r) => tray.some(c => c && c.platform === r.platform && c.username === r.username);
   const big = size === 'lg';
   return (
-    <div className={`relative mx-auto ${big ? 'max-w-2xl mt-8' : 'max-w-md'}`}>
+    <div className={`relative mx-auto ${big ? 'max-w-2xl mt-5 sm:mt-8' : 'max-w-md'}`}>
       <div className={`flex items-center gap-2.5 bg-white border border-neutral-200 rounded-xl focus-within:border-neutral-400 transition-colors ${big ? 'px-4 h-14 shadow-[0_1px_2px_rgba(0,0,0,0.04)]' : 'px-3 h-10'}`}>
         {searching ? <Loader2 className={`${big ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-neutral-400 animate-spin flex-shrink-0`} /> : <Search className={`${big ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-neutral-400 flex-shrink-0`} />}
         <input
@@ -637,7 +637,7 @@ function DotGrid() {
   return <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />;
 }
 
-const SLOT_CARD = 'w-[124px] h-[174px] sm:w-[200px] sm:h-[280px]';
+const SLOT_CARD = 'w-[100px] h-[140px] sm:w-[200px] sm:h-[280px]';
 
 /**
  * Landing: two face-down slots with a VS between them. Picking a creator
@@ -673,7 +673,7 @@ function LandingStage({ creators, query, setQuery, results, searching, onAdd, on
         <div className={`transition-opacity duration-300 ${c ? 'opacity-100' : 'opacity-50'}`}>
           <FlipCard creator={c || null} delay={dealt && i === 1 ? 300 : 0} className={SLOT_CARD} />
         </div>
-        <div className="mt-4 h-12 flex flex-col items-center justify-start text-center max-w-[180px]">
+        <div className="mt-3 sm:mt-4 h-10 sm:h-12 flex flex-col items-center justify-start text-center max-w-[180px]">
           {picked ? (
             <>
               <p className="text-sm sm:text-base font-bold truncate max-w-full">{filled[i].displayName}</p>
@@ -692,20 +692,20 @@ function LandingStage({ creators, query, setQuery, results, searching, onAdd, on
   return (
     <section className={DARK_BAND}>
       <DotGrid />
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-12 sm:pb-16">
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-7 sm:pt-14 pb-10 sm:pb-16">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">{filled.length === 0 ? 'Step 1 of 2' : 'Step 2 of 2'}</p>
-          <h1 className="mt-3 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-balance">
+          <h1 className="mt-3 text-[32px] sm:text-5xl md:text-6xl font-extrabold tracking-tight text-balance">
             {filled.length === 0 ? "Who's actually bigger?" : <>Who&apos;s up against {filled[0].displayName}?</>}
           </h1>
-          <p className="mt-3 text-base sm:text-lg text-white/60 max-w-md mx-auto text-pretty">
+          <p className="mt-2 sm:mt-3 text-[15px] sm:text-lg text-white/70 max-w-md mx-auto text-pretty">
             {filled.length === 0 ? 'Pick two creators and put their cards head to head.' : 'Pick a challenger and flip their card.'}
           </p>
         </div>
 
-        <div className="mt-8 sm:mt-10 flex items-start justify-center gap-4 sm:gap-10">
+        <div className="mt-6 sm:mt-10 flex items-start justify-center gap-4 sm:gap-10">
           {slot(0)}
-          <div className="self-center -mt-12"><VsChip big /></div>
+          <div className="self-center -mt-10 sm:-mt-12"><VsChip big /></div>
           {slot(1)}
         </div>
 

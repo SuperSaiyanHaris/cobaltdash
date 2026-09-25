@@ -1087,7 +1087,7 @@ export default function CreatorProfile() {
                 )}
 
                 {showSharePanel && (
-                  <div className="absolute top-full left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 mt-2 w-[min(340px,calc(100vw-2rem))] bg-white text-left border border-neutral-200 rounded-2xl shadow-2xl p-4 z-30">
+                  <div className="absolute top-full left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 mt-2 w-[min(340px,calc(100vw-2rem))] max-h-[60vh] sm:max-h-none overflow-y-auto bg-white text-left border border-neutral-200 rounded-2xl shadow-2xl p-4 z-30">
                     {[
                       { label: 'Profile link', value: profileUrl, copied: copiedProfile, onCopy: handleCopyProfile },
                       { label: 'Clean share link', value: shareUrl, copied: copiedUrl, onCopy: handleCopyUrl },

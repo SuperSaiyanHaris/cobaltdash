@@ -82,6 +82,13 @@ sessions never see it. Anything a cloud session must know goes here.
 - Rankings: podium header, Table/Cards toggle, foil sponsored rows (Premium
   at ranks 4-5 and 9-10, Basic at 15, 20, 25...), rarity chips on the
   subscribers tab.
+- Rarity is shown with `RarityPill` (tappable, opens the explainer sheet).
+  Growth stars were removed on 2026-09-25; rarity replaces them. Do not add
+  a second rating system.
+- Content pages use the shared `PageHero` (dark band, `z-20` so dropdowns in
+  it are never covered). Any dark band holding a dropdown or panel needs a
+  z-index above the section after it.
+- Text on light backgrounds is neutral-600 at the lightest; no faint grays.
 - Hover stays quiet (no lift). Follow the existing typography tiers.
 
 # Copy rules

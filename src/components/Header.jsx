@@ -73,9 +73,12 @@ export default function Header() {
     }
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
+    // The floating bottom nav would otherwise peek out under the open menu.
+    document.body.dataset.mobileMenu = 'open';
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
+      delete document.body.dataset.mobileMenu;
     };
   }, [mobileMenuOpen]);
 
