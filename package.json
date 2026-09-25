@@ -33,7 +33,10 @@
     "audit:hubs": "node scripts/auditHubs.js",
     "generate:blog": "node scripts/generateBlogDraft.js",
     "lint": "eslint src/ api/ middleware.js",
-    "generate:og": "node scripts/generateOgImages.mjs"
+    "generate:og": "node scripts/generateOgImages.mjs",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -57,6 +60,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "1.55",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.2.3",
@@ -70,7 +74,8 @@
     "resend": "^6.12.4",
     "rss-parser": "^3.13.0",
     "tailwindcss": "^3.4.1",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^3.2.7"
   },
   "overrides": {
     "fflate": "^0.8.3",

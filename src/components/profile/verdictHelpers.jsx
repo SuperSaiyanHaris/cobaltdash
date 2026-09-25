@@ -3,7 +3,7 @@ import { formatNumber } from '../../lib/utils';
 // Next round-number milestone (1-9 x 10^n) above `current` and when it lands
 // at `dailyGrowth` per day. Null when there's no growth to project. Cheap
 // (at most 27 iterations), so callers compute it inline rather than memoizing.
-export function findNextMilestone(current, dailyGrowth) {
+export function findNextMilestone(current, dailyGrowth, now = new Date()) {
   if (!dailyGrowth || dailyGrowth <= 0 || !current) return null;
   const startPow = Math.floor(Math.log10(Math.max(current, 1)));
   for (let pow = startPow; pow < startPow + 3; pow++) {
@@ -12,7 +12,7 @@ export function findNextMilestone(current, dailyGrowth) {
       const m = digit * decade;
       if (m > current) {
         const days = Math.ceil((m - current) / dailyGrowth);
-        const date = new Date();
+        const date = new Date(now);
         date.setDate(date.getDate() + days);
         return { milestone: m, days, date };
       }
@@ -38,10 +38,10 @@ export function fmtMilestone(n) {
 // Bare 30-day view/subscriber deltas, safe wherever GrowthChart's own
 // filteredData logic already lives — kept separate (not exported) so a
 // change here can't affect the other 8 platforms' still-unmodified chart.
-export function buildYouTubeSeries(statsHistory, rangeDays) {
+export function buildYouTubeSeries(statsHistory, rangeDays, now = new Date()) {
   const sorted = [...statsHistory].sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
   const cutoff = rangeDays >= 9999 ? null : (() => {
-    const d = new Date();
+    const d = new Date(now);
     d.setDate(d.getDate() - rangeDays);
     return d;
   })();

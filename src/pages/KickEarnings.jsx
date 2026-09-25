@@ -6,24 +6,14 @@ import KickIcon from '../components/KickIcon';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { supabase } from '../lib/supabase';
 import { formatNumber } from '../lib/utils';
+import { KICK_SUB_PRICE, kickSubEarnings, formatMoney } from '../lib/earnings';
 
-// Kick's public creator terms: a standard sub is $4.99 (US) and the creator
-// keeps 95%. Same constants as the Kick profile revenue card and middleware.js
-// (the server-rendered copy of this page) — change all three together.
-export const KICK_SUB_PRICE = 4.99;
-export const KICK_CREATOR_SHARE = 0.95;
-const PER_SUB = KICK_SUB_PRICE * KICK_CREATOR_SHARE;
+const PER_SUB = kickSubEarnings(1).perSub;
 const LEADERBOARD_SIZE = 100;
 
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500';
 
-function money(n) {
-  if (!n || n < 0) return '$0';
-  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e4) return '$' + Math.round(n / 1e3) + 'K';
-  return '$' + Math.round(n).toLocaleString('en-US');
-}
 
 const FAQ = [
   ['How much does Kick pay per subscriber?', `A standard Kick subscription costs $${KICK_SUB_PRICE} in the US and Kick passes 95% of it to the streamer, so each active sub is worth about $${PER_SUB.toFixed(2)} a month before payment fees and taxes.`],
@@ -54,7 +44,7 @@ export default function KickEarnings() {
     return () => { cancelled = true; };
   }, []);
 
-  const monthly = Math.max(0, subs || 0) * PER_SUB;
+  const monthly = kickSubEarnings(subs).monthly;
   const updated = rows?.[0]?.computed_at ? new Date(rows[0].computed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   return (
@@ -90,8 +80,8 @@ export default function KickEarnings() {
               />
             </label>
             <div className="sm:text-right">
-              <p className="text-3xl font-bold tabular-nums text-neutral-900 leading-none">up to {money(monthly)}<span className="text-base font-medium text-neutral-500">/mo</span></p>
-              <p className="text-sm text-neutral-500 mt-1.5">{money(monthly * 12)} per year &middot; ${PER_SUB.toFixed(2)} per sub</p>
+              <p className="text-3xl font-bold tabular-nums text-neutral-900 leading-none">up to {formatMoney(monthly)}<span className="text-base font-medium text-neutral-500">/mo</span></p>
+              <p className="text-sm text-neutral-500 mt-1.5">{formatMoney(monthly * 12)} per year &middot; ${PER_SUB.toFixed(2)} per sub</p>
             </div>
           </div>
         </div>
@@ -114,7 +104,7 @@ export default function KickEarnings() {
             <div key={i} className="h-14 border-t border-neutral-100 animate-pulse bg-neutral-50/60" />
           ))}
           {rows?.map((r) => {
-            const m = (r.subscribers || 0) * PER_SUB;
+            const m = kickSubEarnings(r.subscribers).monthly;
             return (
               <Link
                 key={r.creator_id}
@@ -126,12 +116,12 @@ export default function KickEarnings() {
                   <CreatorAvatar src={r.profile_image} name={r.display_name || r.username} size="sm" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-neutral-900 truncate">{r.display_name || r.username}</p>
-                    <p className="text-xs text-neutral-500 sm:hidden tabular-nums">{formatNumber(r.subscribers)} subs &middot; {money(m * 12)}/yr</p>
+                    <p className="text-xs text-neutral-500 sm:hidden tabular-nums">{formatNumber(r.subscribers)} subs &middot; {formatMoney(m * 12)}/yr</p>
                   </div>
                 </div>
                 <div className="hidden sm:block col-span-2 text-right text-sm tabular-nums text-neutral-700">{(r.subscribers || 0).toLocaleString('en-US')}</div>
-                <div className="col-span-4 sm:col-span-2 text-right text-sm font-semibold tabular-nums text-neutral-900">{money(m)}</div>
-                <div className="hidden sm:block col-span-2 text-right text-sm tabular-nums text-neutral-600">{money(m * 12)}</div>
+                <div className="col-span-4 sm:col-span-2 text-right text-sm font-semibold tabular-nums text-neutral-900">{formatMoney(m)}</div>
+                <div className="hidden sm:block col-span-2 text-right text-sm tabular-nums text-neutral-600">{formatMoney(m * 12)}</div>
               </Link>
             );
           })}

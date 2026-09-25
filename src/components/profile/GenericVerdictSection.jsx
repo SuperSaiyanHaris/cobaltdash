@@ -6,6 +6,7 @@ import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 import { buildYouTubeSeries, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, formatHoursWatched, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
 import { formatNumber, formatRelativeTime } from '../../lib/utils';
 import { useMemo, useState } from 'react';
+import { KICK_SUB_PRICE, KICK_CREATOR_SHARE } from '../../lib/earnings';
 
 // ============================================================================
 // Verdict-first layout for the other 8 platforms (added 2026-08-28).
@@ -42,7 +43,7 @@ export const GENERIC_PLATFORM_CONFIG = {
     thirdTab: null,
     // Kick's public US sub price and creator share (95/5 split). See the
     // comment above GENERIC_PLATFORM_CONFIG for why Kick gets an estimate.
-    subRevenue: { price: 4.99, creatorShare: 0.95 },
+    subRevenue: { price: KICK_SUB_PRICE, creatorShare: KICK_CREATOR_SHARE },
   },
   tiktok: {
     primaryLabel: 'Followers',

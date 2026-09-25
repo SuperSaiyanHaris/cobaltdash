@@ -25,6 +25,8 @@ jobs:
       - run: npm ci
       - name: Lint (errors fail the build; warnings are reported)
         run: npm run lint
+      - name: Unit + API tests
+        run: npm test
       # `vite build` only: the full `npm run build` also regenerates the sitemap
       # and OG images, which need production Supabase credentials.
       - name: Build

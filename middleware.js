@@ -27,6 +27,8 @@
 // ESM with no dependencies specifically so it can be bundled into the edge runtime.
 import { getHub, HUBS } from './src/lib/hubs.js';
 import { HUB_INTROS } from './src/lib/hubIntros.js';
+import { isThinProfile, pickCreatorRow } from './src/lib/seoRules.js';
+import { KICK_SUB_PRICE, YOUTUBE_CPM_LOW, YOUTUBE_CPM_HIGH, kickSubEarnings, youtubeAdEarnings, formatMoney } from './src/lib/earnings.js';
 
 export const config = {
   matcher: [
@@ -333,10 +335,8 @@ async function getProfileContent(platform, username) {
   // and most of Bluesky/Substack. A page is now indexable when the creator is
   // in its platform's top TOP_TIER_RANK_LIMIT by subscribers (exactly the set
   // sitemap-top.xml lists) OR clears 50,000 (the tail rule above, unchanged).
-  const TOP_TIER_RANK_LIMIT = 500; // keep in sync with generateSitemap.js
   const subsRank = (c.rankings_cache || []).find((r) => r.rank_type === 'subscribers')?.rank_position ?? null;
-  const inHead = subsRank !== null && subsRank <= TOP_TIER_RANK_LIMIT;
-  const thin = count === null || (!inHead && count < 50000);
+  const thin = isThinProfile({ count, subsRank });
 
   // Title/description with real numbers — this is what shows in the SERP.
   const title = count !== null
@@ -439,16 +439,16 @@ async function getProfileContent(platform, username) {
   // Earnings: only where a published formula exists (see Methodology page).
   let earnings = null;
   if (platform === 'kick' && count) {
-    const monthly = count * 4.99 * 0.95;
-    earnings = `Kick pays creators 95% of each $4.99 subscription, so ${count.toLocaleString('en-US')} active paid subscribers works out to <strong>up to about $${Math.round(monthly).toLocaleString('en-US')} per month</strong> (about $${Math.round(monthly * 12).toLocaleString('en-US')} a year) from subscriptions. That is a ceiling: regional pricing, payment fees and taxes lower it, and tips, sponsorships and Kick's incentive payouts are not included.`;
-    faq.push([`How much does ${name} make on Kick?`, `Up to about $${Math.round(monthly).toLocaleString('en-US')} per month from ${count.toLocaleString('en-US')} paid subscribers at $4.99 with Kick's 95% creator share, before fees and taxes, not counting tips or sponsorships.`]);
+    const { monthly } = kickSubEarnings(count);
+    earnings = `Kick pays creators 95% of each $${KICK_SUB_PRICE} subscription, so ${count.toLocaleString('en-US')} active paid subscribers works out to <strong>up to about $${Math.round(monthly).toLocaleString('en-US')} per month</strong> (about $${Math.round(monthly * 12).toLocaleString('en-US')} a year) from subscriptions. That is a ceiling: regional pricing, payment fees and taxes lower it, and tips, sponsorships and Kick's incentive payouts are not included.`;
+    faq.push([`How much does ${name} make on Kick?`, `Up to about $${Math.round(monthly).toLocaleString('en-US')} per month from ${count.toLocaleString('en-US')} paid subscribers at $${KICK_SUB_PRICE} with Kick's 95% creator share, before fees and taxes, not counting tips or sponsorships.`]);
   } else if (platform === 'youtube' && oldest && latest.total_views != null && oldest.total_views != null && days >= 7) {
     const views30 = ((latest.total_views - oldest.total_views) / days) * 30;
     if (views30 > 0) {
-      const lo = (views30 / 1000) * 2, hi = (views30 / 1000) * 5;
-      const money = (n) => n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3).toLocaleString('en-US')}K` : `$${Math.round(n)}`;
-      earnings = `${esc(name)} has been getting about <strong>${formatNumber(Math.round(views30))} views a month</strong>. At typical YouTube ad rates of $2 to $5 per 1,000 views, that suggests roughly <strong>${money(lo)} to ${money(hi)} per month</strong> from AdSense. Sponsorships, merchandise and memberships usually add more and are not public.`;
-      faq.push([`How much does ${name} make on YouTube?`, `Roughly ${money(lo)} to ${money(hi)} per month from YouTube ads, estimated from about ${formatNumber(Math.round(views30))} monthly views at $2 to $5 per 1,000 views. Sponsorships and other income are not included.`]);
+      const { low: lo, high: hi } = youtubeAdEarnings(views30);
+      const money = formatMoney;
+      earnings = `${esc(name)} has been getting about <strong>${formatNumber(Math.round(views30))} views a month</strong>. At typical YouTube ad rates of $${YOUTUBE_CPM_LOW} to $${YOUTUBE_CPM_HIGH} per 1,000 views, that suggests roughly <strong>${money(lo)} to ${money(hi)} per month</strong> from AdSense. Sponsorships, merchandise and memberships usually add more and are not public.`;
+      faq.push([`How much does ${name} make on YouTube?`, `Roughly ${money(lo)} to ${money(hi)} per month from YouTube ads, estimated from about ${formatNumber(Math.round(views30))} monthly views at $${YOUTUBE_CPM_LOW} to $${YOUTUBE_CPM_HIGH} per 1,000 views. Sponsorships and other income are not included.`]);
     }
   }
 
@@ -626,22 +626,22 @@ async function getKickEarningsContent() {
     '&select=username,display_name,subscribers,rank_position,computed_at&order=rank_position.asc&limit=100'
   );
   if (!rows || !rows.length) return { status: 'error' };
-  const perSub = 4.99 * 0.95;
-  const money = (n) => n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : `$${Math.round(n).toLocaleString('en-US')}`;
+  const perSub = kickSubEarnings(1).perSub;
+  const money = formatMoney;
   const title = `How Much Do Kick Streamers Make? Estimated Sub Earnings (${new Date().getFullYear()}) - ShinyPull`;
   const top = rows[0];
-  const description = `Estimated monthly Kick subscription earnings for the top 100 Kick streamers. ${top.display_name || top.username} leads with ${top.subscribers.toLocaleString('en-US')} paid subs, up to about ${money(top.subscribers * perSub)} a month.`;
+  const description = `Estimated monthly Kick subscription earnings for the top 100 Kick streamers. ${top.display_name || top.username} leads with ${top.subscribers.toLocaleString('en-US')} paid subs, up to about ${money(kickSubEarnings(top.subscribers).monthly)} a month.`;
 
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
   html += `<h1 style="font-size:1.5rem;font-weight:600">How much do Kick streamers make?</h1>`;
-  html += `<p>Kick publishes each channel's active paid subscriber count. A sub costs $4.99 and Kick passes 95% to the streamer, so each active sub is worth up to about $${perSub.toFixed(2)} a month. The figures below are ceilings for subscription income only: payment fees and taxes lower them, and tips, sponsorships and incentive payouts are not included.</p>`;
+  html += `<p>Kick publishes each channel's active paid subscriber count. A sub costs $${KICK_SUB_PRICE} and Kick passes 95% to the streamer, so each active sub is worth up to about $${perSub.toFixed(2)} a month. The figures below are ceilings for subscription income only: payment fees and taxes lower them, and tips, sponsorships and incentive payouts are not included.</p>`;
   html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">Top 100 Kick streamers by estimated sub earnings</h2>`;
   html += `<table style="border-collapse:collapse;width:100%"><thead><tr><th style="text-align:left;padding:6px 12px 6px 0">#</th><th style="text-align:left;padding:6px 12px">Streamer</th><th style="text-align:right;padding:6px 12px">Paid subs</th><th style="text-align:right;padding:6px 0 6px 12px">Est. per month</th></tr></thead><tbody>`;
   for (const r of rows) {
     html += `<tr><td style="padding:4px 12px 4px 0;border-top:1px solid #e5e5e5">${r.rank_position}</td>` +
       `<td style="padding:4px 12px;border-top:1px solid #e5e5e5"><a href="/kick/${encodeURIComponent(r.username)}" style="color:#171717">${esc(r.display_name || r.username)}</a></td>` +
       `<td style="text-align:right;padding:4px 12px;border-top:1px solid #e5e5e5">${r.subscribers.toLocaleString('en-US')}</td>` +
-      `<td style="text-align:right;padding:4px 0 4px 12px;border-top:1px solid #e5e5e5">${money(r.subscribers * perSub)}</td></tr>`;
+      `<td style="text-align:right;padding:4px 0 4px 12px;border-top:1px solid #e5e5e5">${money(kickSubEarnings(r.subscribers).monthly)}</td></tr>`;
   }
   html += `</tbody></table>`;
   html += `<p style="margin-top:1.5rem"><a href="/rankings/kick" style="color:#171717">Kick rankings</a> · <a href="/methodology" style="color:#171717">Methodology</a> · <a href="/" style="color:#171717">ShinyPull</a></p></div>`;
@@ -848,22 +848,6 @@ function badgeSvg({ name, count, metric, platform }) {
   <text x="30" y="47" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif" font-size="15" font-weight="700" fill="#171717">${esc(countText)}</text>
   <text x="228" y="57" text-anchor="end" font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif" font-size="8" font-weight="500" letter-spacing="1" fill="#a3a3a3">SHINYPULL.COM</text>
 </svg>`;
-}
-
-/**
- * Resolve a username lookup that may match several rows (copycat channels can
- * share our derived username, see getProfileContent). Returns the only row,
- * or the row whose latest count is 10x+ the runner-up's, else null (ambiguous).
- * Rows must embed creator_stats ordered newest first.
- */
-function pickCreatorRow(rows) {
-  if (!rows || !rows.length) return null;
-  if (rows.length === 1) return rows[0];
-  const latestCount = (r) => r.creator_stats?.[0]?.subscribers ?? 0;
-  const sorted = [...rows].sort((x, y) => latestCount(y) - latestCount(x));
-  const top = latestCount(sorted[0]);
-  if (!top || top < latestCount(sorted[1]) * 10) return null;
-  return sorted[0];
 }
 
 async function handleBadge(platform, username) {

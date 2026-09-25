@@ -30,16 +30,15 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
+import { pathToFileURL } from 'url';
 
 config();
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_KEY) { console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY is not set. Refusing to run without it.'); process.exit(1); }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false },
-});
+// Created in main() so importing this module (the tests do) needs no credentials.
+let supabase = null;
 
 const MIN_SAMPLES_FOR_AGGREGATE = 2;
 const PAGE = 1000;           // PostgREST's max rows per response
@@ -54,7 +53,7 @@ function getTodayLocal() {
 }
 
 /** The UTC instant at which `dateStr` (YYYY-MM-DD) begins in `tz`. */
-function zonedMidnight(dateStr, tz) {
+export function zonedMidnight(dateStr, tz) {
   const guess = new Date(`${dateStr}T00:00:00Z`);
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
     timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -95,8 +94,50 @@ function addSession(agg, s) {
 const round2 = (n) => Math.round(n * 100) / 100;
 const same = (a, b) => Math.abs((Number(a) || 0) - (Number(b) || 0)) < 0.01;
 
+/**
+ * Add one finalized session to its creator's today/week/month windows (the
+ * caller only fetches sessions from the last 30 days, so every accepted one
+ * counts toward month). Returns false for sessions below the sample-quality
+ * bar, which are left out.
+ */
+export function bucketSession(byCreator, s, { todayStart, weekAgo }) {
+  if (!(typeof s.sample_count === 'number' && s.sample_count >= MIN_SAMPLES_FOR_AGGREGATE)) return false;
+  let a = byCreator.get(s.creator_id);
+  if (!a) { a = { today: emptyAgg(), week: emptyAgg(), month: emptyAgg() }; byCreator.set(s.creator_id, a); }
+  const ended = new Date(s.ended_at);
+  addSession(a.month, s);
+  if (ended >= weekAgo) addSession(a.week, s);
+  if (ended >= todayStart) addSession(a.today, s);
+  return true;
+}
+
+/**
+ * Which of today's rows need writing, and with what. Creators with no
+ * sessions in the windows get zeros (so old numbers decay); rows already
+ * holding the right values are skipped.
+ */
+export function planWrites(rows, byCreator) {
+  const writes = [];
+  for (const r of rows) {
+    const a = byCreator.get(r.creator_id) || { today: emptyAgg(), week: emptyAgg(), month: emptyAgg() };
+    const next = {
+      hours_watched_day: round2(a.today.hours),
+      hours_watched_week: round2(a.week.hours),
+      hours_watched_month: round2(a.month.hours),
+      peak_viewers_day: a.today.peak,
+      avg_viewers_day: a.today.count ? Math.round(a.today.avgSum / a.today.count) : 0,
+      streams_count_day: a.today.count,
+    };
+    const unchanged = Object.keys(next).every((k) => r[k] !== null && r[k] !== undefined && same(r[k], next[k]));
+    if (!unchanged) writes.push({ creator_id: r.creator_id, fields: next });
+  }
+  return writes;
+}
+
 async function aggregateHoursWatched() {
   const t0 = Date.now();
+  if (!SUPABASE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set. Refusing to run without it.');
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
   const todayStr = getTodayLocal();
   const todayStart = zonedMidnight(todayStr, TZ);
   const now = new Date();
@@ -123,16 +164,7 @@ async function aggregateHoursWatched() {
       return q;
     });
     for (const s of data) {
-      if (!(typeof s.sample_count === 'number' && s.sample_count >= MIN_SAMPLES_FOR_AGGREGATE)) {
-        excludedLowSample++;
-        continue;
-      }
-      let a = byCreator.get(s.creator_id);
-      if (!a) { a = { today: emptyAgg(), week: emptyAgg(), month: emptyAgg() }; byCreator.set(s.creator_id, a); }
-      const ended = new Date(s.ended_at);
-      addSession(a.month, s);
-      if (ended >= weekAgo) addSession(a.week, s);
-      if (ended >= todayStart) addSession(a.today, s);
+      if (!bucketSession(byCreator, s, { todayStart, weekAgo })) excludedLowSample++;
     }
     swept += data.length;
     if (data.length < PAGE) break;
@@ -165,20 +197,7 @@ async function aggregateHoursWatched() {
   // --- 3. Write only what changed --------------------------------------------
   // UPDATE only, never insert: collectDailyStats.js owns row creation, and an
   // upsert here would create rows with NULL subscribers and corrupt charts.
-  const writes = [];
-  for (const r of rows) {
-    const a = byCreator.get(r.creator_id) || { today: emptyAgg(), week: emptyAgg(), month: emptyAgg() };
-    const next = {
-      hours_watched_day: round2(a.today.hours),
-      hours_watched_week: round2(a.week.hours),
-      hours_watched_month: round2(a.month.hours),
-      peak_viewers_day: a.today.peak,
-      avg_viewers_day: a.today.count ? Math.round(a.today.avgSum / a.today.count) : 0,
-      streams_count_day: a.today.count,
-    };
-    const unchanged = Object.keys(next).every((k) => r[k] !== null && r[k] !== undefined && same(r[k], next[k]));
-    if (!unchanged) writes.push({ creator_id: r.creator_id, fields: next });
-  }
+  const writes = planWrites(rows, byCreator);
 
   if (DRY_RUN) {
     console.log(`\n🧪 Dry run: would write ${writes.length.toLocaleString()} of ${rows.length.toLocaleString()} rows. Sample (current -> new):`);
@@ -209,7 +228,10 @@ async function aggregateHoursWatched() {
   if (failed) throw new Error(`${failed} creator_stats updates failed`);
 }
 
-aggregateHoursWatched().catch((err) => {
-  console.error('❌ Aggregation failed:', err.message);
-  process.exit(1);
-});
+// CLI entry (the workflow runs `node scripts/aggregateHoursWatched.js`).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  aggregateHoursWatched().catch((err) => {
+    console.error('❌ Aggregation failed:', err.message);
+    process.exit(1);
+  });
+}

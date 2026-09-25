@@ -14,6 +14,7 @@
  * robots.txt keeps pointing at /sitemap.xml — a sitemap index is valid there.
  */
 
+import { TOP_TIER_RANK_LIMIT } from '../src/lib/seoRules.js';
 import { createClient } from '@supabase/supabase-js';
 import { writeFileSync } from 'fs';
 import { config } from 'dotenv';
@@ -168,7 +169,6 @@ async function generateSitemap() {
   // badge is a real, wanted feature — this tier just needs its own notion
   // of "the head" again, independent of how many rows the table now holds.
   console.log('🏆 Fetching ranked creators (priority tier)...');
-  const TOP_TIER_RANK_LIMIT = 500; // keep in sync with middleware.js thin-content gate
   const topKeys = new Set();
   const topUrls = [];
   {
