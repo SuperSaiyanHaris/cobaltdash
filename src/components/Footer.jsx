@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { BarChart3 } from 'lucide-react';
 import NewsletterSignup from './NewsletterSignup';
 import MusicIcon from './MusicIcon';
 import YouTubeIcon from './YouTubeIcon';
@@ -52,13 +51,11 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white border-t border-neutral-200 mt-auto">
-      <div className="border-b border-neutral-200 bg-neutral-50">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <NewsletterSignup variant="bar" />
-        </div>
+    <footer className="relative bg-white border-t border-neutral-200 mt-auto overflow-hidden">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
+        <NewsletterSignup variant="bar" />
       </div>
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-10">
 
           {/* Brand */}
@@ -174,6 +171,15 @@ export default function Footer() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Oversized wordmark as the footer's sign-off, cropped by the page
+          edge. Decorative only. On phones it sits above the fixed bottom
+          nav (MobileBottomNav) instead of being cropped under it. */}
+      <div aria-hidden="true" className="select-none pointer-events-none text-center leading-[0.8] pb-24 md:pb-0 md:-mb-[0.2em]">
+        <span className="footer-wordmark inline-block font-black tracking-[-0.06em]" style={{ fontSize: 'clamp(4.5rem, 19vw, 17rem)' }}>
+          ShinyPull
+        </span>
       </div>
     </footer>
   );
