@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, X, Users, Eye, Video, TrendingUp, TrendingDown, Minus, Info, Bookmark, Check, Swords, Loader2, Crown, Radio } from 'lucide-react';
+import { Search, X, Users, Eye, Video, TrendingUp, TrendingDown, Minus, Info, Bookmark, Check, Loader2, Crown, Radio, ChevronLeft, ChevronRight } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine } from 'recharts';
@@ -10,7 +11,8 @@ import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import MusicIcon from '../components/MusicIcon';
-import { CompareCardSkeleton } from '../components/Skeleton';
+import FlipCard from '../components/FlipCard';
+import { cardImageUrl } from '../lib/cardUrl';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { searchChannels as searchYouTube, getChannelByUsername as getYouTubeChannel } from '../services/youtubeService';
 import { getChannelByUsername as getTwitchChannel } from '../services/twitchService';
@@ -495,46 +497,33 @@ export default function Compare() {
       />
       <div className="min-h-screen bg-[#fafaf9]">
         {filledCreators.length < 2 && !loadingFromUrl && (
-          <div className="bg-white border-b border-neutral-200/80">
-            <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-              <div className="max-w-2xl mx-auto text-center">
-                <p className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-full bg-neutral-900 text-white text-xs font-semibold tracking-wide">
-                  <Swords className="w-3.5 h-3.5" />
-                  {filledCreators.length === 0 ? 'Step 1 of 2' : 'Step 2 of 2'}
-                </p>
-                {filledCreators.length === 0 ? (
-                  <>
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Who's actually bigger?</h1>
-                    <p className="mt-2 text-sm text-neutral-500 max-w-md mx-auto">Search any creator we track.</p>
-                  </>
-                ) : (
-                  <>
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Who's up against {filledCreators[0].displayName}?</h1>
-                    <p className="mt-2 text-sm text-neutral-500 max-w-md mx-auto">Add a second creator to compare them against.</p>
-                  </>
-                )}
-              </div>
-
-              <CreatorSearchBox
-                query={query} setQuery={setQuery} results={results} searching={searching}
-                tray={filledCreators} onAdd={addToLineup} size="lg"
-                placeholder={filledCreators.length === 1 ? `Add someone to compare against ${filledCreators[0].displayName}…` : undefined}
-              />
-
-              {filledCreators.length > 0 && (
-                <LineupTray creators={creators} onRemove={removeFromLineup} onClear={clearAll} maxCompare={MAX_COMPARE} navigate={navigate} />
-              )}
-            </div>
-          </div>
+          <LandingStage
+            creators={creators}
+            query={query} setQuery={setQuery} results={results} searching={searching}
+            onAdd={addToLineup} onRemove={removeFromLineup} onClear={clearAll}
+            navigate={navigate}
+          />
         )}
 
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          {loadingFromUrl && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {Array.from({ length: 2 }).map((_, i) => <CompareCardSkeleton key={i} />)}
-            </div>
-          )}
+        {loadingFromUrl && <FaceOffBand loading />}
 
+        {!loadingFromUrl && filledCreators.length >= 2 && (
+          <FaceOffBand
+            filledCreators={filledCreators}
+            growthData={growthData}
+            creators={creators}
+            query={query} setQuery={setQuery} results={results} searching={searching}
+            onAdd={addToLineup}
+            existingSave={existingSave} savedFlash={savedFlash} removing={removing}
+            handleOpenSave={handleOpenSave} handleRemoveSave={handleRemoveSave}
+            saveDialogOpen={saveDialogOpen} saveName={saveName} setSaveName={setSaveName}
+            handleSaveCompare={handleSaveCompare} setSaveDialogOpen={setSaveDialogOpen}
+            onClearAll={clearAll} onRemove={removeFromLineup}
+            formatGrowth={formatGrowth} getGrowthIcon={getGrowthIcon} getGrowthColor={getGrowthColor}
+          />
+        )}
+
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10">
           {!loadingFromUrl && filledCreators.length >= 2 && (
             <ResultsView
               filledCreators={filledCreators}
@@ -544,15 +533,7 @@ export default function Compare() {
               setChartMetric={setChartMetric}
               cpm={cpm}
               setCpm={setCpm}
-              query={query} setQuery={setQuery} results={results} searching={searching}
-              onAdd={addToLineup} onRemove={removeFromLineup} maxCompare={MAX_COMPARE}
-              creators={creators}
-              existingSave={existingSave} savedFlash={savedFlash} removing={removing}
-              handleOpenSave={handleOpenSave} handleRemoveSave={handleRemoveSave}
-              saveDialogOpen={saveDialogOpen} saveName={saveName} setSaveName={setSaveName}
-              handleSaveCompare={handleSaveCompare} setSaveDialogOpen={setSaveDialogOpen}
-              onClearAll={clearAll} navigate={navigate}
-              formatGrowth={formatGrowth} getGrowthIcon={getGrowthIcon} getGrowthColor={getGrowthColor}
+              getGrowthColor={getGrowthColor} formatGrowth={formatGrowth}
             />
           )}
 
@@ -631,103 +612,397 @@ function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, si
   );
 }
 
-function LineupTray({ creators, onRemove, onClear, maxCompare, navigate }) {
+/* ------------------------------------------------------------------------ */
+/* Card stages. Dark bands (same base as the home hero) where the creators' */
+/* holographic cards go head to head. No glow: flat dark + dot grid only.   */
+/* ------------------------------------------------------------------------ */
+const DARK_BAND = 'relative isolate bg-[#0a0a0f] text-white';
+// Lighter tints of ACCENT_COLORS for text and marks on the dark bands, where
+// the base hexes are too dark to read. Same hue order, so creator #1 is still
+// indigo, #2 teal and so on everywhere on the page.
+const ACCENT_ON_DARK = ['#818cf8', '#2dd4bf', '#fb923c', '#f472b6', '#38bdf8', '#a3e635'];
+const accentOnDark = (i) => ACCENT_ON_DARK[i % ACCENT_ON_DARK.length];
+const cardOf = (c) => c && { platform: c.platform, username: c.username, name: c.displayName, avatar: c.profileImage };
+const growthTone = (pct) => (!pct || isNaN(pct)) ? 'text-white/50' : (pct > 0 ? 'text-emerald-400' : 'text-red-400');
+
+function VsChip({ big = false }) {
   return (
-    <div className="mt-5 max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 flex-wrap justify-center">
-        {creators.map((c, i) => c && (
-          <div key={`${c.platform}:${c.username}`} className="flex items-center gap-2 bg-white border rounded-lg pl-1.5 pr-2 py-1.5" style={{ borderColor: accentFor(i) }}>
-            <CreatorAvatar src={c.profileImage} name={c.displayName} size="xs" rounded="rounded-md" />
-            <span className="text-sm font-medium text-neutral-900">{c.displayName}</span>
-            <button onClick={() => onRemove(i)} className="text-neutral-400 hover:text-neutral-900"><X className="w-3.5 h-3.5" /></button>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-3 mt-3">
-        {creators.filter(Boolean).length > 0 && (
-          <button onClick={onClear} className="text-xs text-neutral-400 hover:text-neutral-900 transition-colors">Clear all</button>
-        )}
-        <p className="text-xs text-neutral-400">Two creators reads best · cap is {maxCompare}</p>
-      </div>
-    </div>
+    <span className={`flex items-center justify-center rounded-full bg-white text-neutral-950 font-black tracking-wide flex-shrink-0 ${big ? 'w-12 h-12 sm:w-16 sm:h-16 text-sm sm:text-lg' : 'w-10 h-10 sm:w-12 sm:h-12 text-xs sm:text-sm'}`}>
+      VS
+    </span>
   );
 }
 
+function DotGrid() {
+  return <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />;
+}
+
+const SLOT_CARD = 'w-[124px] h-[174px] sm:w-[200px] sm:h-[280px]';
+
+/**
+ * Landing: two face-down slots with a VS between them. Picking a creator
+ * flips their card into the next slot; the second pick opens the face-off.
+ * "Deal a random matchup" flips a popular pair in and then opens it.
+ */
+function LandingStage({ creators, query, setQuery, results, searching, onAdd, onRemove, onClear, navigate }) {
+  const reduceMotion = useReducedMotion();
+  const filled = creators.filter(Boolean);
+  const [dealt, setDealt] = useState(null);
+  const lastDeal = useRef(-1);
+  const dealTimer = useRef(null);
+  useEffect(() => () => clearTimeout(dealTimer.current), []);
+
+  const deal = () => {
+    if (dealt) return;
+    let i = Math.floor(Math.random() * POPULAR_MATCHUPS.length);
+    if (i === lastDeal.current) i = (i + 1) % POPULAR_MATCHUPS.length;
+    lastDeal.current = i;
+    const m = POPULAR_MATCHUPS[i];
+    setDealt([{ platform: m.aPlatform, username: m.aUsername }, { platform: m.bPlatform, username: m.bUsername }]);
+    dealTimer.current = setTimeout(
+      () => navigate(`/compare?creators=${m.aPlatform}:${m.aUsername},${m.bPlatform}:${m.bUsername}`),
+      reduceMotion ? 400 : 2000,
+    );
+  };
+
+  const slot = (i) => {
+    const c = dealt ? dealt[i] : cardOf(filled[i]);
+    const picked = !dealt && filled[i];
+    return (
+      <div className="flex flex-col items-center min-w-0">
+        <div className={`transition-opacity duration-300 ${c ? 'opacity-100' : 'opacity-50'}`}>
+          <FlipCard creator={c || null} delay={dealt && i === 1 ? 300 : 0} className={SLOT_CARD} />
+        </div>
+        <div className="mt-4 h-12 flex flex-col items-center justify-start text-center max-w-[180px]">
+          {picked ? (
+            <>
+              <p className="text-sm sm:text-base font-bold truncate max-w-full">{filled[i].displayName}</p>
+              <button onClick={() => onRemove(i)} className="mt-0.5 inline-flex items-center gap-1 text-xs text-white/50 hover:text-white transition-colors">
+                <X className="w-3 h-3" /> Swap out
+              </button>
+            </>
+          ) : (
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">{i === 0 ? 'Creator 1' : 'Challenger'}</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <section className={DARK_BAND}>
+      <DotGrid />
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-12 sm:pb-16">
+        <div className="text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">{filled.length === 0 ? 'Step 1 of 2' : 'Step 2 of 2'}</p>
+          <h1 className="mt-3 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-balance">
+            {filled.length === 0 ? "Who's actually bigger?" : <>Who&apos;s up against {filled[0].displayName}?</>}
+          </h1>
+          <p className="mt-3 text-base sm:text-lg text-white/60 max-w-md mx-auto text-pretty">
+            {filled.length === 0 ? 'Pick two creators and put their cards head to head.' : 'Pick a challenger and flip their card.'}
+          </p>
+        </div>
+
+        <div className="mt-8 sm:mt-10 flex items-start justify-center gap-4 sm:gap-10">
+          {slot(0)}
+          <div className="self-center -mt-12"><VsChip big /></div>
+          {slot(1)}
+        </div>
+
+        <div className="relative z-30">
+          <CreatorSearchBox
+            query={query} setQuery={setQuery} results={results} searching={searching}
+            tray={filled} onAdd={onAdd} size="lg"
+            placeholder={filled.length === 1 ? `Search a challenger for ${filled[0].displayName}…` : undefined}
+          />
+        </div>
+
+        <div className="mt-5 flex items-center justify-center gap-4">
+          {filled.length === 0 ? (
+            <button
+              type="button"
+              onClick={deal}
+              disabled={!!dealt}
+              className="hero-pull-btn inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-neutral-900 disabled:opacity-80"
+            >
+              <span aria-hidden="true">✦</span> {dealt ? 'Dealing…' : 'Deal a random matchup'}
+            </button>
+          ) : (
+            <button type="button" onClick={onClear} className="text-sm font-medium text-white/60 hover:text-white transition-colors">
+              Start over
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Results header: the cards on plinths, the leader crowned in gold, the
+ * verdict above and (for a pair) the score and round-by-round below.
+ * `loading` renders the same band with face-down cards while the lineup
+ * from the URL loads, so the page doesn't jump when it arrives.
+ */
+function FaceOffBand(props) {
+  const reduceMotion = useReducedMotion();
+
+  if (props.loading) {
+    return (
+      <section className={DARK_BAND}>
+        <DotGrid />
+        <div className="relative max-w-5xl mx-auto px-4 pt-16 sm:pt-20 pb-14 sm:pb-20">
+          <div className="flex items-center justify-center gap-5 sm:gap-12">
+            <FlipCard creator={null} className={SLOT_CARD} />
+            <VsChip big />
+            <FlipCard creator={null} className={SLOT_CARD} />
+          </div>
+          <p className="mt-8 text-center text-sm text-white/50">Shuffling the deck…</p>
+        </div>
+      </section>
+    );
+  }
+
+  const {
+    filledCreators, growthData, creators, query, setQuery, results, searching, onAdd,
+    existingSave, savedFlash, removing, handleOpenSave, handleRemoveSave,
+    saveDialogOpen, saveName, setSaveName, handleSaveCompare, setSaveDialogOpen, onClearAll, formatGrowth,
+  } = props;
+
+  const metrics = buildMetrics(filledCreators, growthData);
+  const rounds = metrics.filter((m) => m.hasLeader);
+  const wins = filledCreators.map((_, i) => rounds.reduce((n, m) => n + (m.leaderIndex === i ? 1 : 0), 0));
+  const total = rounds.length;
+  const maxWins = Math.max(...wins);
+  const topIdx = wins.indexOf(maxWins);
+  // Crown only an outright leader: topIdx alone can't tell a real lead from
+  // a tie at the top (including 0-0 with nothing comparable).
+  const hasWinner = maxWins > 0 && wins.filter((w) => w === maxWins).length === 1;
+  const winner = filledCreators[topIdx];
+  const isPair = filledCreators.length === 2;
+  // Two creators can share a display name (a brand's YouTube and TikTok), so
+  // name the platform only when that collision is real.
+  const winnerNameCollides = hasWinner && filledCreators.filter((c) => c.displayName === winner.displayName).length > 1;
+  const winnerLabel = winnerNameCollides ? `${winner.displayName} (${platformConfig[winner.platform]?.label})` : winner?.displayName;
+
+  const verdictTail = (() => {
+    if (!isPair || !hasWinner) return '.';
+    const other = filledCreators[1 - topIdx];
+    // Kick's number is paid subs and everyone else's is free follows, so a
+    // size ratio between them would compare two different things.
+    if ((winner.platform === 'kick') !== (other.platform === 'kick')) return '.';
+    const wTotal = winner.subscribers || winner.followers || 0;
+    const oTotal = other.subscribers || other.followers || 0;
+    if (!wTotal || !oTotal) return '.';
+    return `, with ${formatNumber(Math.abs(wTotal - oTotal))} more ${metricLabel(winner.platform).toLowerCase()} at ${(wTotal / oTotal).toFixed(1)}× the size.`;
+  })();
+
+  const cardSize = isPair
+    ? 'w-[124px] h-[174px] sm:w-[220px] sm:h-[308px]'
+    : filledCreators.length === 3
+      ? 'w-[96px] h-[134px] sm:w-[180px] sm:h-[252px]'
+      : 'w-[88px] h-[123px] sm:w-[150px] sm:h-[210px]';
+
+  const fighter = (c, i) => {
+    const g = growthData[c.platformId];
+    const isWinner = hasWinner && i === topIdx;
+    return (
+      <Link key={`${c.platform}:${c.username}`} to={`/${c.platform}/${c.username}`} className="group flex flex-col items-center min-w-0">
+        <div className="relative">
+          {isWinner && (
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-950 whitespace-nowrap">
+              <Crown className="w-3 h-3" /> Leader
+            </span>
+          )}
+          <FlipCard creator={cardOf(c)} delay={i * 220} className={cardSize} />
+        </div>
+        <div className={`mt-4 w-full rounded-t-xl border-t border-x px-2 pt-3 pb-5 text-center ${isWinner ? 'border-amber-400/50 bg-amber-400/[0.08]' : 'border-white/10 bg-white/[0.04]'}`}>
+          <p className="text-sm sm:text-base font-bold truncate">{c.displayName}</p>
+          <span className="mx-auto mt-1.5 block h-[3px] w-8 rounded-full" style={{ background: accentOnDark(i) }} />
+          <p className="mt-2.5 text-2xl sm:text-4xl font-extrabold tabular-nums tracking-tight">{formatNumber(c.subscribers || c.followers || 0)}</p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">{metricLabel(c.platform)}</p>
+          {g && g.growth30Day ? (
+            <p className={`mt-1.5 text-xs font-semibold tabular-nums ${growthTone(g.growth30Day)}`}>{formatGrowth(g.growth30Day)} <span className="font-normal text-white/40">30d</span></p>
+          ) : <p className="mt-1.5 h-4" />}
+          {!isPair && total > 0 && (
+            <p className={`mt-2 text-[11px] font-bold uppercase tracking-[0.12em] ${isWinner ? 'text-amber-300' : 'text-white/50'}`}>{wins[i]} of {total} rounds</p>
+          )}
+        </div>
+      </Link>
+    );
+  };
+
+  return (
+    <section className={DARK_BAND}>
+      <DotGrid />
+      <div className="relative max-w-5xl mx-auto px-4 pt-6 sm:pt-8 pb-12 sm:pb-16">
+        {/* Add / save / clear */}
+        <div className="relative z-30 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <CreatorSearchBox query={query} setQuery={setQuery} results={results} searching={searching} tray={creators} onAdd={onAdd} size="sm" />
+          </div>
+          <div className="flex items-center justify-center gap-2 flex-shrink-0">
+            {savedFlash ? (
+              <span className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-300 font-medium bg-emerald-400/10 border border-emerald-400/30 rounded-lg"><Check className="w-3.5 h-3.5" />Saved!</span>
+            ) : existingSave ? (
+              <button onClick={handleRemoveSave} disabled={removing} className="flex items-center gap-1.5 px-3 py-2 text-sm text-white/80 hover:text-red-300 border border-white/15 hover:border-red-400/40 rounded-lg transition-colors font-medium">
+                <Bookmark className="w-3.5 h-3.5 fill-current" />{removing ? 'Removing...' : 'Saved'}
+              </button>
+            ) : (
+              <button onClick={handleOpenSave} className="flex items-center gap-1.5 px-3 py-2 text-sm text-neutral-900 bg-white hover:bg-neutral-100 rounded-lg transition-colors font-semibold">
+                <Bookmark className="w-3.5 h-3.5" />Save
+              </button>
+            )}
+            <button onClick={onClearAll} className="flex items-center gap-1.5 px-3 py-2 text-sm text-white/60 hover:text-white rounded-lg transition-colors">
+              <X className="w-3.5 h-3.5" />New matchup
+            </button>
+          </div>
+        </div>
+        {saveDialogOpen && (
+          <div className="relative z-20 flex items-center gap-2 bg-white border border-neutral-200 rounded-lg px-3 py-2 mt-3 max-w-md mx-auto">
+            <input
+              type="text" value={saveName} onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCompare(); if (e.key === 'Escape') setSaveDialogOpen(false); }}
+              placeholder="Name this comparison..." maxLength={80} autoFocus
+              className="bg-transparent text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none flex-1 min-w-0"
+            />
+            <button onClick={handleSaveCompare} disabled={!saveName.trim()} className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors shrink-0">Save</button>
+            <button onClick={() => setSaveDialogOpen(false)} className="p-1 text-neutral-500 hover:text-neutral-700 shrink-0"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
+        {/* Verdict */}
+        <h1 className="mt-10 sm:mt-12 text-xl sm:text-3xl font-extrabold tracking-tight text-center leading-snug text-balance max-w-3xl mx-auto">
+          {hasWinner ? (
+            <>
+              <Crown className="w-5 h-5 sm:w-7 sm:h-7 inline-block -mt-1 mr-1.5 text-amber-400" />
+              <span className="text-amber-300">{winnerLabel}</span> leads on {wins[topIdx]} of {total} round{total === 1 ? '' : 's'}{verdictTail}
+            </>
+          ) : total > 0 ? (
+            'Dead even. Nobody wins more rounds than anyone else.'
+          ) : (
+            'Not enough comparable numbers between these to call a leader.'
+          )}
+        </h1>
+
+        {/* Cards */}
+        {isPair ? (
+          <div className="mt-10 grid grid-cols-[1fr,auto,1fr] items-end gap-3 sm:gap-8 max-w-3xl mx-auto">
+            {fighter(filledCreators[0], 0)}
+            <div className="self-center flex flex-col items-center pb-16 sm:pb-24">
+              <VsChip big />
+              {total > 0 && (
+                <>
+                  <p className="mt-4 text-3xl sm:text-5xl font-black tabular-nums leading-none">
+                    <span style={{ color: accentOnDark(0) }}>{wins[0]}</span>
+                    <span className="text-white/30 mx-1 sm:mx-2">–</span>
+                    <span style={{ color: accentOnDark(1) }}>{wins[1]}</span>
+                  </p>
+                  <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">Rounds</p>
+                </>
+              )}
+            </div>
+            {fighter(filledCreators[1], 1)}
+          </div>
+        ) : (
+          <div className="mt-10 flex flex-wrap items-end justify-center gap-3 sm:gap-6">
+            {filledCreators.map((c, i) => (
+              <div key={`${c.platform}:${c.username}`} className="w-[calc(33%-0.75rem)] sm:w-auto sm:min-w-[170px]">{fighter(c, i)}</div>
+            ))}
+          </div>
+        )}
+
+        {/* Round by round (pairs) */}
+        {isPair && total > 0 && (
+          <div className="mt-10 max-w-xl mx-auto">
+            <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-white/50 mb-3">Round by round</p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/[0.06] overflow-hidden">
+              {rounds.map((m, r) => (
+                <motion.div
+                  key={m.label}
+                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1 + r * 0.18, duration: 0.35, ease: 'easeOut' }}
+                  className="grid grid-cols-[1fr,auto,1fr] items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3"
+                >
+                  <span className={`flex items-center justify-end gap-1 text-sm sm:text-base tabular-nums ${m.leaderIndex === 0 ? 'font-bold text-white' : 'text-white/40'}`}>
+                    {m.leaderIndex === 0 && <ChevronLeft className="w-4 h-4 flex-shrink-0" style={{ color: accentOnDark(0) }} />}
+                    {m.bars[0]?.value}
+                  </span>
+                  <span className="w-24 sm:w-40 text-center text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 truncate">{m.label}</span>
+                  <span className={`flex items-center gap-1 text-sm sm:text-base tabular-nums ${m.leaderIndex === 1 ? 'font-bold text-white' : 'text-white/40'}`}>
+                    {m.bars[1]?.value}
+                    {m.leaderIndex === 1 && <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: accentOnDark(1) }} />}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+            <p className="mt-3 text-center text-xs text-white/40">Size and engagement decide the rounds. Growth, viewers and more are below.</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* Popular matchups: two cards fanned against each other over a small dark
+   stage. The fanned cards are rotated, so they are the markless render. */
 function MatchupGrid({ matchupStats }) {
   return (
     <div className="mb-10">
-      <div className="text-center mb-5">
-        <h2 className="text-xl font-bold text-neutral-900">Popular matchups</h2>
-        <p className="mt-1.5 text-sm text-neutral-500">Pick one and we'll pull up both sides for you.</p>
+      <div className="text-center mb-6">
+        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">Popular matchups</h2>
+        <p className="mt-1.5 text-sm text-neutral-500">Pick one and both cards go head to head.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {POPULAR_MATCHUPS.map((m) => {
           const a = matchupStats[`${m.aPlatform}:${m.aUsername}`];
           const b = matchupStats[`${m.bPlatform}:${m.bUsername}`];
-          // Each matchup keeps its own fixed grid slot from the first paint,
-          // whether it's showing a skeleton or the real card, so a slow tile
-          // (a live Twitch/YouTube/Kick lookup) resolving later never shoves
-          // an already-visible one down the page. Same key both states, so
-          // React updates it in place instead of unmounting and reinserting.
           const url = `${m.aPlatform}:${m.aUsername},${m.bPlatform}:${m.bUsername}`;
-          if (!a || !b) return <MatchupTileSkeleton key={url} />;
-          const aTotal = a.subscribers || a.followers || 0;
-          const bTotal = b.subscribers || b.followers || 0;
-          const sum = aTotal + bTotal || 1;
-          const shareA = (aTotal / sum) * 100;
+          const ready = a && b;
+          const aTotal = a ? (a.subscribers || a.followers || 0) : 0;
+          const bTotal = b ? (b.subscribers || b.followers || 0) : 0;
+          const shareA = (aTotal / ((aTotal + bTotal) || 1)) * 100;
           const lead = aTotal >= bTotal ? a : b;
-          const gap = Math.abs(aTotal - bTotal);
-          const AIcon = platformConfig[a.platform]?.icon;
-          const BIcon = platformConfig[b.platform]?.icon;
           return (
-            <Link key={url} to={`/compare?creators=${url}`} className={`group block ${CARD} p-4 hover:border-neutral-300 transition-colors`}>
-              <div className="flex items-center gap-3">
-                <CreatorAvatar src={a.profileImage} name={a.displayName} size="md" rounded="rounded-lg" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-neutral-900 tabular-nums flex items-center gap-1">{AIcon && <AIcon className={`w-3 h-3 ${platformConfig[a.platform]?.color}`} />}{formatNumber(aTotal)}</p>
-                  <p className="text-xs font-medium text-neutral-500 truncate">{a.displayName}</p>
-                </div>
-                <span className="flex items-center justify-center w-7 h-7 rounded-full border border-neutral-200 bg-white text-[11px] font-bold text-neutral-900 tracking-wide flex-shrink-0">VS</span>
-                <div className="flex-1 min-w-0 text-right">
-                  <p className="text-sm font-bold text-neutral-900 tabular-nums flex items-center gap-1 justify-end">{formatNumber(bTotal)}{BIcon && <BIcon className={`w-3 h-3 ${platformConfig[b.platform]?.color}`} />}</p>
-                  <p className="text-xs font-medium text-neutral-500 truncate">{b.displayName}</p>
-                </div>
-                <CreatorAvatar src={b.profileImage} name={b.displayName} size="md" rounded="rounded-lg" />
+            <Link key={url} to={`/compare?creators=${url}`} className={`group block ${CARD} overflow-hidden hover:border-neutral-300 transition-colors`}>
+              <div className="relative h-[150px] bg-[#0a0a0f] overflow-hidden">
+                <DotGrid />
+                <img
+                  src={cardImageUrl(m.aPlatform, m.aUsername, { mark: false })}
+                  alt="" width="250" height="350" loading="lazy" draggable="false"
+                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[96%] -rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none"
+                />
+                <img
+                  src={cardImageUrl(m.bPlatform, m.bUsername, { mark: false })}
+                  alt="" width="250" height="350" loading="lazy" draggable="false"
+                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[4%] rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none"
+                />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><VsChip /></span>
               </div>
-              <div className="flex items-center gap-0.5 h-1.5 mt-3.5 rounded-full overflow-hidden bg-neutral-100">
-                <div className="h-full animate-bar-grow" style={{ width: `${shareA}%`, background: accentFor(0) }} />
-                <div className="h-full flex-1" style={{ background: accentFor(1) }} />
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    {ready ? <p className="text-base font-extrabold text-neutral-900 tabular-nums">{formatNumber(aTotal)}</p> : <div className="h-6 w-14 rounded bg-neutral-100 animate-pulse" />}
+                    <p className="text-xs font-medium text-neutral-500 truncate">{a?.displayName || m.aUsername}</p>
+                  </div>
+                  <div className="min-w-0 text-right">
+                    {ready ? <p className="text-base font-extrabold text-neutral-900 tabular-nums">{formatNumber(bTotal)}</p> : <div className="h-6 w-14 ml-auto rounded bg-neutral-100 animate-pulse" />}
+                    <p className="text-xs font-medium text-neutral-500 truncate">{b?.displayName || m.bUsername}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 h-1.5 mt-3 rounded-full overflow-hidden bg-neutral-100">
+                  {ready && <div className="h-full animate-bar-grow" style={{ width: `${shareA}%`, background: accentFor(0) }} />}
+                  {ready && <div className="h-full flex-1" style={{ background: accentFor(1) }} />}
+                </div>
+                <p className="text-xs text-neutral-500 mt-2 h-4">
+                  {ready && <><span className="font-semibold text-neutral-700">{lead.displayName}</span> leads by {formatNumber(Math.abs(aTotal - bTotal))}</>}
+                </p>
               </div>
-              <p className="text-xs text-neutral-500 mt-2"><span className="font-semibold text-neutral-700">{lead.displayName}</span> leads by {formatNumber(gap)}</p>
             </Link>
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// Same padding, row structure, and line heights as the real tile above so
-// swapping skeleton -> real content never changes the card's height either,
-// not just its grid position.
-function MatchupTileSkeleton() {
-  return (
-    <div className={`${CARD} p-4`}>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-neutral-100 animate-pulse flex-shrink-0" />
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="h-3.5 w-14 rounded bg-neutral-100 animate-pulse" />
-          <div className="h-2.5 w-20 rounded bg-neutral-100 animate-pulse" />
-        </div>
-        <div className="w-7 h-7 rounded-full bg-neutral-100 animate-pulse flex-shrink-0" />
-        <div className="flex-1 min-w-0 flex flex-col items-end space-y-1.5">
-          <div className="h-3.5 w-14 rounded bg-neutral-100 animate-pulse" />
-          <div className="h-2.5 w-20 rounded bg-neutral-100 animate-pulse" />
-        </div>
-        <div className="w-10 h-10 rounded-lg bg-neutral-100 animate-pulse flex-shrink-0" />
-      </div>
-      <div className="h-1.5 mt-3.5 rounded-full bg-neutral-100 animate-pulse" />
-      <div className="h-3 w-32 mt-2 rounded bg-neutral-100 animate-pulse" />
     </div>
   );
 }
@@ -794,142 +1069,14 @@ function SavedComparesRow({ saved, navigate }) {
 function ResultsView(props) {
   const {
     filledCreators, growthData, loadingGrowth, chartMetric, setChartMetric, cpm, setCpm,
-    query, setQuery, results, searching, onAdd, onRemove, maxCompare, creators,
-    existingSave, savedFlash, removing, handleOpenSave, handleRemoveSave,
-    saveDialogOpen, saveName, setSaveName, handleSaveCompare, setSaveDialogOpen, onClearAll, navigate,
-    formatGrowth, getGrowthIcon, getGrowthColor,
+    getGrowthColor, formatGrowth,
   } = props;
 
   const metrics = buildMetrics(filledCreators, growthData);
-  const wins = filledCreators.map((c, i) => metrics.reduce((n, m) => n + (m.leaderIndex === i ? 1 : 0), 0));
-  const total = metrics.filter(m => m.hasLeader).length;
-  const maxWins = Math.max(...wins);
-  const topIdx = wins.indexOf(maxWins);
-  const winner = filledCreators[topIdx];
-  const isPair = filledCreators.length === 2;
-  // "topIdx" picks the first index at the max by construction, even when
-  // every creator is tied there (including a 0-0 tie with zero comparable
-  // metrics), so it alone can't tell a real leader from a coin flip. Require
-  // the max to be won outright by exactly one creator before crowning anyone.
-  const hasWinner = maxWins > 0 && wins.filter(w => w === maxWins).length === 1;
-  // Two creators can share a display name (e.g. the same brand's YouTube and
-  // TikTok accounts), which makes "X leads" ambiguous about which X. Only
-  // pay the extra words when a real collision exists in this lineup.
-  const winnerNameCollides = hasWinner && filledCreators.filter(c => c.displayName === winner.displayName).length > 1;
-  const winnerLabel = winnerNameCollides ? `${winner.displayName} (${platformConfig[winner.platform]?.label})` : winner?.displayName;
-
   const youtubeCreators = filledCreators.filter(c => c.platform === 'youtube' && growthData[c.platformId]?.monthlyViews > 0);
 
   return (
     <div>
-      {/* Lineup + actions bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-        <div className="flex-1 min-w-0">
-          <CreatorSearchBox query={query} setQuery={setQuery} results={results} searching={searching} tray={creators} onAdd={onAdd} size="sm" />
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {savedFlash ? (
-            <span className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-600 font-medium bg-emerald-50 border border-emerald-200 rounded-lg"><Check className="w-3.5 h-3.5" />Saved!</span>
-          ) : existingSave ? (
-            <button onClick={handleRemoveSave} disabled={removing} className="flex items-center gap-1.5 px-3 py-2 text-sm text-neutral-600 bg-white hover:text-red-600 border border-neutral-200 hover:border-red-300 rounded-lg transition-colors font-medium">
-              <Bookmark className="w-3.5 h-3.5 fill-current" />{removing ? 'Removing...' : 'Saved'}
-            </button>
-          ) : (
-            <button onClick={handleOpenSave} className="flex items-center gap-1.5 px-3 py-2 text-sm text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors font-medium">
-              <Bookmark className="w-3.5 h-3.5" />Save
-            </button>
-          )}
-          <button onClick={onClearAll} className="flex items-center gap-1.5 px-3 py-2 text-sm text-neutral-500 hover:text-red-600 rounded-lg transition-colors">
-            <X className="w-3.5 h-3.5" />Clear
-          </button>
-        </div>
-      </div>
-      {saveDialogOpen && (
-        <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-lg px-3 py-2 mb-6">
-          <input
-            type="text" value={saveName} onChange={(e) => setSaveName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCompare(); if (e.key === 'Escape') setSaveDialogOpen(false); }}
-            placeholder="Name this comparison..." maxLength={80} autoFocus
-            className="bg-transparent text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none flex-1 min-w-0"
-          />
-          <button onClick={handleSaveCompare} disabled={!saveName.trim()} className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-xs font-medium rounded-md transition-colors shrink-0">Save</button>
-          <button onClick={() => setSaveDialogOpen(false)} className="p-1 text-neutral-500 hover:text-neutral-700 shrink-0"><X className="w-3.5 h-3.5" /></button>
-        </div>
-      )}
-
-      {/* Verdict card */}
-      <div className={`${CARD} p-6 sm:p-8 mb-5`}>
-        <p className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 text-center leading-snug text-pretty">
-          {hasWinner ? (
-            <>
-              <Crown className="w-5 h-5 inline-block -mt-1 mr-1" style={{ color: accentFor(topIdx) }} />
-              <span style={{ color: accentFor(topIdx) }}>{winnerLabel}</span> leads on {wins[topIdx]} of {total} comparable metric{total === 1 ? '' : 's'}
-              {isPair && (() => {
-                const other = filledCreators[1 - topIdx];
-                // One of these is Kick's paid-subscriber count and the other
-                // is a free follower count, so "X more, Y times the size" is
-                // comparing two different things, not a real size gap.
-                if ((winner.platform === 'kick') !== (other.platform === 'kick')) return '.';
-                const wTotal = winner.subscribers || winner.followers || 0;
-                const oTotal = other.subscribers || other.followers || 0;
-                if (!wTotal || !oTotal) return '.';
-                const ratio = wTotal / oTotal;
-                return `, with ${formatNumber(Math.abs(wTotal - oTotal))} more ${metricLabel(winner.platform).toLowerCase()} at ${ratio.toFixed(1)}× the size.`;
-              })()}
-            </>
-          ) : total > 0 ? (
-            'Dead even, nobody leads on more metrics than anyone else.'
-          ) : (
-            "Not enough comparable metrics between these to call a leader."
-          )}
-        </p>
-
-        {/* Tailwind needs the full class name as a literal to pick it up at
-            build time, so this is a static lookup rather than string
-            concatenation. */}
-        <div className={`relative grid gap-4 mt-7 grid-cols-2 ${{ 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3' }[filledCreators.length] || 'sm:grid-cols-3'}`}>
-          {isPair && (
-            <div className="absolute left-1/2 top-8 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-neutral-900 text-white text-sm font-bold tracking-wide ring-4 ring-white shadow-md">
-              VS
-            </div>
-          )}
-          {filledCreators.map((c, i) => {
-            const g = growthData[c.platformId];
-            const Icon = platformConfig[c.platform]?.icon;
-            const GrowthIcon = g ? getGrowthIcon(g.growth30Day) : null;
-            const isWinner = hasWinner && i === topIdx;
-            return (
-              <div key={c.platformId || c.username} className="text-center">
-                <Link to={`/${c.platform}/${c.username}`} className="relative inline-block">
-                  <CreatorAvatar src={c.profileImage} name={c.displayName} size="xl" rounded="rounded-2xl" className="mx-auto" style={{ boxShadow: `0 0 0 2px ${accentFor(i)}` }} />
-                  {isWinner && (
-                    <span
-                      className="absolute -top-2 -right-2 flex items-center justify-center w-6 h-6 rounded-full bg-white border-2"
-                      style={{ borderColor: accentFor(i) }}
-                      title="Leading this comparison"
-                    >
-                      <Crown className="w-3.5 h-3.5" style={{ color: accentFor(i) }} />
-                    </span>
-                  )}
-                </Link>
-                <p className="mt-3 text-sm sm:text-base font-semibold text-neutral-900 truncate">{c.displayName}</p>
-                <span className="mt-1 inline-flex items-center gap-1.5">
-                  {Icon && <Icon className={`w-3 h-3 flex-shrink-0 ${platformConfig[c.platform]?.color}`} />}
-                  <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-neutral-400">{platformConfig[c.platform]?.label}</span>
-                </span>
-                <p className="mt-2.5 text-2xl sm:text-3xl font-bold text-neutral-900 tabular-nums tracking-tight">{formatNumber(c.subscribers || c.followers || 0)}</p>
-                <p className={`${MICRO} mt-0.5`}>{metricLabel(c.platform)}</p>
-                {g && g.growth30Day ? (
-                  <span className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${getGrowthColor(g.growth30Day)}`}>
-                    <GrowthIcon className="w-3.5 h-3.5" />{formatGrowth(g.growth30Day)} <span className="text-neutral-400 font-normal">30d</span>
-                  </span>
-                ) : <span className="mt-2 block h-[18px]" />}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Metric-by-metric bars. Replaces both the old radar chart and the
           winner-dotted table. Bar length is each creator's share of the
           row's largest value; growth rows use a centered zero axis. */}

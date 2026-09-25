@@ -4,12 +4,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, Lock, Search, X, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
 import CreatorAvatar from '../components/CreatorAvatar';
+import FlipCard from '../components/FlipCard';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getRankedCreators, getTopCreatorsByPlatform, searchCreators } from '../services/creatorService';
 import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
-import { CARD_PLATFORMS, renderMarkOverlay } from '../lib/badgeCard';
-import { cardImageUrl } from '../lib/cardUrl';
+import { CARD_PLATFORMS } from '../lib/badgeCard';
 import { formatNumber } from '../lib/utils';
 
 /**
@@ -28,7 +28,6 @@ import { formatNumber } from '../lib/utils';
  */
 
 const PULL_EVERY_MS = 7000;
-const FLIP_MS = 450;
 const SPONSORED_AFTER = 3; // Premium ghost slot sits after #3 on /rankings
 const PREMIUM_PER_PLATFORM = 2;
 const BASIC_PER_PLATFORM = 98;
@@ -54,94 +53,7 @@ const FAQS = [
   },
 ];
 
-const markUri = (platform) =>
-  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderMarkOverlay(platform))}`;
-
-function preload(src) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const done = () => resolve();
-    img.onload = done;
-    img.onerror = done;
-    setTimeout(done, 1500);
-    img.src = src;
-  });
-}
-
 const platformName = (p) => PLATFORM_DISPLAY_NAMES[p] || CARD_PLATFORMS[p]?.name || p;
-
-/**
- * One upright holographic card that flips to the next creator whenever
- * `creator` changes. Same brand rule as the home hero: the flipping card is
- * the markless render and the platform logo is a flat layer on top that only
- * shows while the card is face up and still.
- */
-function FlipCard({ creator }) {
-  const reduceMotion = useReducedMotion();
-  const [shown, setShown] = useState(null);
-  const [faceUp, setFaceUp] = useState(false);
-  const [settled, setSettled] = useState(false);
-  const shownRef = useRef(null);
-
-  useEffect(() => {
-    if (!creator) return;
-    const key = `${creator.platform}/${creator.username}`;
-    if (shownRef.current === key) return;
-    let cancelled = false;
-    const src = cardImageUrl(creator.platform, creator.username, { mark: false });
-    const first = shownRef.current === null;
-    shownRef.current = key;
-    (async () => {
-      if (!first && !reduceMotion) {
-        setSettled(false);
-        setFaceUp(false);
-        await Promise.all([preload(src), new Promise((r) => setTimeout(r, FLIP_MS))]);
-      } else {
-        await preload(src);
-      }
-      if (cancelled) return;
-      setShown(creator);
-      setFaceUp(true);
-    })();
-    return () => { cancelled = true; };
-  }, [creator, reduceMotion]);
-
-  return (
-    <div className="hero-stage relative w-[200px] h-[280px] sm:w-[240px] sm:h-[336px]">
-      <span
-        className={`hero-flip block w-full h-full ${faceUp ? 'is-up' : ''}`}
-        onTransitionEnd={(e) => { if (e.target === e.currentTarget && faceUp) setSettled(true); }}
-      >
-        <span className="hero-face hero-face-back">
-          <img src="/card-back.svg" alt="" width="250" height="350" draggable="false" className="w-full h-full select-none" />
-        </span>
-        <span className="hero-face hero-face-front">
-          {shown && (
-            <img
-              src={cardImageUrl(shown.platform, shown.username, { mark: false })}
-              alt={`${shown.display_name} ${platformName(shown.platform)} creator card`}
-              width="250"
-              height="350"
-              draggable="false"
-              className="w-full h-full select-none"
-            />
-          )}
-        </span>
-      </span>
-      {shown && (
-        <img
-          src={markUri(shown.platform)}
-          alt=""
-          aria-hidden="true"
-          width="250"
-          height="350"
-          draggable="false"
-          className={`absolute inset-0 w-full h-full select-none pointer-events-none transition-opacity ${faceUp && (settled || reduceMotion) ? 'opacity-100 duration-150' : 'opacity-0 duration-100'}`}
-        />
-      )}
-    </div>
-  );
-}
 
 /** Organic row in the preview table (light, like /rankings). */
 function OrganicRow({ rank, creator }) {
@@ -445,7 +357,7 @@ export default function Promote() {
             </div>
 
             <div className="flex flex-col items-center">
-              <FlipCard creator={stageCreator} />
+              <FlipCard creator={stageCreator && { platform: stageCreator.platform, username: stageCreator.username, name: stageCreator.display_name, avatar: stageCreator.profile_image }} />
               <p className="mt-5 text-[13px] text-white/60 text-center min-h-[20px]">
                 {picked ? `${picked.display_name} on ${platformName(picked.platform)}` : sample ? `#1 on ${platformName(sample.platform)}: ${sample.display_name}` : ' '}
               </p>
