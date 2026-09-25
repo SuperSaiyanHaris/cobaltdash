@@ -19,8 +19,13 @@ const COLUMN_SPEEDS = ['75s', '62s', '84s', '68s', '79s', '64s', '88s', '70s', '
 // as an even pattern rather than a straight grid.
 const COLUMN_OFFSETS = [0, -150, -70];
 
+// One drifting column. Every slot starts as a ShinyPull card back (a single
+// small, cached image), so the wall is full and moving from the first frame;
+// each creator's card then fades in over its back once it has loaded,
+// instead of cards popping in one by one. The list is doubled so the -50%
+// loop is seamless. Slots are keyed by position, so the column (and its
+// animation) is never remounted when the creators arrive.
 function WallColumn({ creators, index }) {
-  if (!creators.length) return null;
   const down = index % 2 === 1;
   return (
     <div
@@ -28,16 +33,22 @@ function WallColumn({ creators, index }) {
       style={{ animationDuration: COLUMN_SPEEDS[index % COLUMN_SPEEDS.length] }}
     >
       {[...creators, ...creators].map((c, i) => (
-        <img
-          key={`${c.id}-${i}`}
-          src={cardImageUrl(c.platform, c.username, { mark: false })}
-          alt=""
-          width="250"
-          height="350"
-          loading={i < 3 ? 'eager' : 'lazy'}
-          draggable="false"
-          className="w-full h-auto select-none rounded-[6.4%/4.571%] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]"
-        />
+        <div key={i} className="relative aspect-[250/350] rounded-[6.4%/4.571%] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]">
+          <img src="/card-back.svg" alt="" width="250" height="350" draggable="false" className="absolute inset-0 w-full h-full select-none" />
+          {c && (
+            <img
+              src={cardImageUrl(c.platform, c.username, { mark: false })}
+              alt=""
+              width="250"
+              height="350"
+              decoding="async"
+              draggable="false"
+              onLoad={(e) => { e.currentTarget.style.opacity = '1'; }}
+              style={{ opacity: 0 }}
+              className="absolute inset-0 w-full h-full select-none transition-opacity duration-700"
+            />
+          )}
+        </div>
       ))}
     </div>
   );
@@ -73,7 +84,8 @@ export default function AuthPage({ initialMode = 'signin' }) {
 
   const columns = useMemo(() => {
     const cols = Array.from({ length: WALL_COLUMNS }, () => []);
-    creators.slice(0, WALL_COLUMNS * PER_COLUMN).forEach((c, i) => cols[i % WALL_COLUMNS].push(c));
+    // Placeholders (null) until the creators load, so the wall renders at once.
+    for (let i = 0; i < WALL_COLUMNS * PER_COLUMN; i++) cols[i % WALL_COLUMNS].push(creators[i] || null);
     return cols;
   }, [creators]);
 
