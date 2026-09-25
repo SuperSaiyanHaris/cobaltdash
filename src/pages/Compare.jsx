@@ -929,7 +929,7 @@ function FaceOffBand(props) {
                     {m.leaderIndex === 0 && <ChevronLeft className="w-4 h-4 flex-shrink-0" style={{ color: accentOnDark(0) }} />}
                     {m.bars[0]?.value}
                   </span>
-                  <span className="w-24 sm:w-40 text-center text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 truncate">{m.label}</span>
+                  <span className="w-24 sm:w-52 text-center text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60 truncate">{m.label}</span>
                   <span className={`flex items-center gap-1 text-sm sm:text-base tabular-nums ${m.leaderIndex === 1 ? 'font-bold text-white' : 'text-white/40'}`}>
                     {m.bars[1]?.value}
                     {m.leaderIndex === 1 && <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: accentOnDark(1) }} />}
@@ -971,12 +971,14 @@ function MatchupGrid({ matchupStats }) {
                 <img
                   src={cardImageUrl(m.aPlatform, m.aUsername, { mark: false })}
                   alt="" width="250" height="350" loading="lazy" draggable="false"
-                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[96%] -rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none"
+                  onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[96%] -rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none opacity-0 transition-opacity duration-500"
                 />
                 <img
                   src={cardImageUrl(m.bPlatform, m.bUsername, { mark: false })}
                   alt="" width="250" height="350" loading="lazy" draggable="false"
-                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[4%] rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none"
+                  onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[4%] rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none opacity-0 transition-opacity duration-500"
                 />
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><VsChip /></span>
               </div>
