@@ -24,6 +24,8 @@ import { cardImageUrl } from '../lib/cardUrl';
 import CreatorAvatar from '../components/CreatorAvatar';
 import CountUp from '../components/CountUp';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
+import HeroCardStage from '../components/HeroCardStage';
+import { CARD_PLATFORMS } from '../lib/badgeCard';
 import PreviewRankingRow from '../components/PreviewRankingRow';
 import { PLATFORM_COUNT, PLATFORM_ACCENTS } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
@@ -138,63 +140,6 @@ const RotatingHeadlineWord = memo(function RotatingHeadlineWord() {
     </span>
   );
 });
-
-const SHOWCASE_ICONS = { youtube: YouTubeIcon, twitch: TwitchIcon };
-const SHOWCASE_TINT = { youtube: 'text-red-400', twitch: 'text-purple-400' };
-const SHOWCASE_METRIC = { youtube: 'subscribers', twitch: 'followers' };
-// Left-edge accent per platform, same hue family as the icon tint above
-// (red/purple) so the accent reads as an extension of the existing platform
-// tint convention, not a new colored-background chip.
-const SHOWCASE_ACCENT = { youtube: 'border-l-red-500/70', twitch: 'border-l-purple-500/70' };
-
-// Real-creator showcase band — bigger card treatment borrowed from the auth
-// page's showcase columns, so this reads as a considered section rather than
-// a cramped ticker. Kept out of the tab order entirely (cards remain
-// clickable) so keyboard users reach the search input immediately; the
-// duplicated copy is hidden from assistive tech. Each card carries a
-// platform-tinted left edge (2026-08-02, reverted back from a data-skyline
-// experiment per user feedback — kept the accent-edge idea from that pass).
-const HeroMarquee = memo(function HeroMarquee({ creators }) {
-  if (creators.length === 0) return null;
-
-  const strip = (hidden) => (
-    <div className="flex gap-3 sm:gap-4" aria-hidden={hidden || undefined}>
-      {creators.map((c, i) => {
-        const Icon = SHOWCASE_ICONS[c.platform] || YouTubeIcon;
-        return (
-          <Link
-            key={`${c.id}-${i}`}
-            to={`/${c.platform}/${c.username}`}
-            tabIndex={-1}
-            className={`inline-flex items-center gap-3 pl-3.5 pr-4 py-3 bg-white/[0.05] border border-white/10 border-l-2 ${SHOWCASE_ACCENT[c.platform] || 'border-l-neutral-400/70'} rounded-xl hover:bg-white/[0.09] hover:border-white/20 transition-colors w-64 flex-shrink-0`}
-          >
-            <CreatorAvatar src={c.profile_image} name={c.display_name} rounded="rounded-lg" className="!w-11 !h-11 flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${SHOWCASE_TINT[c.platform] || 'text-neutral-400'}`} />
-                <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
-              </div>
-              <p className="text-xs text-white/60 tabular-nums mt-0.5">
-                {formatNumber(c.subscribers)} {SHOWCASE_METRIC[c.platform] || 'followers'}
-              </p>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
-  );
-
-  return (
-    <div
-      className="flex gap-3 sm:gap-4 animate-marquee-slow whitespace-nowrap"
-      style={{ width: 'max-content' }}
-    >
-      {strip(false)}
-      {strip(true)}
-    </div>
-  );
-});
-
 
 // Champions — the #1 creator on every platform, fanned out coverflow-style
 // (Ripit.co's homepage card-fan carousel is the reference) instead of a plain
@@ -949,7 +894,7 @@ export default function Home() {
   const [latestPosts, setLatestPosts] = useState(null);
   const [topCreators, setTopCreators] = useState([]);
   const [liveStats, setLiveStats] = useState({ creators: null, dataPoints: null });
-  const [marqueeCreators, setMarqueeCreators] = useState([]);
+  const [heroCards, setHeroCards] = useState([]);
   const [topByPlatform, setTopByPlatform] = useState([]);
   const [topHistory, setTopHistory] = useState(null);
   const navigate = useNavigate();
@@ -970,21 +915,28 @@ export default function Home() {
     }).catch(() => {});
   }, []);
 
-  // Marquee = YouTube top 20 + Twitch top 20, shuffled. (User: only these two platforms in ticker.)
-  // The #1-per-platform cards come from a single rankings_cache query. We
-  // also fetch the top YouTuber's stats history for the earnings estimate.
+  // Hero card hand = YouTube + Twitch top 20 plus every other platform's #1,
+  // shuffled so each visit pulls a different run of cards. The #1-per-platform
+  // cards come from a single rankings_cache query. We also fetch the top
+  // YouTuber's stats history for the earnings estimate.
   useEffect(() => {
     Promise.all([
       getRankedCreators('youtube', 'subscribers', 20),
       getRankedCreators('twitch', 'subscribers', 20),
       getTopCreatorsByPlatform(),
     ]).then(([yt, tw, top1s]) => {
-      const pool = [...yt, ...tw].filter(c => c?.profile_image && c?.display_name);
+      const seen = new Set();
+      const pool = [...yt, ...tw, ...(top1s || [])].filter((c) => {
+        const key = `${c?.platform}/${c?.username}`;
+        if (!c?.username || !c?.display_name || !CARD_PLATFORMS[c.platform] || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
       }
-      setMarqueeCreators(pool);
+      setHeroCards(pool);
 
       const byPlatform = Object.fromEntries((top1s || []).map(c => [c.platform, c]));
       const tops = TOP_CARD_META
@@ -1010,6 +962,11 @@ export default function Home() {
       .catch(() => setLatestPosts([]));
   }, []);
 
+  // "43,000+" once the live count arrives (rounded down, never overstated).
+  const heroCreatorCount = liveStats.creators
+    ? `${(Math.floor(liveStats.creators / 1000) * 1000).toLocaleString('en-US')}+`
+    : 'thousands of';
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -1030,7 +987,7 @@ export default function Home() {
         {/* ============== CINEMATIC HERO ==============
             Full-bleed hero — section min-height ensures the bg image + left stack always have room.
             Hard bottom edge (no gradient fade) per project preference. */}
-        <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white min-h-[520px] sm:min-h-[680px] md:min-h-[760px] flex flex-col">
+        <section className="relative isolate overflow-hidden grain-dark bg-[#0a0a0f] text-white lg:min-h-[680px] flex flex-col">
           {/* Bespoke background — no stock photography, no gradient glow washes.
               Flat dark base plus a faint engineering dot-grid for texture only.
               Content (headline, search, focal card) carries all the visual weight. */}
@@ -1040,119 +997,112 @@ export default function Home() {
               into the page below, no hard seam. */}
           <div className="absolute inset-x-0 bottom-0 h-40 pointer-events-none bg-gradient-to-b from-transparent to-[#0a0a0f]" />
 
-          {/* Center stage — fills the remaining height and centers vertically,
-              so the section reads as intentionally composed at any content length. */}
-          <div className="relative flex-1 flex flex-col justify-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-
-            {/* Headline — condensed to 2 lines, lighter weight above the fold.
-                Plain h1, not motion.h1: this text is the page's LCP element,
-                and animating it in from opacity:0 measurably delays LCP (a
-                fade-in means Chrome can't count it as painted until the
-                animation resolves). Confirmed via PageSpeed Insights on
-                2026-08-19 (poor 6.4s mobile LCP). No visual polish is worth
-                that on the single most time-sensitive element on the page. */}
-            <h1
-              className="text-center font-black tracking-[-0.035em] leading-[0.95] text-white max-w-4xl mx-auto"
-              style={{ fontSize: 'clamp(2.25rem, 6vw, 5rem)' }}
-            >
-              <span className="block">Analytics for every</span>
-              <RotatingHeadlineWord />
-            </h1>
-
-            {/* Glass search — the page's primary action */}
-            <motion.form
-              onSubmit={handleSearch}
-              role="search"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-10 max-w-xl mx-auto"
-            >
-              <div className="relative flex items-center bg-white/[0.08] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/40 focus-within:border-white/30 focus-within:bg-white/[0.12] transition-all duration-200 overflow-hidden">
-                <Search className="absolute left-4 w-5 h-5 text-white/50 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Search any creator"
-                  placeholder="Search any creator"
-                  className="w-full pl-12 pr-32 py-4 bg-transparent text-white placeholder-white/60 focus:outline-none text-base"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1.5 inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-neutral-900 hover:bg-white/90 text-sm font-semibold rounded-xl transition-colors"
-                >
-                  Search
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.form>
-
-            {/* Platform icons — quiet, icon-only, no chip backgrounds. Identity
-                is the tint alone, per the site's precision system. */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-8 flex flex-wrap justify-center items-center gap-x-5 gap-y-3 max-w-md mx-auto"
-            >
-              {PLATFORMS.map(({ id, name, Icon, accent }) => (
-                <Link
-                  key={id}
-                  to={`/rankings/${id}`}
-                  aria-label={name}
-                  title={name}
-                  // p-1.5 -m-1.5: expands the tap target past the 18-22px
-                  // icon to comfortably clear 24px (flagged by PageSpeed),
-                  // while the matching negative margin keeps the row's gap
-                  // spacing visually identical to before.
-                  className={`p-1.5 -m-1.5 flex items-center justify-center ${id === 'youtube' ? '' : 'opacity-70 hover:opacity-100 transition-opacity'}`}
-                >
-                  <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
-                </Link>
-              ))}
-            </motion.div>
-
-            {/* Featured Listings CTA — sits under the platform icons, the
-                last thing in the post-search stack. Deliberately a quiet
-                text link now (2026-09-07), not a bordered card: this page's
-                job is search, and /promote itself now does the actual
-                selling, so this only needs to be a low-friction pointer to
-                it, not a second pitch competing with the search bar for
-                attention. Amber stays the one accent, this site's
-                established Featured Listings / Premium color. */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-8 sm:mt-10 flex justify-center"
-            >
-              <Link
-                to="/promote"
-                className="group inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
+          {/* Two-column stage: headline, search and platforms on the left,
+              the holographic card hand on the right (stacked on mobile,
+              cards under the search). Replaced the drifting creator marquee
+              (2026-09-25): it was the busiest thing on screen and said the
+              least; the cards say the brand ("pull a shiny card"). */}
+          <div className="relative flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 grid lg:grid-cols-[1.1fr,0.9fr] gap-6 lg:gap-10 items-center">
+            <div className="text-center lg:text-left">
+              {/* Headline — condensed to 2 lines, lighter weight above the fold.
+                  Plain h1, not motion.h1: this text is the page's LCP element,
+                  and animating it in from opacity:0 measurably delays LCP (a
+                  fade-in means Chrome can't count it as painted until the
+                  animation resolves). Confirmed via PageSpeed Insights on
+                  2026-08-19 (poor 6.4s mobile LCP). No visual polish is worth
+                  that on the single most time-sensitive element on the page. */}
+              <h1
+                className="font-black tracking-[-0.035em] leading-[0.95] text-white max-w-4xl mx-auto lg:mx-0"
+                style={{ fontSize: 'clamp(2.25rem, 4.6vw, 4rem)' }}
               >
-                <Megaphone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="font-medium text-amber-300">Get Featured</span>
-                <span className="hidden sm:inline text-white/40">&middot; Sponsored placement in the rankings</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
-              </Link>
-            </motion.div>
+                <span className="block">Analytics for every</span>
+                <RotatingHeadlineWord />
+              </h1>
+              <p className="mt-5 text-base sm:text-lg text-white/60 max-w-lg mx-auto lg:mx-0 text-pretty">
+                Live stats, growth and rankings for {heroCreatorCount} creators across {PLATFORM_COUNT} platforms. Every one of them has a holographic card.
+              </p>
 
-          </div>
+              {/* Glass search — the page's primary action */}
+              <motion.form
+                onSubmit={handleSearch}
+                role="search"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mt-8 max-w-xl mx-auto lg:mx-0"
+              >
+                <div className="relative flex items-center bg-white/[0.08] backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl shadow-black/40 focus-within:border-white/30 focus-within:bg-white/[0.12] transition-all duration-200 overflow-hidden">
+                  <Search className="absolute left-4 w-5 h-5 text-white/50 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Search any creator"
+                    placeholder="Search any creator"
+                    className="w-full pl-12 pr-32 py-4 bg-transparent text-white placeholder-white/60 focus:outline-none text-base"
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-1.5 inline-flex items-center gap-1.5 px-4 py-2.5 bg-white text-neutral-900 hover:bg-white/90 text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    Search
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.form>
 
-          {/* CREATOR SHOWCASE — real creators, real numbers. Moved out of the
-              cramped strip that used to sit above the headline; now a proper
-              closing section of the hero with room to breathe, using the same
-              bigger-card treatment as the auth page's showcase columns. No
-              label needed — the cards speak for themselves. Slower drift
-              (220s, was riding the shared 120s .animate-marquee) since these
-              cards are bigger/richer than a plain ticker and read as rushed
-              at the faster pace. Briefly tried a "data skyline" bar-chart
-              treatment (2026-08-02); reverted back to cards per user
-              feedback, kept the platform-tinted left edge idea from that
-              detour. */}
-          <div className="relative flex-shrink-0 pt-2 pb-10 sm:pb-14 overflow-hidden mask-gradient">
-            <HeroMarquee creators={marqueeCreators} />
+              {/* Platform icons — quiet, icon-only, no chip backgrounds. Identity
+                  is the tint alone, per the site's precision system. */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="mt-7 flex flex-wrap justify-center lg:justify-start items-center gap-x-5 gap-y-3 max-w-md mx-auto lg:mx-0"
+              >
+                {PLATFORMS.map(({ id, name, Icon, accent }) => (
+                  <Link
+                    key={id}
+                    to={`/rankings/${id}`}
+                    aria-label={name}
+                    title={name}
+                    // p-1.5 -m-1.5: expands the tap target past the 18-22px
+                    // icon to comfortably clear 24px (flagged by PageSpeed),
+                    // while the matching negative margin keeps the row's gap
+                    // spacing visually identical to before.
+                    className={`p-1.5 -m-1.5 flex items-center justify-center ${id === 'youtube' ? '' : 'opacity-70 hover:opacity-100 transition-opacity'}`}
+                  >
+                    <Icon className="w-[18px] h-[18px]" style={{ color: accent }} />
+                  </Link>
+                ))}
+              </motion.div>
+
+              {/* Featured Listings CTA — sits under the platform icons, the
+                  last thing in the post-search stack. Deliberately a quiet
+                  text link now (2026-09-07), not a bordered card: this page's
+                  job is search, and /promote itself now does the actual
+                  selling, so this only needs to be a low-friction pointer to
+                  it, not a second pitch competing with the search bar for
+                  attention. Amber stays the one accent, this site's
+                  established Featured Listings / Premium color. */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="mt-7 sm:mt-8 flex justify-center lg:justify-start"
+              >
+                <Link
+                  to="/promote"
+                  className="group inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors"
+                >
+                  <Megaphone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span className="font-medium text-amber-300">Get Featured</span>
+                  <span className="hidden sm:inline text-white/40">&middot; Sponsored placement in the rankings</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                </Link>
+              </motion.div>
+            </div>
+
+            <HeroCardStage creators={heroCards} />
           </div>
         </section>
 

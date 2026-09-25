@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderCard, cardTier, compactCount, TIERS, CARD_PLATFORMS, MARK_HEIGHT } from '../../src/lib/badgeCard.js';
+import { renderCard, cardTier, compactCount, TIERS, CARD_PLATFORMS, MARK_HEIGHT, renderMarkOverlay } from '../../src/lib/badgeCard.js';
 
 const base = { platform: 'twitch', name: 'KaiCenat', username: 'kaicenat', count: 21_772_129, delta30: 74_298, rank: 1, total: 28_504, avatar: null };
 
@@ -98,5 +98,17 @@ describe('platform logos follow brand guidelines', () => {
   it('draws the mark after the shine so nothing ever covers it', () => {
     const svg = card('youtube');
     expect(svg.indexOf('data-mark="youtube"')).toBeGreaterThan(svg.indexOf('shine)'));
+  });
+});
+
+describe('renderMarkOverlay (flat logo layer for the home hero)', () => {
+  it('draws only the mark, exactly where the card draws it', () => {
+    for (const platform of ['youtube', 'twitch', 'kick', 'tiktok']) {
+      const overlay = renderMarkOverlay(platform);
+      const card = renderCard({ platform, name: 'X', username: 'x', count: 1, delta30: 0, rank: 1, total: 10, avatar: null });
+      const mark = overlay.match(/<g data-mark="[^"]+"[\s\S]*<\/g>/)[0];
+      expect(overlay).toMatch(/^<svg [^>]*viewBox="0 0 250 350"/);
+      expect(card).toContain(mark);
+    }
   });
 });

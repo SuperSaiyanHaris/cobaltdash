@@ -478,3 +478,73 @@ h1, h2, h3, h4 {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Home hero card stage (src/components/HeroCardStage.jsx). */
+.hero-stage { perspective: 1100px; }
+.hero-fan {
+  opacity: 0.5;
+  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
+}
+.hero-fan-left  { transform: translateX(-46%) translateY(16px) rotate(-11deg); }
+.hero-fan-right { transform: translateX(46%) translateY(16px) rotate(11deg); }
+.hero-tilt {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.18s ease-out;
+}
+.hero-flip {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  transition: transform 0.9s cubic-bezier(0.3, 1.35, 0.4, 1);
+}
+.hero-flip.is-up { transform: rotateY(180deg); }
+.hero-face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 1rem;
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 60px rgba(167, 139, 250, 0.22);
+}
+.hero-face-front { transform: rotateY(180deg); }
+.hero-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255, 255, 255, 0.55), transparent 45%);
+}
+.hero-stage:hover .hero-glare { opacity: 1; }
+.hero-burst {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(253, 230, 138, 0.35) 25%, transparent 60%);
+  animation: hero-burst 0.9s ease-out 0.35s;
+}
+@keyframes hero-burst {
+  0%   { opacity: 0; transform: scale(0.3); }
+  25%  { opacity: 0.9; }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+.hero-pull-btn {
+  background: linear-gradient(90deg, #fde68a, #f0abfc, #67e8f9);
+  box-shadow: 0 8px 30px rgba(240, 171, 252, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.hero-pull-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 36px rgba(240, 171, 252, 0.5); }
+.hero-pull-btn:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .hero-flip, .hero-tilt { transition: none; }
+  .hero-burst { display: none; }
+}

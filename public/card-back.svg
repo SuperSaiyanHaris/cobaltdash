@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="350" viewBox="0 0 250 350" role="img" aria-label="ShinyPull card back">
+<defs>
+<linearGradient id="f" x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect"><stop offset="0" stop-color="#a78bfa"/><stop offset=".25" stop-color="#f0abfc"/><stop offset=".5" stop-color="#67e8f9"/><stop offset=".75" stop-color="#fde68a"/><stop offset="1" stop-color="#a78bfa"/><animateTransform attributeName="gradientTransform" type="translate" values="-0.5 -0.5;0.5 0.5;-0.5 -0.5" dur="6s" repeatCount="indefinite"/></linearGradient>
+<linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient>
+<pattern id="p" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="14" fill="#fff" opacity=".035"/></pattern>
+<radialGradient id="g" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#0b0b12" stop-opacity="0"/></radialGradient>
+<clipPath id="c"><rect width="250" height="350" rx="16"/></clipPath>
+</defs>
+<g clip-path="url(#c)">
+<rect width="250" height="350" fill="url(#f)"/>
+<rect x="7" y="7" width="236" height="336" rx="11" fill="#0b0b12"/>
+<rect x="7" y="7" width="236" height="336" rx="11" fill="url(#g)"/>
+<rect x="7" y="7" width="236" height="336" rx="11" fill="url(#p)"/>
+<rect x="18" y="18" width="214" height="314" rx="9" fill="none" stroke="url(#f)" stroke-opacity=".45"/>
+<circle cx="125" cy="160" r="58" fill="none" stroke="url(#f)" stroke-width="3"/>
+<g transform="translate(89 124) scale(.72)">
+<rect width="100" height="100" rx="24" fill="url(#m)"/>
+<rect x="28" y="54" width="12" height="22" rx="4" fill="#fff"/>
+<rect x="44" y="40" width="12" height="36" rx="4" fill="#fff"/>
+<rect x="60" y="26" width="12" height="50" rx="4" fill="#fff"/>
+</g>
+<text x="125" y="258" text-anchor="middle" font-family="-apple-system,Segoe UI,Inter,sans-serif" font-size="17" font-weight="900" letter-spacing="5" fill="#fafafa">SHINYPULL</text>
+<text x="125" y="280" text-anchor="middle" font-family="-apple-system,Segoe UI,Inter,sans-serif" font-size="8.5" font-weight="700" letter-spacing="3" fill="#8b8b96">CREATOR CARDS</text>
+</g>
+</svg>

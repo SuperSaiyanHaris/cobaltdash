@@ -112,6 +112,17 @@ function platformMark(platform, rightX, centerY) {
 }
 
 /**
+ * Just the platform mark on a transparent card-sized canvas, positioned
+ * exactly where renderCard draws it. Laid flat over a markless card that is
+ * tilting or flipping (the home hero), so the card moves in 3D while the
+ * logo itself is never rotated.
+ */
+export function renderMarkOverlay(platform) {
+  const W = 250, H = 350;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${platformMark(platform, W - 20, 28)}</svg>`;
+}
+
+/**
  * @param {object} c
  * @param {string} c.platform   key of CARD_PLATFORMS
  * @param {string} c.name       display name
