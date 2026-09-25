@@ -201,7 +201,7 @@ export default function HeroCardStage({ creators }) {
         >
           <span aria-hidden="true">✦</span> Pull a card
         </button>
-        <Link to="/badge" className="group inline-flex items-center gap-1 text-xs text-white/50 hover:text-white/80 transition-colors">
+        <Link to="/badge" className="group inline-flex items-center gap-1 text-[13px] text-white/80 hover:text-white transition-colors">
           Every creator has one. Get yours
           <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
         </Link>

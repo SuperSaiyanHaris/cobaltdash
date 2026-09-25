@@ -197,12 +197,12 @@ export function renderCard(c) {
 ${art}
 ${rankChip}
 <text x="${W / 2}" y="232" text-anchor="middle" font-family="${FONT}" font-size="18" font-weight="800" fill="#FAFAFA">${escapeXml(name)}</text>
-<text x="${W / 2}" y="247" text-anchor="middle" font-family="${FONT}" font-size="9.5" font-weight="600" letter-spacing=".6" fill="#7C7C88">@${escapeXml(handle)} · ${p.name}</text>
+<text x="${W / 2}" y="247" text-anchor="middle" font-family="${FONT}" font-size="9.5" font-weight="600" letter-spacing=".6" fill="#E4E4EA">@${escapeXml(handle)} · ${p.name}</text>
 <text x="${W / 2}" y="284" text-anchor="middle" font-family="${FONT}" font-size="30" font-weight="900" letter-spacing="-1" fill="url(#${id}num)">${count !== null ? compactCount(count) : '—'}</text>
-<text x="${W / 2}" y="298" text-anchor="middle" font-family="${FONT}" font-size="8.5" font-weight="800" letter-spacing="2.2" fill="#8B8B96">${escapeXml(p.unit.toUpperCase())}</text>
+<text x="${W / 2}" y="298" text-anchor="middle" font-family="${FONT}" font-size="8.5" font-weight="800" letter-spacing="2.2" fill="#D4D4DC">${escapeXml(p.unit.toUpperCase())}</text>
 <line x1="22" y1="312" x2="${W - 22}" y2="312" stroke="#fff" stroke-opacity=".08"/>
-${hasDelta ? `<text x="22" y="329" font-family="${FONT}" font-size="9.5" font-weight="700" fill="${up ? '#34D399' : '#F87171'}">${up ? '▲ +' : '▼ −'}${compactCount(c.delta30)} <tspan fill="#6B6B76" font-weight="600">30d</tspan></text>` : ''}
-<text x="${W - 22}" y="329" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#6B6B76">${cardNo} · SHINYPULL</text>
+${hasDelta ? `<text x="22" y="329" font-family="${FONT}" font-size="9.5" font-weight="700" fill="${up ? '#34D399' : '#F87171'}">${up ? '▲ +' : '▼ −'}${compactCount(c.delta30)} <tspan fill="#C4C4CE" font-weight="600">30d</tspan></text>` : ''}
+<text x="${W - 22}" y="329" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#C4C4CE">${cardNo} · SHINYPULL</text>
 <rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)"><animate attributeName="x" values="-220;-220;420" keyTimes="0;.55;1" dur="4.5s" repeatCount="indefinite"/></rect>
 ${c.showMark === false ? '' : platformMark(c.platform in CARD_PLATFORMS ? c.platform : 'youtube', W - 20, 28)}
 </g>
