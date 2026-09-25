@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Eye, Clock, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search } from 'lucide-react';
+import { TrendingUp, Users, Eye, Clock, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search, List, LayoutGrid } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -14,7 +14,7 @@ import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
 import CreatorAvatar from '../components/CreatorAvatar';
 import Sparkline from '../components/Sparkline';
-import { getRankedCreators, getFeaturedListings, getSparklineData } from '../services/creatorService';
+import { getRankedCreators, getFeaturedListings, getSparklineData, getPlatformCreatorCount } from '../services/creatorService';
 import { getHubsByPlatform } from '../lib/hubs';
 import SEO from '../components/SEO';
 import StructuredData from '../components/StructuredData';
@@ -23,6 +23,10 @@ import { formatNumber } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import CountUp from '../components/CountUp';
+import RankingsPodium from '../components/rankings/RankingsPodium';
+import RankingsCardGrid from '../components/rankings/RankingsCardGrid';
+import { cardImageUrl } from '../lib/cardUrl';
+import { CARD_PLATFORMS, cardTier } from '../lib/badgeCard';
 import logger from '../lib/logger';
 
 // Platform identity is the icon tint plus a thin hover rule — no colored
@@ -41,6 +45,13 @@ const platforms = [
 ];
 
 const topCounts = [50, 100, 500];
+
+// Unit of each platform's 30-day growth figure (rankings_cache.growth_30d).
+const GROWTH_UNIT = { youtube: 'views', twitch: 'hours', kick: 'paid subs', music: 'listeners' };
+
+// Rarity label colors for the light table (darker than the card foils so
+// they pass contrast on white).
+const TIER_TEXT = { LEGENDARY: '#b45309', EPIC: '#7e22ce', RARE: '#0369a1', COMMON: '#71717a' };
 
 const MotionLink = motion(Link);
 
@@ -83,7 +94,21 @@ const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px
 // page must route through handlePlatformChange, which also resets the rank
 // type when moving to a platform with no views metric and fires analytics.
 // Passing it renders buttons; omitting it renders plain links.
-function PlatformNav({ current, onSelect }) {
+// TikTok's only official mark is the black-fill one for light backgrounds
+// (it may not be recolored), so on the dark header it sits on a small white
+// chip; every other platform mark reads fine on dark as is.
+function NavIcon({ Icon, id, dark, className }) {
+  if (dark && id === 'tiktok') {
+    return (
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-white flex-shrink-0">
+        <Icon className="w-3.5 h-3.5" />
+      </span>
+    );
+  }
+  return <Icon className={className} />;
+}
+
+function PlatformNav({ current, onSelect, dark = false }) {
   const [open, setOpen] = useState(false);
   const activeId = current === 'all' ? null : current;
   const active = platforms.find((p) => p.id === activeId);
@@ -96,7 +121,7 @@ function PlatformNav({ current, onSelect }) {
   const items = [{ id: 'all', name: 'All platforms', icon: null, tint: '', available: true }, ...platforms];
 
   return (
-    <div className="mt-7 pt-6 border-t border-neutral-200/80">
+    <div className={`mt-7 pt-6 border-t ${dark ? 'border-white/10' : 'border-neutral-200/80'}`}>
       {/* Mobile: dropdown */}
       <div className="relative lg:hidden">
         <button
@@ -104,10 +129,10 @@ function PlatformNav({ current, onSelect }) {
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-haspopup="menu"
-          className="w-full flex items-center justify-between gap-2 h-11 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-900 hover:border-neutral-300 transition-colors"
+          className={`w-full flex items-center justify-between gap-2 h-11 px-3.5 rounded-lg text-sm font-medium transition-colors border ${dark ? 'bg-white/[0.06] border-white/15 text-white hover:border-white/30' : 'bg-white border-neutral-200 text-neutral-900 hover:border-neutral-300'}`}
         >
           <span className="flex items-center gap-2 min-w-0">
-            {ActiveIcon ? <ActiveIcon className={`w-4 h-4 flex-shrink-0 ${active.tint}`} /> : null}
+            {ActiveIcon ? <NavIcon Icon={ActiveIcon} id={active.id} dark={dark} className={`w-4 h-4 flex-shrink-0 ${active.tint}`} /> : null}
             <span className="truncate">{active ? active.name : 'All platforms'}</span>
           </span>
           <ChevronDown className={`w-4 h-4 flex-shrink-0 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -162,13 +187,17 @@ function PlatformNav({ current, onSelect }) {
           const cls = `flex-shrink-0 flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
             item.available === false
               ? 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
+              : dark
+              ? (isActive
+                ? 'bg-white border-white text-neutral-900'
+                : 'bg-white/[0.04] border-white/10 text-white/65 hover:text-white hover:border-white/25')
               : isActive
               ? 'bg-neutral-900 border-neutral-900 text-white'
               : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
           }`;
           const inner = (
             <>
-              {Icon && <Icon className={`w-4 h-4 ${isActive && item.available !== false ? 'text-white' : item.tint}`} />}
+              {Icon && <NavIcon Icon={Icon} id={item.id} dark={dark && !isActive} className={`w-4 h-4 ${isActive && item.available !== false && !dark ? 'text-white' : item.tint}`} />}
               {item.name}
               {item.available === false && <span className="text-xs opacity-75">(Soon)</span>}
             </>
@@ -469,18 +498,20 @@ function RankingsOverview() {
         keywords="top youtubers, top tiktokers, top twitch streamers, top kick streamers, top bluesky accounts, top music artists, creator rankings, most subscribers, most followers, live rankings 2026"
       />
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        {/* Header — the same dark stage as the per-platform pages. */}
+        <div className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+          <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
+          <div aria-hidden="true" className="absolute -top-24 left-1/3 w-[720px] h-[420px] rounded-full bg-violet-600/20 blur-[130px] pointer-events-none" />
+          <div className="relative w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
             {/* Masthead row. Title and stat strip sit side by side from lg up
                 instead of stacking, which is what left the right two thirds of
                 this block empty on desktop (raised in user feedback). Below lg
                 they stack exactly as before, so mobile is unchanged. */}
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
               <div className="lg:flex-shrink-0">
-                <p className={`${MICRO} mb-3`}>Rankings</p>
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Rankings</h1>
-                <p className="mt-2 text-sm text-neutral-500">Top creators across all platforms. Updated daily.</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">Rankings</p>
+                <h1 className="mt-2 text-3xl sm:text-5xl font-extrabold tracking-tight">Creator Rankings</h1>
+                <p className="mt-2 text-sm sm:text-base text-white/55">Top creators across all platforms. Updated daily.</p>
               </div>
 
               {/* Live stat strip — the same real, honest counts the home page
@@ -498,7 +529,7 @@ function RankingsOverview() {
                   The fourth cell is a real cache age derived from
                   rankings_cache.computed_at, not a static "updated daily"
                   claim, and it's a plain string so it never goes near CountUp. */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 w-full lg:w-auto lg:min-w-[34rem] bg-white border border-neutral-200 rounded-xl divide-x divide-y sm:divide-y-0 divide-neutral-200 overflow-hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-4 w-full lg:w-auto lg:min-w-[34rem] bg-white/[0.04] border border-white/10 rounded-xl divide-x divide-y sm:divide-y-0 divide-white/10 overflow-hidden">
                 {[
                   { label: 'Creators tracked', value: liveStats.creators },
                   { label: 'Daily data points', value: liveStats.dataPoints },
@@ -507,24 +538,24 @@ function RankingsOverview() {
                 ].map((s) => (
                   <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
                     {s.text ? (
-                      <p className="flex items-center gap-1.5 text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
+                      <p className="flex items-center gap-1.5 text-lg sm:text-xl font-bold text-white tabular-nums leading-none">
                         {s.live && <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" aria-hidden="true" />}
                         {s.text}
                       </p>
                     ) : s.value ? (
-                      <p className="text-lg sm:text-xl font-bold text-neutral-900 tabular-nums leading-none">
+                      <p className="text-lg sm:text-xl font-bold text-white tabular-nums leading-none">
                         <CountUp value={s.value} />
                       </p>
                     ) : (
-                      <div className="h-[1.125rem] sm:h-[1.25rem] w-10 bg-neutral-100 rounded animate-pulse" />
+                      <div className="h-[1.125rem] sm:h-[1.25rem] w-10 bg-white/10 rounded animate-pulse" />
                     )}
-                    <p className={`${MICRO} mt-1.5`}>{s.label}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/50 mt-1.5">{s.label}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <PlatformNav current="all" />
+            <PlatformNav current="all" dark />
           </div>
         </div>
 
@@ -570,55 +601,41 @@ function RankingsOverview() {
                         const premiumListings = listings.filter(l => l.placement_tier === 'premium');
                         const items = [];
 
+                        // Premium slots as compact gold foil rows (same look
+                        // as the per-platform table): the buyer's creator when
+                        // sold, a "Your channel here" pitch when not.
                         const pushPremiumSlot = (slotKey, advertiser) => {
-                          if (advertiser) {
-                            // Sold slot — render the buyer's creator
-                            const c = advertiser.creators;
-                            items.push(
-                              <Link
-                                key={slotKey}
-                                to={`/${c?.platform}/${c?.username}`}
-                                className="flex items-center gap-3 px-5 py-3 bg-amber-50/60 hover:bg-amber-50 transition-colors group"
-                              >
-                                <span className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] flex-shrink-0 bg-amber-100 border border-amber-200 text-amber-700" title="Premium featured listing">
-                                  Ad
-                                </span>
-                                <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="sm" rounded="rounded-lg" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name}</p>
-                                </div>
-                              </Link>
-                            );
-                          } else {
-                            // Unsold slot — ghost "Your Creator Here" row that
-                            // promotes the product on every rankings page. Auto-
-                            // replaced the moment the slot sells (queue logic).
-                            items.push(
-                              <Link
-                                key={slotKey}
-                                to="/promote"
-                                className="flex items-center gap-3 px-5 py-3 bg-amber-50/40 hover:bg-amber-50 border-y border-dashed border-amber-200 transition-colors group"
-                              >
-                                <span className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] flex-shrink-0 bg-amber-100 border border-amber-200 text-amber-700" title="Premium featured listing available">
-                                  Ad
-                                </span>
-                                <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600 text-xs font-semibold flex-shrink-0">
-                                  ★
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-neutral-900 truncate">Your Creator Here</p>
-                                  {/* amber-800, not amber-600: measured ~3:1 on
-                                      the amber-50/40 row background, well under
-                                      WCAG AA. amber-800 clears it (~6.8:1)
-                                      without changing anything but the color. */}
-                                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-800">Premium slot available</p>
-                                </div>
-                                <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
-                                  Claim <ArrowRight className="w-3 h-3" />
-                                </span>
-                              </Link>
-                            );
-                          }
+                          const c = advertiser?.creators;
+                          items.push(
+                            <div key={slotKey} className="px-3 py-2">
+                              <div className="sponsor-foil rounded-xl p-[1.5px] shadow-[0_10px_28px_-14px_rgba(245,158,11,0.6)]">
+                                <Link
+                                  to={advertiser ? `/${c?.platform}/${c?.username}` : '/promote'}
+                                  className="relative flex items-center gap-3 rounded-[10px] bg-gradient-to-r from-amber-50 via-white to-amber-50 px-3 py-2.5 overflow-hidden group"
+                                >
+                                  <span aria-hidden="true" className="sponsor-shine" />
+                                  <span className="relative inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-bold uppercase tracking-[0.1em] flex-shrink-0 bg-amber-100 border border-amber-300 text-amber-800" title={advertiser ? 'Premium featured listing' : 'Premium featured listing available'}>
+                                    Ad
+                                  </span>
+                                  {advertiser ? (
+                                    <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="sm" rounded="rounded-lg" className="relative" />
+                                  ) : (
+                                    <span className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center text-neutral-900 text-xs font-black flex-shrink-0">★</span>
+                                  )}
+                                  <div className="relative min-w-0 flex-1">
+                                    <p className="text-sm font-bold text-neutral-900 truncate">{advertiser ? c?.display_name : 'Your channel here'}</p>
+                                    {/* amber-800 on the amber-50 wash clears WCAG AA. */}
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-800">{advertiser ? 'Featured · Premium' : 'Premium slot available'}</p>
+                                  </div>
+                                  {!advertiser && (
+                                    <span className="relative hidden sm:inline-flex items-center gap-1 text-xs font-bold text-amber-800 group-hover:gap-2 transition-all whitespace-nowrap">
+                                      Claim <ArrowRight className="w-3 h-3" />
+                                    </span>
+                                  )}
+                                </Link>
+                              </div>
+                            </div>
+                          );
                         };
 
                         creators.forEach((creator, index) => {
@@ -721,6 +738,19 @@ function PlatformRankings({ urlPlatform }) {
   const [highlightListingId, setHighlightListingId] = useState(null);
   // creator_id → number[] (30-day subscriber series). Loaded lazily after rankings render.
   const [sparklines, setSparklines] = useState({});
+  // Table or Cards view, remembered per browser.
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem('sp-rankings-view') === 'cards' ? 'cards' : 'table'; } catch { return 'table'; }
+  });
+  const chooseView = (v) => {
+    setView(v);
+    try { localStorage.setItem('sp-rankings-view', v); } catch { /* private mode */ }
+  };
+  // Creators tracked on this platform: the total behind each row's rarity.
+  const [platformTotal, setPlatformTotal] = useState(null);
+  // Desktop hover preview of a row's holographic card.
+  const [hoverCard, setHoverCard] = useState(null); // { creator, top }
+  const hoverTimer = useRef(null);
 
   const rankTypes = [
     { id: 'subscribers', name: selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' || selectedPlatform === 'rumble' ? 'Top Followers' : selectedPlatform === 'music' ? 'Top Listeners' : selectedPlatform === 'kick' ? 'Top Paid Subs' : 'Top Subscribers', icon: Users },
@@ -736,6 +766,11 @@ function PlatformRankings({ urlPlatform }) {
       setSelectedPlatform(urlPlatform);
     }
   }, [urlPlatform]);
+
+  useEffect(() => {
+    setPlatformTotal(null);
+    getPlatformCreatorCount(selectedPlatform).then((n) => setPlatformTotal(n || null)).catch(() => {});
+  }, [selectedPlatform]);
 
   useEffect(() => {
     getFeaturedListings(selectedPlatform)
@@ -956,6 +991,7 @@ function PlatformRankings({ urlPlatform }) {
     available: false,
   } : undefined);
   const platformHubs = getHubsByPlatform(selectedPlatform);
+  const updatedAgo = timeAgo(rankings[0]?.computedAt || null);
   const seoData = getSeoData(currentPlatform, selectedRankType, topCount);
   const listSchema = createRankingListSchema(rankings, currentPlatform, topCount);
 
@@ -969,19 +1005,26 @@ function PlatformRankings({ urlPlatform }) {
       {listSchema && <StructuredData schema={listSchema} />}
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-            <p className={`${MICRO} mb-3`}>Rankings</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">{getH1Text(currentPlatform, topCount)}</h1>
-            <p className="mt-2 text-sm text-neutral-500">{getSubheading(currentPlatform)}</p>
-            {getPlatformIntro(currentPlatform) && (
-              <p className="mt-4 text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl">
-                {getPlatformIntro(currentPlatform)}
-              </p>
-            )}
+        {/* Header — a dark stage like the home hero: title, platform nav, and
+            the top 3 as holographic cards on a podium. The long platform
+            intro moved below the table (still on the page for SEO). */}
+        <div className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+          <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
+          <div aria-hidden="true" className="absolute left-1/2 -translate-x-1/2 top-24 w-[720px] h-[480px] rounded-full blur-[130px] opacity-25 pointer-events-none" style={{ backgroundColor: CARD_PLATFORMS[selectedPlatform]?.color || '#a855f7' }} />
+          <div className="relative w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
+              Rankings{updatedAgo ? <> · Updated {updatedAgo}</> : null}
+            </p>
+            <h1 className="mt-2 text-3xl sm:text-5xl font-extrabold tracking-tight">{getH1Text(currentPlatform, topCount)}</h1>
+            <p className="mt-2 text-sm sm:text-base text-white/55">{getSubheading(currentPlatform)}</p>
 
-            <PlatformNav current={selectedPlatform} onSelect={handlePlatformChange} />
+            <PlatformNav current={selectedPlatform} onSelect={handlePlatformChange} dark />
+
+            {loading && rankings.length === 0 ? (
+              <div className="mt-10 h-[190px] sm:h-[400px]" />
+            ) : (
+              <RankingsPodium creators={rankings} />
+            )}
           </div>
         </div>
 
@@ -1093,8 +1136,35 @@ function PlatformRankings({ urlPlatform }) {
                 )}
               </div>
             )}
+
+            {/* Table / Cards view switch */}
+            <div role="group" aria-label="View" className={`ml-auto flex gap-0.5 p-0.5 ${CARD} !rounded-lg`}>
+              {[['table', 'Table', List], ['cards', 'Cards', LayoutGrid]].map(([id, label, Icon]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => chooseView(id)}
+                  aria-pressed={view === id}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === id ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
+          {/* Cards view: every creator's holographic card in rank order, on a
+              dark stage so the foil reads, with the ad slots as gold cards. */}
+          {view === 'cards' && !loading && !error && displayList.length > 0 ? (
+            <div className="relative isolate overflow-hidden rounded-3xl bg-[#0a0a0f] px-4 py-6 sm:p-8">
+              <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
+              <div className="relative">
+                <RankingsCardGrid items={displayList} growthUnit={GROWTH_UNIT[selectedPlatform] || 'followers'} />
+              </div>
+            </div>
+          ) : (
+          <div className="relative" onMouseLeave={() => { clearTimeout(hoverTimer.current); setHoverCard(null); }}>
           {/* Rankings Table */}
           <div className={`${CARD} overflow-hidden`}>
             {/* Sticky Table Header */}
@@ -1172,83 +1242,66 @@ function PlatformRankings({ urlPlatform }) {
             )}
 
             {/* Rankings List */}
-            {!loading && !error && displayList.map((creator, index) => {
+            {!loading && !error && displayList.map((creator) => {
               if (creator.isSponsored) {
+                // Featured listing slot. Premium slots (ranks 4-5 and 9-10) are
+                // a gold foil row with a slow shine, the most eye-catching row
+                // on the page; Featured (basic) slots get a quieter gold edge.
+                // Unsold slots sell themselves ("Your channel here" -> /promote);
+                // sold ones show the buyer's creator.
                 const isPremium = creator.isPremium;
                 const isGhost = creator.isGhost;
-                // Ghost slots link to /promote (CTA), real slots link to the
-                // creator's profile. Different visual treatment makes the
-                // available-slot read clearly without breaking the row layout.
-                const RowComponent = isGhost ? Link : Link;
                 const rowHref = isGhost ? '/promote' : `/${creator.platform}/${creator.username}`;
                 const isHighlighted = highlightListingId === `listing-${creator.listingId}`;
-                const rowClass = `${isGhost
-                  ? 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-dashed border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-colors group'
-                  : 'grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 bg-amber-50/60 hover:bg-amber-50 transition-colors group'
-                } transition-shadow duration-700 ${isHighlighted ? 'ring-2 ring-inset ring-amber-500' : ''}`;
                 return (
-                  <RowComponent
+                  <div
                     key={`sponsored-${creator.listingId}`}
-                    id={`listing-${creator.listingId}`}
-                    to={rowHref}
-                    className={rowClass}
+                    onMouseEnter={() => { clearTimeout(hoverTimer.current); setHoverCard(null); }}
+                    className="relative z-30 px-3 sm:px-4 py-2 border-b border-neutral-100"
                   >
-                    {/* "Ad" badge in rank column */}
-                    <div className="col-span-2 md:col-span-1 flex items-center">
-                      <span
-                        className="inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] bg-amber-100 border border-amber-200 text-amber-700"
-                        title={isPremium ? 'Premium featured listing' : 'Featured listing'}
+                    <div className={`rounded-2xl p-[1.5px] transition-shadow duration-700 ${isPremium ? 'sponsor-foil shadow-[0_14px_40px_-16px_rgba(245,158,11,0.6)]' : 'bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200'} ${isHighlighted ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}>
+                      <Link
+                        id={`listing-${creator.listingId}`}
+                        to={rowHref}
+                        className="relative flex items-center gap-3 sm:gap-4 rounded-[14px] bg-gradient-to-r from-amber-50 via-white to-amber-50 px-3 sm:px-4 py-3 overflow-hidden group"
                       >
-                        Ad
-                      </span>
-                    </div>
-
-                    {/* Creator info OR ghost call-to-action */}
-                    <div className={`col-span-10 flex items-center gap-3 min-w-0 ${creatorColSpanRow}`}>
-                      {isGhost ? (
-                        <>
-                          <div className="w-10 h-10 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600 text-sm font-semibold flex-shrink-0">
-                            {isPremium ? '★' : '+'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-neutral-900">
-                              Your Creator Here
-                            </p>
-                            {/* amber-800, not amber-600: see the matching
-                                comment on the other ghost-slot instance above
-                                -- same contrast fix, same reasoning. */}
-                            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-800 mt-0.5">
-                              {isPremium ? 'Premium slot' : 'Basic slot'} available · {creator.slotPrice}
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-lg" className="!w-10 !h-10" />
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium truncate text-neutral-900">
-                              {creator.display_name}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Empty stat columns to match the organic-row layout, then a
-                        Claim CTA in the trailing column. Views column only when
-                        the platform actually has a Views column. */}
-                    <div className="hidden md:block col-span-2" />
-                    <div className="hidden md:block col-span-2" />
-                    {secondaryCol && <div className="hidden md:block col-span-2" />}
-                    <div className="hidden md:flex col-span-1 items-center justify-end">
-                      {isGhost && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:gap-2 transition-all whitespace-nowrap">
-                          Claim
-                          <ArrowRight className="w-3 h-3" />
+                        {isPremium && <span aria-hidden="true" className="sponsor-shine" />}
+                        <span
+                          className="relative hidden sm:inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-bold uppercase tracking-[0.1em] bg-amber-100 border border-amber-300 text-amber-800 flex-shrink-0"
+                          title={isPremium ? 'Premium featured listing' : 'Featured listing'}
+                        >
+                          Ad
                         </span>
-                      )}
+                        {isGhost ? (
+                          <span className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center text-neutral-900 font-black flex-shrink-0 shadow-[0_4px_14px_-4px_rgba(245,158,11,0.7)]">★</span>
+                        ) : (
+                          <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-xl" className="relative !w-10 !h-10" />
+                        )}
+                        <div className="relative min-w-0 flex-1">
+                          <p className="font-bold text-[15px] text-neutral-900 truncate">{isGhost ? 'Your channel here' : creator.display_name}</p>
+                          {/* amber-800 on the amber-50 wash clears WCAG AA. */}
+                          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800 truncate">
+                            {/* On phones the Ad label rides here instead of in its own badge. */}
+                            <span className="sm:hidden">Ad · </span>
+                            {isGhost ? <>{isPremium ? 'Premium' : 'Featured'} slot<span className="hidden sm:inline"> available</span></> : `Featured${isPremium ? ' · Premium' : ''}`}
+                          </p>
+                        </div>
+                        {isGhost ? (
+                          <>
+                            <span className="relative hidden sm:inline text-sm font-bold text-amber-700 tabular-nums">{creator.slotPrice}</span>
+                            <span className="relative inline-flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-neutral-900 group-hover:bg-neutral-800 text-white text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors">
+                              Claim<span className="hidden sm:inline"> this spot</span>
+                              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </span>
+                          </>
+                        ) : (
+                          <span className="relative inline-flex items-center gap-1 text-sm font-semibold text-neutral-700 group-hover:text-neutral-900 whitespace-nowrap">
+                            View<span className="hidden sm:inline"> profile</span> <ArrowRight className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </Link>
                     </div>
-                  </RowComponent>
+                  </div>
                 );
               }
 
@@ -1261,6 +1314,12 @@ function PlatformRankings({ urlPlatform }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
+                  onMouseEnter={(e) => {
+                    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+                    const { offsetTop: top, offsetHeight: height } = e.currentTarget;
+                    clearTimeout(hoverTimer.current);
+                    hoverTimer.current = setTimeout(() => setHoverCard({ creator, top, height }), 220);
+                  }}
                   className="relative grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 hover:bg-neutral-50 transition-colors group"
                 >
                   {/* Thin platform-tinted rule on hover — the one allowed accent */}
@@ -1279,6 +1338,18 @@ function PlatformRankings({ urlPlatform }) {
                       <p className="font-medium text-neutral-900 truncate">
                         {creator.display_name}
                       </p>
+                      {/* Card rarity from the subscribers rank (the same rule the
+                          creator's holographic card uses). */}
+                      {(() => {
+                        if (selectedRankType !== 'subscribers' || !platformTotal || !creator.rank_position) return null;
+                        const tier = cardTier(creator.rank_position, platformTotal);
+                        return (
+                          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: TIER_TEXT[tier.name] }}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tier.a }} />
+                            {tier.name.charAt(0) + tier.name.slice(1).toLowerCase()}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -1347,9 +1418,38 @@ function PlatformRankings({ urlPlatform }) {
             })}
           </div>
 
+          {/* Hover preview of the row's card (desktop, fine pointers only).
+              Sits under the ad rows (z-30) so it never covers a paid slot. */}
+          {hoverCard && (
+            <div
+              aria-hidden="true"
+              className="hidden lg:block absolute z-20 pointer-events-none left-[30%] animate-fade-in"
+              style={{ top: Math.max(0, hoverCard.top + hoverCard.height / 2 - 112) }}
+            >
+              <img
+                src={cardImageUrl(hoverCard.creator.platform, hoverCard.creator.username)}
+                alt=""
+                width="250"
+                height="350"
+                className="w-[160px] h-auto rounded-2xl shadow-[0_28px_60px_-14px_rgba(0,0,0,0.5)]"
+              />
+            </div>
+          )}
+          </div>
+          )}
+
+          {/* About these rankings: the platform intro that used to sit in the
+              header, kept on the page (and in the SSR copy) for SEO. */}
+          {getPlatformIntro(currentPlatform) && (
+            <div className={`mt-12 ${CARD} p-6 sm:p-8`}>
+              <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-neutral-900 mb-3">About the {currentPlatform?.name} rankings</h2>
+              <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-3xl">{getPlatformIntro(currentPlatform)}</p>
+            </div>
+          )}
+
           {/* SEO FAQ Section */}
           {!loading && !error && rankings.length > 0 && (
-            <div className={`mt-12 ${CARD} p-6 sm:p-8`}>
+            <div className={`mt-6 ${CARD} p-6 sm:p-8`}>
               <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-neutral-900 mb-6">
                 {currentPlatform?.name} Rankings FAQ
               </h2>

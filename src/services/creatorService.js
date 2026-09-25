@@ -665,6 +665,12 @@ async function _platformCreatorCount(platform) {
   return count || 0;
 }
 
+/** Creators tracked on a platform: the `total` behind a card's rarity. */
+export const getPlatformCreatorCount = withErrorHandling(
+  (platform) => _platformCreatorCount(platform),
+  'creatorService.getPlatformCreatorCount'
+);
+
 function _randomRanks([lo, hi], n) {
   const span = hi - lo + 1;
   if (span <= n) return Array.from({ length: span }, (_, i) => lo + i);
