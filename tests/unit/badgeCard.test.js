@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderCard, cardTier, compactCount, TIERS, CARD_PLATFORMS } from '../../src/lib/badgeCard.js';
+import { renderCard, cardTier, compactCount, TIERS, CARD_PLATFORMS, MARK_HEIGHT } from '../../src/lib/badgeCard.js';
 
 const base = { platform: 'twitch', name: 'KaiCenat', username: 'kaicenat', count: 21_772_129, delta30: 74_298, rank: 1, total: 28_504, avatar: null };
 
@@ -57,8 +57,8 @@ describe('renderCard', () => {
   });
 
   it('can leave out the platform logo (for rotated/faded placements)', () => {
-    expect(renderCard({ ...base, showMark: false })).not.toContain('<g transform="translate(214 20)"');
-    expect(renderCard(base)).toContain('<g transform="translate(214 20)"');
+    expect(renderCard({ ...base, showMark: false })).not.toContain('data-mark=');
+    expect(renderCard(base)).toContain('data-mark="twitch"');
   });
 
   it('truncates very long names', () => {
@@ -72,5 +72,25 @@ describe('compactCount', () => {
     expect(compactCount(20_000)).toBe('20K');
     expect(compactCount(1_684_784)).toBe('1.68M');
     expect(compactCount(518_000_000)).toBe('518M');
+  });
+});
+
+describe('platform logos follow brand guidelines', () => {
+  const card = (platform) => renderCard({ ...base, platform });
+  it('uses the official colors, never a tint', () => {
+    expect(card('youtube')).toContain('fill="#FF0000"');
+    expect(card('twitch')).toContain('fill="#9146FF"');
+    expect(card('kick')).toContain('fill="#53FC19"');
+    expect(card('mastodon')).toContain('fill="#6364FF"');
+    expect(card('tiktok')).toMatch(/<image href="data:image\/png;base64,/);
+  });
+  it('renders the mark at least 22px tall (YouTube requires >= 20dp)', () => {
+    expect(MARK_HEIGHT).toBeGreaterThanOrEqual(22);
+    const scale = Number(card('youtube').match(/data-mark="youtube">[\s\S]*?scale\(([\d.]+)\)/)[1]);
+    expect(20 * scale).toBeGreaterThanOrEqual(22 - 0.01);
+  });
+  it('draws the mark after the shine so nothing ever covers it', () => {
+    const svg = card('youtube');
+    expect(svg.indexOf('data-mark="youtube"')).toBeGreaterThan(svg.indexOf('shine)'));
   });
 });

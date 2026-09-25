@@ -1113,7 +1113,10 @@ export default function CreatorProfile() {
                       </div>
                       <a href={profileUrl} onClick={(e) => e.preventDefault()} className="inline-block mb-2 cursor-default">
                         <img
-                          src={badgeUrl}
+                          // Half-size thumbnail: mark=0, since the card's platform
+                          // logo would render under the 22px brand minimum here.
+                          // The embed code itself is full size, with the logo.
+                          src={`${badgeUrl}?mark=0`}
                           width="125"
                           height="175"
                           alt={`${creator?.displayName || username} creator card`}

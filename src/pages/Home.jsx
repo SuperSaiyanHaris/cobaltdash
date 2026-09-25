@@ -290,25 +290,41 @@ function ChampionsGrid({ tops }) {
           const isActive = offset === 0;
 
           // The creator's live holographic card (middleware.js -> /card/...).
-          // mark=0: no platform logo, since receded cards are rotated, scaled
-          // and faded, which YouTube's brand guidelines don't allow on their
-          // logo (see the note that used to sit here). The card still names
-          // the platform in text. draggable=false so the browser's native
-          // image drag doesn't fight the fan's swipe gesture.
+          // Platform logos follow the brand rules: receded cards are rotated,
+          // scaled and faded (Twitch forbids tilting its logo; YouTube forbids
+          // altering it or shrinking it under 20dp), so they use mark=0 and
+          // only name the platform in text. Once a card is centered (upright,
+          // full size, full opacity) the logo version fades in over it, after
+          // the fan's spring has settled. draggable=false so the browser's
+          // native image drag doesn't fight the swipe gesture.
           const cardClassName = `block w-full rounded-2xl transition-[filter] cursor-pointer ${
             isActive ? 'drop-shadow-[0_18px_30px_rgba(0,0,0,0.28)] hover:brightness-110' : 'drop-shadow-[0_10px_18px_rgba(0,0,0,0.18)]'
           }`;
 
+          const cardSrc = `/card/${top.platform}/${encodeURIComponent(top.username)}`;
           const cardInner = (
-            <img
-              src={`/card/${top.platform}/${encodeURIComponent(top.username)}?mark=0`}
-              width="250"
-              height="350"
-              alt={`${top.display_name}, #1 on ${top._platformLabel}: ${formatNumber(top.subscribers || 0)} ${top._metricLabel}`}
-              draggable="false"
-              loading={abs <= 1 ? 'eager' : 'lazy'}
-              className="w-full h-auto select-none"
-            />
+            <span className="relative block">
+              <img
+                src={`${cardSrc}?mark=0`}
+                width="250"
+                height="350"
+                alt={`${top.display_name}, #1 on ${top._platformLabel}: ${formatNumber(top.subscribers || 0)} ${top._metricLabel}`}
+                draggable="false"
+                loading={abs <= 1 ? 'eager' : 'lazy'}
+                className="w-full h-auto select-none"
+              />
+              {abs <= 1 && (
+                <img
+                  src={cardSrc}
+                  width="250"
+                  height="350"
+                  alt=""
+                  aria-hidden="true"
+                  draggable="false"
+                  className={`absolute inset-0 w-full h-auto select-none transition-opacity ${isActive ? 'opacity-100 duration-300 delay-500' : 'opacity-0 duration-0'}`}
+                />
+              )}
+            </span>
           );
 
           return (

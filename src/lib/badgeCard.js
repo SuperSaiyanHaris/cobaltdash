@@ -7,20 +7,35 @@
 // Rarity comes from the creator's real rank on their platform:
 //   LEGENDARY top 10 or top 0.1% · EPIC top 1% · RARE top 10% · COMMON rest.
 
+import { TIKTOK_MARK_DATA_URI, TIKTOK_MARK_ASPECT } from './tiktokMark.js';
+
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif";
 const NOTE = '<path transform="translate(1 0)" d="M13 1v10.6A3.5 3.5 0 1 0 15 14.8V5.2l4 1.3V3.1L13 1Z"/>';
 
-// glyph: SVG drawn in a ~16x16 box (fill set by the caller).
+// Official platform marks, exact shapes and colors copied from the site's
+// verified icon components (src/components/*Icon.jsx). Never recolor them.
+const LOGOS = {
+  youtube: { w: 28.5701, h: 20, svg: '<path fill="#FF0000" d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 0 14.285 0 14.285 0C14.285 0 5.35042 0 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C0 5.35042 0 10 0 10C0 10 0 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z"/><path fill="#FFFFFF" d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z"/>' },
+  twitch: { w: 24, h: 24, svg: '<path fill="#9146FF" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>' },
+  kick: { w: 24, h: 24, svg: '<path fill="#53FC19" d="M2.86957 1.5h6.84782v4.56522H12V3.78261h2.2826V1.5h6.8478v6.84783h-2.2826v2.28257h-2.2826v2.7392h2.2826v2.2826h2.2826V22.5h-6.8478v-2.2826H12v-2.2826H9.71739V22.5H2.86957v-21Z"/>' },
+  bluesky: { w: 320, h: 286, svg: '<path fill="#1185FE" d="M69.364 19.146c36.687 27.806 76.147 84.186 90.636 114.439 14.489-30.253 53.948-86.633 90.636-114.439C277.107-.917 320-16.44 320 32.957c0 9.865-5.603 82.875-8.889 94.729-11.423 41.208-53.045 51.719-90.071 45.357 64.719 11.12 81.182 47.953 45.627 84.785-80 82.874-106.667-44.333-106.667-44.333s-26.667 127.207-106.667 44.333c-35.555-36.832-19.092-73.665 45.627-84.785-37.026 6.362-78.648-4.149-90.071-45.357C5.603 115.832 0 42.822 0 32.957 0-16.44 42.893-.917 69.364 19.147Z"/>' },
+  mastodon: { w: 24, h: 24, svg: '<path fill="#6364FF" d="M23.193 7.879c0-5.206-3.411-6.732-3.411-6.732C18.062.357 15.108.025 12.041 0h-.076c-3.068.025-6.02.357-7.74 1.147 0 0-3.412 1.526-3.412 6.732 0 1.192-.023 2.618.015 4.129.124 5.092.934 10.11 5.641 11.355 2.17.574 4.034.695 5.535.612 2.722-.151 4.25-.972 4.25-.972l-.09-1.975s-1.945.613-4.129.539c-2.165-.074-4.449-.233-4.799-2.891a5.499 5.499 0 0 1-.048-.745s2.125.52 4.817.643c1.646.075 3.19-.097 4.758-.283 3.007-.359 5.625-2.212 5.954-3.905.52-2.666.476-6.507.476-6.507zm-4.024 6.709h-2.497V8.469c0-1.29-.543-1.944-1.628-1.944-1.2 0-1.802.776-1.802 2.312v3.349h-2.484v-3.35c0-1.536-.602-2.31-1.802-2.31-1.085 0-1.628.653-1.628 1.943v6.119H4.831V8.285c0-1.29.328-2.314.987-3.07.68-.758 1.569-1.146 2.674-1.146 1.278 0 2.246.491 2.886 1.474L12 6.585l.622-1.043c.64-.982 1.608-1.474 2.886-1.474 1.104 0 1.994.389 2.674 1.146.658.756.986 1.781.986 3.07v6.304z"/>' },
+  substack: { w: 24, h: 24, svg: '<path fill="#FF6719" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812H22.54V24l-10.54-5.91L1.46 24V10.812zM22.539 0H1.46v2.836h21.08V0z"/>' },
+  rumble: { w: 24, h: 24, svg: '<path fill="#85C742" d="M22.435 9.299c-.371-.605-.847-1.137-1.395-1.581L9.842 1.235a3.84 3.84 0 0 0-3.835-.022 3.84 3.84 0 0 0-1.926 3.32V17.46a3.84 3.84 0 0 0 1.926 3.32 3.838 3.838 0 0 0 3.835-.023l11.198-6.482a3.84 3.84 0 0 0 1.929-3.318 3.86 3.86 0 0 0-.534-1.659zM15.66 12.49l-6.05 3.529a.957.957 0 0 1-.957.005.96.96 0 0 1-.482-.83V8.157a.96.96 0 0 1 .482-.831.957.957 0 0 1 .957.005l6.05 3.529a.96.96 0 0 1 .477.829.957.957 0 0 1-.477.802z"/>' },
+};
+
+// color: accent for the card's art glow (not the logo). plate: background the
+// official mark sits on (Kick's mark is green-on-black; the rest go on white).
 export const CARD_PLATFORMS = {
-  youtube:  { name: 'YouTube', color: '#FF3B30', unit: 'subscribers', glyph: '<path transform="translate(0 2.5) scale(0.56)" d="M27.97 3.12A3.58 3.58 0 0 0 25.45.6C23.22 0 14.29 0 14.29 0S5.35 0 3.12.6A3.58 3.58 0 0 0 .6 3.12C0 5.35 0 10 0 10s0 4.65.6 6.88a3.58 3.58 0 0 0 2.52 2.52c2.23.6 11.17.6 11.17.6s8.93 0 11.16-.6a3.58 3.58 0 0 0 2.52-2.52c.6-2.23.6-6.88.6-6.88s0-4.65-.6-6.88Z"/><path transform="translate(0 2.5) scale(0.56)" fill="#fff" d="M11.43 14.29 18.85 10l-7.42-4.29v8.58Z"/>' },
-  twitch:   { name: 'Twitch', color: '#A970FF', unit: 'followers', glyph: '<path transform="scale(0.66)" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>' },
-  kick:     { name: 'Kick', color: '#53FC18', unit: 'paid subs', glyph: '<path transform="scale(0.66)" d="M2.87 1.5h6.85v4.57H12V3.78h2.28V1.5h6.85v6.85h-2.28v2.28h-2.28v2.74h2.28v2.28h2.28v6.85h-6.85v-2.28H12v-2.28H9.72v4.57H2.87v-21Z"/>' },
-  tiktok:   { name: 'TikTok', color: '#FF2D6F', unit: 'followers', glyph: NOTE },
-  bluesky:  { name: 'Bluesky', color: '#1185FE', unit: 'followers', glyph: '<path transform="translate(0 1.5) scale(0.05)" d="M69.364 19.146c36.687 27.806 76.147 84.186 90.636 114.439 14.489-30.253 53.948-86.633 90.636-114.439C277.107-.917 320-16.44 320 32.957c0 9.865-5.603 82.875-8.889 94.729-11.423 41.208-53.045 51.719-90.071 45.357 64.719 11.12 81.182 47.953 45.627 84.785-80 82.874-106.667-44.333-106.667-44.333s-26.667 127.207-106.667 44.333c-35.555-36.832-19.092-73.665 45.627-84.785-37.026 6.362-78.648-4.149-90.071-45.357C5.603 115.832 0 42.822 0 32.957 0-16.44 42.893-.917 69.364 19.147Z"/>' },
-  mastodon: { name: 'Mastodon', color: '#8C8DFF', unit: 'followers', glyph: '<path transform="scale(0.66)" d="M23.193 7.879c0-5.206-3.411-6.732-3.411-6.732C18.062.357 15.108.025 12.041 0h-.076c-3.068.025-6.02.357-7.74 1.147 0 0-3.412 1.526-3.412 6.732 0 1.192-.023 2.618.015 4.129.124 5.092.934 10.11 5.641 11.355 2.17.574 4.034.695 5.535.612 2.722-.151 4.25-.972 4.25-.972l-.09-1.975s-1.945.613-4.129.539c-2.165-.074-4.449-.233-4.799-2.891a5.499 5.499 0 0 1-.048-.745s2.125.52 4.817.643c1.646.075 3.19-.097 4.758-.283 3.007-.359 5.625-2.212 5.954-3.905.52-2.666.476-6.507.476-6.507zm-4.024 6.709h-2.497V8.469c0-1.29-.543-1.944-1.628-1.944-1.2 0-1.802.776-1.802 2.312v3.349h-2.484v-3.35c0-1.536-.602-2.31-1.802-2.31-1.085 0-1.628.653-1.628 1.943v6.119H4.831V8.285c0-1.29.328-2.314.987-3.07.68-.758 1.569-1.146 2.674-1.146 1.278 0 2.246.491 2.886 1.474L12 6.585l.622-1.043c.64-.982 1.608-1.474 2.886-1.474 1.104 0 1.994.389 2.674 1.146.658.756.986 1.781.986 3.07v6.304z"/>' },
-  music:    { name: 'Music', color: '#F59E0B', unit: 'monthly listeners', glyph: NOTE },
-  substack: { name: 'Substack', color: '#FF6719', unit: 'subscribers', glyph: '<path transform="scale(0.66)" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812H22.54V24l-10.54-5.91L1.46 24V10.812zM22.539 0H1.46v2.836h21.08V0z"/>' },
-  rumble:   { name: 'Rumble', color: '#85C742', unit: 'followers', glyph: NOTE },
+  youtube:  { name: 'YouTube', color: '#FF3B30', unit: 'subscribers', plate: '#FFFFFF' },
+  twitch:   { name: 'Twitch', color: '#A970FF', unit: 'followers', plate: '#FFFFFF' },
+  kick:     { name: 'Kick', color: '#53FC18', unit: 'paid subs', plate: '#000000' },
+  tiktok:   { name: 'TikTok', color: '#FF2D6F', unit: 'followers', plate: '#FFFFFF' },
+  bluesky:  { name: 'Bluesky', color: '#1185FE', unit: 'followers', plate: '#FFFFFF' },
+  mastodon: { name: 'Mastodon', color: '#8C8DFF', unit: 'followers', plate: '#FFFFFF' },
+  music:    { name: 'Music', color: '#F59E0B', unit: 'monthly listeners', plate: '#FFFFFF' },
+  substack: { name: 'Substack', color: '#FF6719', unit: 'subscribers', plate: '#FFFFFF' },
+  rumble:   { name: 'Rumble', color: '#85C742', unit: 'followers', plate: '#FFFFFF' },
 };
 
 export const TIERS = {
@@ -56,6 +71,38 @@ export function compactCount(n) {
 function fit(s, max) {
   const str = String(s ?? '');
   return str.length > max ? str.slice(0, max - 1) + '…' : str;
+}
+
+/** Minimum rendered height of a platform mark, same floor the site uses
+ * everywhere (src/components/brandMarkSize.js): YouTube requires >= 20dp. */
+export const MARK_HEIGHT = 22;
+const PLATE_PAD = 5;
+
+/**
+ * The platform's official mark on a solid plate, top-right of the card:
+ * official colors, never scaled under MARK_HEIGHT, padded clear space, and
+ * drawn last so the card's shine/foil never pass over it (YouTube: "must not
+ * be altered or partially covered"; Twitch: no glows/gradients/busy
+ * backgrounds). Music isn't a brand, so it gets a plain note.
+ */
+function logoPlate(platform, rightX, topY) {
+  const p = CARD_PLATFORMS[platform];
+  let w, inner;
+  if (platform === 'tiktok') {
+    w = MARK_HEIGHT * TIKTOK_MARK_ASPECT;
+    inner = `<image href="${TIKTOK_MARK_DATA_URI}" width="${w.toFixed(2)}" height="${MARK_HEIGHT}"/>`;
+  } else if (LOGOS[platform]) {
+    const l = LOGOS[platform];
+    const k = MARK_HEIGHT / l.h;
+    w = l.w * k;
+    inner = `<g transform="scale(${k.toFixed(5)})">${l.svg}</g>`;
+  } else {
+    w = MARK_HEIGHT;
+    inner = `<g transform="scale(${(MARK_HEIGHT / 20).toFixed(3)})" fill="${p.color}">${NOTE}</g>`;
+  }
+  const pw = w + PLATE_PAD * 2 + 2, ph = MARK_HEIGHT + PLATE_PAD * 2;
+  const x = rightX - pw;
+  return `<g data-mark="${platform}"><rect x="${x.toFixed(2)}" y="${topY}" width="${pw.toFixed(2)}" height="${ph}" rx="8" fill="${p.plate}"/><g transform="translate(${(x + PLATE_PAD + 1).toFixed(2)} ${topY + PLATE_PAD})">${inner}</g></g>`;
 }
 
 /**
@@ -106,7 +153,6 @@ export function renderCard(c) {
 <rect x="18" y="18" width="${t.name.length * 8.4 + 32}" height="20" rx="10" fill="${t.a}" fill-opacity=".14" stroke="${t.a}" stroke-opacity=".6"/>
 <path transform="translate(24 21.5) scale(.5)" d="M12 1.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.6 5.6 21.1 7 14l-5.3-5 7.2-.9z" fill="${t.a}"/>
 <text x="40" y="32.5" font-family="${FONT}" font-size="9.5" font-weight="800" letter-spacing="1.6" fill="${t.a}">${t.name}</text>
-${c.showMark === false ? '' : `<g transform="translate(${W - 36} 20)" fill="${p.color}">${p.glyph}</g>`}
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="#12121A"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}art)"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}holo)"/>
@@ -122,6 +168,7 @@ ${rankChip}
 ${hasDelta ? `<text x="22" y="329" font-family="${FONT}" font-size="9.5" font-weight="700" fill="${up ? '#34D399' : '#F87171'}">${up ? '▲ +' : '▼ −'}${compactCount(c.delta30)} <tspan fill="#6B6B76" font-weight="600">30d</tspan></text>` : ''}
 <text x="${W - 22}" y="329" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#6B6B76">${cardNo} · SHINYPULL</text>
 <rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)"><animate attributeName="x" values="-220;-220;420" keyTimes="0;.55;1" dur="4.5s" repeatCount="indefinite"/></rect>
+${c.showMark === false ? '' : logoPlate(c.platform in CARD_PLATFORMS ? c.platform : 'youtube', W - 14, 12)}
 </g>
 <rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" rx="15.5" fill="none" stroke="#fff" stroke-opacity=".25"/>
 </svg>`;
