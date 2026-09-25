@@ -36,7 +36,7 @@ function WallColumn({ creators, index }) {
           height="350"
           loading={i < 3 ? 'eager' : 'lazy'}
           draggable="false"
-          className="w-full h-auto select-none rounded-2xl shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]"
+          className="w-full h-auto select-none rounded-[6.4%/4.571%] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]"
         />
       ))}
     </div>

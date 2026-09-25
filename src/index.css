@@ -503,7 +503,9 @@ h1, h2, h3, h4 {
   position: absolute;
   inset: 0;
   display: block;
-  border-radius: 1rem;
+  /* The card SVG's own corner: rx 16 on a 250x350 card, as a share of
+     the box so it matches at every rendered size. */
+  border-radius: 6.4% / 4.571%;
   overflow: hidden;
   -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
@@ -513,7 +515,9 @@ h1, h2, h3, h4 {
 .hero-glare {
   position: absolute;
   inset: 0;
-  border-radius: 1rem;
+  /* The card SVG's own corner: rx 16 on a 250x350 card, as a share of
+     the box so it matches at every rendered size. */
+  border-radius: 6.4% / 4.571%;
   pointer-events: none;
   mix-blend-mode: overlay;
   opacity: 0;

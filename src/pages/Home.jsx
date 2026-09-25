@@ -215,7 +215,7 @@ function ChampionsGrid({ tops }) {
           // full size, full opacity) the logo version fades in over it, after
           // the fan's spring has settled. draggable=false so the browser's
           // native image drag doesn't fight the swipe gesture.
-          const cardClassName = `block w-full rounded-2xl transition-[filter] cursor-pointer ${
+          const cardClassName = `block w-full rounded-[6.4%/4.571%] transition-[filter] cursor-pointer ${
             isActive ? 'drop-shadow-[0_18px_30px_rgba(0,0,0,0.28)] hover:brightness-110' : 'drop-shadow-[0_10px_18px_rgba(0,0,0,0.18)]'
           }`;
 

@@ -156,7 +156,7 @@ export default function HeroCardStage({ creators }) {
         <Link
           to={current ? `/${current.platform}/${current.username}` : '/badge'}
           aria-label={current ? `${current.display_name}'s ${platformName} stats` : 'Creator cards'}
-          className="relative z-10 block w-[200px] h-[280px] sm:w-[250px] sm:h-[350px] rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+          className="relative z-10 block w-[200px] h-[280px] sm:w-[250px] sm:h-[350px] rounded-[6.4%/4.571%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
           <span ref={tiltRef} className="hero-tilt block w-full h-full">
             <span className={`hero-flip block w-full h-full ${faceUp ? 'is-up' : ''}`}>

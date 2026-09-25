@@ -1431,7 +1431,7 @@ function PlatformRankings({ urlPlatform }) {
                 alt=""
                 width="250"
                 height="350"
-                className="w-[160px] h-auto rounded-2xl shadow-[0_28px_60px_-14px_rgba(0,0,0,0.5)]"
+                className="w-[160px] h-auto rounded-[6.4%/4.571%] shadow-[0_28px_60px_-14px_rgba(0,0,0,0.5)]"
               />
             </div>
           )}

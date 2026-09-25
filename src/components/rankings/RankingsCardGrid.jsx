@@ -14,8 +14,8 @@ function AdCard({ premium, price }) {
         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-400/15 border border-amber-400/40 text-amber-300">Ad</span>
         <span className="text-[11px] font-semibold text-amber-300/80">{premium ? 'Premium' : 'Featured'}</span>
       </div>
-      <div className={`rounded-2xl p-[3px] aspect-[250/350] ${premium ? 'sponsor-foil shadow-[0_20px_50px_-12px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-br from-amber-300/70 via-amber-500/50 to-amber-700/60'}`}>
-        <div className="relative h-full rounded-[13px] bg-[#15110a] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+      <div className={`rounded-[6.4%/4.571%] p-[3px] aspect-[250/350] ${premium ? 'sponsor-foil shadow-[0_20px_50px_-12px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-br from-amber-300/70 via-amber-500/50 to-amber-700/60'}`}>
+        <div className="relative h-full rounded-[5.2%/3.7%] bg-[#15110a] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
           <span aria-hidden="true" className="sponsor-shine" />
           <div className={`relative ${premium ? 'w-16 h-16 sm:w-20 sm:h-20 text-3xl' : 'w-14 h-14 text-2xl'} rounded-full bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center font-black text-neutral-900 shadow-[0_0_40px_rgba(251,191,36,0.45)]`}>★</div>
           <p className="relative mt-4 text-base sm:text-lg font-extrabold text-white">Your card here</p>
@@ -64,7 +64,7 @@ export default function RankingsCardGrid({ items, growthUnit }) {
               height="350"
               loading={i < 10 ? 'eager' : 'lazy'}
               draggable="false"
-              className={`w-full h-auto select-none rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:-translate-y-1 ${sponsored ? 'ring-2 ring-amber-400/70 ring-offset-4 ring-offset-[#0a0a0f]' : ''}`}
+              className={`w-full h-auto select-none rounded-[6.4%/4.571%] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:-translate-y-1 ${sponsored ? 'ring-2 ring-amber-400/70 ring-offset-4 ring-offset-[#0a0a0f]' : ''}`}
             />
           </Link>
         );

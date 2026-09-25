@@ -32,7 +32,7 @@ export default function RankingsPodium({ creators }) {
                 width="250"
                 height="350"
                 draggable="false"
-                className={`relative h-auto select-none rounded-2xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:-translate-y-1.5 ${first ? 'w-[118px] sm:w-[230px]' : 'w-[96px] sm:w-[190px]'}`}
+                className={`relative h-auto select-none rounded-[6.4%/4.571%] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:-translate-y-1.5 ${first ? 'w-[118px] sm:w-[230px]' : 'w-[96px] sm:w-[190px]'}`}
               />
             </div>
             <div className={`mt-3 sm:mt-4 w-full ${PLINTH[i]} rounded-t-xl bg-gradient-to-b from-white/[0.09] to-transparent border-t border-x border-white/10 flex items-start justify-center pt-1.5 sm:pt-2 text-xs sm:text-sm font-black tabular-nums ${first ? 'text-amber-300' : 'text-white/55'}`}>
