@@ -19,7 +19,7 @@ import { CARD_PLATFORMS, renderMarkOverlay } from '../lib/badgeCard';
 // Reduced motion: no auto-pull and no tilt; the button just swaps
 // the card.
 
-const PULL_EVERY_MS = 5500;
+const PULL_EVERY_MS = 9000;
 const FLIP_MS = 450;
 const MAX_TILT = 9;
 
@@ -41,6 +41,8 @@ export default function HeroCardStage({ creators }) {
   const reduceMotion = useReducedMotion();
   const [idx, setIdx] = useState(0);
   const [faceUp, setFaceUp] = useState(false);
+  // True once the flip has fully stopped: the flat logo only shows then.
+  const [settled, setSettled] = useState(false);
   const tiltRef = useRef(null);
   const busyRef = useRef(false);
   const timerRef = useRef(null);
@@ -77,6 +79,7 @@ export default function HeroCardStage({ creators }) {
       return;
     }
     busyRef.current = true;
+    setSettled(false);
     setFaceUp(false);
     await Promise.all([preload(nextSrc), new Promise((r) => setTimeout(r, FLIP_MS))]);
     setIdx(next);
@@ -148,7 +151,10 @@ export default function HeroCardStage({ creators }) {
           className="relative z-10 block w-[200px] h-[280px] sm:w-[250px] sm:h-[350px] rounded-[6.4%/4.571%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
           <span ref={tiltRef} className="hero-tilt block w-full h-full">
-            <span className={`hero-flip block w-full h-full ${faceUp ? 'is-up' : ''}`}>
+            <span
+              className={`hero-flip block w-full h-full ${faceUp ? 'is-up' : ''}`}
+              onTransitionEnd={(e) => { if (e.target === e.currentTarget && faceUp) setSettled(true); }}
+            >
               <span className="hero-face hero-face-back">
                 <img src="/card-back.svg" alt="" width="250" height="350" draggable="false" className="w-full h-full select-none" />
               </span>
@@ -176,7 +182,7 @@ export default function HeroCardStage({ creators }) {
               width="250"
               height="350"
               draggable="false"
-              className={`absolute inset-0 w-full h-full select-none pointer-events-none transition-opacity ${faceUp ? 'opacity-100 duration-300 delay-500' : 'opacity-0 duration-100'}`}
+              className={`absolute inset-0 w-full h-full select-none pointer-events-none transition-opacity ${faceUp && (settled || reduceMotion) ? 'opacity-100 duration-150' : 'opacity-0 duration-100'}`}
             />
           )}
         </Link>

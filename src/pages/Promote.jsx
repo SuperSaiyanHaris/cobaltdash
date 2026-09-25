@@ -27,7 +27,7 @@ import { formatNumber } from '../lib/utils';
  * works, the FAQ, and a dark closing band. No glow anywhere (hard rule).
  */
 
-const PULL_EVERY_MS = 4200;
+const PULL_EVERY_MS = 7000;
 const FLIP_MS = 450;
 const SPONSORED_AFTER = 3; // Premium ghost slot sits after #3 on /rankings
 const PREMIUM_PER_PLATFORM = 2;
@@ -80,6 +80,7 @@ function FlipCard({ creator }) {
   const reduceMotion = useReducedMotion();
   const [shown, setShown] = useState(null);
   const [faceUp, setFaceUp] = useState(false);
+  const [settled, setSettled] = useState(false);
   const shownRef = useRef(null);
 
   useEffect(() => {
@@ -92,6 +93,7 @@ function FlipCard({ creator }) {
     shownRef.current = key;
     (async () => {
       if (!first && !reduceMotion) {
+        setSettled(false);
         setFaceUp(false);
         await Promise.all([preload(src), new Promise((r) => setTimeout(r, FLIP_MS))]);
       } else {
@@ -106,7 +108,10 @@ function FlipCard({ creator }) {
 
   return (
     <div className="hero-stage relative w-[200px] h-[280px] sm:w-[240px] sm:h-[336px]">
-      <span className={`hero-flip block w-full h-full ${faceUp ? 'is-up' : ''}`}>
+      <span
+        className={`hero-flip block w-full h-full ${faceUp ? 'is-up' : ''}`}
+        onTransitionEnd={(e) => { if (e.target === e.currentTarget && faceUp) setSettled(true); }}
+      >
         <span className="hero-face hero-face-back">
           <img src="/card-back.svg" alt="" width="250" height="350" draggable="false" className="w-full h-full select-none" />
         </span>
@@ -131,7 +136,7 @@ function FlipCard({ creator }) {
           width="250"
           height="350"
           draggable="false"
-          className={`absolute inset-0 w-full h-full select-none pointer-events-none transition-opacity ${faceUp ? 'opacity-100 duration-300 delay-500' : 'opacity-0 duration-100'}`}
+          className={`absolute inset-0 w-full h-full select-none pointer-events-none transition-opacity ${faceUp && (settled || reduceMotion) ? 'opacity-100 duration-150' : 'opacity-0 duration-100'}`}
         />
       )}
     </div>
