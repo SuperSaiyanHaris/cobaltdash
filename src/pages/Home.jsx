@@ -1,8 +1,8 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, ArrowRight, ArrowUpRight, Calculator, Scale, TrendingUp, ChartNoAxesColumnIncreasing,
-  LineChart, DollarSign, Users, ChevronLeft, ChevronRight, Megaphone,
+  LineChart, ChevronLeft, ChevronRight, Megaphone,
 } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -19,14 +19,12 @@ import {
   getRankedCreators, getTopCreatorsByPlatform, getCreatorStats,
 } from '../services/creatorService';
 import { supabase } from '../lib/supabase';
-import { formatNumber, formatRelativeTimeShort } from '../lib/utils';
+import { formatNumber } from '../lib/utils';
 import { cardImageUrl } from '../lib/cardUrl';
-import CreatorAvatar from '../components/CreatorAvatar';
-import CountUp from '../components/CountUp';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
 import HeroCardStage from '../components/HeroCardStage';
+import HomeProductBento from '../components/HomeProductBento';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
-import PreviewRankingRow from '../components/PreviewRankingRow';
 import { PLATFORM_COUNT, PLATFORM_ACCENTS } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
 import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
@@ -68,32 +66,6 @@ const TOP_CARD_META = [
   { platform: 'mastodon', label: 'Mastodon',        metric: 'followers' },
   { platform: 'substack', label: 'Substack',        metric: 'subscribers' },
 ];
-
-const FALLBACK_NAMES = ['MrBeast', 'T-Series', 'Cocomelon', 'SET India', 'Vlad and Niki'];
-
-// Same CPM range the earnings calculator advertises.
-const CPM_LOW = 0.5;
-const CPM_HIGH = 4.0;
-
-function fmtUSD(n) {
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(n < 1e4 ? 1 : 0)}K`;
-  return `$${Math.round(n)}`;
-}
-
-// Average daily views from a creator's real 30-day total_views history.
-// Returns null when there isn't enough data — callers must hide, not fake.
-function deriveDailyViews(history) {
-  const rows = (history || []).filter((r) => r.total_views > 0);
-  if (rows.length < 2) return null;
-  const first = rows[0];
-  const last = rows[rows.length - 1];
-  const days = Math.max(1, Math.round(
-    (new Date(last.recorded_at) - new Date(first.recorded_at)) / 86400000
-  ));
-  const delta = last.total_views - first.total_views;
-  return delta > 0 ? Math.round(delta / days) : null;
-}
 
 /* ---------------------------------------------------------------------------
  * Hero pieces. Each rotation timer lives inside its own memoized component so
@@ -357,446 +329,6 @@ function ChampionsGrid({ tops }) {
   );
 }
 
-// Display order for the top-3 podium: 2nd (left), 1st (center, raised), 3rd
-// (right) — real hierarchy via size and position instead of a colored bar.
-const PODIUM_ORDER = [2, 1, 3];
-const PODIUM_TIER = {
-  1: { stripe: 'border-t-amber-400', rank: 'text-amber-600' },
-  2: { stripe: 'border-t-neutral-300', rank: 'text-neutral-500' },
-  3: { stripe: 'border-t-orange-300', rank: 'text-orange-600' },
-};
-
-function RankingPodium({ creators, fallbackNames }) {
-  return (
-    <div className="flex items-end gap-2 sm:gap-3">
-      {PODIUM_ORDER.map((rank) => {
-        const creator = creators[rank - 1];
-        const displayName = creator?.display_name || fallbackNames[rank - 1];
-        const isFirst = rank === 1;
-        const tier = PODIUM_TIER[rank];
-        const growth = creator?.growth30d;
-        // Real creator, real destination -> the whole tile is a link. A
-        // loading placeholder has nowhere to go, so it stays a plain div.
-        const href = creator?.platform && creator?.username ? `/${creator.platform}/${creator.username}` : null;
-        const Tag = href ? Link : 'div';
-        return (
-          <Tag
-            key={rank}
-            {...(href ? { to: href } : {})}
-            className={`flex-1 min-w-0 bg-white border border-neutral-200/80 border-t-[3px] ${tier.stripe} rounded-xl text-center block ${href ? 'hover:border-neutral-300 transition-colors' : ''} ${
-              isFirst ? '-mt-3 pt-5 pb-4 px-2 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.18)]' : 'pt-4 pb-3 px-2'
-            }`}
-          >
-            <p className={`text-[11px] font-extrabold mb-2 ${tier.rank}`}>#{rank}</p>
-            <div className="flex justify-center mb-2">
-              <CreatorAvatar src={creator?.profile_image} name={displayName} size={isFirst ? 'lg' : 'md'} />
-            </div>
-            <p className={`font-bold text-neutral-900 truncate ${isFirst ? 'text-[13px]' : 'text-[11px]'}`}>{displayName}</p>
-            <p className={`font-extrabold text-neutral-900 tabular-nums leading-tight mt-1 ${isFirst ? 'text-xl' : 'text-base'}`}>
-              {creator?.subscribers ? formatNumber(creator.subscribers) : '—'}
-            </p>
-            {growth > 0 && (
-              <p className="flex items-center justify-center gap-0.5 text-[10px] font-medium text-emerald-600 tabular-nums mt-0.5">
-                <TrendingUp className="w-2.5 h-2.5" />
-                {formatNumber(growth)}
-              </p>
-            )}
-          </Tag>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------------------
- * Product preview carousel — owns its rotation state. Auto-advance stops
- * permanently on manual tab selection and never runs under reduced motion.
- * ------------------------------------------------------------------------- */
-const PreviewCarousel = memo(function PreviewCarousel({ topCreators, topHistory }) {
-  const reduceMotion = useReducedMotion();
-  const [idx, setIdx] = useState(0);
-  const [autoPlay, setAutoPlay] = useState(true);
-
-  const mr = topCreators[0];
-  const tseries = topCreators[1];
-  const updatedAt = mr?.computedAt;
-  const dailyViews = useMemo(() => deriveDailyViews(topHistory), [topHistory]);
-  // YouTube subscriber counts barely move day to day for large channels (see
-  // CLAUDE.md), so "30-day growth" is shown via total views instead — it's
-  // the metric that actually moves, and growth30d is already views delta for
-  // this platform (see refresh_rankings_cache_platform).
-  const viewsStart = mr?.totalViews != null && mr?.growth30d != null ? mr.totalViews - mr.growth30d : null;
-
-  const previews = useMemo(() => {
-    const list = [
-      // 1. RANKINGS
-      {
-        url: 'shinypull.com/rankings/youtube',
-        label: 'Rankings',
-        ctaText: 'See full rankings',
-        ctaLink: '/rankings/youtube',
-        content: (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <ChartNoAxesColumnIncreasing className="w-4 h-4 text-amber-500" />
-                <h3 className="text-sm font-bold text-neutral-900">Top YouTubers</h3>
-              </div>
-              {updatedAt && (
-                <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">
-                  Updated {formatRelativeTimeShort(updatedAt)}
-                </span>
-              )}
-            </div>
-            <RankingPodium
-              creators={topCreators.length > 0 ? topCreators : Array(3).fill(null)}
-              fallbackNames={FALLBACK_NAMES}
-            />
-            <div className="mt-4">
-              {(topCreators.length > 0 ? topCreators : Array(5).fill(null)).slice(3, 5).map((creator, i) => (
-                <PreviewRankingRow
-                  key={creator?.id || i + 3}
-                  rank={i + 4}
-                  creator={creator}
-                  fallbackName={FALLBACK_NAMES[i + 3]}
-                />
-              ))}
-            </div>
-          </>
-        ),
-      },
-      // 2. CREATOR PROFILE
-      {
-        url: `shinypull.com/youtube/${mr?.username || 'mrbeast'}`,
-        label: 'Profile',
-        ctaText: `See ${mr?.display_name || 'MrBeast'}'s profile`,
-        ctaLink: `/youtube/${mr?.username || 'mrbeast'}`,
-        content: (
-          <>
-            {(() => {
-              const Tag = mr?.username ? Link : 'div';
-              return (
-                <Tag {...(mr?.username ? { to: `/youtube/${mr.username}` } : {})} className="flex flex-col items-center text-center mb-4 group">
-                  <CreatorAvatar src={mr?.profile_image} name={mr?.display_name || 'MrBeast'} size="lg" className="mb-2" />
-                  <div className="flex items-center gap-2 mb-0.5 max-w-full">
-                    <h3 className="text-base sm:text-lg font-bold text-neutral-900 truncate group-hover:underline">{mr?.display_name || 'MrBeast'}</h3>
-                    <YouTubeIcon className="w-4 h-4 flex-shrink-0" />
-                  </div>
-                  <p className="text-xs text-neutral-500">@{mr?.username || 'mrbeast'} · YouTube</p>
-                </Tag>
-              );
-            })()}
-            <div className="flex flex-wrap items-baseline gap-2.5">
-              <p className="text-3xl sm:text-4xl font-extrabold text-neutral-900 tabular-nums tracking-tight leading-none">
-                {mr?.subscribers ? formatNumber(mr.subscribers) : '—'}
-              </p>
-              {mr?.growth30d > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 border border-emerald-200 rounded-md text-[10px] font-semibold text-emerald-700 flex-shrink-0">
-                  <TrendingUp className="w-3 h-3" />
-                  +{formatNumber(mr.growth30d)} / 30d
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-neutral-500 uppercase tracking-wider font-medium mb-4">Subscribers</p>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
-              <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
-                <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Total Views</p>
-                <p className="text-base sm:text-lg font-extrabold text-neutral-900 tabular-nums">{mr?.totalViews ? formatNumber(mr.totalViews) : '—'}</p>
-              </div>
-              <div className="p-2.5 sm:p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
-                <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Videos</p>
-                <p className="text-base sm:text-lg font-extrabold text-neutral-900 tabular-nums">{mr?.totalPosts ? formatNumber(mr.totalPosts) : '—'}</p>
-              </div>
-            </div>
-            {viewsStart != null && (
-              <div className="p-3 sm:p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
-                <p className="text-[10px] text-neutral-500 uppercase tracking-[0.14em] font-medium mb-3">30-day view momentum</p>
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-0.5">30 days ago</p>
-                    <p className="text-lg sm:text-xl font-extrabold text-neutral-600 tabular-nums">{formatNumber(viewsStart)}</p>
-                  </div>
-                  <div className="flex flex-col items-center px-2 flex-shrink-0">
-                    <ArrowRight className="w-4 h-4 text-neutral-300" />
-                    {mr.growth30d !== 0 && (
-                      <span className={`mt-1 text-[10px] font-semibold tabular-nums whitespace-nowrap ${mr.growth30d > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {mr.growth30d > 0 ? '+' : ''}{formatNumber(mr.growth30d)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-wider mb-0.5">Today</p>
-                    <p className="text-lg sm:text-xl font-extrabold text-neutral-900 tabular-nums">{formatNumber(mr.totalViews)}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        ),
-      },
-      // 3. COMPARE
-      {
-        url: 'shinypull.com/compare',
-        label: 'Compare',
-        ctaText: 'Compare creators',
-        ctaLink: '/compare',
-        content: (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Scale className="w-4 h-4 text-violet-500" />
-                <h3 className="text-sm font-bold text-neutral-900">Head-to-head</h3>
-              </div>
-              <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Live</span>
-            </div>
-            <div className="relative grid grid-cols-2 gap-3 sm:gap-4 pt-2">
-              {[mr, tseries].map((c, i) => {
-                const name = c?.display_name || FALLBACK_NAMES[i];
-                // Real creator, real destination -> the whole card links to
-                // their profile. A loading placeholder has nowhere to go.
-                const href = c?.platform && c?.username ? `/${c.platform}/${c.username}` : null;
-                const Tag = href ? Link : 'div';
-                return (
-                  <Tag
-                    key={i}
-                    {...(href ? { to: href } : {})}
-                    className={`block p-3 sm:p-4 rounded-xl border border-neutral-200/80 bg-white text-center ${href ? 'hover:border-neutral-300 transition-colors' : ''}`}
-                  >
-                    <div className="flex flex-col items-center gap-2 mb-2">
-                      <CreatorAvatar src={c?.profile_image} name={name} size="md" />
-                      <p className="text-sm font-bold text-neutral-900 truncate max-w-full">{name}</p>
-                    </div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums leading-none">
-                      {c?.subscribers ? formatNumber(c.subscribers) : '—'}
-                    </p>
-                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider mt-1">Subscribers</p>
-                    <div className="mt-3 pt-3 border-t border-neutral-200/80 space-y-1.5 text-left">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-neutral-500">Views</span>
-                        <span className="font-semibold text-neutral-900 tabular-nums">{c?.totalViews ? formatNumber(c.totalViews) : '—'}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-neutral-500">Videos</span>
-                        <span className="font-semibold text-neutral-900 tabular-nums">{c?.totalPosts ? formatNumber(c.totalPosts) : '—'}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-neutral-500">30d growth</span>
-                        <span className="font-semibold text-emerald-600 tabular-nums">{c?.growth30d > 0 ? `+${formatNumber(c.growth30d)}` : '—'}</span>
-                      </div>
-                    </div>
-                  </Tag>
-                );
-              })}
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-neutral-900 text-white text-[10px] font-extrabold flex items-center justify-center ring-4 ring-white">
-                VS
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-neutral-500">
-              <Users className="w-3 h-3" />
-              Stack up to 10 creators side-by-side
-            </div>
-          </>
-        ),
-      },
-    ];
-
-    // 4. EARNINGS — only shown when we can compute it from real view history.
-    if (mr && dailyViews) {
-      const rows = [
-        { label: 'Per day',   low: dailyViews * CPM_LOW / 1000,         high: dailyViews * CPM_HIGH / 1000,         pad: 'py-3 sm:py-4' },
-        { label: 'Per month', low: dailyViews * 30 * CPM_LOW / 1000,    high: dailyViews * 30 * CPM_HIGH / 1000,    pad: 'py-4 sm:py-5' },
-        { label: 'Per year',  low: dailyViews * 365 * CPM_LOW / 1000,   high: dailyViews * 365 * CPM_HIGH / 1000,   pad: 'py-5 sm:py-6' },
-      ];
-      list.push({
-        url: 'shinypull.com/youtube/money-calculator',
-        label: 'Earnings',
-        ctaText: 'Try the earnings calculator',
-        ctaLink: '/youtube/money-calculator',
-        content: (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Calculator className="w-4 h-4 text-emerald-500" />
-                <h3 className="text-sm font-bold text-neutral-900">YouTube Earnings Estimate</h3>
-              </div>
-              <span className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">$0.50 - $4.00 CPM</span>
-            </div>
-            <Link
-              to={`/youtube/${mr.username}`}
-              className="flex flex-col items-center text-center gap-1.5 mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg hover:border-neutral-300 transition-colors group"
-            >
-              <CreatorAvatar src={mr.profile_image} name={mr.display_name} size="sm" />
-              <div className="min-w-0 max-w-full">
-                <p className="text-sm font-bold text-neutral-900 truncate group-hover:underline">{mr.display_name}</p>
-                <p className="text-[11px] text-neutral-500 tabular-nums">{formatNumber(dailyViews)} views per day</p>
-              </div>
-            </Link>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 items-start">
-              {rows.map((row) => (
-                <div
-                  key={row.label}
-                  className={`bg-white border border-neutral-200/80 border-t-[3px] border-t-emerald-400 rounded-xl text-center px-2 ${row.pad}`}
-                >
-                  <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mb-2">{row.label}</p>
-                  <p className="text-xs sm:text-sm font-extrabold text-neutral-900 tabular-nums leading-tight">{fmtUSD(row.low)}</p>
-                  <p className="text-[9px] text-neutral-400">to</p>
-                  <p className="text-xs sm:text-sm font-extrabold text-neutral-900 tabular-nums leading-tight">{fmtUSD(row.high)}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-neutral-500">
-              <DollarSign className="w-3 h-3" />
-              Estimate based on industry CPM ranges
-            </div>
-          </>
-        ),
-      });
-    }
-
-    return list;
-  }, [mr, tseries, topCreators, viewsStart, updatedAt, dailyViews]);
-
-  // Auto-advance. Rankings (index 0) holds longer; stops for good once the
-  // user picks a tab, and never runs under reduced motion.
-  useEffect(() => {
-    if (!autoPlay || reduceMotion || previews.length < 2) return;
-    const dwell = idx === 0 ? 20000 : 9000;
-    const id = setTimeout(() => setIdx((i) => (i + 1) % previews.length), dwell);
-    return () => clearTimeout(id);
-  }, [idx, autoPlay, reduceMotion, previews.length]);
-
-  const active = previews[Math.min(idx, previews.length - 1)];
-
-  return (
-    <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-10%' }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative rounded-2xl bg-white border border-neutral-200/80 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.22)] overflow-hidden"
-      >
-        {/* Chrome — quiet label bar, no fake browser window */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-neutral-200/80">
-          <Link
-            to={active.ctaLink}
-            className="min-w-0 text-[11px] font-semibold text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={active.label}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.25 }}
-                className="block truncate"
-              >
-                {active.url}
-              </motion.span>
-            </AnimatePresence>
-          </Link>
-          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex-shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Live
-          </span>
-        </div>
-
-        {/* Content area — fixed min-height set to the tallest preview (Rankings) so swaps don't reflow the page */}
-        <div
-          id="home-preview-panel"
-          role="tabpanel"
-          aria-labelledby={`home-preview-tab-${active.label}`}
-          className="p-4 sm:p-6 min-h-[420px] sm:min-h-[440px] flex flex-col"
-        >
-          <div className="flex-1">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active.label}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {active.content}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* CTA — pinned to bottom so it stays put across all previews */}
-          <Link
-            to={active.ctaLink}
-            className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-sm rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={active.label}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {active.ctaText}
-              </motion.span>
-            </AnimatePresence>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* Tabs */}
-      <div role="tablist" aria-label="Product previews" className="mt-5 flex items-center justify-center gap-2">
-        {previews.map((p, i) => (
-          <button
-            key={p.label}
-            type="button"
-            role="tab"
-            id={`home-preview-tab-${p.label}`}
-            aria-selected={i === idx}
-            aria-controls="home-preview-panel"
-            onClick={() => { setIdx(i); setAutoPlay(false); }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-              i === idx
-                ? 'bg-neutral-900 border-neutral-900 text-white'
-                : 'bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-700'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${i === idx ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-300'}`} />
-            {p.label}
-          </button>
-        ))}
-      </div>
-    </>
-  );
-});
-
-// Only renders once both counts came back as real positive numbers — an
-// analytics site must never display "0 creators tracked" as a loading state.
-const LiveStatsStrip = memo(function LiveStatsStrip({ creators, dataPoints }) {
-  if (!creators || !dataPoints) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="mt-6 grid grid-cols-3 max-w-3xl mx-auto bg-white border border-neutral-200 rounded-xl overflow-hidden"
-    >
-      {[
-        { label: 'Creators tracked',  value: creators },
-        { label: 'Daily data points', value: dataPoints },
-        { label: 'Platforms',         value: PLATFORM_COUNT },
-      ].map((s, i) => (
-        <div key={s.label} className={`p-4 sm:p-5 text-center ${i !== 2 ? 'border-r border-neutral-200' : ''}`}>
-          <p className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums">
-            <CountUp value={s.value} />
-          </p>
-          <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5 uppercase tracking-wider">{s.label}</p>
-        </div>
-      ))}
-    </motion.div>
-  );
-});
-
 // posts === null → loading skeletons (space reserved, no layout shift when
 // data lands); [] → nothing to show, hide the section.
 const BlogTeaser = memo(function BlogTeaser({ posts }) {
@@ -893,6 +425,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [latestPosts, setLatestPosts] = useState(null);
   const [topCreators, setTopCreators] = useState([]);
+  const [youtubeTop, setYoutubeTop] = useState([]);
   const [liveStats, setLiveStats] = useState({ creators: null, dataPoints: null });
   const [heroCards, setHeroCards] = useState([]);
   const [topByPlatform, setTopByPlatform] = useState([]);
@@ -948,6 +481,7 @@ export default function Home() {
         }));
       setTopByPlatform(tops);
 
+      setYoutubeTop(yt.slice(0, 7));
       const top5 = yt.slice(0, 5);
       setTopCreators(top5);
 
@@ -1106,22 +640,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ============== PRODUCT PREVIEW ============== */}
-        <section className="relative mt-20 sm:mt-28 mb-16 sm:mb-24">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section header so the dark→light transition reads as an intentional break */}
-            <div className="scroll-reveal text-center mb-10 sm:mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-600 mb-3">Live preview</p>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
-                Real rankings. Live data.
-              </h2>
-            </div>
-
-            <PreviewCarousel topCreators={topCreators} topHistory={topHistory} />
-
-            <LiveStatsStrip creators={liveStats.creators} dataPoints={liveStats.dataPoints} />
-          </div>
-        </section>
+        {/* ============== WHAT'S INSIDE ============== */}
+        <HomeProductBento
+          youtubeTop={youtubeTop}
+          topHistory={topHistory}
+          twitchTop={topByPlatform.find((c) => c.platform === 'twitch')}
+          liveStats={liveStats}
+        />
 
         {/* ============== CHAMPIONS ============== */}
         <ChampionsGrid tops={topByPlatform} />
