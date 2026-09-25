@@ -202,36 +202,26 @@ export default function Methodology() {
             </div>
           </section>
 
-          {/* Growth Grade */}
-          <section>
-            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Growth Stars</h2>
-            <p className="text-sm text-neutral-500 mb-6">
-              Every profile with enough history gets a 1 to 5 star rating, recomputed weekly. Here's exactly how it's calculated, no black box.
+          {/* Card rarity */}
+          <section id="rarity">
+            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Card rarity</h2>
+            <p className="text-sm text-neutral-700 mb-6">
+              Every creator has a holographic card, and its rarity comes straight from where they rank on their platform by followers, subscribers or listeners.
             </p>
-            <div className={`${CARD} p-6 space-y-4`}>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                The rating blends how big a creator is with how they're actually trending right now. Being the largest channel on a platform is a real, earned achievement and counts for a lot, but it isn't the whole story: a giant that's gone flat can rate lower than a smaller channel that's clearly accelerating.
-              </p>
-              <div className="border-l-2 border-neutral-200 pl-4 space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-neutral-800">Standing (45%)</p>
-                  <p className="text-sm text-neutral-500 leading-relaxed">Where this creator's current size ranks against everyone else on the platform, not just their size bracket.</p>
+            <div className={`${CARD} p-6 space-y-3`}>
+              {[
+                { name: 'Legendary', color: '#E0A526', rule: 'The top 10 on the platform, or the top 0.1% where that is more than 10 creators.' },
+                { name: 'Epic', color: '#9333EA', rule: 'The top 1%.' },
+                { name: 'Rare', color: '#0284C7', rule: 'The top 10%.' },
+                { name: 'Common', color: '#71717A', rule: 'Everyone else we track.' },
+              ].map((t) => (
+                <div key={t.name} className="flex items-start gap-3">
+                  <span className="mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
+                  <p className="text-sm text-neutral-700 leading-relaxed"><span className="font-semibold" style={{ color: t.color }}>{t.name}</span>: {t.rule}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-800">Momentum (30%)</p>
-                  <p className="text-sm text-neutral-500 leading-relaxed">The better of two readings: recent growth as a percentage of their own trailing pace, or recent growth in raw numbers against the whole platform. A creator only needs to look good on one, since both are real signals of the same thing at different scales.</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-800">Peer standing (10%)</p>
-                  <p className="text-sm text-neutral-500 leading-relaxed">Current growth rate ranked against other creators in the same size bracket, never against the platform's biggest names.</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-800">Activity (15%)</p>
-                  <p className="text-sm text-neutral-500 leading-relaxed">Real posting or streaming activity during the window, where that signal exists for the platform.</p>
-                </div>
-              </div>
-              <p className="text-sm text-neutral-500 leading-relaxed">
-                The four scores combine into one number, then get placed on a curve against every other creator on that platform, so most land in the middle of the scale and a full 5 stars stays rare. A creator needs at least a week of tracked history before a rating appears at all. We never show a rating we can't back with real data.
+              ))}
+              <p className="text-sm text-neutral-700 leading-relaxed pt-2">
+                Rankings refresh every day, so a card can level up (or down) as a creator grows. Each platform is ranked on its own, since a follower on one platform isn't the same as a subscriber on another.
               </p>
             </div>
           </section>

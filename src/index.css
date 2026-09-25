@@ -300,28 +300,6 @@ h1, h2, h3, h4 {
 @keyframes bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .animate-bar-grow { transform-origin: left; animation: bar-grow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* Growth Grade star rating (CreatorProfile.jsx). Each star pops in on mount,
-   staggered left-to-right via inline animation-delay — same "back out"
-   overshoot-then-settle feel as a satisfying UI confirmation, not a loop.
-   A perfect 5.0 gets two sweep passes: the same light-sweep language as
-   .sp-hint-sweep above (already the established, feedback-approved way this
-   site does a "notable" accent), clipped to the star row. */
-@keyframes star-pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.animate-star-pop { animation: star-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-/* Exactly 2 iterations via animation-iteration-count, each a full reset-and-
-   replay of this same keyframe timeline — deliberately not one longer
-   keyframe hand-rolling two passes, that's what caused an earlier version to
-   visibly stall on a 3rd, broken-looking pass (reported 2026-09-18). Ends
-   parked at 100% (fully translated past the row, invisible) with `forwards`
-   so it locks there for good afterward, leaving just the solid stars. */
-@keyframes star-sweep {
-  0%, 12%  { transform: translateX(-150%) skewX(-20deg); }
-  70%      { transform: translateX(280%) skewX(-20deg); }
-  100%     { transform: translateX(280%) skewX(-20deg); }
-}
-.star-sweep { animation: star-sweep 1.2s ease-in-out 0.4s 2 forwards; }
-
 /* WCAG 2.3.3 — kill decorative looping animations for reduced-motion users.
    Loading spinners (animate-spin) are deliberately left alone. */
 @media (prefers-reduced-motion: reduce) {
@@ -333,9 +311,7 @@ h1, h2, h3, h4 {
   .auth-col-up,
   .auth-col-down,
   .sp-hint-sweep,
-  .animate-bar-grow,
-  .animate-star-pop,
-  .star-sweep {
+  .animate-bar-grow {
     animation: none;
   }
 }

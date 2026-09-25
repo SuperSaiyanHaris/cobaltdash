@@ -616,7 +616,7 @@ function CreatorSearchBox({ query, setQuery, results, searching, tray, onAdd, si
 /* Card stages. Dark bands (same base as the home hero) where the creators' */
 /* holographic cards go head to head. No glow: flat dark + dot grid only.   */
 /* ------------------------------------------------------------------------ */
-const DARK_BAND = 'relative isolate bg-[#0a0a0f] text-white';
+const DARK_BAND = 'relative isolate z-20 bg-[#0a0a0f] text-white';
 // Lighter tints of ACCENT_COLORS for text and marks on the dark bands, where
 // the base hexes are too dark to read. Same hue order, so creator #1 is still
 // indigo, #2 teal and so on everywhere on the page.

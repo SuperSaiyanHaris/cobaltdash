@@ -312,7 +312,7 @@ export default function Promote() {
       />
 
       {/* ── Dark stage: search, card, live preview ── */}
-      <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+      <section className="relative isolate z-20 bg-[#0a0a0f] text-white">
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-14 sm:pb-20">

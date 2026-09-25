@@ -25,7 +25,7 @@ import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib
 import CountUp from '../components/CountUp';
 import RankingsPodium from '../components/rankings/RankingsPodium';
 import RankingsCardGrid from '../components/rankings/RankingsCardGrid';
-import { cardTier } from '../lib/badgeCard';
+import RarityPill from '../components/RarityPill';
 import logger from '../lib/logger';
 
 // Platform identity is the icon tint plus a thin hover rule — no colored
@@ -50,7 +50,6 @@ const GROWTH_UNIT = { youtube: 'views', twitch: 'hours', kick: 'paid subs', musi
 
 // Rarity label colors for the light table (darker than the card foils so
 // they pass contrast on white).
-const TIER_TEXT = { LEGENDARY: '#b45309', EPIC: '#7e22ce', RARE: '#0369a1', COMMON: '#71717a' };
 
 const MotionLink = motion(Link);
 
@@ -1315,16 +1314,9 @@ function PlatformRankings({ urlPlatform }) {
                       </p>
                       {/* Card rarity from the subscribers rank (the same rule the
                           creator's holographic card uses). */}
-                      {(() => {
-                        if (selectedRankType !== 'subscribers' || !platformTotal || !creator.rank_position) return null;
-                        const tier = cardTier(creator.rank_position, platformTotal);
-                        return (
-                          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: TIER_TEXT[tier.name] }}>
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tier.a }} />
-                            {tier.name.charAt(0) + tier.name.slice(1).toLowerCase()}
-                          </p>
-                        );
-                      })()}
+                      {selectedRankType === 'subscribers' && platformTotal && creator.rank_position ? (
+                        <RarityPill size="sm" variant="light" rank={creator.rank_position} total={platformTotal} platformName={currentPlatform?.name || PLATFORM_DISPLAY_NAMES[selectedPlatform]} creatorName={creator.display_name} />
+                      ) : null}
                     </div>
                   </div>
 

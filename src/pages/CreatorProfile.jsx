@@ -17,8 +17,7 @@ import { getSubstackPublication } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
 import MusicIcon from '../components/MusicIcon';
-import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getCreatorGrade } from '../services/creatorService';
-import StarRating from '../components/StarRating';
+import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext } from '../services/creatorService';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
 import { followCreator, unfollowCreator, isFollowing as checkIsFollowing } from '../services/followService';
@@ -32,7 +31,7 @@ import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
 import { computeProfileMetrics } from '../lib/profileMetrics';
-import { cardTier } from '../lib/badgeCard';
+import RarityPill from '../components/RarityPill';
 import FlipCard from '../components/FlipCard';
 import GenericVerdictSection, { GENERIC_PLATFORM_CONFIG } from '../components/profile/GenericVerdictSection';
 import SimilarCreators from '../components/profile/SimilarCreators';
@@ -181,7 +180,6 @@ export default function CreatorProfile() {
   const [peakStats, setPeakStats] = useState(null);
   const [rankContext, setRankContext] = useState(null);
   const [nearbyCreators, setNearbyCreators] = useState([]);
-  const [grade, setGrade] = useState(null);
   const shareRef = useRef(null);
   // True only for the very first loadCreator() call of the very first
   // profile this component instance renders, and only when that first call
@@ -199,16 +197,14 @@ export default function CreatorProfile() {
     let cancelled = false;
     (async () => {
       try {
-        const [peak, rank, creatorGrade] = await Promise.all([
+        const [peak, rank] = await Promise.all([
           getCreatorPeakStats(dbCreatorId),
           getCreatorRankContext(dbCreatorId, platform),
-          getCreatorGrade(dbCreatorId),
         ]);
         if (cancelled) return;
         setPeakStats(peak);
         setRankContext(rank);
         setNearbyCreators(rank?.nearby || []);
-        setGrade(creatorGrade);
       } catch (err) {
         logger.warn('Failed to load record/rank context:', err);
       }
@@ -925,7 +921,6 @@ export default function CreatorProfile() {
 
   const seoKeywords = `${creator.displayName} ${platformName} stats, ${creator.displayName} ${primaryLabel}, ${creator.displayName} analytics, ${platformName} statistics, ${creator.displayName} growth`;
 
-  const heroTier = rankContext?.rank && rankContext?.total ? cardTier(rankContext.rank, rankContext.total) : null;
   const updatedAgo = (() => {
     // The real freshness signal is the latest creator_stats row (ascending order).
     const latestStat = statsHistory.length > 0 ? statsHistory[statsHistory.length - 1] : null;
@@ -992,7 +987,7 @@ export default function CreatorProfile() {
         {/* ── Dark hero: their card flips in beside the numbers that matter ──
             Same dark base + dot grid as the home hero. No banner image and no
             colored wash (hard rule); platform identity is the chip and the card. */}
-        <section className="relative isolate bg-[#0a0a0f] text-white">
+        <section className="relative isolate z-20 bg-[#0a0a0f] text-white">
           <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-10 sm:pb-14 grid md:grid-cols-[auto,1fr] gap-8 md:gap-12 items-center">
             <div className="flex justify-center">
@@ -1020,16 +1015,11 @@ export default function CreatorProfile() {
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Live
                   </span>
                 )}
-                {heroTier && (
-                  <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-white/20 bg-white/[0.06] text-xs font-black uppercase tracking-[0.14em]" style={{ color: heroTier.a }}>
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: heroTier.a }} /> {heroTier.name}
-                  </span>
-                )}
+                {rankContext?.rank && rankContext?.total ? (
+                  <RarityPill rank={rankContext.rank} total={rankContext.total} platformName={platformName} creatorName={creator.displayName} />
+                ) : null}
                 {creator.country && (
                   <span className="inline-flex items-center h-8 px-3 rounded-full border border-white/20 bg-white/[0.06] text-sm font-semibold">{creator.country}</span>
-                )}
-                {grade?.stars != null && (
-                  <StarRating stars={grade.stars} size={15} dark className="h-8 px-3 rounded-full border border-white/20 bg-white/[0.06]" />
                 )}
               </div>
 

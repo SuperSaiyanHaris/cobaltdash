@@ -275,27 +275,6 @@ export const getCreatorRankContext = withErrorHandling(
 );
 
 /**
- * Get a creator's weekly-computed growth rating: 1.0-5.0 stars in half-star
- * steps. Returns null when the creator hasn't been graded yet (needs >=7
- * days of stats history before refresh_creator_grades_platform produces a
- * row for them) — callers should treat null as "not enough data yet", never
- * as a low rating.
- */
-export const getCreatorGrade = withErrorHandling(
-  async (creatorId) => {
-    const { data, error } = await supabase
-      .from('creator_grades')
-      .select('stars, composite_score, momentum_score, peer_score, activity_score, authority_score, computed_at')
-      .eq('creator_id', creatorId)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
-  },
-  'creatorService.getCreatorGrade'
-);
-
-/**
  * Get hours watched stats for a Twitch creator
  */
 export const getHoursWatched = withErrorHandling(
