@@ -19,6 +19,7 @@ import BlueskyIcon from '../components/BlueskyIcon';
 import MusicIcon from '../components/MusicIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import SubstackIcon from '../components/SubstackIcon';
+import { isActivePlatform } from '../lib/constants';
 
 const TABS = [
   { id: 'listings', label: 'Listings', icon: Megaphone },
@@ -207,6 +208,34 @@ export default function Account() {
     setNextBasicRank(15 + basicCount * 5);
     setNextPremiumRank(premiumCount === 0 ? 5 : premiumCount === 1 ? 10 : null);
   };
+
+  // Arriving from /promote with a creator already picked
+  // (?feature=platform/username): open the listing dialog with that creator
+  // selected, so the buyer doesn't have to search again.
+  const featureParam = searchParams.get('feature');
+  useEffect(() => {
+    if (!user || !featureParam) return;
+    const [p, ...rest] = featureParam.split('/');
+    const uname = rest.join('/');
+    if (!isActivePlatform(p) || !uname) return;
+    let cancelled = false;
+    supabase.from('creators')
+      .select('id, username, display_name, profile_image, platform')
+      .eq('platform', p)
+      .ilike('username', uname.replace(/[\\%_]/g, (m) => `\\${m}`))
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        window.history.replaceState({}, '', '/account?tab=listings');
+        setActiveTab('listings');
+        setListingPlatform(p);
+        setShowListingDialog(true);
+        handleSelectCreator(data);
+      });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, featureParam]);
 
   const handleTikTokInstantAdd = async () => {
     if (!listingQuery.trim()) return;
