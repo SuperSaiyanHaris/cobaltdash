@@ -51,7 +51,6 @@ export default function Account() {
 
   // Display name
   const [displayName, setDisplayName] = useState('');
-  const [savingEmailPref, setSavingEmailPref] = useState(null);
   const [savingName, setSavingName] = useState(false);
 
   // Password
@@ -385,20 +384,6 @@ export default function Account() {
       showToast(err.message || 'Failed to update display name.', 'error');
     } finally {
       setSavingName(false);
-    }
-  };
-
-  // Preference keys are "opt-out" flags in user_metadata; absent = subscribed.
-  const handleToggleEmailPref = async (key, currentlyEnabled) => {
-    setSavingEmailPref(key);
-    try {
-      const { error } = await supabase.auth.updateUser({ data: { [key]: currentlyEnabled } });
-      if (error) throw error;
-      showToast(currentlyEnabled ? 'Unsubscribed.' : 'Subscribed.');
-    } catch (err) {
-      showToast(err.message || 'Could not update email settings.', 'error');
-    } finally {
-      setSavingEmailPref(null);
     }
   };
 
@@ -1074,34 +1059,6 @@ export default function Account() {
                         {savingName ? 'Saving...' : 'Save'}
                       </button>
                     </form>
-                  </div>
-                  {/* Email notifications (read by api/cron/digest.js) */}
-                  <div className={`${CARD} p-6`}>
-                    <h2 className="text-base font-medium text-neutral-900 mb-1">Email Notifications</h2>
-                    <p className="text-sm text-neutral-500 mb-4">About the creators you follow. Every email also has a one-click unsubscribe link.</p>
-                    <div className="space-y-3">
-                      {[
-                        ['digest_opt_out', 'Weekly summary', 'Monday recap of how every creator you follow moved.'],
-                        ['milestone_alerts_opt_out', 'Milestone alerts', 'When a creator you follow crosses a round number.'],
-                      ].map(([key, label, hint]) => {
-                        const enabled = !user.user_metadata?.[key];
-                        return (
-                          <label key={key} className="flex items-start gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={enabled}
-                              disabled={savingEmailPref === key}
-                              onChange={() => handleToggleEmailPref(key, enabled)}
-                              className="mt-1 h-4 w-4 accent-neutral-900"
-                            />
-                            <span>
-                              <span className="block text-sm font-medium text-neutral-900">{label}</span>
-                              <span className="block text-sm text-neutral-500">{hint}</span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
                   </div>
                 </div>
               )}

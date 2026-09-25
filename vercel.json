@@ -77,14 +77,6 @@
     {
       "path": "/api/cron/stream-monitor",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/digest?type=milestones",
-      "schedule": "7 15 * * 0,2-6"
-    },
-    {
-      "path": "/api/cron/digest?type=weekly",
-      "schedule": "13 14 * * 1"
     }
   ],
   "functions": {
