@@ -764,8 +764,10 @@ export default function CreatorProfile() {
   const shareUrl = `${window.location.origin}/s/${platform}/${creator?.username || username}`;
   const embedCode = `<iframe src="${shareUrl}" width="520" height="400" frameborder="0" style="border-radius:16px;border:1px solid #e5e5e5" allowfullscreen></iframe>`;
   // Live SVG badge served by the edge — the anchor makes every embed a backlink.
-  const badgeUrl = `https://shinypull.com/badge/${platform}/${encodeURIComponent(creator?.username || username)}`;
-  const badgeEmbed = `<a href="${profileUrl}?utm_source=badge"><img src="${badgeUrl}" width="240" height="64" alt="${(creator?.displayName || username)} ${platformDisplayNames[platform] || platform} stats on ShinyPull"></a>`;
+  // Live holographic trading card (SVG) served by the edge; the anchor makes
+  // every embed a backlink.
+  const badgeUrl = `https://shinypull.com/card/${platform}/${encodeURIComponent(creator?.username || username)}`;
+  const badgeEmbed = `<a href="${profileUrl}?utm_source=card"><img src="${badgeUrl}" width="250" height="350" alt="${(creator?.displayName || username)} ${platformDisplayNames[platform] || platform} card on ShinyPull"></a>`;
   // Share + embed are free for everyone — kept variable for minimal blast radius.
   const isMod = true;
 
@@ -809,7 +811,7 @@ export default function CreatorProfile() {
   const handleCopyBadge = () => {
     navigator.clipboard.writeText(badgeEmbed).then(() => {
       setCopiedBadge(true);
-      toast.success('Badge code copied', { description: 'Paste the HTML anywhere. The count stays up to date automatically.' });
+      toast.success('Card code copied', { description: 'Paste the HTML anywhere. The count stays up to date automatically.' });
       setTimeout(() => setCopiedBadge(false), 2000);
     });
   };
@@ -1107,14 +1109,14 @@ export default function CreatorProfile() {
 
                       {/* Stats badge — live-count image that links back to this profile */}
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Stats badge</p>
+                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Creator card</p>
                       </div>
                       <a href={profileUrl} onClick={(e) => e.preventDefault()} className="inline-block mb-2 cursor-default">
                         <img
                           src={badgeUrl}
-                          width="240"
-                          height="64"
-                          alt={`${creator?.displayName || username} stats badge`}
+                          width="125"
+                          height="175"
+                          alt={`${creator?.displayName || username} creator card`}
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       </a>
@@ -1133,7 +1135,7 @@ export default function CreatorProfile() {
                           {copiedBadge ? 'Copied!' : 'Copy'}
                         </button>
                       </div>
-                      <p className="text-xs text-neutral-400">A live badge for your website or blog. The count updates automatically and links back to this page. <Link to="/badge" className="underline hover:text-neutral-600">Markdown and more options</Link>.</p>
+                      <p className="text-xs text-neutral-400">A live holographic card for your website, stream panels or README. Rarity comes from the real rank, the count updates automatically, and it links back to this page. <Link to="/badge" className="underline hover:text-neutral-600">Markdown and more options</Link>.</p>
                     </div>
                   )}
 

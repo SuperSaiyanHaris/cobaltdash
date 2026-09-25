@@ -74,6 +74,12 @@ const checks = [
     expect(r.status === 200 && r.type.includes('image/svg+xml'), `status ${r.status} ${r.type}`);
     expect(/MrBeast: [\d.]+[MB] subscribers/.test(r.text), 'badge count missing');
   }],
+  ['creator card renders with rarity and avatar', async () => {
+    const r = await get('/card/twitch/kaicenat');
+    expect(r.status === 200 && r.type.includes('image/svg+xml'), `status ${r.status} ${r.type}`);
+    expect(r.text.includes('>LEGENDARY<'), 'rarity missing');
+    expect(r.text.includes('href="data:image/'), 'avatar not embedded');
+  }],
   ['unknown badge 404s', async () => {
     expect((await get('/badge/youtube/zz-no-such-creator-zz')).status === 404, 'expected 404');
   }],

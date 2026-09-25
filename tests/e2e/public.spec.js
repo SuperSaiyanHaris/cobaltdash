@@ -61,15 +61,16 @@ test('Kick earnings calculator and leaderboard', async ({ page }) => {
   await expect(page.locator('a[href^="/kick/"]').nth(49)).toBeVisible();
 });
 
-test('badge maker previews a live badge and gives embed code', async ({ page }) => {
+test('card maker pulls a live holographic card and gives embed code', async ({ page }) => {
   await page.goto('/badge');
-  await page.getByRole('combobox').selectOption('twitch');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/creator card/i);
+  await page.getByLabel('Platform').selectOption('twitch');
   await page.getByLabel('Username').fill('kaicenat');
-  await page.getByRole('button', { name: 'Create badge' }).click();
-  const preview = page.getByAltText('Your badge preview');
+  await page.getByRole('button', { name: 'Pull my card' }).click();
+  const preview = page.getByAltText('Your card preview');
   await expect(preview).toBeVisible();
-  await expect.poll(() => preview.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
-  await expect(page.locator('input[readonly]').first()).toHaveValue(/shinypull\.com\/badge\/twitch\/kaicenat/);
+  await expect.poll(() => preview.evaluate((img) => img.naturalWidth)).toBe(250);
+  await expect(page.locator('input[readonly]').first()).toHaveValue(/shinypull\.com\/card\/twitch\/kaicenat/);
 });
 
 test('live counter shows a real count and refresh note', async ({ page }) => {
