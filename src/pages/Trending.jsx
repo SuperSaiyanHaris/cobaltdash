@@ -63,7 +63,7 @@ export default function Trending() {
           title="Who's growing fastest right now."
           subtitle="The creators gaining the most ground over the last 30 days, platform by platform."
         >
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             {PLATFORMS.map(p => {
               const PIcon = p.icon;
               const isActive = p.id === activePlatform;

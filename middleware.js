@@ -1255,7 +1255,10 @@ export default async function middleware(request) {
   // so this fetch will NOT re-enter middleware — no infinite loop)
   let html;
   try {
-    const res = await fetch(new URL('/index.html', url.origin));
+    // Time-boxed: if the shell is slow (e.g. mid-deploy) fall through and let
+    // the normal rewrite serve it, instead of holding the visitor until the
+    // edge's hard limit and a 502.
+    const res = await fetch(new URL('/index.html', url.origin), { signal: AbortSignal.timeout(3000) });
     if (!res.ok) return; // Graceful fallback: serve unmodified if fetch fails
     html = await res.text();
   } catch {

@@ -146,8 +146,8 @@ export default function BlogPost() {
                 <span className="inline-flex items-center h-8 px-3 rounded-full bg-white text-neutral-950 text-xs font-black uppercase tracking-[0.14em]">Draft</span>
               )}
             </div>
-            <h1 className="mt-4 text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.08] text-balance">{post.title}</h1>
-            {post.description && <p className="mt-4 text-base sm:text-lg text-white/75 leading-relaxed max-w-3xl">{post.description}</p>}
+            <h1 className="mt-4 text-[28px] sm:text-5xl font-extrabold tracking-tight leading-[1.08] text-balance">{post.title}</h1>
+            {post.description && <p className="mt-4 text-[15px] sm:text-lg text-white/75 leading-relaxed max-w-3xl">{post.description}</p>}
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-white/80">
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />

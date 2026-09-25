@@ -13,7 +13,7 @@ export default function RankingsPodium({ creators }) {
   if (top.length < 3) return null;
 
   return (
-    <div className="mt-8 sm:mt-10 grid grid-cols-3 items-end gap-3 sm:gap-6 max-w-3xl mx-auto">
+    <div className="mt-6 sm:mt-10 grid grid-cols-3 items-end gap-3 sm:gap-6 max-w-3xl mx-auto">
       {ORDER.map((i) => {
         const c = top[i];
         const first = i === 0;

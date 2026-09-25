@@ -63,7 +63,7 @@ export default function Milestones() {
           title="Every big number, the day it's crossed."
           subtitle="When a creator we track passes a round subscriber, follower or listener mark, it lands here."
         >
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
               onClick={() => setActivePlatform(null)}
               className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors border flex-shrink-0 ${

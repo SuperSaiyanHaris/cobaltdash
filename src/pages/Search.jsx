@@ -510,8 +510,8 @@ export default function Search() {
           title="Find any creator."
           subtitle={`Pick a platform, type a name, and open their stats and card.`}
         >
-          {/* Platform tabs */}
-          <div className="flex flex-wrap gap-2">
+          {/* Platform tabs: one swipeable row on phones, wrapping on wider screens */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
             {platforms.map((platform) => {
               const Icon = platform.icon;
               const isSelected = selectedPlatform === platform.id;
@@ -520,7 +520,7 @@ export default function Search() {
                   key={platform.id}
                   onClick={() => platform.available && handlePlatformChange(platform.id)}
                   disabled={!platform.available}
-                  className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold transition-colors border ${
+                  className={`flex-shrink-0 flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold transition-colors border ${
                     isSelected
                       ? 'bg-white border-white text-neutral-950'
                       : platform.available
@@ -562,7 +562,7 @@ export default function Search() {
             <button
               type="submit"
               disabled={loading}
-              className="h-12 px-7 bg-amber-400 hover:bg-amber-300 disabled:opacity-60 disabled:cursor-not-allowed text-neutral-950 text-sm font-bold rounded-xl transition-colors"
+              className="h-12 px-7 bg-amber-400 hover:bg-amber-300 disabled:opacity-90 disabled:cursor-wait text-neutral-950 text-sm font-bold rounded-xl transition-colors"
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
