@@ -839,9 +839,19 @@ export default function CreatorProfile() {
       };
     });
 
-    // For "Last 30 days" metrics, use the 30th data point back from today (not the absolute
-    // oldest in the 90-day window). sortedStats is descending, so index 29 = ~30 days ago.
-    const last30Stat = sortedStats[Math.min(29, sortedStats.length - 1)];
+    // "Last 30 days" baseline = the oldest reading dated within the last 30
+    // calendar days, the exact rule the chart's 30D view uses (see
+    // buildYouTubeSeries), so the stat cards and the chart's "net" can never
+    // disagree. It used to be the 30th row back, which lands a day or two
+    // earlier whenever a day's reading is missing (-5.6K card vs -5.4K chart).
+    // Falls back to that row-based pick only when collection has stalled and
+    // fewer than two readings fall inside the window.
+    const cutoff30 = new Date();
+    cutoff30.setDate(cutoff30.getDate() - 30);
+    const inWindow = sortedStats.filter((s) => new Date(s.recorded_at) >= cutoff30);
+    const last30Stat = inWindow.length >= 2
+      ? inWindow[inWindow.length - 1]
+      : sortedStats[Math.min(29, sortedStats.length - 1)];
 
     const subsGrowth = (latest.subscribers || latest.followers) - (last30Stat.subscribers || last30Stat.followers);
     const viewsGrowth = latest.total_views - last30Stat.total_views;
