@@ -8,14 +8,14 @@ import { PLATFORM_COUNT } from '../lib/constants';
 import { cardImageUrl } from '../lib/cardUrl';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
 
-// Right-hand showcase: a slanted wall of real holographic creator cards
+// Page backdrop (desktop): a slanted wall of real holographic creator cards
 // drifting in columns, with one upright "focal" card floating in front.
 // The wall is rotated in 3D, so it uses the markless card render (brand
 // rules forbid rotating platform logos); the focal card stays upright and
 // only bobs vertically, so it keeps its logo.
-const WALL_COLUMNS = 4;
-const PER_COLUMN = 6;
-const COLUMN_SPEEDS = ['75s', '60s', '85s', '68s'];
+const WALL_COLUMNS = 7;
+const PER_COLUMN = 5;
+const COLUMN_SPEEDS = ['75s', '60s', '85s', '68s', '80s', '64s', '72s'];
 
 function WallColumn({ creators, index }) {
   if (!creators.length) return null;
@@ -83,38 +83,18 @@ export default function AuthPage({ initialMode = 'signin' }) {
         noindex
       />
 
-      <div className="min-h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-2 bg-white">
-        {/* Left — the form */}
-        <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16">
-          <div className="w-full max-w-sm mx-auto">
-            <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-1">
-              {mode === 'signup' ? 'Create your account' : mode === 'reset' ? 'Reset password' : 'Sign in'}
-            </h1>
-            <p className="text-sm text-neutral-500 mb-8">
-              {mode === 'signup'
-                ? <>Already have an account? <button onClick={() => setMode('signin')} className="text-indigo-600 font-medium hover:text-indigo-700">Sign in</button></>
-                : mode === 'reset'
-                ? <>Remembered it? <button onClick={() => setMode('signin')} className="text-indigo-600 font-medium hover:text-indigo-700">Back to sign in</button></>
-                : <>Don't have an account? <button onClick={() => setMode('signup')} className="text-indigo-600 font-medium hover:text-indigo-700">Sign up</button></>}
-            </p>
-
-            <AuthForm
-              mode={mode}
-              setMode={setMode}
-              onSuccess={() => navigate(returnTo || '/dashboard', { replace: true })}
-              showBenefits={false}
-            />
-          </div>
-        </div>
-
-        {/* Right — holographic card showcase (desktop only) */}
-        <div className="relative hidden lg:block overflow-hidden bg-[#0a0a0f] isolate">
-          <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
+      {/* One continuous stage on desktop: the card wall runs full width
+          behind everything and the form floats over it in a white card, so
+          there's no seam between a light half and a dark half. Phones get
+          the plain white page. */}
+      <div className="relative isolate overflow-hidden min-h-[calc(100vh-4rem)] bg-white lg:bg-[#0a0a0f]">
+        <div aria-hidden="true" className="hidden lg:block absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 hero-dot-grid" />
 
           {/* The slanted, drifting card wall. */}
-          <div aria-hidden="true" className="absolute inset-0 [perspective:1600px] pointer-events-none">
+          <div className="absolute inset-0 [perspective:1600px]">
             <div
-              className="absolute left-1/2 top-1/2 flex gap-5 opacity-70"
+              className="absolute left-[58%] top-1/2 flex gap-5 opacity-65"
               style={{ transform: 'translate(-50%, -50%) rotateX(22deg) rotateY(-16deg) rotateZ(-10deg)', transformStyle: 'preserve-3d' }}
             >
               {columns.map((col, i) => (
@@ -125,14 +105,17 @@ export default function AuthPage({ initialMode = 'signin' }) {
             </div>
           </div>
 
-          {/* Scrims: dark edges so the wall melts into the panel and the copy stays legible. */}
-          <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(70% 60% at 60% 55%, transparent 0%, rgba(10,10,15,0.55) 70%, #0a0a0f 100%)' }} />
-          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-72 pointer-events-none bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/85 to-transparent" />
+          {/* Scrims: calmer behind the form, dark at the edges, and a floor
+              for the copy. All gradients, no hard edges. */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(10,10,15,0.92) 0%, rgba(10,10,15,0.7) 30%, rgba(10,10,15,0.15) 60%, rgba(10,10,15,0) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(90% 80% at 65% 45%, transparent 40%, rgba(10,10,15,0.75) 100%)' }} />
+          <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/80 to-transparent" />
+          <div className="absolute -left-40 top-1/3 w-[520px] h-[520px] rounded-full bg-violet-600/20 blur-[120px]" />
 
           {/* Focal card: upright, floating, with its platform logo. */}
           {focal && (
-            <div className="absolute right-[12%] top-[14%] [@media(max-height:760px)]:top-[8%] auth-float" aria-hidden="true">
-              <div className="absolute -inset-10 rounded-full blur-3xl opacity-50 pointer-events-none" style={{ backgroundColor: CARD_PLATFORMS[focal.platform]?.color || '#a855f7' }} />
+            <div className="absolute right-[9%] top-[12%] [@media(max-height:760px)]:top-[7%] auth-float">
+              <div className="absolute -inset-10 rounded-full blur-3xl opacity-50" style={{ backgroundColor: CARD_PLATFORMS[focal.platform]?.color || '#a855f7' }} />
               <img
                 src={cardImageUrl(focal.platform, focal.username)}
                 alt=""
@@ -143,8 +126,34 @@ export default function AuthPage({ initialMode = 'signin' }) {
               />
             </div>
           )}
+        </div>
 
-          <div className="absolute left-10 right-10 bottom-10 z-10 xl:left-14 xl:bottom-14">
+        <div className="relative grid lg:grid-cols-2 min-h-[calc(100vh-4rem)]">
+          {/* The form: plain on phones, a floating white card on desktop. */}
+          <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12 xl:px-20">
+            <div className="w-full max-w-sm mx-auto lg:max-w-md lg:bg-white lg:rounded-3xl lg:p-10 lg:shadow-[0_40px_100px_-30px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.06)]">
+              <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-1">
+                {mode === 'signup' ? 'Create your account' : mode === 'reset' ? 'Reset password' : 'Sign in'}
+              </h1>
+              <p className="text-sm text-neutral-500 mb-8">
+                {mode === 'signup'
+                  ? <>Already have an account? <button onClick={() => setMode('signin')} className="text-indigo-600 font-medium hover:text-indigo-700">Sign in</button></>
+                  : mode === 'reset'
+                  ? <>Remembered it? <button onClick={() => setMode('signin')} className="text-indigo-600 font-medium hover:text-indigo-700">Back to sign in</button></>
+                  : <>Don't have an account? <button onClick={() => setMode('signup')} className="text-indigo-600 font-medium hover:text-indigo-700">Sign up</button></>}
+              </p>
+
+              <AuthForm
+                mode={mode}
+                setMode={setMode}
+                onSuccess={() => navigate(returnTo || '/dashboard', { replace: true })}
+                showBenefits={false}
+              />
+            </div>
+          </div>
+
+          {/* Copy over the wall (desktop only). */}
+          <div className="hidden lg:flex flex-col justify-end px-10 pb-12 xl:px-14 xl:pb-14">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-300">Live across {PLATFORM_COUNT} platforms</p>
             <p className="mt-3 text-3xl xl:text-4xl font-extrabold text-white leading-[1.1] tracking-tight max-w-md text-balance">
               Every creator has a card. Follow the ones you care about.
