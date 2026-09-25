@@ -35,6 +35,7 @@ import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import { computeProfileMetrics } from '../lib/profileMetrics';
+import { cardImageUrl } from '../lib/cardUrl';
 import GenericVerdictSection, { GENERIC_PLATFORM_CONFIG } from '../components/profile/GenericVerdictSection';
 import SimilarCreators from '../components/profile/SimilarCreators';
 import YouTubeVerdictSection from '../components/profile/YouTubeVerdictSection';
@@ -1116,7 +1117,7 @@ export default function CreatorProfile() {
                           // Half-size thumbnail: mark=0, since the card's platform
                           // logo would render under the 22px brand minimum here.
                           // The embed code itself is full size, with the logo.
-                          src={`${badgeUrl}?mark=0`}
+                          src={cardImageUrl(platform, creator?.username || username, { mark: false, absolute: true })}
                           width="125"
                           height="175"
                           alt={`${creator?.displayName || username} creator card`}

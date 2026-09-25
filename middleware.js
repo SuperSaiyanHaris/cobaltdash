@@ -996,7 +996,9 @@ async function handleCard(platform, username, { showMark = true } = {}) {
   return new Response(svg, {
     headers: {
       'content-type': 'image/svg+xml',
-      'cache-control': 'public, s-maxage=21600, stale-while-revalidate=86400',
+      // max-age: browsers otherwise keep an image with no explicit lifetime
+      // for an unpredictable time, showing an old design after a change.
+      'cache-control': 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
       'access-control-allow-origin': '*',
     },
   });

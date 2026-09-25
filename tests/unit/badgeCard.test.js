@@ -86,9 +86,15 @@ describe('platform logos follow brand guidelines', () => {
   });
   it('renders the mark at least 22px tall (YouTube requires >= 20dp)', () => {
     expect(MARK_HEIGHT).toBeGreaterThanOrEqual(22);
-    const scale = Number(card('youtube').match(/data-mark="youtube">[\s\S]*?scale\(([\d.]+)\)/)[1]);
+    const scale = Number(card('youtube').match(/data-mark="youtube"[^>]*scale\(([\d.]+)\)/)[1]);
     expect(20 * scale).toBeGreaterThanOrEqual(22 - 0.01);
   });
+  it('sits directly on the card (no tile), except TikTok whose light-background mark needs one', () => {
+    expect(card('youtube')).not.toMatch(/data-mark="youtube"><rect/);
+    expect(card('twitch')).not.toMatch(/data-mark="twitch"><rect/);
+    expect(card('tiktok')).toMatch(/data-mark="tiktok"><rect[^>]*fill="#FFFFFF"/);
+  });
+
   it('draws the mark after the shine so nothing ever covers it', () => {
     const svg = card('youtube');
     expect(svg.indexOf('data-mark="youtube"')).toBeGreaterThan(svg.indexOf('shine)'));

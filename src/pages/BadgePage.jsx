@@ -4,6 +4,7 @@ import { Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
 import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
+import { cardImageUrl } from '../lib/cardUrl';
 
 // Creator card maker. The card itself is an SVG rendered at the edge
 // (middleware.js -> src/lib/badgeCard.js) at /card/:platform/:username; the
@@ -83,7 +84,7 @@ export default function BadgePage() {
         <div className="rounded-2xl bg-[#111117] p-5 sm:p-8 mt-8 flex flex-wrap justify-center gap-5">
           {EXAMPLES.map(([p, u]) => (
             <Link key={p} to={`/${p}/${u}`} className="transition-transform hover:-translate-y-1">
-              <img src={`/card/${p}/${u}`} width="250" height="350" alt={`${u} ${PLATFORM_DISPLAY_NAMES[p]} creator card`} loading="lazy" />
+              <img src={cardImageUrl(p, u)} width="250" height="350" alt={`${u} ${PLATFORM_DISPLAY_NAMES[p]} creator card`} loading="lazy" />
             </Link>
           ))}
         </div>
@@ -117,7 +118,7 @@ export default function BadgePage() {
           {codes && (
             <div className="mt-6 grid md:grid-cols-[250px,1fr] gap-6 items-start">
               <div className="rounded-xl bg-[#111117] p-3 w-fit">
-                <img key={codes.img} src={codes.img} width="250" height="350" alt="Your card preview" />
+                <img key={codes.img} src={cardImageUrl(pulled.platform, pulled.username)} width="250" height="350" alt="Your card preview" />
               </div>
               <div className="space-y-4 min-w-0">
                 <CopyField label="HTML" value={codes.html} />

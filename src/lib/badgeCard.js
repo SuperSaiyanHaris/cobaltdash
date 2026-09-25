@@ -24,18 +24,17 @@ const LOGOS = {
   rumble: { w: 24, h: 24, svg: '<path fill="#85C742" d="M22.435 9.299c-.371-.605-.847-1.137-1.395-1.581L9.842 1.235a3.84 3.84 0 0 0-3.835-.022 3.84 3.84 0 0 0-1.926 3.32V17.46a3.84 3.84 0 0 0 1.926 3.32 3.838 3.838 0 0 0 3.835-.023l11.198-6.482a3.84 3.84 0 0 0 1.929-3.318 3.86 3.86 0 0 0-.534-1.659zM15.66 12.49l-6.05 3.529a.957.957 0 0 1-.957.005.96.96 0 0 1-.482-.83V8.157a.96.96 0 0 1 .482-.831.957.957 0 0 1 .957.005l6.05 3.529a.96.96 0 0 1 .477.829.957.957 0 0 1-.477.802z"/>' },
 };
 
-// color: accent for the card's art glow (not the logo). plate: background the
-// official mark sits on (Kick's mark is green-on-black; the rest go on white).
+// color: accent for the card's art glow (never applied to the logo).
 export const CARD_PLATFORMS = {
-  youtube:  { name: 'YouTube', color: '#FF3B30', unit: 'subscribers', plate: '#FFFFFF' },
-  twitch:   { name: 'Twitch', color: '#A970FF', unit: 'followers', plate: '#FFFFFF' },
-  kick:     { name: 'Kick', color: '#53FC18', unit: 'paid subs', plate: '#000000' },
-  tiktok:   { name: 'TikTok', color: '#FF2D6F', unit: 'followers', plate: '#FFFFFF' },
-  bluesky:  { name: 'Bluesky', color: '#1185FE', unit: 'followers', plate: '#FFFFFF' },
-  mastodon: { name: 'Mastodon', color: '#8C8DFF', unit: 'followers', plate: '#FFFFFF' },
-  music:    { name: 'Music', color: '#F59E0B', unit: 'monthly listeners', plate: '#FFFFFF' },
-  substack: { name: 'Substack', color: '#FF6719', unit: 'subscribers', plate: '#FFFFFF' },
-  rumble:   { name: 'Rumble', color: '#85C742', unit: 'followers', plate: '#FFFFFF' },
+  youtube:  { name: 'YouTube', color: '#FF3B30', unit: 'subscribers' },
+  twitch:   { name: 'Twitch', color: '#A970FF', unit: 'followers' },
+  kick:     { name: 'Kick', color: '#53FC18', unit: 'paid subs' },
+  tiktok:   { name: 'TikTok', color: '#FF2D6F', unit: 'followers' },
+  bluesky:  { name: 'Bluesky', color: '#1185FE', unit: 'followers' },
+  mastodon: { name: 'Mastodon', color: '#8C8DFF', unit: 'followers' },
+  music:    { name: 'Music', color: '#F59E0B', unit: 'monthly listeners' },
+  substack: { name: 'Substack', color: '#FF6719', unit: 'subscribers' },
+  rumble:   { name: 'Rumble', color: '#85C742', unit: 'followers' },
 };
 
 export const TIERS = {
@@ -73,36 +72,43 @@ function fit(s, max) {
   return str.length > max ? str.slice(0, max - 1) + '…' : str;
 }
 
-/** Minimum rendered height of a platform mark, same floor the site uses
- * everywhere (src/components/brandMarkSize.js): YouTube requires >= 20dp. */
+/** Rendered height of every platform mark: the site-wide brand floor
+ * (src/components/brandMarkSize.js; YouTube requires >= 20dp). All marks share
+ * it so they read as one set. */
 export const MARK_HEIGHT = 22;
-const PLATE_PAD = 5;
+
+// Visible bounds of marks whose artwork doesn't fill its viewBox, so every
+// mark's *visible* height is MARK_HEIGHT (Kick's glyph sits inside 1.5px of
+// padding top and bottom, which made it look smaller than the rest).
+const MARK_CROP = { kick: { x: 2.87, y: 1.5, w: 18.26, h: 21 } };
 
 /**
- * The platform's official mark on a solid plate, top-right of the card:
- * official colors, never scaled under MARK_HEIGHT, padded clear space, and
- * drawn last so the card's shine/foil never pass over it (YouTube: "must not
- * be altered or partially covered"; Twitch: no glows/gradients/busy
- * backgrounds). Music isn't a brand, so it gets a plain note.
+ * The platform's official mark, top-right of the card, directly on the
+ * card's solid dark header: official colors, MARK_HEIGHT tall, clear of the
+ * rarity pill and art window, and drawn last so the foil/shine never pass
+ * over it (YouTube: solid background, sufficient contrast, "must not be
+ * altered or partially covered"; Twitch: no glows/gradients/busy
+ * backgrounds). The one exception is TikTok: the only official TikTok mark
+ * the site has is the black-fill variant for light backgrounds, which would
+ * vanish on the dark card, and it may not be recolored, so it sits on a
+ * small white tile. Music isn't a brand, so it gets a plain note.
  */
-function logoPlate(platform, rightX, topY) {
+function platformMark(platform, rightX, centerY) {
   const p = CARD_PLATFORMS[platform];
-  let w, inner;
+  const top = centerY - MARK_HEIGHT / 2;
   if (platform === 'tiktok') {
-    w = MARK_HEIGHT * TIKTOK_MARK_ASPECT;
-    inner = `<image href="${TIKTOK_MARK_DATA_URI}" width="${w.toFixed(2)}" height="${MARK_HEIGHT}"/>`;
-  } else if (LOGOS[platform]) {
-    const l = LOGOS[platform];
-    const k = MARK_HEIGHT / l.h;
-    w = l.w * k;
-    inner = `<g transform="scale(${k.toFixed(5)})">${l.svg}</g>`;
-  } else {
-    w = MARK_HEIGHT;
-    inner = `<g transform="scale(${(MARK_HEIGHT / 20).toFixed(3)})" fill="${p.color}">${NOTE}</g>`;
+    const w = MARK_HEIGHT * TIKTOK_MARK_ASPECT, pad = 4;
+    const x = rightX - w - pad * 2;
+    return `<g data-mark="tiktok"><rect x="${x.toFixed(2)}" y="${top - pad}" width="${(w + pad * 2).toFixed(2)}" height="${MARK_HEIGHT + pad * 2}" rx="7" fill="#FFFFFF"/><image href="${TIKTOK_MARK_DATA_URI}" x="${(x + pad).toFixed(2)}" y="${top}" width="${w.toFixed(2)}" height="${MARK_HEIGHT}"/></g>`;
   }
-  const pw = w + PLATE_PAD * 2 + 2, ph = MARK_HEIGHT + PLATE_PAD * 2;
-  const x = rightX - pw;
-  return `<g data-mark="${platform}"><rect x="${x.toFixed(2)}" y="${topY}" width="${pw.toFixed(2)}" height="${ph}" rx="8" fill="${p.plate}"/><g transform="translate(${(x + PLATE_PAD + 1).toFixed(2)} ${topY + PLATE_PAD})">${inner}</g></g>`;
+  if (LOGOS[platform]) {
+    const l = LOGOS[platform];
+    const crop = MARK_CROP[platform] || { x: 0, y: 0, w: l.w, h: l.h };
+    const k = MARK_HEIGHT / crop.h;
+    const w = crop.w * k;
+    return `<g data-mark="${platform}" transform="translate(${(rightX - w - crop.x * k).toFixed(2)} ${(top - crop.y * k).toFixed(2)}) scale(${k.toFixed(5)})">${l.svg}</g>`;
+  }
+  return `<g data-mark="${platform}" transform="translate(${rightX - MARK_HEIGHT} ${top}) scale(${(MARK_HEIGHT / 20).toFixed(3)})" fill="${p.color}">${NOTE}</g>`;
 }
 
 /**
@@ -168,7 +174,7 @@ ${rankChip}
 ${hasDelta ? `<text x="22" y="329" font-family="${FONT}" font-size="9.5" font-weight="700" fill="${up ? '#34D399' : '#F87171'}">${up ? '▲ +' : '▼ −'}${compactCount(c.delta30)} <tspan fill="#6B6B76" font-weight="600">30d</tspan></text>` : ''}
 <text x="${W - 22}" y="329" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#6B6B76">${cardNo} · SHINYPULL</text>
 <rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)"><animate attributeName="x" values="-220;-220;420" keyTimes="0;.55;1" dur="4.5s" repeatCount="indefinite"/></rect>
-${c.showMark === false ? '' : logoPlate(c.platform in CARD_PLATFORMS ? c.platform : 'youtube', W - 14, 12)}
+${c.showMark === false ? '' : platformMark(c.platform in CARD_PLATFORMS ? c.platform : 'youtube', W - 20, 28)}
 </g>
 <rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" rx="15.5" fill="none" stroke="#fff" stroke-opacity=".25"/>
 </svg>`;

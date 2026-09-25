@@ -20,6 +20,7 @@ import {
 } from '../services/creatorService';
 import { supabase } from '../lib/supabase';
 import { formatNumber, formatRelativeTimeShort } from '../lib/utils';
+import { cardImageUrl } from '../lib/cardUrl';
 import CreatorAvatar from '../components/CreatorAvatar';
 import CountUp from '../components/CountUp';
 import FeaturedListingPreview from '../components/FeaturedListingPreview';
@@ -301,11 +302,10 @@ function ChampionsGrid({ tops }) {
             isActive ? 'drop-shadow-[0_18px_30px_rgba(0,0,0,0.28)] hover:brightness-110' : 'drop-shadow-[0_10px_18px_rgba(0,0,0,0.18)]'
           }`;
 
-          const cardSrc = `/card/${top.platform}/${encodeURIComponent(top.username)}`;
           const cardInner = (
             <span className="relative block">
               <img
-                src={`${cardSrc}?mark=0`}
+                src={cardImageUrl(top.platform, top.username, { mark: false })}
                 width="250"
                 height="350"
                 alt={`${top.display_name}, #1 on ${top._platformLabel}: ${formatNumber(top.subscribers || 0)} ${top._metricLabel}`}
@@ -315,7 +315,7 @@ function ChampionsGrid({ tops }) {
               />
               {abs <= 1 && (
                 <img
-                  src={cardSrc}
+                  src={cardImageUrl(top.platform, top.username)}
                   width="250"
                   height="350"
                   alt=""
