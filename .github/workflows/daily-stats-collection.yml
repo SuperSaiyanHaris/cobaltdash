@@ -74,3 +74,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/refreshRankingsCache.js
+      # Fails the run (and emails you) if any platform's readings came up short
+      # or the hours-watched rollup didn't land. See scripts/checkDataHealth.js.
+      - name: Data health check
+        if: always()
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/checkDataHealth.js --strict --only=coverage,hours

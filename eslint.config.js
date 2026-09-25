@@ -17,7 +17,7 @@ export default [
   { ignores: ['dist/', 'node_modules/', '_tmp_*', 'public/'] },
   js.configs.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
@@ -56,7 +56,7 @@ export default [
   },
   {
     // Scripts run in Node, no JSX, no React rules needed
-    files: ['scripts/**/*.js', 'api/**/*.js'],
+    files: ['scripts/**/*.{js,mjs}', 'api/**/*.js', 'tests/**/*.js'],
     languageOptions: {
       globals: { ...globals.node, ...globals.es2024 },
     },

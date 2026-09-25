@@ -1,0 +1,74 @@
+name: Live checks
+
+# Checks the real site after every production deploy and every 3 hours:
+#   smoke   - key pages/endpoints return what they should (scripts/smoke.mjs)
+#   health  - data isn't stale or thin (scripts/checkDataHealth.js)
+#   browser - Playwright flows on desktop + mobile (tests/e2e)
+# A failure turns the run red and GitHub emails you.
+on:
+  deployment_status:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: live-checks
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    # Vercel reports each deployment to GitHub; only react to a successful
+    # production one (schedule/manual runs always go ahead).
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Smoke test shinypull.com
+        run: node scripts/smoke.mjs
+
+  health:
+    if: github.event_name != 'deployment_status'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - name: Data health
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/checkDataHealth.js
+
+  browser:
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Browser tests (desktop + mobile)
+        env:
+          # Optional dedicated test account for the signed-in flow; skipped if unset.
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: npx playwright test
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

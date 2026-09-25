@@ -72,3 +72,7 @@ _*.html
 
 # Generated at build time by scripts/generateSitemap.js
 public/sitemap*.xml
+
+# Playwright output
+test-results/
+playwright-report/
