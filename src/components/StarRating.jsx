@@ -41,7 +41,7 @@ function Star({ fill, size, delay, gradientId }) {
  * for null/undefined — a creator with no grade yet gets no stars shown,
  * never a fabricated rating.
  */
-export default function StarRating({ stars, size = 18, showValue = true, className = '' }) {
+export default function StarRating({ stars, size = 18, showValue = true, dark = false, className = '' }) {
   const uid = useId();
   if (stars === null || stars === undefined) return null;
 
@@ -70,7 +70,7 @@ export default function StarRating({ stars, size = 18, showValue = true, classNa
         )}
       </span>
       {showValue && (
-        <span className="text-xs sm:text-sm font-semibold text-neutral-700 tabular-nums ml-0.5">
+        <span className={`text-xs sm:text-sm font-semibold tabular-nums ml-0.5 ${dark ? 'text-white' : 'text-neutral-700'}`}>
           {stars.toFixed(1)}
         </span>
       )}

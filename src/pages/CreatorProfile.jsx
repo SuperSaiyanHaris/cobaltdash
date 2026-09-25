@@ -16,10 +16,8 @@ import { getMastodonProfile, getMastodonLatestStatus } from '../services/mastodo
 import { getSubstackPublication } from '../services/substackService';
 import SubstackIcon from '../components/SubstackIcon';
 import { getArtistByMbid, getArtistByName, getArtistTopTracks, getArtistTopAlbums } from '../services/musicService';
-import { Music } from 'lucide-react';
 import MusicIcon from '../components/MusicIcon';
 import { upsertCreator, saveCreatorStats, getCreatorByUsername, isUsernameAmbiguous, getCreatorStats, getHoursWatched, getCreatorPeakStats, getCreatorRankContext, getCreatorGrade } from '../services/creatorService';
-import CreatorAvatar from '../components/CreatorAvatar';
 import StarRating from '../components/StarRating';
 import { ProfileSkeleton } from '../components/Skeleton';
 import { toast } from 'sonner';
@@ -34,7 +32,8 @@ import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
 import { computeProfileMetrics } from '../lib/profileMetrics';
-import { cardImageUrl } from '../lib/cardUrl';
+import { cardTier } from '../lib/badgeCard';
+import FlipCard from '../components/FlipCard';
 import GenericVerdictSection, { GENERIC_PLATFORM_CONFIG } from '../components/profile/GenericVerdictSection';
 import SimilarCreators from '../components/profile/SimilarCreators';
 import YouTubeVerdictSection from '../components/profile/YouTubeVerdictSection';
@@ -926,6 +925,30 @@ export default function CreatorProfile() {
 
   const seoKeywords = `${creator.displayName} ${platformName} stats, ${creator.displayName} ${primaryLabel}, ${creator.displayName} analytics, ${platformName} statistics, ${creator.displayName} growth`;
 
+  const heroTier = rankContext?.rank && rankContext?.total ? cardTier(rankContext.rank, rankContext.total) : null;
+  const updatedAgo = (() => {
+    // The real freshness signal is the latest creator_stats row (ascending order).
+    const latestStat = statsHistory.length > 0 ? statsHistory[statsHistory.length - 1] : null;
+    if (!latestStat?.recorded_at) return 'recently';
+    const diffHours = Math.floor((new Date() - new Date(latestStat.recorded_at)) / (1000 * 60 * 60));
+    if (diffHours < 1) return 'less than an hour ago';
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return diffDays === 1 ? 'yesterday' : `${diffDays} days ago`;
+  })();
+  const quickLinks = platform === 'youtube' && creator.platformId ? [
+    { label: 'About', href: `https://www.youtube.com/channel/${creator.platformId}/about` },
+    { label: 'Videos', href: `https://www.youtube.com/channel/${creator.platformId}/videos` },
+    { label: 'Community', href: `https://www.youtube.com/channel/${creator.platformId}/community` },
+  ] : platform === 'twitch' ? [
+    { label: 'Videos', href: `https://twitch.tv/${creator.username}/videos` },
+    { label: 'Schedule', href: `https://twitch.tv/${creator.username}/schedule` },
+    { label: 'About', href: `https://twitch.tv/${creator.username}/about` },
+  ] : platform === 'music' ? [
+    { label: 'Wiki', href: `https://www.last.fm/music/${encodeURIComponent(creator.displayName)}/+wiki` },
+    { label: 'Similar artists', href: `https://www.last.fm/music/${encodeURIComponent(creator.displayName)}/+similar` },
+  ] : [];
+
   const profileSchema = {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
@@ -966,397 +989,174 @@ export default function CreatorProfile() {
       <StructuredData schema={breadcrumbSchema} />
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Hero banner — uses the creator's channel art as background with gradient fade.
-            No banner: flat paper + a faint dot-grid texture (same motif as the home hero,
-            adapted for light backgrounds) instead of a colored gradient wash. Product
-            pages stay light and functional-color-only per the site's design system —
-            platform identity already reads from the badge pill below, not this banner. */}
-        <div className="relative h-40 sm:h-48 md:h-56 overflow-hidden">
-          {creator.bannerImage ? (
-            <>
-              <img
-                src={creator.bannerImage}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105 blur-[2px]"
+        {/* ── Dark hero: their card flips in beside the numbers that matter ──
+            Same dark base + dot grid as the home hero. No banner image and no
+            colored wash (hard rule); platform identity is the chip and the card. */}
+        <section className="relative isolate bg-[#0a0a0f] text-white">
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-10 sm:pb-14 grid md:grid-cols-[auto,1fr] gap-8 md:gap-12 items-center">
+            <div className="flex justify-center">
+              <FlipCard
+                creator={{ platform, username: creator.username || username, name: creator.displayName, avatar: creator.profileImage }}
+                className="w-[190px] h-[266px] sm:w-[250px] sm:h-[350px]"
               />
-              <img
-                src={creator.bannerImage}
-                alt="Channel banner"
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ maskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)' }}
-              />
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-neutral-100 hero-dot-grid-light" />
-          )}
-          {/* Bottom gradient fade so the card overlap is seamless */}
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#fafaf9] via-[#fafaf9]/80 to-transparent pointer-events-none" />
-        </div>
+            </div>
 
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-          <div className="max-w-6xl mx-auto">
-            {/* Profile Header — overlaps the banner */}
-            <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 sm:p-6 md:p-8 mb-6 relative z-10 -mt-24 sm:-mt-28 md:-mt-32">
-              {/* Action Buttons - Top Right */}
-              <div ref={shareRef} className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-2">
-                {/* Compare button */}
-                <button
-                  onClick={() => navigate(`/compare?creators=${platform}:${username}`)}
-                  className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm border bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
-                  title="Compare this creator"
+            <div className="min-w-0 text-center md:text-left">
+              {/* Chips: platform, live, rarity, country, rating */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                <a
+                  href={platformUrls[platform]?.(creator.username || username, creator?.platformId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white text-neutral-950 text-sm font-bold hover:bg-neutral-100 transition-colors"
                 >
-                  <Scale className="w-4 h-4" />
-                  {/* Label only from lg up. Between md and lg the header puts
-                      the avatar and name side by side while this cluster is
-                      absolutely positioned over the same band, and a labelled
-                      cluster (349px) leaves too little room for a long display
-                      name beside the platform badge. */}
-                  <span className="hidden lg:inline">Compare</span>
-                </button>
+                  {Icon && <Icon className={`w-4 h-4 ${platform === 'tiktok' ? '' : colors.text}`} />}
+                  {platformName}
+                  <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                </a>
+                {isLive && (
+                  <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-red-600 text-white text-xs font-black uppercase tracking-[0.14em]">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Live
+                  </span>
+                )}
+                {heroTier && (
+                  <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-white/20 bg-white/[0.06] text-xs font-black uppercase tracking-[0.14em]" style={{ color: heroTier.a }}>
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: heroTier.a }} /> {heroTier.name}
+                  </span>
+                )}
+                {creator.country && (
+                  <span className="inline-flex items-center h-8 px-3 rounded-full border border-white/20 bg-white/[0.06] text-sm font-semibold">{creator.country}</span>
+                )}
+                {grade?.stars != null && (
+                  <StarRating stars={grade.stars} size={15} dark className="h-8 px-3 rounded-full border border-white/20 bg-white/[0.06]" />
+                )}
+              </div>
 
-                {/* Share button + panel */}
+              <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.02] break-words">{creator.displayName}</h1>
+              <p className="mt-2 text-[15px] text-white/75">
+                @{creator.username}
+                <span className="mx-2 text-white/40">·</span>
+                <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Updated {updatedAgo}</span>
+              </p>
+
+              {/* The number */}
+              <div className="mt-6 flex flex-wrap items-end justify-center md:justify-start gap-x-5 gap-y-2">
                 <div>
-                  <button
-                    onClick={handleShareClick}
-                    className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm border ${
-                      showSharePanel
-                        ? 'bg-neutral-900 border-neutral-900 text-white'
-                        : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
-                    }`}
-                  >
-                    <Share2 className="w-4 h-4" />
-                    <span className="hidden lg:inline">Share</span>
-                  </button>
+                  <p className="text-5xl sm:text-7xl font-black tabular-nums tracking-tight leading-none">{formatNumber(primaryCount)}</p>
+                  <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70">{primaryLabel}</p>
                 </div>
+                <div className="flex flex-col items-center md:items-start gap-1.5 pb-1">
+                  {metrics?.last30Days?.subs ? (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-bold tabular-nums ${metrics.last30Days.subs > 0 ? 'bg-emerald-400/15 text-emerald-300' : 'bg-red-400/15 text-red-300'}`}>
+                      {metrics.last30Days.subs > 0 ? '▲' : '▼'} {formatNumber(Math.abs(metrics.last30Days.subs))} in 30 days
+                    </span>
+                  ) : null}
+                  {rankContext?.rank && rankContext?.total ? (
+                    <Link to={`/rankings/${platform}`} className="text-sm font-semibold text-white/85 hover:text-white transition-colors">
+                      #{formatNumber(rankContext.rank)} of {formatNumber(rankContext.total)} {platformName} creators
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
 
-                  {/* Share panel dropdown */}
-                  {showSharePanel && (
-                    <div className="absolute top-full right-0 mt-2 w-[min(320px,calc(100vw-2rem))] bg-white border border-neutral-200 rounded-xl shadow-2xl p-4 z-30">
-
-                      {/* Profile URL — everyone */}
-                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Profile URL</p>
-                      <div className="flex items-center gap-2 mb-4">
-                        <input
-                          readOnly
-                          value={profileUrl}
-                          className="flex-1 min-w-0 px-3 py-2 bg-neutral-100 border border-neutral-300 rounded-lg text-xs text-neutral-800 font-mono truncate"
-                        />
-                        <button
-                          onClick={handleCopyProfile}
-                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                            copiedProfile ? 'bg-emerald-600 text-white' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
-                          }`}
-                        >
-                          {copiedProfile ? 'Copied!' : 'Copy'}
-                        </button>
-                      </div>
-
-                      {/* Clean share link — Mod only */}
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Clean share link</p>
-                      </div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <input
-                          readOnly
-                          value={shareUrl}
-                          className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate bg-neutral-100 border-neutral-300 text-neutral-800"
-                        />
-                        <button
-                          onClick={handleCopyUrl}
-                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                            copiedUrl ? 'bg-emerald-600 text-white' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
-                          }`}
-                        >
-                          {copiedUrl ? 'Copied!' : 'Copy'}
-                        </button>
-                      </div>
-
-                      {/* Embed code */}
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Embed code</p>
-                      </div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <input
-                          readOnly
-                          value={embedCode}
-                          className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate bg-neutral-100 border-neutral-300 text-neutral-800"
-                        />
-                        <button
-                          onClick={handleCopyEmbed}
-                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                            copiedEmbed ? 'bg-emerald-700 text-emerald-100' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
-                          }`}
-                        >
-                          {copiedEmbed ? 'Copied!' : 'Copy'}
-                        </button>
-                      </div>
-                      {isMod && <p className="text-xs text-neutral-400 mb-4">Embed works in Notion, websites, and anywhere iframes are supported.</p>}
-
-                      {/* Stats badge — live-count image that links back to this profile */}
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Creator card</p>
-                      </div>
-                      <a href={profileUrl} onClick={(e) => e.preventDefault()} className="inline-block mb-2 cursor-default">
-                        <img
-                          // Half-size thumbnail: mark=0, since the card's platform
-                          // logo would render under the 22px brand minimum here.
-                          // The embed code itself is full size, with the logo.
-                          src={cardImageUrl(platform, creator?.username || username, { mark: false, absolute: true })}
-                          width="125"
-                          height="175"
-                          alt={`${creator?.displayName || username} creator card`}
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </a>
-                      <div className="flex items-center gap-2 mb-3">
-                        <input
-                          readOnly
-                          value={badgeEmbed}
-                          className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-xs font-mono truncate bg-neutral-100 border-neutral-300 text-neutral-800"
-                        />
-                        <button
-                          onClick={handleCopyBadge}
-                          className={`flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                            copiedBadge ? 'bg-emerald-600 text-white' : 'bg-neutral-900 hover:bg-neutral-800 text-white'
-                          }`}
-                        >
-                          {copiedBadge ? 'Copied!' : 'Copy'}
-                        </button>
-                      </div>
-                      <p className="text-xs text-neutral-400">A live holographic card for your website, stream panels or README. Rarity comes from the real rank, the count updates automatically, and it links back to this page. <Link to="/badge" className="underline hover:text-neutral-600">Markdown and more options</Link>.</p>
-                    </div>
-                  )}
-
-                {/* Follow button — primary action is black-on-white; followed
-                    state is a quiet bordered pill */}
+              {/* Actions */}
+              <div ref={shareRef} className="relative mt-7 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                 <button
                   onClick={handleFollowToggle}
                   disabled={followLoading}
-                  className={`inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                    isFollowing
-                      ? 'bg-white text-neutral-700 hover:bg-neutral-50 border border-neutral-200'
-                      : 'bg-neutral-900 text-white hover:bg-neutral-800'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`inline-flex items-center gap-2 h-11 px-5 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                    isFollowing ? 'bg-white/10 border border-white/30 text-white hover:border-white/60' : 'bg-white text-neutral-950 hover:bg-neutral-100'
+                  }`}
                 >
-                  <Star className={`w-4 h-4 ${isFollowing ? 'fill-current' : ''}`} />
+                  <Star className={`w-4 h-4 ${isFollowing ? 'fill-current text-amber-300' : ''}`} />
                   {followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
                 </button>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-start gap-4 sm:gap-6">
-                {(platform === 'music' && (!creator.profileImage || creator.profileImage.includes('2a96cbd8b46e442fc41c2b86b821562f'))) ? (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-amber-50 border-4 border-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] flex items-center justify-center flex-shrink-0">
-                    <Music className="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" />
-                  </div>
-                ) : (
-                  <CreatorAvatar
-                    src={creator.profileImage}
-                    name={creator.displayName}
-                    size="2xl"
-                    rounded="rounded-2xl"
-                    loading="eager"
-                    className="sm:w-24 sm:h-24 md:w-28 md:h-28 border-4 border-white shadow-[0_2px_10px_rgba(0,0,0,0.08)]"
-                  />
+                <button
+                  onClick={() => navigate(`/compare?creators=${platform}:${username}`)}
+                  className="inline-flex items-center gap-2 h-11 px-4 rounded-xl border border-white/25 hover:border-white/60 text-white text-sm font-bold transition-colors"
+                >
+                  <Scale className="w-4 h-4" /> Compare
+                </button>
+                <button
+                  onClick={handleShareClick}
+                  className={`inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-bold transition-colors ${showSharePanel ? 'bg-white text-neutral-950' : 'border border-white/25 hover:border-white/60 text-white'}`}
+                >
+                  <Share2 className="w-4 h-4" /> Share
+                </button>
+                {isLive && (platform === 'twitch' || platform === 'kick') && (
+                  <a
+                    href={platform === 'twitch' ? `https://twitch.tv/${creator.username}` : `https://kick.com/${creator.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
+                  >
+                    <Radio className="w-4 h-4" /> Watch live
+                    {liveStreamInfo?.viewer_count ? <span className="font-semibold text-red-100 tabular-nums">{formatNumber(liveStreamInfo.viewer_count)} watching</span> : null}
+                  </a>
                 )}
-                <div className="flex-1 w-full">
-                  {/* Reserve room for the absolutely-positioned action cluster
-                      above. Only needed from md up: below that the header
-                      stacks (flex-col) and this row sits under the buttons
-                      rather than beside them. Without it a long display name
-                      plus the platform badge runs underneath the buttons. */}
-                  <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap md:pr-64 lg:pr-96">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">{creator.displayName}</h1>
-                    <a
-                      href={platformUrls[platform]?.(creator.username || username, creator?.platformId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm hover:opacity-90 transition-opacity ${
-                        platform === 'youtube' || platform === 'twitch'
-                          ? `bg-white border ${colors.border} ${colors.text}`
-                          : `${colors.bg} text-white`
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {Icon && <Icon className="w-3 h-3 sm:w-4 sm:h-4" />}
-                      {platformDisplayNames[platform] || platform}
-                    </a>
-                    {isLive && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm bg-red-500 text-white animate-pulse">
-                        <Radio className="w-3 h-3 sm:w-4 sm:h-4" />
-                        LIVE
-                      </span>
-                    )}
-                    {creator.country && (
-                      <span className="px-2 sm:px-2.5 py-1 bg-neutral-100 rounded-lg text-xs sm:text-sm text-neutral-700 font-medium">
-                        {creator.country}
-                      </span>
-                    )}
-                    {grade?.stars != null && (
-                      <StarRating stars={grade.stars} size={16} className="px-2 sm:px-2.5 py-1 bg-neutral-50 border border-neutral-200/80 rounded-full" />
-                    )}
+
+                {showSharePanel && (
+                  <div className="absolute top-full left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 mt-2 w-[min(340px,calc(100vw-2rem))] bg-white text-left border border-neutral-200 rounded-2xl shadow-2xl p-4 z-30">
+                    {[
+                      { label: 'Profile link', value: profileUrl, copied: copiedProfile, onCopy: handleCopyProfile },
+                      { label: 'Clean share link', value: shareUrl, copied: copiedUrl, onCopy: handleCopyUrl },
+                      { label: 'Embed code', value: embedCode, copied: copiedEmbed, onCopy: handleCopyEmbed },
+                    ].map((row) => (
+                      <div key={row.label} className="mb-4">
+                        <p className="text-xs font-bold text-neutral-800 uppercase tracking-wider mb-2">{row.label}</p>
+                        <div className="flex items-center gap-2">
+                          <input readOnly value={row.value} className="flex-1 min-w-0 px-3 py-2 bg-neutral-100 border border-neutral-300 rounded-lg text-xs text-neutral-900 font-mono truncate" />
+                          <button
+                            onClick={row.onCopy}
+                            className={`flex-shrink-0 px-3 py-2 text-xs font-bold rounded-lg transition-colors ${row.copied ? 'bg-emerald-600 text-white' : 'bg-neutral-900 hover:bg-neutral-800 text-white'}`}
+                          >
+                            {row.copied ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-xs font-bold text-neutral-800 uppercase tracking-wider mb-2">Creator card</p>
+                    <div className="flex items-center gap-2">
+                      <input readOnly value={badgeEmbed} className="flex-1 min-w-0 px-3 py-2 bg-neutral-100 border border-neutral-300 rounded-lg text-xs text-neutral-900 font-mono truncate" />
+                      <button
+                        onClick={handleCopyBadge}
+                        className={`flex-shrink-0 px-3 py-2 text-xs font-bold rounded-lg transition-colors ${copiedBadge ? 'bg-emerald-600 text-white' : 'bg-neutral-900 hover:bg-neutral-800 text-white'}`}
+                      >
+                        {copiedBadge ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-neutral-700 leading-relaxed">
+                      A live holographic card for your site, stream panels or README. It updates itself and links back here. <Link to="/badge" className="font-semibold underline">More options</Link>
+                    </p>
                   </div>
-                  <p className="text-sm sm:text-base text-neutral-700 mb-1">@{creator.username}</p>
-
-                  {/* Data Freshness Indicator */}
-                  <div className="flex items-center gap-1.5 text-xs text-neutral-700 mb-3">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>
-                      Updated {(() => {
-                        // creator.updated_at is never actually set anywhere in this
-                        // file (checked: no channelData branch or setCreator call
-                        // populates it, for any platform), so this always silently
-                        // fell back to the vague "recently" regardless of real
-                        // staleness. The real signal is the latest creator_stats
-                        // row we already have in statsHistory (ascending order, so
-                        // the last element is the most recent).
-                        const latestStat = statsHistory.length > 0 ? statsHistory[statsHistory.length - 1] : null;
-                        if (!latestStat?.recorded_at) return 'recently';
-                        const updated = new Date(latestStat.recorded_at);
-                        const now = new Date();
-                        const diffHours = Math.floor((now - updated) / (1000 * 60 * 60));
-                        if (diffHours < 1) return 'less than an hour ago';
-                        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-                        const diffDays = Math.floor(diffHours / 24);
-                        if (diffDays === 1) return 'yesterday';
-                        return `${diffDays} days ago`;
-                      })()}
-                    </span>
-                  </div>
-
-                  {/* Social Links */}
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <a
-                      href={platformUrls[platform]?.(creator.username, creator?.platformId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 sm:gap-2 text-indigo-600 hover:text-indigo-700 font-medium text-xs sm:text-sm"
-                    >
-                      <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden xs:inline">View on {platform === 'music' ? 'Last.fm' : platformDisplayNames[platform] || platform}</span>
-                      <span className="xs:hidden">View</span>
-                    </a>
-
-                    {/* Watch Live Button for Twitch */}
-                    {isLive && platform === 'twitch' && (
-                      <>
-                        <span className="text-neutral-700">•</span>
-                        <a
-                          href={`https://twitch.tv/${creator.username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-500 hover:bg-red-600 text-white font-medium text-xs sm:text-sm rounded-full transition-colors"
-                        >
-                          <Radio className="w-3 h-3" />
-                          Watch Live
-                          {liveStreamInfo?.viewer_count && (
-                            <span className="ml-1 text-red-200">
-                              ({formatNumber(liveStreamInfo.viewer_count)} viewers)
-                            </span>
-                          )}
-                        </a>
-                      </>
-                    )}
-
-                    {/* Additional social links for YouTube channels */}
-                    {platform === 'youtube' && creator.platformId && (
-                      <>
-                        <a
-                          href={`https://www.youtube.com/channel/${creator.platformId}/about`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          About
-                        </a>
-                        <a
-                          href={`https://www.youtube.com/channel/${creator.platformId}/videos`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          Videos
-                        </a>
-                        <a
-                          href={`https://www.youtube.com/channel/${creator.platformId}/community`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          Community
-                        </a>
-                      </>
-                    )}
-
-                    {/* Twitch-specific links */}
-                    {platform === 'twitch' && (
-                      <>
-                        <a
-                          href={`https://twitch.tv/${creator.username}/videos`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          Videos
-                        </a>
-                        <a
-                          href={`https://twitch.tv/${creator.username}/schedule`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          Schedule
-                        </a>
-                        <a
-                          href={`https://twitch.tv/${creator.username}/about`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          About
-                        </a>
-                      </>
-                    )}
-
-                    {/* Music-specific links */}
-                    {platform === 'music' && (
-                      <>
-                        <a
-                          href={`https://www.last.fm/music/${encodeURIComponent(creator.displayName)}/+wiki`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          Wiki
-                        </a>
-                        <a
-                          href={`https://www.last.fm/music/${encodeURIComponent(creator.displayName)}/+similar`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 transition-colors"
-                        >
-                          Similar Artists
-                        </a>
-                      </>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
 
-              {platform === 'music' ? (
-                creator.bio && (
-                  <p className="text-neutral-700 text-sm mt-6 line-clamp-4 leading-relaxed">
-                    {creator.bio}
-                  </p>
-                )
-              ) : (
-                creator.description && (
-                  <p className="text-neutral-700 text-sm mt-6 line-clamp-3 leading-relaxed">
-                    {creator.description}
-                  </p>
-                )
+              {/* Platform quick links */}
+              {quickLinks.length > 0 && (
+                <div className="mt-5 flex flex-wrap items-center justify-center md:justify-start gap-2">
+                  {quickLinks.map((l) => (
+                    <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center h-8 px-3 rounded-full border border-white/15 hover:border-white/50 text-xs font-semibold text-white/85 hover:text-white transition-colors">
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
+          </div>
+
+          {(platform === 'music' ? creator.bio : creator.description) && (
+            <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 -mt-2">
+              <p className="max-w-3xl text-sm sm:text-[15px] text-white/75 leading-relaxed line-clamp-3">
+                {platform === 'music' ? creator.bio : creator.description}
+              </p>
+            </div>
+          )}
+        </section>
+
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          <div className="max-w-6xl mx-auto">
 
             {/* "Awaiting first data point" banner —
                 Some creators are added via the lazy-hydration flow when a user

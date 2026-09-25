@@ -80,7 +80,7 @@ export function renderNoHistoryMessage(creator) {
     ? new Date(creator.dbCreatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
   return (
-    <div className="h-full flex flex-col items-center justify-center text-sm text-neutral-500 text-center px-6 gap-1">
+    <div className="h-full flex flex-col items-center justify-center text-sm text-neutral-700 text-center px-6 gap-1">
       <span>{dateStr ? `Added to tracking on ${dateStr}.` : 'Just added to tracking.'}</span>
       <span>A trend line will appear once a few more daily readings come in.</span>
     </div>

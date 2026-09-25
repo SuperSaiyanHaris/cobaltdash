@@ -238,7 +238,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
             ) : (
               <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
             )}
-            <p className="text-xs text-neutral-500">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
+            <p className="text-xs text-neutral-700">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
           </div>
         </div>
 
@@ -262,7 +262,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
                     const raw = payload[0].payload[currentMetric.dataKey];
                     return (
                       <div className="bg-white border border-neutral-200 rounded-lg shadow-lg px-3 py-2">
-                        <p className="text-xs text-neutral-500">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        <p className="text-xs text-neutral-700">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                         <p className="text-sm font-semibold text-neutral-900 tabular-nums">{formatNumber(raw)}</p>
                       </div>
                     );
@@ -290,7 +290,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
           {nearestMilestone && (
             <button onClick={() => setDrilldownOpen(true)} className="text-left hover:text-neutral-900 transition-colors">
               Next milestone <span className="font-semibold text-neutral-900">{fmtMilestone(nearestMilestone.milestone)} {config.primaryLabel.toLowerCase()}</span> in ~{nearestMilestone.days} days
-              <span className="text-neutral-400"> ({nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, at the current pace)</span>
+              <span className="text-neutral-600"> ({nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, at the current pace)</span>
             </button>
           )}
         </div>
@@ -299,39 +299,39 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
       {/* Stat strip — cells vary per platform, every value real */}
       <div className="grid grid-cols-2 lg:grid-cols-3 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-neutral-200/80 mt-6">
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">{config.primaryLabel}</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">{config.primaryLabel}</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(primaryCount)}</p>
           <p className="text-xs text-emerald-600 mt-1">{peakStats?.subscribers && primaryCount >= peakStats.subscribers ? 'all-time high' : ''}</p>
         </div>
 
         {(platform === 'twitch' || platform === 'kick') && (
           <div className="p-4">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Hours watched</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Hours watched</p>
             <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{creator.hoursWatchedMonth ? formatHoursWatched(creator.hoursWatchedMonth) : '—'}</p>
-            <p className="text-xs text-neutral-500 mt-1">last 30 days</p>
+            <p className="text-xs text-neutral-700 mt-1">last 30 days</p>
           </div>
         )}
         {platform === 'tiktok' && (
           <div className="p-4">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Total likes</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Total likes</p>
             <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalViews)}</p>
           </div>
         )}
         {(platform === 'bluesky' || platform === 'mastodon') && (
           <div className="p-4">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Posts</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Posts</p>
             <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
           </div>
         )}
         {platform === 'music' && (
           <>
             <div className="p-4">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Total plays</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Total plays</p>
               <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalViews)}</p>
             </div>
             {creator.description && (
               <div className="p-4">
-                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Genres</p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Genres</p>
                 <p className="text-sm font-semibold text-neutral-900 mt-1.5 line-clamp-2">{creator.description}</p>
               </div>
             )}
@@ -340,16 +340,16 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
 
         {!config.noGrowthRate && (
           <div className="p-4">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">30-day {config.primaryLabel.toLowerCase()}</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">30-day {config.primaryLabel.toLowerCase()}</p>
             <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{metrics ? fmtSigned(metrics.last30Days.subs) : '—'}</p>
             {metrics?.growthRates && <p className={`text-xs mt-1 ${metrics.growthRates.thirtyDay >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{metrics.growthRates.thirtyDay >= 0 ? '+' : ''}{metrics.growthRates.thirtyDay.toFixed(2)}% growth rate</p>}
           </div>
         )}
 
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Platform rank</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Platform rank</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatNumber(rank)}` : '—'}</p>
-          <p className="text-xs text-neutral-500 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
+          <p className="text-xs text-neutral-700 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
         </div>
       </div>
 
@@ -361,23 +361,23 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
         return (
           <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6 mt-6">
             <div className="flex items-baseline gap-2 flex-wrap">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Estimated sub revenue</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Estimated sub revenue</p>
               <span className="flex-1" />
-              <p className="text-xs text-neutral-500">{formatNumber(primaryCount)} subs &times; ${config.subRevenue.price.toFixed(2)} &times; {Math.round(config.subRevenue.creatorShare * 100)}% creator share</p>
+              <p className="text-xs text-neutral-700">{formatNumber(primaryCount)} subs &times; ${config.subRevenue.price.toFixed(2)} &times; {Math.round(config.subRevenue.creatorShare * 100)}% creator share</p>
             </div>
             <div className="flex flex-wrap items-end gap-6 mt-3">
               <div>
                 <p className="text-2xl sm:text-3xl font-bold tabular-nums text-neutral-900 leading-none">up to {formatEarningsSingle(monthly)}</p>
-                <p className="text-xs text-neutral-500 mt-1.5">per month &middot; {formatEarningsSingle(monthly * 12)} per year</p>
+                <p className="text-xs text-neutral-700 mt-1.5">per month &middot; {formatEarningsSingle(monthly * 12)} per year</p>
               </div>
               {delta30 != null && delta30 !== 0 && (
                 <div>
                   <p className={`text-base font-semibold tabular-nums ${delta30 > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{delta30 > 0 ? '+' : '-'}{formatEarningsSingle(Math.abs(delta30) * perSub)}/mo</p>
-                  <p className="text-xs text-neutral-500 mt-1">change over last 30 days</p>
+                  <p className="text-xs text-neutral-700 mt-1">change over last 30 days</p>
                 </div>
               )}
             </div>
-            <p className="text-xs text-neutral-500 mt-4 leading-relaxed">Subscriptions only, at the US price. Tips, sponsorships, and incentive payouts aren't public, and regional pricing, payment fees, and taxes can lower the real figure. Gifted subs are included in the count. <Link to="/kick/earnings" className="underline hover:text-neutral-800">Compare with the top 100 Kick streamers</Link>.</p>
+            <p className="text-xs text-neutral-700 mt-4 leading-relaxed">Subscriptions only, at the US price. Tips, sponsorships, and incentive payouts aren't public, and regional pricing, payment fees, and taxes can lower the real figure. Gifted subs are included in the count. <Link to="/kick/earnings" className="underline hover:text-neutral-800">Compare with the top 100 Kick streamers</Link>.</p>
           </div>
         );
       })()}
@@ -388,7 +388,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">{config.liveLabel}</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">{config.liveLabel}</p>
               <p className="text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{primaryCount.toLocaleString('en-US')}</p>
             </div>
           </div>
@@ -405,10 +405,10 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`flex-shrink-0 text-sm font-medium pb-3 -mb-px border-b-2 transition-colors ${
-              activeTab === t.key ? 'text-neutral-900 border-neutral-900' : 'text-neutral-500 border-transparent hover:text-neutral-700'
+              activeTab === t.key ? 'text-neutral-900 border-neutral-900' : 'text-neutral-700 border-transparent hover:text-neutral-700'
             }`}
           >
-            {t.label}{t.count != null && <span className="text-neutral-400 font-normal ml-1.5">{t.count}</span>}
+            {t.label}{t.count != null && <span className="text-neutral-600 font-normal ml-1.5">{t.count}</span>}
           </button>
         ))}
       </div>
@@ -432,7 +432,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
                     <tr key={row.date} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
                       <td className="px-5 py-3 text-neutral-900 tabular-nums">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
                       <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">{formatNumber(row.subscribers)}</td>
-                      <td className={`px-5 py-3 text-right tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-400'}`}>{delta != null ? fmtSigned(delta) : '—'}</td>
+                      <td className={`px-5 py-3 text-right tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-600'}`}>{delta != null ? fmtSigned(delta) : '—'}</td>
                     </tr>
                   );
                 })}
@@ -447,8 +447,8 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
                 <div key={row.date} className="flex items-center gap-3 px-4 py-3">
                   <p className="text-sm font-semibold text-neutral-900 flex-1">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                   <div className="text-right flex-shrink-0">
-                    <p className={`text-sm font-semibold tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-400'}`}>{delta != null ? fmtSigned(delta) : '—'}</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 mt-0.5">&Delta; {config.primaryLabel.toLowerCase()}</p>
+                    <p className={`text-sm font-semibold tabular-nums ${delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-neutral-600'}`}>{delta != null ? fmtSigned(delta) : '—'}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-600 mt-0.5">&Delta; {config.primaryLabel.toLowerCase()}</p>
                   </div>
                 </div>
               );
@@ -472,7 +472,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
             )}
             <div className="flex-1 min-w-0">
               {creator.latestPost.title && <h3 className="text-base font-semibold text-neutral-900 leading-snug line-clamp-2 group-hover:underline">{creator.latestPost.title}</h3>}
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-700">
                 {creator.latestPost.publishedAt && <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatRelativeTime(creator.latestPost.publishedAt)}</span>}
                 {creator.latestPost.views != null && <span className="inline-flex items-center gap-1"><Eye className="w-3.5 h-3.5" />{formatNumber(creator.latestPost.views)} views</span>}
                 {creator.latestPost.reactions > 0 && <span className="inline-flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" />{formatNumber(creator.latestPost.reactions)}</span>}
@@ -493,9 +493,9 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
               rel="noopener noreferrer"
               className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-4 hover:border-neutral-300 transition-colors"
             >
-              <span className="text-xs font-mono text-neutral-400">{i + 1}</span>
+              <span className="text-xs font-mono text-neutral-600">{i + 1}</span>
               <p className="text-sm font-semibold text-neutral-900 line-clamp-2 mt-1">{track.name}</p>
-              {track.playcount && <p className="text-xs text-neutral-500 mt-1 tabular-nums">{formatNumber(Number(track.playcount))} plays</p>}
+              {track.playcount && <p className="text-xs text-neutral-700 mt-1 tabular-nums">{formatNumber(Number(track.playcount))} plays</p>}
             </a>
           ))}
         </div>
@@ -506,15 +506,15 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
           {creator.description && <p className="text-sm leading-relaxed text-neutral-700 text-pretty whitespace-pre-line">{creator.description}</p>}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-neutral-200/80">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Joined</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Joined</p>
               <p className="text-sm text-neutral-900 mt-1">{creator.createdAt ? new Date(creator.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Country</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Country</p>
               <p className="text-sm text-neutral-900 mt-1">{creator.country || '—'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Tracked since</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Tracked since</p>
               <p className="text-sm text-neutral-900 mt-1">{creator.dbCreatedAt ? new Date(creator.dbCreatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</p>
             </div>
           </div>
@@ -538,12 +538,12 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
               const delta = pt && prevPt ? pt[currentMetric.dataKey] - prevPt[currentMetric.dataKey] : null;
               return pt ? (
                 <>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-700">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                   <div className="flex items-end gap-3 mt-2">
                     <p className="text-4xl font-bold tabular-nums text-neutral-900 leading-none">{formatNumber(pt[currentMetric.dataKey])}</p>
                     {delta != null && <p className={`text-sm font-semibold tabular-nums pb-1 ${delta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(delta)} that day</p>}
                   </div>
-                  <p className="text-xs text-neutral-500 mt-1.5">drag across the chart to read any day</p>
+                  <p className="text-xs text-neutral-700 mt-1.5">drag across the chart to read any day</p>
                 </>
               ) : null;
             })()}
@@ -575,7 +575,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex justify-between mt-2 text-[10px] text-neutral-400 tabular-nums">
+            <div className="flex justify-between mt-2 text-[10px] text-neutral-600 tabular-nums">
               <span>{relData[0] && new Date(relData[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               <span>{relData[relData.length - 1] && new Date(relData[relData.length - 1].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
@@ -591,9 +591,9 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
             </div>
             {nearestMilestone && (
               <div className="mt-4 rounded-xl bg-neutral-900 text-white p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Next milestone</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600">Next milestone</p>
                 <p className="text-xl font-bold mt-1.5">{fmtMilestone(nearestMilestone.milestone)} {config.primaryLabel.toLowerCase()}</p>
-                <p className="text-xs text-neutral-400 mt-1">~{nearestMilestone.days} days &middot; {nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at the current pace</p>
+                <p className="text-xs text-neutral-600 mt-1">~{nearestMilestone.days} days &middot; {nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at the current pace</p>
               </div>
             )}
             <div className="h-6" />

@@ -161,7 +161,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
             ) : (
               <p className={`text-sm font-semibold tabular-nums ${netGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtSigned(netGrowth)}</p>
             )}
-            <p className="text-xs text-neutral-500">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
+            <p className="text-xs text-neutral-700">last {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</p>
           </div>
         </div>
 
@@ -192,7 +192,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                     const raw = payload[0].payload[currentMetric.dataKey];
                     return (
                       <div className="bg-white border border-neutral-200 rounded-lg shadow-lg px-3 py-2">
-                        <p className="text-xs text-neutral-500">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        <p className="text-xs text-neutral-700">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                         <p className="text-sm font-semibold text-neutral-900 tabular-nums">{formatNumber(raw)}</p>
                       </div>
                     );
@@ -220,8 +220,8 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
           {nearestMilestone && (
             <button onClick={() => setDrilldownOpen(true)} className="text-left hover:text-neutral-900 transition-colors">
               Next milestone <span className="font-semibold text-neutral-900">{fmtMilestone(nearestMilestone.milestone)} views</span> in ~{nearestMilestone.days} days
-              <span className="text-neutral-400"> ({nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, at the current pace)</span>
-              <span className="hidden sm:inline text-neutral-400"> Details &rsaquo;</span>
+              <span className="text-neutral-600"> ({nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, at the current pace)</span>
+              <span className="hidden sm:inline text-neutral-600"> Details &rsaquo;</span>
             </button>
           )}
         </div>
@@ -230,36 +230,36 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
       {/* 6-cell stat strip — real values, derived from the same metrics/rankContext as everywhere else on the page */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl divide-y divide-x-0 lg:divide-y-0 lg:divide-x divide-neutral-200/80 mt-6">
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Subscribers</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Subscribers</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.subscribers)}</p>
           <p className="text-xs text-emerald-600 mt-1">all-time high</p>
         </div>
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Total views</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Total views</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalViews)}</p>
-          <p className="text-xs text-neutral-500 mt-1">{creator.createdAt ? `since ${new Date(creator.createdAt).getFullYear()}` : 'lifetime'}</p>
+          <p className="text-xs text-neutral-700 mt-1">{creator.createdAt ? `since ${new Date(creator.createdAt).getFullYear()}` : 'lifetime'}</p>
         </div>
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Videos</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Videos</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{formatNumber(creator.totalPosts)}</p>
-          {metrics && <p className={`text-xs mt-1 ${metrics.last30Days.videos > 0 ? 'text-emerald-600' : 'text-neutral-500'}`}>{fmtSigned(metrics.last30Days.videos)} in 30 days</p>}
+          {metrics && <p className={`text-xs mt-1 ${metrics.last30Days.videos > 0 ? 'text-emerald-600' : 'text-neutral-700'}`}>{fmtSigned(metrics.last30Days.videos)} in 30 days</p>}
         </div>
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Avg / video</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Avg / video</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{creator.totalPosts > 0 ? formatNumber(creator.totalViews / creator.totalPosts) : '—'}</p>
-          <p className="text-xs text-neutral-500 mt-1">lifetime</p>
+          <p className="text-xs text-neutral-700 mt-1">lifetime</p>
         </div>
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">30-day views</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">30-day views</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{metrics ? fmtSigned(metrics.last30Days.views) : '—'}</p>
           {momentum && (
             <p className={`text-xs mt-1 ${momentum.pct >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{momentum.pct >= 0 ? '+' : ''}{momentum.pct.toFixed(2)}% vs. prior 30d</p>
           )}
         </div>
         <div className="p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Platform rank</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Platform rank</p>
           <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatNumber(rank)}` : '—'}</p>
-          <p className="text-xs text-neutral-500 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
+          <p className="text-xs text-neutral-700 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
         </div>
       </div>
 
@@ -267,32 +267,32 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
       <div className="flex flex-col lg:flex-row gap-4 mt-6 items-stretch">
         <div className="flex-1 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Estimated revenue</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Estimated revenue</p>
             <span className="flex-1" />
-            <p className="text-xs text-neutral-500">your CPM assumption</p>
+            <p className="text-xs text-neutral-700">your CPM assumption</p>
           </div>
           <div className="flex flex-wrap items-end gap-6 mt-3">
             <div>
               <p className="text-2xl sm:text-3xl font-bold tabular-nums text-neutral-900 leading-none">{formatEarningsSingle(monthlyRevenue)}</p>
-              <p className="text-xs text-neutral-500 mt-1.5">per month &middot; {formatEarningsSingle(monthlyRevenue * 12)} per year</p>
+              <p className="text-xs text-neutral-700 mt-1.5">per month &middot; {formatEarningsSingle(monthlyRevenue * 12)} per year</p>
             </div>
             <div className="flex-1 min-w-[200px]">
               <div className="flex items-baseline gap-2 mb-1.5">
                 <span className="text-base font-semibold tabular-nums text-neutral-900">${cpm.toFixed(2)}</span>
-                <span className="text-xs text-neutral-500">CPM &middot; category median ${CPM_MEDIAN.toFixed(2)}</span>
+                <span className="text-xs text-neutral-700">CPM &middot; category median ${CPM_MEDIAN.toFixed(2)}</span>
               </div>
               <input type="range" min="1" max="12" step="0.1" value={cpm} onChange={(e) => setCpm(parseFloat(e.target.value))} className="w-full accent-neutral-900 h-8" />
-              <div className="flex justify-between text-[10px] text-neutral-400 mt-0.5"><span>$1</span><span>$12</span></div>
+              <div className="flex justify-between text-[10px] text-neutral-600 mt-0.5"><span>$1</span><span>$12</span></div>
             </div>
           </div>
         </div>
         <div className="lg:w-72 flex-shrink-0 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-5 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Live subscriber count</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Live subscriber count</p>
           </div>
           <p className="text-2xl font-bold tabular-nums text-neutral-900 mt-3">{creator.subscribers?.toLocaleString('en-US')}</p>
-          <p className="text-xs text-neutral-500 mt-1">updated every 60s</p>
+          <p className="text-xs text-neutral-700 mt-1">updated every 60s</p>
           <span className="flex-1" />
           <Link to={`/live/youtube/${creator.username}`} className="text-sm font-medium text-neutral-900 hover:underline mt-3 inline-flex items-center gap-1">
             Open full-screen counter <ExternalLink className="w-3.5 h-3.5" />
@@ -307,10 +307,10 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`flex-shrink-0 text-sm font-medium pb-3 -mb-px border-b-2 transition-colors ${
-              activeTab === t.key ? 'text-neutral-900 border-neutral-900' : 'text-neutral-500 border-transparent hover:text-neutral-700'
+              activeTab === t.key ? 'text-neutral-900 border-neutral-900' : 'text-neutral-700 border-transparent hover:text-neutral-700'
             }`}
           >
-            {t.label}{t.count != null && <span className="text-neutral-400 font-normal ml-1.5">{t.count}</span>}
+            {t.label}{t.count != null && <span className="text-neutral-600 font-normal ml-1.5">{t.count}</span>}
           </button>
         ))}
       </div>
@@ -339,7 +339,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                       <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">{formatNumber(row.views)}</td>
                       <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta != null ? fmtSigned(delta) : '—'}</td>
                       <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{formatNumber(row.subscribers)}</td>
-                      <td className="px-5 py-3 text-right text-neutral-500 tabular-nums">{row.videos}</td>
+                      <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{row.videos}</td>
                       <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</td>
                     </tr>
                   );
@@ -356,15 +356,15 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                 <div key={row.date} className="flex items-center gap-4 px-4 py-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-neutral-900">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5 tabular-nums">{formatNumber(row.subscribers)} subs &middot; {row.videos} videos</p>
+                    <p className="text-xs text-neutral-700 mt-0.5 tabular-nums">{formatNumber(row.subscribers)} subs &middot; {row.videos} videos</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-semibold tabular-nums text-emerald-600">{delta != null ? fmtSigned(delta) : '—'}</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 mt-0.5">&Delta; views</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-600 mt-0.5">&Delta; views</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-semibold tabular-nums text-emerald-600">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 mt-0.5">est. revenue</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-600 mt-0.5">est. revenue</p>
                   </div>
                 </div>
               );
@@ -394,14 +394,14 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                   </div>
                   <div className="p-5 flex flex-col justify-between flex-1 min-w-0">
                     <div>
-                      <p className="text-xs font-medium text-neutral-500 mb-1.5">Most recent upload</p>
+                      <p className="text-xs font-medium text-neutral-700 mb-1.5">Most recent upload</p>
                       <h3 className="font-semibold text-neutral-900 mb-2 line-clamp-2 group-hover:text-neutral-700 transition-colors">{recentVideos[0].title}</h3>
-                      <p className="text-sm text-neutral-500">{formatRelativeTime(recentVideos[0].publishedAt)}</p>
+                      <p className="text-sm text-neutral-700">{formatRelativeTime(recentVideos[0].publishedAt)}</p>
                     </div>
                     <div className="flex items-center gap-5 mt-3 text-sm text-neutral-700">
-                      <span className="flex items-center gap-1.5 tabular-nums"><Eye className="w-4 h-4 text-neutral-400" />{formatNumber(recentVideos[0].views)}</span>
-                      <span className="flex items-center gap-1.5 tabular-nums"><ThumbsUp className="w-4 h-4 text-neutral-400" />{formatNumber(recentVideos[0].likes)}</span>
-                      <span className="flex items-center gap-1.5 tabular-nums"><MessageCircle className="w-4 h-4 text-neutral-400" />{formatNumber(recentVideos[0].comments)}</span>
+                      <span className="flex items-center gap-1.5 tabular-nums"><Eye className="w-4 h-4 text-neutral-600" />{formatNumber(recentVideos[0].views)}</span>
+                      <span className="flex items-center gap-1.5 tabular-nums"><ThumbsUp className="w-4 h-4 text-neutral-600" />{formatNumber(recentVideos[0].likes)}</span>
+                      <span className="flex items-center gap-1.5 tabular-nums"><MessageCircle className="w-4 h-4 text-neutral-600" />{formatNumber(recentVideos[0].comments)}</span>
                     </div>
                   </div>
                 </div>
@@ -420,11 +420,11 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                       <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-24 h-14 flex-shrink-0 rounded-lg object-cover" />
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-medium text-neutral-900 line-clamp-1 group-hover:text-neutral-700 transition-colors">{video.title}</h4>
-                        <p className="text-xs text-neutral-500 mt-1">{formatRelativeTime(video.publishedAt)}</p>
-                        <div className="flex items-center gap-3.5 mt-1.5 text-xs text-neutral-500">
-                          <span className="flex items-center gap-1 tabular-nums"><Eye className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.views)}</span>
-                          <span className="flex items-center gap-1 tabular-nums"><ThumbsUp className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.likes)}</span>
-                          <span className="flex items-center gap-1 tabular-nums"><MessageCircle className="w-3.5 h-3.5 text-neutral-400" />{formatNumber(video.comments)}</span>
+                        <p className="text-xs text-neutral-700 mt-1">{formatRelativeTime(video.publishedAt)}</p>
+                        <div className="flex items-center gap-3.5 mt-1.5 text-xs text-neutral-700">
+                          <span className="flex items-center gap-1 tabular-nums"><Eye className="w-3.5 h-3.5 text-neutral-600" />{formatNumber(video.views)}</span>
+                          <span className="flex items-center gap-1 tabular-nums"><ThumbsUp className="w-3.5 h-3.5 text-neutral-600" />{formatNumber(video.likes)}</span>
+                          <span className="flex items-center gap-1 tabular-nums"><MessageCircle className="w-3.5 h-3.5 text-neutral-600" />{formatNumber(video.comments)}</span>
                         </div>
                       </div>
                     </a>
@@ -433,7 +433,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
               )}
             </>
           ) : (
-            <div className="bg-white rounded-xl border border-neutral-200/80 p-8 text-center text-sm text-neutral-500">No recent video data yet.</div>
+            <div className="bg-white rounded-xl border border-neutral-200/80 p-8 text-center text-sm text-neutral-700">No recent video data yet.</div>
           )}
         </div>
       )}
@@ -443,15 +443,15 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
           {creator.description && <p className="text-sm leading-relaxed text-neutral-700 text-pretty whitespace-pre-line">{creator.description}</p>}
           <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-neutral-200/80">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Joined</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Joined</p>
               <p className="text-sm text-neutral-900 mt-1">{creator.createdAt ? new Date(creator.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Country</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Country</p>
               <p className="text-sm text-neutral-900 mt-1">{creator.country || '—'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Tracked since</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Tracked since</p>
               <p className="text-sm text-neutral-900 mt-1">{creator.dbCreatedAt ? new Date(creator.dbCreatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</p>
             </div>
           </div>
@@ -475,12 +475,12 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
               const delta = pt && prevPt ? pt[currentMetric.dataKey] - prevPt[currentMetric.dataKey] : null;
               return pt ? (
                 <>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-700">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                   <div className="flex items-end gap-3 mt-2">
                     <p className="text-4xl font-bold tabular-nums text-neutral-900 leading-none">{formatNumber(pt[currentMetric.dataKey])}</p>
                     {delta != null && <p className="text-sm font-semibold text-emerald-600 tabular-nums pb-1">{fmtSigned(delta)} that day</p>}
                   </div>
-                  <p className="text-xs text-neutral-500 mt-1.5">drag across the chart to read any day</p>
+                  <p className="text-xs text-neutral-700 mt-1.5">drag across the chart to read any day</p>
                 </>
               ) : null;
             })()}
@@ -512,7 +512,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex justify-between mt-2 text-[10px] text-neutral-400 tabular-nums">
+            <div className="flex justify-between mt-2 text-[10px] text-neutral-600 tabular-nums">
               <span>{relData[0] && new Date(relData[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
               <span>{relData[relData.length - 1] && new Date(relData[relData.length - 1].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
@@ -532,9 +532,9 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
 
             {nearestMilestone && (
               <div className="mt-4 rounded-xl bg-neutral-900 text-white p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Next milestone</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600">Next milestone</p>
                 <p className="text-xl font-bold mt-1.5">{fmtMilestone(nearestMilestone.milestone)} views</p>
-                <p className="text-xs text-neutral-400 mt-1">~{nearestMilestone.days} days &middot; {nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at the current pace</p>
+                <p className="text-xs text-neutral-600 mt-1">~{nearestMilestone.days} days &middot; {nearestMilestone.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at the current pace</p>
               </div>
             )}
             <div className="h-6" />
