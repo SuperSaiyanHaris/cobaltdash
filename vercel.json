@@ -77,6 +77,14 @@
     {
       "path": "/api/cron/stream-monitor",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/dispatch?workflow=daily-stats",
+      "schedule": "0 6,14,22 * * *"
+    },
+    {
+      "path": "/api/cron/dispatch?workflow=live-checks",
+      "schedule": "17 */3 * * *"
     }
   ],
   "functions": {
