@@ -9,11 +9,10 @@ name: Daily Stats Collection
 # Rumble (delisted) and Substack (collected by the collect-substack edge
 # function) are intentionally not in the matrix.
 
+# Started by Vercel Cron at 06:00, 14:00 and 22:00 UTC (1-2 AM, 9-10 AM and
+# 5-6 PM ET) through api/cron/dispatch.js. No `schedule:` here on purpose:
+# GitHub's own scheduler ran 2.5-5.5h late or skipped runs entirely.
 on:
-  schedule:
-    - cron: '0 6 * * *'   # 06:00 UTC (1-2 AM ET)
-    - cron: '0 14 * * *'  # 14:00 UTC (9-10 AM ET)
-    - cron: '0 22 * * *'  # 22:00 UTC (5-6 PM ET)
   workflow_dispatch:
 
 # Never run two collections at once: a late-starting scheduled run queues

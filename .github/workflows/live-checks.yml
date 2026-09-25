@@ -5,10 +5,10 @@ name: Live checks
 #   health  - data isn't stale or thin (scripts/checkDataHealth.js)
 #   browser - Playwright flows on desktop + mobile (tests/e2e)
 # A failure turns the run red and GitHub emails you.
+# The 3-hourly run is started by Vercel Cron (api/cron/dispatch.js, :17 past
+# every third hour), not a GitHub `schedule:`, which ran hours late.
 on:
   deployment_status:
-  schedule:
-    - cron: '17 */3 * * *'
   workflow_dispatch:
 
 # One group per deployment environment (schedule/manual runs get their own).
