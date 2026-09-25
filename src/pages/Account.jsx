@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  User, Mail, Lock, Calendar, Star,
-  Eye, EyeOff, ArrowLeft, ExternalLink, Megaphone,
-  X, Search, Loader, LogOut, Shield, ChevronRight, Plus, MoreVertical,
+  User, Eye, EyeOff, ArrowLeft, Megaphone,
+  X, Search, Loader, LogOut, Shield, ChevronRight, Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
@@ -37,8 +36,7 @@ const PLATFORM_ICONS = {
 
 // Typographic backbone shared with the dashboard
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
-const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
-const INPUT = 'bg-white border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 text-sm transition-colors';
+const INPUT = 'bg-white border border-neutral-300 rounded-xl text-neutral-900 placeholder-neutral-500 focus:outline-none focus:border-neutral-900 text-[15px] transition-colors';
 
 export default function Account() {
   const { user, signOut } = useAuth();
@@ -361,14 +359,13 @@ export default function Account() {
     return (
       <>
         <SEO title="Sign in to manage your account" description="Sign in to ShinyPull to manage featured listings and your account." />
-        <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4">
-          <div className={`max-w-md w-full ${CARD} p-8 text-center`}>
-            <div className="w-10 h-10 mx-auto mb-5 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center">
-              <Megaphone className="w-4 h-4 text-amber-500" />
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight text-neutral-900 mb-2">Sign in to continue</h1>
-            <p className="text-sm text-neutral-500 mb-6">
-              You need an account to manage featured listings, follow creators, and access your dashboard. Takes 10 seconds.
+        <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white min-h-[70vh] flex items-center">
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
+          <div className="relative max-w-xl mx-auto px-4 py-20 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Your account</p>
+            <h1 className="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight">Sign in to continue.</h1>
+            <p className="mt-4 text-base sm:text-lg text-white/70">
+              Manage featured listings, your profile and your password. Takes 10 seconds.
             </p>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openAuthPanel', {
@@ -377,15 +374,15 @@ export default function Account() {
                   returnTo: '/account?tab=listings',
                 },
               }))}
-              className="inline-flex items-center gap-2 w-full justify-center px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded-lg transition-colors text-sm"
+              className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors"
             >
-              Sign in / Sign up
+              Sign in / Sign up <ChevronRight className="w-4 h-4" />
             </button>
-            <Link to="/promote" className="block mt-4 text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
-              Back to Featured Listings overview
+            <Link to="/promote" className="block mt-5 text-sm font-semibold text-white/70 hover:text-white transition-colors">
+              How featured listings work
             </Link>
           </div>
-        </div>
+        </section>
       </>
     );
   }
@@ -437,6 +434,27 @@ export default function Account() {
   const nameForDisplay = user?.user_metadata?.display_name || user?.email?.split('@')[0] || '?';
   const initials = nameForDisplay.slice(0, 2).toUpperCase();
 
+  // Billing summary from the listings themselves (promotional ones don't bill).
+  const billed = featuredListings.filter(l => !l.is_mod_free && l.status === 'active');
+  const monthlyTotal = billed.reduce((sum, l) => sum + (TIER_PRICE[l.placement_tier] || TIER_PRICE.basic), 0);
+  const nextCharge = billed
+    .filter(l => !l.cancel_at_period_end && l.active_until)
+    .map(l => new Date(l.active_until))
+    .sort((a, b) => a - b)[0];
+  const activeListingCount = featuredListings.filter(l => l.status === 'active').length;
+
+  const pill = (active) => `flex-shrink-0 inline-flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+    active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-800 border border-neutral-300 hover:border-neutral-900'
+  }`;
+
+  const statusOf = (listing) => {
+    const isActive = listing.status === 'active';
+    if (isActive && listing.cancel_at_period_end) return { label: 'Canceling', cls: 'bg-amber-100 text-amber-800 border-amber-300' };
+    if (isActive) return { label: 'Active', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+    if (listing.status === 'pending') return { label: 'Pending', cls: 'bg-amber-100 text-amber-800 border-amber-300' };
+    return { label: listing.status ? listing.status.charAt(0).toUpperCase() + listing.status.slice(1) : 'Ended', cls: 'bg-neutral-100 text-neutral-700 border-neutral-300' };
+  };
+
   return (
     <>
       <SEO
@@ -445,349 +463,199 @@ export default function Account() {
       />
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Page header — big bold title, "Back" pill */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-6 rounded-full border border-neutral-200 text-xs font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back
-            </Link>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Account Settings</h1>
-            <p className="mt-2 text-sm text-neutral-500">
-              Manage your featured listings, profile, and security settings.
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-          {/* Identity card — one unified card, avatar + name + email + at-a-glance stats */}
-          <div className={`${CARD} p-5 sm:p-6 mb-6 flex items-center flex-wrap gap-4`}>
-            <div className="w-14 h-14 rounded-full bg-neutral-900 flex items-center justify-center text-base font-semibold text-white flex-shrink-0">
-              {initials}
+        {/* ── Dark band: who you are, at a glance ── */}
+        <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-10 sm:pb-12">
+            <div className="flex items-center justify-between gap-3">
+              <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Dashboard
+              </Link>
+              <button
+                onClick={signOut}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/25 hover:border-white/60 text-sm font-semibold text-white transition-colors"
+              >
+                <LogOut className="w-4 h-4" /> Sign out
+              </button>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-neutral-900 truncate text-base">{nameForDisplay}</p>
-              <p className="text-sm text-neutral-400 truncate mt-0.5">{user.email}</p>
-            </div>
-            <div className="flex items-center gap-6 pl-2 sm:pl-5 sm:border-l sm:border-neutral-200/80 flex-shrink-0">
-              <div>
-                <p className={MICRO}>Following</p>
-                <p className="text-lg font-semibold text-neutral-900 tabular-nums mt-0.5">{followCount ?? '–'}</p>
+
+            <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-5">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white text-neutral-950 flex items-center justify-center text-xl sm:text-2xl font-black flex-shrink-0">
+                {initials}
               </div>
-              <div className="hidden sm:block">
-                <p className={MICRO}>Member since</p>
-                <p className="text-sm font-medium text-neutral-700 mt-1">{memberSince}</p>
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Account</p>
+                <h1 className="mt-1 text-3xl sm:text-5xl font-extrabold tracking-tight truncate">{nameForDisplay}</h1>
+                <p className="mt-1 text-[15px] text-white/75 truncate">{user.email}</p>
               </div>
             </div>
+
+            <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Following', value: followCount ?? '–' },
+                { label: 'Active listings', value: activeListingCount },
+                { label: 'Monthly', value: monthlyTotal ? `$${monthlyTotal}` : '$0' },
+                { label: 'Member since', value: new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) },
+              ].map(s => (
+                <div key={s.label} className="rounded-2xl bg-white/[0.06] border border-white/10 px-4 py-3.5">
+                  <p className="text-2xl sm:text-3xl font-extrabold tabular-nums leading-none">{s.value}</p>
+                  <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          {/* Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={pill(activeTab === tab.id)}>
+                  <Icon className="w-4 h-4" /> {tab.label}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Pill tab nav — one responsive row, no separate mobile/desktop treatment */}
-          <div className="flex items-center gap-1.5 mb-6">
-            <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {TABS.map(tab => {
-                const isActive = activeTab === tab.id;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
-                      isActive
-                        ? 'bg-neutral-900 border-neutral-900 text-white'
-                        : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
+          {/* ── Listings tab ── */}
+          {activeTab === 'listings' && (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">Featured listings</h2>
+                  <p className="mt-1 text-[15px] text-neutral-700">
+                    {billed.length > 0
+                      ? <>{billed.length} running · <span className="font-bold text-neutral-900">${monthlyTotal}/month</span>{nextCharge && <> · next charge {nextCharge.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>}</>
+                      : 'Put any creator in the live rankings. Cancel anytime.'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button onClick={openListingDialog} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-bold transition-colors">
+                    <Plus className="w-4 h-4" /> Add a listing
                   </button>
-                );
-              })}
-            </div>
-            <div className="flex-1" />
-            <button
-              onClick={signOut}
-              className="hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 px-3.5 py-2 rounded-full text-sm text-neutral-400 hover:text-red-600 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Sign Out
-            </button>
-          </div>
+                  {featuredListings.length > 0 && (
+                    <button
+                      onClick={handleOpenBillingPortal}
+                      disabled={openingBillingPortal}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-neutral-300 hover:border-neutral-900 disabled:opacity-60 text-neutral-900 text-sm font-bold transition-colors"
+                    >
+                      {openingBillingPortal ? 'Opening...' : 'Manage billing'}
+                    </button>
+                  )}
+                </div>
+              </div>
 
-          {/* Content */}
-          <div>
-
-              {/* ── Listings tab ── */}
-              {activeTab === 'listings' && (
-                <>
-                <div className="space-y-4">
-                  <div className={`${CARD} p-6`}>
-                    <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
-                      <h2 className="text-base font-medium text-neutral-900">Featured Listings</h2>
-                      <Link to="/promote" className="text-xs text-neutral-400 hover:text-neutral-900 transition-colors inline-flex items-center gap-1">
-                        Learn more <ExternalLink className="w-3 h-3" />
-                      </Link>
-                    </div>
-                    <p className="text-sm text-neutral-500 mb-6">Promote any creator across our rankings. Cancel anytime.</p>
-
-                    {/* Existing listings */}
-                    {featuredListings.length > 0 && (
-                      <div className="mb-7">
-                        <p className={`${MICRO} mb-2.5`}>Active listings</p>
-
-                        {/* Desktop: real table with column headers — same pattern as the
-                            Daily Readings table on creator profiles. Comparing platform/
-                            tier/runs/status across several listings is exactly the kind
-                            of tabular data that pattern exists for. */}
-                        <div className="hidden md:block border border-neutral-200/80 rounded-lg overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Creator</th>
-                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Platform</th>
-                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Tier</th>
-                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Runs</th>
-                                <th className="px-4 py-2.5 font-semibold text-neutral-600 text-[10px] uppercase tracking-wider">Status</th>
-                                <th className="px-4 py-2.5 w-10" />
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {featuredListings.map(listing => {
-                                const c = listing.creators;
-                                const isActive = listing.status === 'active';
-                                const isPending = listing.status === 'pending';
-                                const isCanceling = isActive && listing.cancel_at_period_end;
-                                const until = listing.active_until
-                                  ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                  : null;
-                                const isMenuOpen = openListingActionsId === listing.id;
-                                const isPremiumTier = listing.placement_tier === 'premium';
-                                const PlatformIcon = PLATFORM_ICONS[listing.platform];
-                                return (
-                                  <tr
-                                    key={listing.id}
-                                    onClick={() => goToRankingsListing(listing)}
-                                    className="border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                  >
-                                    <td className="px-4 py-2.5">
-                                      <button onClick={() => goToRankingsListing(listing)} className="flex items-center gap-2.5 min-w-0 text-left">
-                                        <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="sm" rounded="rounded-lg" />
-                                        <span className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</span>
-                                      </button>
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span className="inline-flex items-center gap-1.5 text-sm text-neutral-600">
-                                        {PlatformIcon && <PlatformIcon className="w-3.5 h-3.5 flex-shrink-0" />}
-                                        {PLATFORM_LABELS[listing.platform] || listing.platform}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span className={`inline-flex items-center px-1.5 h-5 rounded text-[10px] font-medium uppercase tracking-[0.1em] ${
-                                        isPremiumTier ? 'bg-amber-100 border border-amber-200 text-amber-700' : 'bg-neutral-100 border border-neutral-200 text-neutral-500'
-                                      }`}>
-                                        {isPremiumTier ? 'Premium' : 'Basic'}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2.5 text-neutral-500">
-                                      {listing.is_mod_free ? 'promotional' : until && isActive ? (isCanceling ? `cancels ${until}` : `until ${until}`) : '—'}
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className={`w-1.5 h-1.5 rounded-full ${
-                                          isCanceling ? 'bg-amber-500' : isActive ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-neutral-300'
-                                        }`} />
-                                        <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${
-                                          isCanceling ? 'text-amber-600' : isActive ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-neutral-400'
-                                        }`}>
-                                          {isCanceling ? 'canceling' : listing.status}
-                                        </span>
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
-                                      <div className="relative inline-block">
-                                        {isMenuOpen && (
-                                          <div className="fixed inset-0 z-30" onClick={() => setOpenListingActionsId(null)} />
-                                        )}
-                                        <button
-                                          onClick={() => setOpenListingActionsId(isMenuOpen ? null : listing.id)}
-                                          className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
-                                          title="Listing actions"
-                                        >
-                                          <MoreVertical className="w-3.5 h-3.5" />
-                                        </button>
-                                        {isMenuOpen && (
-                                          <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-40 text-left">
-                                            <button
-                                              onClick={() => { setOpenListingActionsId(null); goToRankingsListing(listing); }}
-                                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
-                                            >
-                                              <Eye className="w-3.5 h-3.5" />
-                                              View in rankings
-                                            </button>
-                                            {isActive && !isPending && !isCanceling && (
-                                              <button
-                                                onClick={() => { setOpenListingActionsId(null); handleCancelListing(listing.id); }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
-                                              >
-                                                <X className="w-3.5 h-3.5" />
-                                                Cancel listing
-                                              </button>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Mobile: stacked list — a table doesn't survive narrow width,
-                            same pattern as the Daily Readings mobile fallback. */}
-                        <div className="md:hidden border border-neutral-200/80 rounded-lg divide-y divide-neutral-100 overflow-hidden">
-                          {featuredListings.map(listing => {
-                            const c = listing.creators;
-                            const isActive = listing.status === 'active';
-                            const isPending = listing.status === 'pending';
-                            const isCanceling = isActive && listing.cancel_at_period_end;
-                            const until = listing.active_until
-                              ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                              : null;
-                            const isMenuOpen = openListingActionsId === listing.id;
-                            const isPremiumTier = listing.placement_tier === 'premium';
-                            const PlatformIcon = PLATFORM_ICONS[listing.platform];
-                            return (
-                              <div
-                                key={listing.id}
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => goToRankingsListing(listing)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToRankingsListing(listing); }
-                                }}
-                                className="group flex items-center gap-3 px-3.5 py-3 cursor-pointer hover:bg-neutral-50 transition-colors"
-                              >
-                                <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="md" rounded="rounded-lg" />
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <p className="text-sm font-medium text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</p>
-                                    <span className={`inline-flex items-center px-1.5 h-4 rounded text-[9px] font-medium uppercase tracking-[0.1em] flex-shrink-0 ${
-                                      isPremiumTier ? 'bg-amber-100 border border-amber-200 text-amber-700' : 'bg-neutral-100 border border-neutral-200 text-neutral-500'
-                                    }`}>
-                                      {isPremiumTier ? 'Premium' : 'Basic'}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-neutral-400 mt-0.5 inline-flex items-center gap-1">
-                                    {PlatformIcon && <PlatformIcon className="w-3 h-3 flex-shrink-0" />}
-                                    {PLATFORM_LABELS[listing.platform] || listing.platform}
-                                    {until && isActive ? ` · ${isCanceling ? 'cancels' : 'until'} ${until}` : ''}
-                                    {listing.is_mod_free ? ' · promotional' : ''}
-                                  </p>
-                                </div>
-                                <span className="inline-flex items-center gap-1.5 flex-shrink-0">
-                                  <span className={`w-1.5 h-1.5 rounded-full ${
-                                    isCanceling ? 'bg-amber-500' : isActive ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-neutral-300'
-                                  }`} />
-                                  <span className={`text-[10px] font-medium uppercase tracking-[0.1em] ${
-                                    isCanceling ? 'text-amber-600' : isActive ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-neutral-400'
-                                  }`}>
-                                    {isCanceling ? 'canceling' : listing.status}
-                                  </span>
-                                </span>
-                                <ChevronRight className="w-3.5 h-3.5 text-neutral-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-
-                                {/* Actions menu — same two actions as clicking the row / the old
-                                    inline cancel button, just also reachable for anyone who doesn't
-                                    notice the row itself is clickable. */}
-                                <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                  {isMenuOpen && (
-                                    <div className="fixed inset-0 z-30" onClick={() => setOpenListingActionsId(null)} />
-                                  )}
-                                  <button
-                                    onClick={() => setOpenListingActionsId(isMenuOpen ? null : listing.id)}
-                                    className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
-                                    title="Listing actions"
-                                  >
-                                    <MoreVertical className="w-3.5 h-3.5" />
-                                  </button>
-                                  {isMenuOpen && (
-                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-40">
-                                      <button
-                                        onClick={() => { setOpenListingActionsId(null); goToRankingsListing(listing); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
-                                      >
-                                        <Eye className="w-3.5 h-3.5" />
-                                        View in rankings
-                                      </button>
-                                      {isActive && !isPending && !isCanceling && (
-                                        <button
-                                          onClick={() => { setOpenListingActionsId(null); handleCancelListing(listing.id); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
-                                        >
-                                          <X className="w-3.5 h-3.5" />
-                                          Cancel listing
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Summary strip — real monthly total + next charge date,
-                            computed from the same rows above (paid tiers only,
-                            promotional listings don't bill). */}
-                        {(() => {
-                          const billed = featuredListings.filter(l => !l.is_mod_free);
-                          if (billed.length === 0) return null;
-                          const monthlyTotal = billed.reduce((sum, l) => sum + (TIER_PRICE[l.placement_tier] || TIER_PRICE.basic), 0);
-                          const nextCharge = billed
-                            .filter(l => !l.cancel_at_period_end && l.active_until)
-                            .map(l => new Date(l.active_until))
-                            .sort((a, b) => a - b)[0];
-                          return (
-                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-2.5 px-1 text-xs text-neutral-400">
-                              <span>{billed.length} active</span>
-                              <span>&middot;</span>
-                              <span>${monthlyTotal}/month</span>
-                              {nextCharge && (
-                                <>
-                                  <span>&middot;</span>
-                                  <span>next charge {nextCharge.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                                </>
-                              )}
-                            </div>
-                          );
-                        })()}
+              {featuredListings.length === 0 ? (
+                <div className="rounded-2xl bg-white border border-neutral-200 p-6 sm:p-10">
+                  <div className="max-w-xl mx-auto text-center">
+                    <p className="text-xl font-extrabold text-neutral-900">No listings yet.</p>
+                    <p className="mt-2 text-[15px] text-neutral-700">This is the row your creator gets, right inside the rankings.</p>
+                    <div className="mt-6 sponsor-foil rounded-2xl p-[1.5px] text-left">
+                      <div className="relative flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-amber-50 via-white to-amber-50 px-4 py-3 overflow-hidden">
+                        <span aria-hidden="true" className="sponsor-shine" />
+                        <span className="relative inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-bold uppercase tracking-[0.1em] bg-amber-100 border border-amber-300 text-amber-800">Ad</span>
+                        <span className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 flex items-center justify-center text-neutral-900 font-black">★</span>
+                        <span className="relative flex-1 min-w-0">
+                          <span className="block font-bold text-[15px] text-neutral-900">Your channel here</span>
+                          <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800">Featured · Premium</span>
+                        </span>
+                        <span className="relative text-sm font-bold text-amber-700">$149/mo</span>
                       </div>
-                    )}
-
-                    {/* Add new listing / manage billing */}
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <button
-                        onClick={openListingDialog}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium transition-colors"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Add a listing
+                    </div>
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                      <button onClick={openListingDialog} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-bold transition-colors">
+                        <Plus className="w-4 h-4" /> Add your first listing
                       </button>
-                      <button
-                        onClick={handleOpenBillingPortal}
-                        disabled={openingBillingPortal}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-neutral-200 hover:border-neutral-300 disabled:opacity-50 text-neutral-600 hover:text-neutral-900 text-sm font-medium transition-colors"
-                      >
-                        {openingBillingPortal ? 'Opening...' : 'Manage billing'}
-                      </button>
+                      <Link to="/promote" className="inline-flex items-center gap-1 text-sm font-bold text-neutral-900 hover:underline">
+                        How it works <ChevronRight className="w-4 h-4" />
+                      </Link>
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="space-y-3">
+                  {featuredListings.map(listing => {
+                    const c = listing.creators;
+                    const isActive = listing.status === 'active';
+                    const isCanceling = isActive && listing.cancel_at_period_end;
+                    const canCancel = isActive && !isCanceling && !listing.is_mod_free;
+                    const isPremiumTier = listing.placement_tier === 'premium';
+                    const PlatformIcon = PLATFORM_ICONS[listing.platform];
+                    const until = listing.active_until
+                      ? new Date(listing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : null;
+                    const st = statusOf(listing);
+                    const confirming = openListingActionsId === listing.id;
+                    return (
+                      <div key={listing.id} className="rounded-2xl bg-white border border-neutral-200 p-3 sm:p-4">
+                        {/* The row as it appears in the rankings */}
+                        <div className={`rounded-2xl p-[1.5px] ${isPremiumTier ? 'sponsor-foil' : 'bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200'}`}>
+                          <button
+                            onClick={() => goToRankingsListing(listing)}
+                            className="relative w-full flex items-center gap-3 rounded-[14px] bg-gradient-to-r from-amber-50 via-white to-amber-50 px-3 sm:px-4 py-3 overflow-hidden text-left"
+                          >
+                            {isPremiumTier && <span aria-hidden="true" className="sponsor-shine" />}
+                            <span className="relative hidden sm:inline-flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-bold uppercase tracking-[0.1em] bg-amber-100 border border-amber-300 text-amber-800 flex-shrink-0">Ad</span>
+                            <CreatorAvatar src={c?.profile_image} name={c?.display_name} size="lg" rounded="rounded-xl" className="relative !w-10 !h-10" />
+                            <span className="relative min-w-0 flex-1">
+                              <span className="block font-bold text-[15px] text-neutral-900 truncate">{c?.display_name || 'Unknown creator'}</span>
+                              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800 truncate">
+                                {PlatformIcon && <PlatformIcon className="w-3 h-3 flex-shrink-0" />}
+                                {PLATFORM_LABELS[listing.platform] || listing.platform} · {isPremiumTier ? 'Premium' : 'Basic'}
+                              </span>
+                            </span>
+                            <span className="relative text-sm font-bold text-amber-700 tabular-nums whitespace-nowrap">
+                              {listing.is_mod_free ? 'Promo' : `$${TIER_PRICE[listing.placement_tier] || TIER_PRICE.basic}/mo`}
+                            </span>
+                          </button>
+                        </div>
+
+                        {/* Status + actions */}
+                        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 px-1">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${st.cls}`}>{st.label}</span>
+                          <span className="text-sm font-medium text-neutral-700">
+                            {listing.is_mod_free ? 'Promotional, no charge' : until && isActive ? (isCanceling ? `Ends ${until}` : `Renews ${until}`) : ''}
+                          </span>
+                          <div className="flex-1" />
+                          {confirming ? (
+                            <span className="inline-flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-neutral-900">Cancel at the end of this period?</span>
+                              <button
+                                onClick={() => { setOpenListingActionsId(null); handleCancelListing(listing.id); }}
+                                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold transition-colors"
+                              >
+                                Yes, cancel
+                              </button>
+                              <button onClick={() => setOpenListingActionsId(null)} className="px-3 py-1.5 rounded-lg border border-neutral-300 hover:border-neutral-900 text-neutral-900 font-bold transition-colors">
+                                Keep it
+                              </button>
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => goToRankingsListing(listing)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-300 hover:border-neutral-900 text-sm font-bold text-neutral-900 transition-colors"
+                              >
+                                <Eye className="w-4 h-4" /> View in rankings
+                              </button>
+                              {canCancel && (
+                                <button
+                                  onClick={() => setOpenListingActionsId(listing.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-red-700 hover:bg-red-50 transition-colors"
+                                >
+                                  <X className="w-4 h-4" /> Cancel
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
                 {/* Add-a-listing dialog: platform nav rail on the left, search/tiers on the right */}
                 {showListingDialog && (
@@ -825,7 +693,7 @@ export default function Account() {
                           <h3 className="text-sm font-semibold text-neutral-900">Add a listing</h3>
                           <button
                             onClick={() => setShowListingDialog(false)}
-                            className="text-neutral-400 hover:text-neutral-900 transition-colors"
+                            className="text-neutral-600 hover:text-neutral-900 transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -841,7 +709,7 @@ export default function Account() {
                                 className={`px-2.5 h-7 rounded-md text-xs font-medium transition-colors border ${
                                   listingPlatform === p
                                     ? 'bg-neutral-900 border-neutral-900 text-white'
-                                    : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+                                    : 'bg-white border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:border-neutral-300'
                                 }`}
                               >
                                 {PLATFORM_LABELS[p]}
@@ -852,8 +720,8 @@ export default function Account() {
                           {/* Search input */}
                           <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${INPUT} focus-within:border-neutral-400`}>
                             {listingSearching
-                              ? <Loader className="w-3.5 h-3.5 text-neutral-400 animate-spin flex-shrink-0" />
-                              : <Search className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
+                              ? <Loader className="w-3.5 h-3.5 text-neutral-600 animate-spin flex-shrink-0" />
+                              : <Search className="w-3.5 h-3.5 text-neutral-600 flex-shrink-0" />
                             }
                             <input
                               type="text"
@@ -864,13 +732,13 @@ export default function Account() {
                                 setAlreadyListed(false);
                               }}
                               placeholder={`Search ${PLATFORM_LABELS[listingPlatform]} creators...`}
-                              className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-400 text-[16px] sm:text-sm focus:outline-none"
+                              className="flex-1 bg-transparent text-neutral-900 placeholder-neutral-500 text-[16px] sm:text-sm focus:outline-none"
                               autoFocus
                             />
                             {listingQuery && (
                               <button
                                 onClick={() => { setListingQuery(''); setSelectedCreator(null); setListingResults([]); setAlreadyListed(false); setTikTokAddError(''); setNextBasicRank(null); setNextPremiumRank(null); setPendingTier(null); }}
-                                className="text-neutral-400 hover:text-neutral-900"
+                                className="text-neutral-600 hover:text-neutral-900"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -891,7 +759,7 @@ export default function Account() {
                                   <CreatorAvatar src={c.profile_image} name={c.display_name} size="sm" rounded="rounded-md" />
                                   <div className="min-w-0">
                                     <p className="text-sm font-medium text-neutral-900 truncate">{c.display_name}</p>
-                                    <p className="text-xs text-neutral-400">@{c.username}</p>
+                                    <p className="text-xs text-neutral-600">@{c.username}</p>
                                   </div>
                                 </button>
                               ))}
@@ -901,7 +769,7 @@ export default function Account() {
                           {/* TikTok: not in DB — offer instant lookup */}
                           {listingPlatform === 'tiktok' && listingQuery.trim().length >= 2 && !listingSearching && listingResults.length === 0 && !selectedCreator && (
                             <div className="flex items-center gap-3 px-1">
-                              <p className="text-xs text-neutral-400 flex-1 min-w-0">
+                              <p className="text-xs text-neutral-600 flex-1 min-w-0">
                                 We don't have this creator yet. Add <span className="text-neutral-700 font-medium">@{listingQuery.trim()}</span> directly.
                               </p>
                               <button
@@ -924,7 +792,7 @@ export default function Account() {
                                 <CreatorAvatar src={selectedCreator.profile_image} name={selectedCreator.display_name} size="md" rounded="rounded-lg" />
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-neutral-900 truncate">{selectedCreator.display_name}</p>
-                                  <p className="text-xs text-neutral-400 mt-0.5">@{selectedCreator.username} · {selectedCreator.platform}</p>
+                                  <p className="text-xs text-neutral-600 mt-0.5">@{selectedCreator.username} · {selectedCreator.platform}</p>
                                 </div>
                                 {alreadyListed && (
                                   <span className={`${MICRO} flex-shrink-0`}>Already listed</span>
@@ -943,11 +811,11 @@ export default function Account() {
                                       className="group text-left bg-white border border-neutral-200 hover:border-neutral-400 disabled:opacity-50 rounded-xl p-4 transition-colors"
                                     >
                                       <div className="flex items-center justify-between mb-3">
-                                        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">Basic</span>
-                                        <span className="text-[10px] text-neutral-400">Cancel anytime</span>
+                                        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Basic</span>
+                                        <span className="text-[10px] text-neutral-600">Cancel anytime</span>
                                       </div>
-                                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">$49<span className="text-sm font-normal text-neutral-400">/mo</span></p>
-                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">
+                                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">$49<span className="text-sm font-normal text-neutral-600">/mo</span></p>
+                                      <p className="text-xs text-neutral-700 mt-2 leading-relaxed">
                                         {nextBasicRank === null
                                           ? 'Checking the next open slot...'
                                           : <>Next open slot: <span className="font-medium text-neutral-700 tabular-nums">rank #{nextBasicRank}</span> on {PLATFORM_LABELS[listingPlatform]}.</>}
@@ -969,20 +837,20 @@ export default function Account() {
                                     >
                                       <div className="flex items-center justify-between mb-3">
                                         <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-amber-600">Premium</span>
-                                        <span className={`text-[10px] tabular-nums ${premiumSlotsLeft > 0 ? 'text-amber-600' : 'text-neutral-400'}`}>
+                                        <span className={`text-[10px] tabular-nums ${premiumSlotsLeft > 0 ? 'text-amber-600' : 'text-neutral-600'}`}>
                                           {premiumSlotsLeft > 0 ? `${premiumSlotsLeft} of 2 left` : 'Sold out'}
                                         </span>
                                       </div>
-                                      <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                                        $149<span className="text-sm font-normal text-neutral-400">/mo</span>
+                                      <p className={`text-2xl font-semibold tabular-nums ${premiumSlotsLeft > 0 ? 'text-neutral-900' : 'text-neutral-600'}`}>
+                                        $149<span className="text-sm font-normal text-neutral-600">/mo</span>
                                       </p>
-                                      <p className="text-xs text-neutral-500 mt-2 leading-relaxed">
+                                      <p className="text-xs text-neutral-700 mt-2 leading-relaxed">
                                         {premiumSlotsLeft > 0
                                           ? <>Next open slot: <span className="font-medium text-neutral-700 tabular-nums">rank #{nextPremiumRank}</span> on {PLATFORM_LABELS[listingPlatform]}.</>
                                           : 'Top-10 placement between rank 4-5 and 9-10. Maximum visibility.'}
                                       </p>
                                       <span className={`inline-flex items-center gap-1 mt-3.5 text-xs font-medium transition-colors ${
-                                        premiumSlotsLeft > 0 ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-400'
+                                        premiumSlotsLeft > 0 ? 'text-amber-600 group-hover:text-amber-700' : 'text-neutral-600'
                                       }`}>
                                         {premiumSlotsLeft > 0
                                           ? <>Get this slot <ChevronRight className="w-3 h-3" /></>
@@ -1000,7 +868,7 @@ export default function Account() {
                                   <p className={`${MICRO} pt-1`}>Confirm your placement</p>
                                   <div className={`rounded-xl p-4 border bg-white ${pendingTier === 'premium' ? 'border-neutral-200 border-t-2 border-t-amber-400' : 'border-neutral-200'}`}>
                                     <div className="flex items-center justify-between">
-                                      <span className={`text-[10px] font-medium uppercase tracking-[0.14em] ${pendingTier === 'premium' ? 'text-amber-600' : 'text-neutral-500'}`}>
+                                      <span className={`text-[10px] font-medium uppercase tracking-[0.14em] ${pendingTier === 'premium' ? 'text-amber-600' : 'text-neutral-700'}`}>
                                         {pendingTier === 'premium' ? 'Premium' : 'Basic'}
                                       </span>
                                       <span className="text-sm font-semibold tabular-nums text-neutral-900">{pendingTier === 'premium' ? '$149/mo' : '$49/mo'}</span>
@@ -1010,7 +878,7 @@ export default function Account() {
                                       <span className="font-semibold text-neutral-900 tabular-nums">rank #{pendingTier === 'premium' ? nextPremiumRank : nextBasicRank}</span>{' '}
                                       on the {PLATFORM_LABELS[listingPlatform]} rankings.
                                     </p>
-                                    <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+                                    <p className="text-xs text-neutral-600 mt-2 leading-relaxed">
                                       This is the next open slot right now. It could shift by one slot if another purchase completes at the same moment.
                                     </p>
                                   </div>
@@ -1042,121 +910,101 @@ export default function Account() {
               </>
               )}
 
-              {/* ── Profile tab ── */}
-              {activeTab === 'profile' && (
-                <div className="space-y-4">
-                  {/* Account info — hairline-divided strip */}
-                  <div className={`${CARD} p-6`}>
-                    <p className={`${MICRO} mb-4`}>Account info</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100 border border-neutral-200/80 rounded-lg overflow-hidden">
-                      <div className="px-4 py-3.5">
-                        <p className="text-xs text-neutral-400 mb-1">Member since</p>
-                        <p className="text-sm font-medium text-neutral-900 truncate">{memberSince}</p>
-                      </div>
-                      <div className="px-4 py-3.5">
-                        <p className="text-xs text-neutral-400 mb-1">Following</p>
-                        <p className="text-sm font-medium text-neutral-900 tabular-nums">
-                          {followCount === null ? '...' : `${followCount} creator${followCount !== 1 ? 's' : ''}`}
-                        </p>
-                      </div>
-                      <div className="px-4 py-3.5">
-                        <p className="text-xs text-neutral-400 mb-1">Email</p>
-                        <p className="text-sm font-medium text-neutral-900 truncate">{user.email}</p>
-                      </div>
-                    </div>
-                  </div>
+          {/* ── Profile tab ── */}
+          {activeTab === 'profile' && (
+            <div className="grid lg:grid-cols-[1fr,1fr] gap-5">
+              <div className="rounded-2xl bg-white border border-neutral-200 p-6 sm:p-7">
+                <h2 className="text-xl font-extrabold tracking-tight text-neutral-900">Display name</h2>
+                <p className="mt-1 text-[15px] text-neutral-700">How your name shows on your dashboard.</p>
+                <form onSubmit={handleSaveName} className="mt-5 flex gap-2.5">
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Your name"
+                    maxLength={50}
+                    className={`flex-1 min-w-0 h-12 px-4 ${INPUT}`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={savingName || !displayName.trim()}
+                    className="h-12 px-5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors text-sm"
+                  >
+                    {savingName ? 'Saving...' : 'Save'}
+                  </button>
+                </form>
+              </div>
 
-                  {/* Display name */}
-                  <div className={`${CARD} p-6`}>
-                    <h2 className="text-base font-medium text-neutral-900 mb-1">Display Name</h2>
-                    <p className="text-sm text-neutral-500 mb-5">This is how your name appears on your dashboard.</p>
-                    <form onSubmit={handleSaveName} className="flex gap-2.5">
+              <div className="rounded-2xl bg-white border border-neutral-200 p-6 sm:p-7">
+                <h2 className="text-xl font-extrabold tracking-tight text-neutral-900">Account details</h2>
+                <dl className="mt-4 divide-y divide-neutral-200">
+                  {[
+                    { k: 'Email', v: user.email },
+                    { k: 'Member since', v: memberSince },
+                    { k: 'Following', v: followCount === null ? '...' : `${followCount} creator${followCount !== 1 ? 's' : ''}` },
+                  ].map(row => (
+                    <div key={row.k} className="flex items-center justify-between gap-4 py-3">
+                      <dt className="text-sm font-semibold text-neutral-700">{row.k}</dt>
+                      <dd className="text-[15px] font-bold text-neutral-900 truncate">{row.v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
+          )}
+
+          {/* ── Security tab ── */}
+          {activeTab === 'security' && (
+            <div className="grid lg:grid-cols-[1fr,1fr] gap-5">
+              <div className="rounded-2xl bg-white border border-neutral-200 p-6 sm:p-7">
+                <h2 className="text-xl font-extrabold tracking-tight text-neutral-900">Change password</h2>
+                <p className="mt-1 text-[15px] text-neutral-700">At least 8 characters.</p>
+                <form onSubmit={handleChangePassword} className="mt-5 space-y-3">
+                  {[
+                    { value: newPassword, set: setNewPassword, show: showNew, toggle: () => setShowNew(v => !v), ph: 'New password' },
+                    { value: confirmPassword, set: setConfirmPassword, show: showConfirm, toggle: () => setShowConfirm(v => !v), ph: 'Confirm new password' },
+                  ].map((f) => (
+                    <div key={f.ph} className="relative">
                       <input
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Your name"
-                        maxLength={50}
-                        className={`flex-1 px-3.5 py-2.5 ${INPUT}`}
+                        type={f.show ? 'text' : 'password'}
+                        value={f.value}
+                        onChange={(e) => f.set(e.target.value)}
+                        placeholder={f.ph}
+                        aria-label={f.ph}
+                        className={`w-full h-12 px-4 pr-11 ${INPUT}`}
                       />
                       <button
-                        type="submit"
-                        disabled={savingName || !displayName.trim()}
-                        className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
+                        type="button"
+                        onClick={f.toggle}
+                        aria-label={f.show ? 'Hide password' : 'Show password'}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-700 hover:text-neutral-950"
                       >
-                        {savingName ? 'Saving...' : 'Save'}
+                        {f.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
-                    </form>
-                  </div>
-                </div>
-              )}
+                    </div>
+                  ))}
+                  <button
+                    type="submit"
+                    disabled={savingPassword || !newPassword || !confirmPassword}
+                    className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors text-sm"
+                  >
+                    {savingPassword ? 'Updating...' : 'Update password'}
+                  </button>
+                </form>
+              </div>
 
-              {/* ── Security tab ── */}
-              {activeTab === 'security' && (
-                <div className="space-y-4">
-                  {/* Change password */}
-                  <div className={`${CARD} p-6`}>
-                    <h2 className="text-base font-medium text-neutral-900 mb-1">Change Password</h2>
-                    <p className="text-sm text-neutral-500 mb-5">Pick a strong password, at least 8 characters.</p>
-                    <form onSubmit={handleChangePassword} className="space-y-2.5 max-w-sm">
-                      <div className="relative">
-                        <input
-                          type={showNew ? 'text' : 'password'}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="New password"
-                          className={`w-full px-3.5 py-2.5 pr-10 ${INPUT}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNew(v => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900"
-                        >
-                          {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type={showConfirm ? 'text' : 'password'}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Confirm new password"
-                          className={`w-full px-3.5 py-2.5 pr-10 ${INPUT}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirm(v => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900"
-                        >
-                          {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={savingPassword || !newPassword || !confirmPassword}
-                        className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
-                      >
-                        {savingPassword ? 'Updating...' : 'Update Password'}
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* Sign out */}
-                  <div className={`${CARD} p-6`}>
-                    <h2 className="text-base font-medium text-neutral-900 mb-1">Sign Out</h2>
-                    <p className="text-sm text-neutral-500 mb-4">Sign out of your account on this device.</p>
-                    <button
-                      onClick={signOut}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 hover:border-red-300 text-neutral-600 hover:text-red-600 font-medium rounded-lg transition-colors text-sm"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              )}
-
-          </div>
+              <div className="rounded-2xl bg-white border border-neutral-200 p-6 sm:p-7 flex flex-col">
+                <h2 className="text-xl font-extrabold tracking-tight text-neutral-900">Sign out</h2>
+                <p className="mt-1 text-[15px] text-neutral-700">Sign out of ShinyPull on this device.</p>
+                <button
+                  onClick={signOut}
+                  className="mt-5 self-start inline-flex items-center gap-2 h-12 px-5 rounded-xl border border-red-300 hover:bg-red-50 text-red-700 font-bold transition-colors text-sm"
+                >
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
