@@ -8,6 +8,7 @@ import SEO from '../components/SEO';
 import YouTubeIcon from '../components/YouTubeIcon';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { formatNumber } from '../lib/utils';
+import PageHero from '../components/PageHero';
 
 const currencies = [
   { code: 'USD', symbol: '$', rate: 1 },
@@ -41,7 +42,7 @@ const sliderToViews = (pos) =>
   Math.round(Math.pow(10, LOG_MIN + (pos / SLIDER_STEPS) * (LOG_MAX - LOG_MIN)));
 
 const TIER_THRESHOLDS = [
-  { label: 'Small Channel',    range: '< $500/mo',          min: 0,      max: 500,    color: 'text-neutral-500', bg: 'bg-neutral-50', border: 'border-neutral-200/80' },
+  { label: 'Small Channel',    range: '< $500/mo',          min: 0,      max: 500,    color: 'text-neutral-700', bg: 'bg-neutral-50', border: 'border-neutral-200/80' },
   { label: 'Growing',          range: '$500 \u2013 $2K/mo',      min: 500,    max: 2000,   color: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200/80' },
   { label: 'Full-Time Viable', range: '$2K \u2013 $10K/mo',      min: 2000,   max: 10000,  color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200/80' },
   { label: 'Established',      range: '$10K \u2013 $100K/mo',    min: 10000,  max: 100000, color: 'text-purple-700',  bg: 'bg-purple-50',  border: 'border-purple-200/80' },
@@ -268,36 +269,25 @@ export default function Calculator() {
       `}</style>
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <div className="max-w-4xl mx-auto text-center">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">Earnings</p>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">YouTube Money Calculator</h1>
-              <p className="mt-2 text-sm sm:text-base text-neutral-500 mb-6">
-                {mode === 'creator' ? "Estimate a creator's earnings using real channel data" : 'Project your own potential YouTube income'}
-              </p>
-
-              {/* Mode Toggle */}
-              <div className="inline-flex items-center gap-0.5 p-0.5 bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-lg">
-                <button
-                  onClick={() => switchMode('creator')}
-                  className={`px-4 sm:px-6 py-1.5 rounded-md font-medium transition-colors text-sm ${mode === 'creator' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
-                >
-                  <span className="hidden sm:inline">Estimate a Creator</span>
-                  <span className="sm:hidden">Creator</span>
-                </button>
-                <button
-                  onClick={() => switchMode('personal')}
-                  className={`px-4 sm:px-6 py-1.5 rounded-md font-medium transition-colors text-sm ${mode === 'personal' ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
-                >
-                  <span className="hidden sm:inline">Estimate My Earnings</span>
-                  <span className="sm:hidden">My Earnings</span>
-                </button>
-              </div>
-            </div>
+        <PageHero
+          center
+          eyebrow="Earnings"
+          title="YouTube money calculator"
+          subtitle={mode === 'creator' ? "Estimate what a channel earns, from its real daily views." : 'Project your own YouTube income from your views and niche.'}
+        >
+          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white/[0.08] border border-white/15">
+            {[['creator', 'Estimate a creator', 'Creator'], ['personal', 'Estimate my earnings', 'My earnings']].map(([id, long, short]) => (
+              <button
+                key={id}
+                onClick={() => switchMode(id)}
+                className={`h-10 px-5 rounded-full text-sm font-bold transition-colors ${mode === id ? 'bg-white text-neutral-950' : 'text-white hover:bg-white/10'}`}
+              >
+                <span className="hidden sm:inline">{long}</span>
+                <span className="sm:hidden">{short}</span>
+              </button>
+            ))}
           </div>
-        </div>
+        </PageHero>
 
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -306,11 +296,11 @@ export default function Calculator() {
             {mode === 'creator' && !selectedCreator && !bannerDismissed && (
               <div className="order-1 lg:col-span-2">
                 <div className="flex items-center gap-3 bg-white rounded-lg border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] px-4 py-3">
-                  <Info className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+                  <Info className="w-4 h-4 text-neutral-600 flex-shrink-0" />
                   <p className="text-sm text-neutral-700 flex-1">
                     Search for a creator to auto-populate their real daily views and category RPM.
                   </p>
-                  <button onClick={() => setBannerDismissed(true)} className="p-1 text-neutral-400 hover:text-neutral-700 transition-colors flex-shrink-0">
+                  <button onClick={() => setBannerDismissed(true)} className="p-1 text-neutral-600 hover:text-neutral-700 transition-colors flex-shrink-0">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -333,7 +323,7 @@ export default function Calculator() {
                       <CreatorAvatar src={selectedCreator.profileImage} name={selectedCreator.displayName} size="md" rounded="rounded-lg" className="flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-neutral-900 truncate">{selectedCreator.displayName}</p>
-                        <p className="text-xs text-neutral-500">{formatNumber(selectedCreator.subscribers)} subscribers</p>
+                        <p className="text-xs text-neutral-700">{formatNumber(selectedCreator.subscribers)} subscribers</p>
                       </div>
                       <Link
                         to={`/youtube/${selectedCreator.username}`}
@@ -341,7 +331,7 @@ export default function Calculator() {
                       >
                         Profile <ExternalLink className="w-3 h-3" />
                       </Link>
-                      <button onClick={clearCreator} className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0" title="Clear creator">
+                      <button onClick={clearCreator} className="p-1.5 rounded-lg text-neutral-600 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0" title="Clear creator">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -349,7 +339,7 @@ export default function Calculator() {
                     <div className="relative">
                       <form onSubmit={handleSearch}>
                         <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-700" />
                           <input
                             type="text"
                             value={searchQuery}
@@ -359,7 +349,7 @@ export default function Calculator() {
                             className="w-full pl-10 pr-10 py-3 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                           />
                           {searching ? (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 animate-spin" />
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-700 animate-spin" />
                           ) : searchQuery.trim() && (
                             <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-emerald-500 hover:bg-emerald-600 rounded-lg flex items-center justify-center transition-colors">
                               <ArrowRight className="w-4 h-4 text-white" />
@@ -375,7 +365,7 @@ export default function Calculator() {
                               <CreatorAvatar src={result.profileImage} name={result.displayName} size="md" rounded="rounded-lg" />
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-neutral-900 truncate">{result.displayName}</p>
-                                <p className="text-xs text-neutral-500">{formatNumber(result.subscribers)} subs</p>
+                                <p className="text-xs text-neutral-700">{formatNumber(result.subscribers)} subs</p>
                               </div>
                             </button>
                           ))}
@@ -395,19 +385,19 @@ export default function Calculator() {
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-neutral-50 rounded-xl">
-                      <p className="text-xs text-neutral-500">Subscribers</p>
+                      <p className="text-xs text-neutral-700">Subscribers</p>
                       <p className="font-bold text-neutral-900">{formatNumber(selectedCreator.subscribers)}</p>
                     </div>
                     <div className="p-3 bg-neutral-50 rounded-xl">
-                      <p className="text-xs text-neutral-500">Total Views</p>
+                      <p className="text-xs text-neutral-700">Total Views</p>
                       <p className="font-bold text-neutral-900">{formatNumber(selectedCreator.totalViews)}</p>
                     </div>
                     <div className="p-3 bg-neutral-50 rounded-xl">
-                      <p className="text-xs text-neutral-500">Videos</p>
+                      <p className="text-xs text-neutral-700">Videos</p>
                       <p className="font-bold text-neutral-900">{formatNumber(selectedCreator.totalPosts)}</p>
                     </div>
                     <div className="p-3 bg-neutral-50 rounded-xl">
-                      <p className="text-xs text-neutral-500">Avg Views / Video</p>
+                      <p className="text-xs text-neutral-700">Avg Views / Video</p>
                       <p className="font-bold text-neutral-900">
                         {selectedCreator.totalPosts > 0
                           ? formatNumber(Math.round(selectedCreator.totalViews / selectedCreator.totalPosts))
@@ -432,7 +422,7 @@ export default function Calculator() {
                       className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${
                         overrideEnabled
                           ? 'bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100'
-                          : 'bg-neutral-100 text-neutral-500 hover:text-neutral-800 border border-neutral-300 hover:border-neutral-300'
+                          : 'bg-neutral-100 text-neutral-700 hover:text-neutral-800 border border-neutral-300 hover:border-neutral-300'
                       }`}
                     >
                       <Pencil className="w-3 h-3" />
@@ -446,7 +436,7 @@ export default function Calculator() {
                   onChange={(e) => setDailyViews(Math.max(1000, parseInt(e.target.value) || 1000))}
                   disabled={isLocked}
                   className={`w-full px-4 py-3 border border-neutral-300 rounded-xl text-neutral-900 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-4 transition-colors ${
-                    isLocked ? 'bg-neutral-100 cursor-not-allowed text-neutral-500' : 'bg-neutral-50'
+                    isLocked ? 'bg-neutral-100 cursor-not-allowed text-neutral-700' : 'bg-neutral-50'
                   }`}
                 />
                 <input
@@ -464,7 +454,7 @@ export default function Calculator() {
                       : `linear-gradient(to right, #10b981 0%, #10b981 ${sliderPct}%, #e5e5e5 ${sliderPct}%, #e5e5e5 100%)`
                   }}
                 />
-                <div className="flex justify-between text-xs text-neutral-400 mt-2">
+                <div className="flex justify-between text-xs text-neutral-600 mt-2">
                   <span>1K</span>
                   <span className="font-semibold text-emerald-600 tabular-nums">{formatNumber(dailyViews)} views/day</span>
                   <span>10M</span>
@@ -490,37 +480,37 @@ export default function Calculator() {
                       ))}
                     </select>
                     {currency.code !== 'USD' && (
-                      <span className="text-[10px] text-neutral-400">rates approx. 2026</span>
+                      <span className="text-[10px] text-neutral-600">rates approx. 2026</span>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="text-xs text-neutral-400 mb-1 block">Low (USD $)</label>
+                    <label className="text-xs text-neutral-600 mb-1 block">Low (USD $)</label>
                     <input
                       type="number" step="0.01" value={rpmLow}
                       onChange={(e) => setRpmLow(Math.max(0, parseFloat(e.target.value) || 0))}
                       disabled={isLocked}
                       className={`w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
-                        isLocked ? 'bg-neutral-100 cursor-not-allowed text-neutral-500' : 'bg-neutral-50'
+                        isLocked ? 'bg-neutral-100 cursor-not-allowed text-neutral-700' : 'bg-neutral-50'
                       }`}
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-neutral-400 mb-1 block">High (USD $)</label>
+                    <label className="text-xs text-neutral-600 mb-1 block">High (USD $)</label>
                     <input
                       type="number" step="0.01" value={rpmHigh}
                       onChange={(e) => setRpmHigh(Math.max(rpmLow, parseFloat(e.target.value) || 0))}
                       disabled={isLocked}
                       className={`w-full px-3 py-2.5 border border-neutral-300 rounded-lg text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
-                        isLocked ? 'bg-neutral-100 cursor-not-allowed text-neutral-500' : 'bg-neutral-50'
+                        isLocked ? 'bg-neutral-100 cursor-not-allowed text-neutral-700' : 'bg-neutral-50'
                       }`}
                     />
                   </div>
                 </div>
 
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-neutral-600">
                   {mode === 'creator' && selectedCreator
                     ? 'Estimated by content category. Varies by audience location and ad engagement.'
                     : 'Varies by niche and audience. Gaming = lower ($1-3), finance/tech = higher ($4-8).'}
@@ -552,7 +542,7 @@ export default function Calculator() {
                         <div className="absolute right-0 top-full mt-2 z-20 w-60 bg-white border border-neutral-300 rounded-xl p-3 shadow-2xl">
                           <p className="text-xs font-semibold text-neutral-700 mb-2 uppercase tracking-wide">Monthly USD tiers</p>
                           {TIER_THRESHOLDS.map((t) => (
-                            <div key={t.label} className={`flex items-center justify-between py-1 text-xs ${t.label === tier.label ? `font-semibold ${t.color}` : 'text-neutral-400'}`}>
+                            <div key={t.label} className={`flex items-center justify-between py-1 text-xs ${t.label === tier.label ? `font-semibold ${t.color}` : 'text-neutral-600'}`}>
                               <span>{t.label}</span>
                               <span>{t.range}</span>
                             </div>
@@ -563,7 +553,7 @@ export default function Calculator() {
                     {/* Copy link */}
                     <button
                       onClick={handleCopyLink}
-                      className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 border border-transparent hover:border-neutral-300 transition-all"
+                      className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg text-neutral-700 hover:text-neutral-800 hover:bg-neutral-100 border border-transparent hover:border-neutral-300 transition-all"
                       title="Copy shareable link"
                     >
                       {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Link2 className="w-3.5 h-3.5" />}
@@ -574,15 +564,15 @@ export default function Calculator() {
 
                 <div className="space-y-3">
                   <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200/80">
-                    <p className="text-xs text-neutral-500 mb-1">Daily</p>
+                    <p className="text-xs text-neutral-700 mb-1">Daily</p>
                     <p className="text-2xl font-semibold text-emerald-700 tabular-nums">{formatCurrency(dailyLow)} &ndash; {formatCurrency(dailyHigh)}</p>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-xl border border-blue-200/80">
-                    <p className="text-xs text-neutral-500 mb-1">Monthly</p>
+                    <p className="text-xs text-neutral-700 mb-1">Monthly</p>
                     <p className="text-2xl font-semibold text-blue-700 tabular-nums">{formatCurrency(monthlyLow)} &ndash; {formatCurrency(monthlyHigh)}</p>
                   </div>
                   <div className="p-4 bg-purple-50 rounded-xl border border-purple-200/80">
-                    <p className="text-xs text-neutral-500 mb-1">Yearly</p>
+                    <p className="text-xs text-neutral-700 mb-1">Yearly</p>
                     <p className="text-2xl font-semibold text-purple-700 tabular-nums">{formatCurrency(yearlyLow)} &ndash; {formatCurrency(yearlyHigh)}</p>
                   </div>
                 </div>
@@ -591,7 +581,7 @@ export default function Calculator() {
               {/* Bar chart — stacked low + range band */}
               <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-6">
                 <h4 className="text-sm font-semibold text-neutral-700 mb-0.5">Earnings Breakdown</h4>
-                <p className="text-xs text-neutral-400 mb-4">Solid = low estimate &nbsp;&middot;&nbsp; Faded = upside range</p>
+                <p className="text-xs text-neutral-600 mb-4">Solid = low estimate &nbsp;&middot;&nbsp; Faded = upside range</p>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={chartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }} barCategoryGap="35%">
                     <XAxis dataKey="period" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -644,7 +634,7 @@ export default function Calculator() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-neutral-800 mb-1">The Formula</p>
-                    <p className="text-xs text-neutral-500 leading-relaxed">(Daily Views &divide; 1,000) &times; RPM. RPM is your revenue per thousand views, before YouTube's 45% cut.</p>
+                    <p className="text-xs text-neutral-700 leading-relaxed">(Daily Views &divide; 1,000) &times; RPM. RPM is your revenue per thousand views, before YouTube's 45% cut.</p>
                   </div>
                 </div>
 
@@ -654,7 +644,7 @@ export default function Calculator() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-neutral-800 mb-1">RPM by Niche</p>
-                    <p className="text-xs text-neutral-500 leading-relaxed">Gaming &amp; entertainment: $1&ndash;3. Education: $2&ndash;5. Finance &amp; tech: $4&ndash;8. Audience location matters too.</p>
+                    <p className="text-xs text-neutral-700 leading-relaxed">Gaming &amp; entertainment: $1&ndash;3. Education: $2&ndash;5. Finance &amp; tech: $4&ndash;8. Audience location matters too.</p>
                   </div>
                 </div>
 
@@ -666,7 +656,7 @@ export default function Calculator() {
                     <p className="text-sm font-semibold text-neutral-800 mb-1">
                       {mode === 'creator' ? 'Real Channel Data' : 'Your Estimates'}
                     </p>
-                    <p className="text-xs text-neutral-500 leading-relaxed">
+                    <p className="text-xs text-neutral-700 leading-relaxed">
                       {mode === 'creator'
                         ? "Daily views come from the channel's real view history, not a rough total-divided-by-videos guess."
                         : 'Set your expected daily views and RPM range. Actual earnings vary by watch time, ad engagement, and geography.'}

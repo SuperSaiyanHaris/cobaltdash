@@ -9,6 +9,7 @@ import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
 import SubstackIcon from '../components/SubstackIcon';
 import SEO from '../components/SEO';
+import PageHero from '../components/PageHero';
 
 // Typographic backbone shared with the rest of the precision system
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
@@ -129,22 +130,14 @@ export default function Methodology() {
 
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-4xl mx-auto px-4 py-12 sm:py-14 text-center">
-            <p className={`${MICRO} mb-3`}>Methodology</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Data Methodology</h1>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500">
-              How we present and maintain publicly available creator statistics.
-            </p>
-          </div>
-        </div>
+        <PageHero center eyebrow="Methodology" title="How our data works" subtitle={`Where the numbers come from, how often they update, and how card rarity is decided.`} />
 
         <div className="max-w-4xl mx-auto px-4 py-12 space-y-14">
 
           {/* Core principles */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Our Principles</h2>
-            <p className="text-sm text-neutral-500 mb-6">
+            <p className="text-sm text-neutral-700 mb-6">
               Accurate data is the whole point of this site. These are the rules we follow to keep it that way.
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -152,7 +145,7 @@ export default function Methodology() {
                 <div key={p.title} className={`${CARD} p-6 hover:border-neutral-300 transition-colors`}>
                   <p.icon className={`w-5 h-5 ${p.tint} mb-4`} />
                   <h3 className="font-medium text-neutral-900 mb-2">{p.title}</h3>
-                  <p className="text-neutral-500 text-sm leading-relaxed">{p.body}</p>
+                  <p className="text-neutral-700 text-sm leading-relaxed">{p.body}</p>
                 </div>
               ))}
             </div>
@@ -161,7 +154,7 @@ export default function Methodology() {
           {/* Per-platform */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight text-neutral-900 mb-1.5">Platform Details</h2>
-            <p className="text-sm text-neutral-500 mb-6">
+            <p className="text-sm text-neutral-700 mb-6">
               Each platform works differently. Here's what we track and any limitations worth knowing about.
             </p>
             <div className="space-y-4">
@@ -193,7 +186,7 @@ export default function Methodology() {
                   {p.notes.length > 0 && (
                     <div className="border-l-2 border-neutral-200 pl-4 space-y-2">
                       {p.notes.map((note, i) => (
-                        <p key={i} className="text-sm text-neutral-500 leading-relaxed">{note}</p>
+                        <p key={i} className="text-sm text-neutral-700 leading-relaxed">{note}</p>
                       ))}
                     </div>
                   )}
@@ -229,7 +222,7 @@ export default function Methodology() {
           {/* Footer CTA */}
           <div className={`${CARD} p-8 text-center`}>
             <h2 className="text-base font-medium text-neutral-900 mb-1.5">Questions about the data?</h2>
-            <p className="text-sm text-neutral-500 mb-6">
+            <p className="text-sm text-neutral-700 mb-6">
               If something looks off or you want to know more, reach out.
             </p>
             <div className="flex flex-col sm:flex-row gap-2.5 justify-center">

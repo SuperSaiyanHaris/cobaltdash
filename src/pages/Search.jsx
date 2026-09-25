@@ -24,6 +24,7 @@ import SEO from '../components/SEO';
 import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
+import PageHero from '../components/PageHero';
 
 const platformIcons = {
   youtube: YouTubeIcon,
@@ -89,7 +90,7 @@ function FilterDropdown({ label, options, value, onChange }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 h-9 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+        className="flex items-center gap-2 h-9 px-3.5 bg-white border border-neutral-200 rounded-lg text-sm font-medium text-neutral-700 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
       >
         <span className="text-neutral-600">{label}:</span> {current.label}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -504,36 +505,30 @@ export default function Search() {
       />
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <p className={`${MICRO} mb-3`}>Search</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Search Creators</h1>
-            <p className="mt-2 text-sm text-neutral-500">Find any creator and view their detailed statistics</p>
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Platform Tabs */}
-          <div className="flex flex-wrap gap-1.5 mb-6 justify-center">
+        <PageHero
+          eyebrow="Search"
+          title="Find any creator."
+          subtitle={`Pick a platform, type a name, and open their stats and card.`}
+        >
+          {/* Platform tabs */}
+          <div className="flex flex-wrap gap-2">
             {platforms.map((platform) => {
               const Icon = platform.icon;
               const isSelected = selectedPlatform === platform.id;
-
               return (
                 <button
                   key={platform.id}
                   onClick={() => platform.available && handlePlatformChange(platform.id)}
                   disabled={!platform.available}
-                  className={`flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium transition-colors border ${
+                  className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold transition-colors border ${
                     isSelected
-                      ? 'bg-neutral-900 border-neutral-900 text-white'
+                      ? 'bg-white border-white text-neutral-950'
                       : platform.available
-                      ? 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
-                      : 'bg-neutral-50 border-neutral-200 text-neutral-400 cursor-not-allowed'
+                      ? 'bg-white/[0.06] border-white/15 text-white hover:border-white/50'
+                      : 'bg-white/[0.03] border-white/10 text-white/40 cursor-not-allowed'
                   }`}
                 >
-                  {Icon && <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : platformTint[platform.id]}`} />}
+                  {Icon && <Icon className={`w-4 h-4 ${isSelected ? platformTint[platform.id] : 'text-white'}`} />}
                   <span className="whitespace-nowrap">{platform.name}</span>
                   {!platform.available && <span className="text-xs opacity-75">(Soon)</span>}
                 </button>
@@ -541,38 +536,40 @@ export default function Search() {
             })}
           </div>
 
-          {/* Search Form */}
-          <form onSubmit={handleSubmit} className="mb-10 max-w-2xl mx-auto">
-            <div className="space-y-3">
-              <div className="relative flex items-center bg-white rounded-xl border border-neutral-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus-within:border-neutral-400 transition-colors">
-                <SearchIcon className="absolute left-4 w-4 h-4 text-neutral-400" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={`Search ${currentPlatform?.name || ''} creators...`}
-                  className="w-full pl-11 pr-11 py-3.5 bg-transparent text-neutral-900 placeholder-neutral-400 focus:outline-none text-base rounded-xl"
-                />
-                {query && (
-                  <button
-                    type="button"
-                    onClick={() => { setQuery(''); setResults([]); setSearched(false); }}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-900 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto sm:min-w-[200px] sm:mx-auto sm:block px-8 py-3 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </button>
+          {/* Search form */}
+          <form onSubmit={handleSubmit} className="mt-5 flex flex-col sm:flex-row gap-2.5 max-w-2xl">
+            <div className="relative flex-1 flex items-center bg-white rounded-xl shadow-[0_12px_30px_-12px_rgba(0,0,0,0.6)]">
+              <SearchIcon className="absolute left-4 w-4 h-4 text-neutral-700" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${currentPlatform?.name || ''} creators...`}
+                aria-label={`Search ${currentPlatform?.name || ''} creators`}
+                className="w-full h-12 pl-11 pr-11 bg-transparent text-neutral-900 placeholder-neutral-500 focus:outline-none text-base rounded-xl"
+              />
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => { setQuery(''); setResults([]); setSearched(false); }}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-neutral-700 hover:text-neutral-900 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-12 px-7 bg-amber-400 hover:bg-amber-300 disabled:opacity-60 disabled:cursor-not-allowed text-neutral-950 text-sm font-bold rounded-xl transition-colors"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
           </form>
+        </PageHero>
 
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
           {/* Error State - Fun Version */}
           {error && (
             <FunErrorState
@@ -587,7 +584,7 @@ export default function Search() {
           {loading && (
             <div className="space-y-3">
               <div className="text-center mb-6">
-                <p className="text-sm text-neutral-500">Searching {currentPlatform?.name}...</p>
+                <p className="text-sm text-neutral-700">Searching {currentPlatform?.name}...</p>
               </div>
               {Array.from({ length: 5 }).map((_, i) => (
                 <CreatorRowSkeleton key={i} />
@@ -602,14 +599,14 @@ export default function Search() {
               {liveSearchUnavailable ? (
                 <>
                   <h2 className="text-base font-medium text-neutral-900 mb-1">Couldn't check just now</h2>
-                  <p className="text-sm text-neutral-500 mb-4">
+                  <p className="text-sm text-neutral-700 mb-4">
                     "{query}" isn't in our database yet, and we couldn't verify it against live {currentPlatform?.name} data this time. If you're sure this creator is real, try again in a few minutes.
                   </p>
                 </>
               ) : (
                 <>
                   <h2 className="text-base font-medium text-neutral-900 mb-1">No creators found</h2>
-                  <p className="text-sm text-neutral-500 mb-4">
+                  <p className="text-sm text-neutral-700 mb-4">
                     We couldn't find any {currentPlatform?.name} creators matching "{query}"
                   </p>
                 </>
@@ -620,7 +617,7 @@ export default function Search() {
                 <>
                   {requestStatus === null && (
                     <div className="mt-6 max-w-md mx-auto px-4">
-                      <p className="text-sm text-neutral-500 mb-3">
+                      <p className="text-sm text-neutral-700 mb-3">
                         If you know the exact handle, enter it below. Otherwise leave as-is and our smart search will find the right match.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
@@ -650,7 +647,7 @@ export default function Search() {
                   {requestStatus === 'requesting' && (
                     <div className="mt-6 max-w-md mx-auto p-4 border border-neutral-200 rounded-lg">
                       <div className="w-6 h-6 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <p className="text-sm text-neutral-500">Submitting request...</p>
+                      <p className="text-sm text-neutral-700">Submitting request...</p>
                     </div>
                   )}
 
@@ -689,7 +686,7 @@ export default function Search() {
                   <>
                     {requestStatus === null && (
                       <div className="mt-6 max-w-md mx-auto px-4">
-                        <p className="text-sm text-neutral-500 mb-3">
+                        <p className="text-sm text-neutral-700 mb-3">
                           Run this {cfg.noun}? Add it and we'll start tracking it. Paste your link or handle.
                         </p>
                         <input
@@ -716,7 +713,7 @@ export default function Search() {
                     {requestStatus === 'requesting' && (
                       <div className="mt-6 max-w-md mx-auto p-4 border border-neutral-200 rounded-lg">
                         <div className="w-6 h-6 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                        <p className="text-sm text-neutral-500">Submitting...</p>
+                        <p className="text-sm text-neutral-700">Submitting...</p>
                       </div>
                     )}
 
@@ -773,7 +770,7 @@ export default function Search() {
 
               {displayedResults.length === 0 ? (
                 <div className={`text-center py-10 ${CARD}`}>
-                  <p className="text-sm text-neutral-500">No creators in this size range.</p>
+                  <p className="text-sm text-neutral-700">No creators in this size range.</p>
                   <button
                     onClick={() => setRangeFilter('any')}
                     className="mt-2 text-sm text-neutral-900 font-medium hover:underline"
@@ -785,7 +782,7 @@ export default function Search() {
               <div className={`${CARD} divide-y divide-neutral-100 overflow-hidden`}>
                 {displayedResults.map((creator) => {
                   const Icon = platformIcons[creator.platform] || User;
-                  const tint = platformTint[creator.platform] || 'text-neutral-400';
+                  const tint = platformTint[creator.platform] || 'text-neutral-600';
 
                   return (
                     <Link
@@ -837,13 +834,13 @@ export default function Search() {
                 return (
                   <div className={`text-center py-8 ${CARD}`}>
                     <div className="max-w-md mx-auto">
-                      <p className="text-sm text-neutral-500 mb-4">
+                      <p className="text-sm text-neutral-700 mb-4">
                         Can't find "@{query}"? TikTok creators are added by request.
                       </p>
 
                       {requestStatus === null && (
                         <>
-                          <p className="text-sm text-neutral-500 mb-3">
+                          <p className="text-sm text-neutral-700 mb-3">
                             If you know the exact handle, enter it below. Otherwise leave as-is and our smart search will find the right match.
                           </p>
                           <div className="flex items-center gap-2 mb-4 px-4">
@@ -873,7 +870,7 @@ export default function Search() {
                       {requestStatus === 'requesting' && (
                         <div className="p-4 border border-neutral-200 rounded-lg">
                           <div className="w-6 h-6 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                          <p className="text-sm text-neutral-500">Submitting request...</p>
+                          <p className="text-sm text-neutral-700">Submitting request...</p>
                         </div>
                       )}
 

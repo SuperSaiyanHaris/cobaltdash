@@ -66,14 +66,15 @@ export default function ResetPassword() {
           description="Your password has been successfully updated."
         />
 
-        <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4">
-          <div className="max-w-sm w-full text-center">
+        <div className="relative isolate min-h-[calc(100vh-4rem)] bg-[#0a0a0f] flex items-center justify-center px-4">
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
+          <div className="relative max-w-sm w-full text-center">
             <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-8">
               <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-6 h-6 text-emerald-600" />
               </div>
               <h1 className="text-xl font-semibold tracking-tight text-neutral-900 mb-2">Password updated</h1>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-neutral-700">
                 Your password has been changed. Taking you to the home page.
               </p>
             </div>
@@ -90,12 +91,13 @@ export default function ResetPassword() {
         description="Set a new password for your ShinyPull account."
       />
 
-      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4 py-12">
-        <div className="max-w-sm w-full">
+      <div className="relative isolate min-h-[calc(100vh-4rem)] bg-[#0a0a0f] flex items-center justify-center px-4 py-12">
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
+        <div className="relative max-w-sm w-full">
           <div className="text-center mb-8">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">Account</p>
-            <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-1.5">Set a new password</h1>
-            <p className="text-sm text-neutral-500">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400 mb-3">Account</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">Set a new password</h1>
+            <p className="text-[15px] text-white/75">
               Enter your new password below
             </p>
           </div>
@@ -103,9 +105,9 @@ export default function ResetPassword() {
           <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-8">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-2">New password</label>
+                <label className="block text-xs font-medium text-neutral-700 mb-2">New password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
                   <input
                     type="password"
                     value={password}
@@ -119,9 +121,9 @@ export default function ResetPassword() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-2">Confirm password</label>
+                <label className="block text-xs font-medium text-neutral-700 mb-2">Confirm password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
                   <input
                     type="password"
                     value={confirmPassword}

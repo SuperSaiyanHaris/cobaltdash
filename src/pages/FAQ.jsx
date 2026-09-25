@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Music } from 'lucide-react';
 import { PLATFORM_COUNT } from '../lib/constants';
 import SEO from '../components/SEO';
 import StructuredData from '../components/StructuredData';
+import PageHero from '../components/PageHero';
 
 const faqs = [
   {
@@ -126,7 +127,7 @@ function FAQItem({ q, a }) {
         <span className="font-semibold text-neutral-900">{q}</span>
         {open
           ? <ChevronUp className="w-5 h-5 text-neutral-900 flex-shrink-0" />
-          : <ChevronDown className="w-5 h-5 text-neutral-400 flex-shrink-0" />
+          : <ChevronDown className="w-5 h-5 text-neutral-600 flex-shrink-0" />
         }
       </button>
       {open && (
@@ -161,15 +162,7 @@ export default function FAQ() {
 
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-3xl mx-auto px-4 py-12 sm:py-14 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">FAQ</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Frequently Asked Questions</h1>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500">
-              Common questions about ShinyPull, our data, and how everything works.
-            </p>
-          </div>
-        </div>
+        <PageHero center eyebrow="FAQ" title="Frequently asked questions" subtitle={`Common questions about ShinyPull, our data, and how everything works.`} />
 
         <div className="max-w-3xl mx-auto px-4 py-12 space-y-10">
           {faqs.map((section) => (
@@ -187,7 +180,7 @@ export default function FAQ() {
 
           <div className="bg-white border border-neutral-200 rounded-2xl p-8 text-center">
             <h2 className="text-xl font-bold text-neutral-900 mb-2">Still have questions?</h2>
-            <p className="text-neutral-500 mb-6">
+            <p className="text-neutral-700 mb-6">
               We're happy to help. Reach out and we'll get back to you within 24-48 hours.
             </p>
             <Link

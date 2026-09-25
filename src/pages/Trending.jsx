@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Loader2, Music } from 'lucide-react';
+import { Loader2, Music } from 'lucide-react';
 import SEO from '../components/SEO';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
@@ -11,6 +11,8 @@ import MastodonIcon from '../components/MastodonIcon';
 import { getRankedCreators } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
 import CreatorAvatar from '../components/CreatorAvatar';
+import PageHero from '../components/PageHero';
+import RankingsPodium from '../components/rankings/RankingsPodium';
 
 // Typographic backbone shared with the rest of the precision system
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
@@ -56,30 +58,12 @@ export default function Trending() {
         keywords="trending creators, fastest growing youtubers, fastest growing tiktok accounts, trending streamers, creator growth rankings"
       />
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Page header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-12 flex items-end justify-between gap-6">
-            <div>
-              <p className={`${MICRO} mb-3`}>Trending</p>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Trending Creators</h1>
-              <p className="mt-2 text-sm text-neutral-500">Fastest growing channels and accounts over the last 30 days.</p>
-              <p className="mt-3 text-sm text-neutral-400 leading-relaxed max-w-2xl">
-                These rankings show which creators are gaining the most ground right now. Each platform uses the metric that best captures real growth.
-                YouTube ranks by total views gained since subscriber counts are rounded by policy.
-                Twitch and Kick rank by hours watched, which is the standard metric sponsors and analytics platforms use.
-                TikTok, Bluesky, and Music rank by follower and listener growth directly.
-              </p>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-600 tracking-wide">UPDATED DAILY</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          {/* Platform tabs */}
-          <div className="flex gap-1.5 overflow-x-auto pb-3 mb-6 scrollbar-hide">
+        <PageHero
+          eyebrow="Trending · updated daily"
+          title="Who's growing fastest right now."
+          subtitle="The creators gaining the most ground over the last 30 days, platform by platform."
+        >
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {PLATFORMS.map(p => {
               const PIcon = p.icon;
               const isActive = p.id === activePlatform;
@@ -87,22 +71,25 @@ export default function Trending() {
                 <button
                   key={p.id}
                   onClick={() => setActivePlatform(p.id)}
-                  className={`flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border flex-shrink-0 ${
-                    isActive
-                      ? 'bg-neutral-900 border-neutral-900 text-white'
-                      : 'bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300'
+                  className={`flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors border flex-shrink-0 ${
+                    isActive ? 'bg-white border-white text-neutral-950' : 'bg-white/[0.06] border-white/15 text-white hover:border-white/50'
                   }`}
                 >
-                  <PIcon className={`w-4 h-4 ${isActive ? 'text-white' : p.tint}`} />
+                  <PIcon className={`w-4 h-4 ${isActive ? p.tint : 'text-white'}`} />
                   {p.name}
                 </button>
               );
             })}
           </div>
+          {!loading && creators.length >= 3 && (
+            <RankingsPodium creators={creators.slice(0, 3).map(c => ({ ...c, platform: activePlatform }))} />
+          )}
+        </PageHero>
 
+        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-10">
           {/* Metric note */}
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-600">
               Ranked by <span className="text-neutral-600 font-medium">{platform.growthLabel}</span> over the last 30 days
               {platform.growthNote && <span className="hidden sm:inline">. {platform.growthNote}</span>}
             </p>
@@ -111,10 +98,10 @@ export default function Trending() {
           {/* Creator list */}
           {loading ? (
             <div className="flex justify-center py-20">
-              <Loader2 className="w-6 h-6 text-neutral-300 animate-spin" />
+              <Loader2 className="w-6 h-6 text-neutral-500 animate-spin" />
             </div>
           ) : creators.length === 0 ? (
-            <p className="text-center py-20 text-neutral-400 text-sm">No growth data available yet for this platform.</p>
+            <p className="text-center py-20 text-neutral-600 text-sm">No growth data available yet for this platform.</p>
           ) : (
             <div className={`${CARD} divide-y divide-neutral-100 overflow-hidden`}>
               {creators.map((creator, i) => {
@@ -127,7 +114,7 @@ export default function Trending() {
                     to={`/${activePlatform}/${creator.username}`}
                     className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-neutral-50 transition-colors"
                   >
-                    <span className={`w-6 text-right text-sm font-semibold tabular-nums flex-shrink-0 ${i < 3 ? 'text-neutral-900' : 'text-neutral-400'}`}>{i + 1}</span>
+                    <span className={`w-6 text-right text-sm font-semibold tabular-nums flex-shrink-0 ${i < 3 ? 'text-neutral-900' : 'text-neutral-600'}`}>{i + 1}</span>
                     <CreatorAvatar
                       src={creator.profile_image}
                       name={creator.display_name}
@@ -137,7 +124,7 @@ export default function Trending() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-neutral-900 truncate text-sm">{creator.display_name}</p>
-                      <p className="text-xs text-neutral-400 truncate tabular-nums">{formatNumber(creator.latestStats.subscribers)} {platform.followerLabel}</p>
+                      <p className="text-xs text-neutral-600 truncate tabular-nums">{formatNumber(creator.latestStats.subscribers)} {platform.followerLabel}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-semibold text-emerald-600 text-sm tabular-nums">
@@ -156,7 +143,7 @@ export default function Trending() {
           {!loading && creators.length > 0 && (
             <div className={`mt-10 ${CARD} p-6 sm:p-8`}>
               <h2 className="text-base font-medium text-neutral-900 mb-3">How growth is calculated</h2>
-              <div className="space-y-2 text-sm text-neutral-500 leading-relaxed">
+              <div className="space-y-2 text-sm text-neutral-700 leading-relaxed">
                 <p>Growth is the difference between a creator's latest stat and their stat from 30 days ago. All data is publicly available, collected multiple times per day.</p>
                 <p>YouTube uses total view growth instead of subscribers because YouTube rounds subscriber counts to three significant figures by policy. Twitch and Kick use hours watched, the metric the streaming industry uses to measure audience engagement. TikTok, Bluesky, and Music use follower and listener growth, which are the primary public metrics on those platforms.</p>
                 <p>Only creators with positive growth appear here. Creators are tracked daily, so rankings update as new data comes in.</p>

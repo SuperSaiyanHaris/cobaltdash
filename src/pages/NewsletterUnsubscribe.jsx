@@ -21,9 +21,10 @@ export default function NewsletterUnsubscribe() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4 py-16">
+    <div className="relative isolate min-h-[calc(100vh-4rem)] bg-[#0a0a0f] flex items-center justify-center px-4 py-16">
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
       <SEO title="Unsubscribed" noindex />
-      <div className="w-full max-w-md bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 sm:p-10 text-center">
+      <div className="relative w-full max-w-md bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 sm:p-10 text-center">
         {status === 'loading' && (
           <Loader2 className="w-8 h-8 text-neutral-300 mx-auto mb-4 animate-spin" />
         )}
@@ -33,18 +34,18 @@ export default function NewsletterUnsubscribe() {
             <h1 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-2 tracking-tight">
               You're unsubscribed
             </h1>
-            <p className="text-sm text-neutral-500 mb-6">
+            <p className="text-sm text-neutral-700 mb-6">
               You won't get any more emails from ShinyPull.
             </p>
           </>
         )}
         {status === 'error' && (
           <>
-            <XCircle className="w-10 h-10 text-neutral-400 mx-auto mb-4" />
+            <XCircle className="w-10 h-10 text-neutral-600 mx-auto mb-4" />
             <h1 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-2 tracking-tight">
               Link not valid
             </h1>
-            <p className="text-sm text-neutral-500 mb-6">
+            <p className="text-sm text-neutral-700 mb-6">
               This unsubscribe link is missing or has already been used.
             </p>
           </>

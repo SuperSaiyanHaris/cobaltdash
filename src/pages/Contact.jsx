@@ -2,6 +2,7 @@ import { useState } from 'react';
 import SEO from '../components/SEO';
 import { Mail, MessageSquare, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { analytics } from '../lib/analytics';
+import PageHero from '../components/PageHero';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -49,15 +50,7 @@ export default function Contact() {
 
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">Contact</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Get in touch</h1>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500">
-              We'd love to hear from you
-            </p>
-          </div>
-        </div>
+        <PageHero center eyebrow="Contact" title="Get in touch" subtitle={`Questions, ideas, partnerships or a number that looks off. We read everything.`} />
 
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="grid md:grid-cols-2 gap-8">
@@ -100,7 +93,7 @@ export default function Contact() {
                     <CheckCircle className="w-8 h-8 text-emerald-600" />
                   </div>
                   <h3 className="text-xl font-semibold tracking-tight text-neutral-900 mb-2">Message sent</h3>
-                  <p className="text-neutral-500 text-sm">We'll get back to you soon.</p>
+                  <p className="text-neutral-700 text-sm">We'll get back to you soon.</p>
                   <button
                     onClick={() => setStatus('idle')}
                     className="mt-4 text-indigo-600 hover:text-indigo-700 transition-colors font-medium text-sm"

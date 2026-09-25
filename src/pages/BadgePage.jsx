@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import SEO from '../components/SEO';
 import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import { cardImageUrl } from '../lib/cardUrl';
+import PageHero from '../components/PageHero';
 
 // Creator card maker. The card itself is an SVG rendered at the edge
 // (middleware.js -> src/lib/badgeCard.js) at /card/:platform/:username; the
@@ -19,7 +20,7 @@ const RARITIES = [
   ['Common', 'Everyone else, for now', 'from-zinc-300 via-white to-zinc-400'],
 ];
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500';
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700';
 
 function codesFor(platform, username) {
   const u = encodeURIComponent(username.trim().replace(/^@/, ''));
@@ -72,29 +73,27 @@ export default function BadgePage() {
         title="Get Your Holographic Creator Card: Live Stats Card for Creators"
         description="Pull your free holographic ShinyPull card: your live follower count, 30-day growth and platform rank, with Legendary, Epic, Rare or Common rarity. Embed it on your site, stream panels or GitHub."
       />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <p className={MICRO}>Creator cards</p>
-        <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mt-3 tracking-tight text-balance">Pull your creator card</h1>
-        <p className="text-[15px] leading-relaxed text-neutral-700 mt-4 max-w-2xl text-pretty">
-          Every creator we track has a holographic card with their live count, 30-day growth and rank. Its rarity comes from
-          where they really stand on their platform. Grab yours for your website, stream panels, Linktree, GitHub or media kit.
-          It updates itself every day.
-        </p>
-
-        <div className="rounded-2xl bg-[#111117] p-5 sm:p-8 mt-8 flex flex-wrap justify-center gap-5">
+      <PageHero
+        center
+        eyebrow="Creator cards"
+        title="Pull your creator card."
+        subtitle="Every creator we track has a holographic card with their live count, 30-day growth and rank. Its rarity comes from where they stand on their platform. Grab yours for your site, stream panels, Linktree, GitHub or media kit. It updates itself every day."
+      >
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-5">
           {EXAMPLES.map(([p, u]) => (
-            <Link key={p} to={`/${p}/${u}`} className="transition-transform hover:-translate-y-1">
-              <img src={cardImageUrl(p, u)} width="250" height="350" alt={`${u} ${PLATFORM_DISPLAY_NAMES[p]} creator card`} loading="lazy" />
+            <Link key={p} to={`/${p}/${u}`} className="block">
+              <img src={cardImageUrl(p, u)} width="250" height="350" alt={`${u} ${PLATFORM_DISPLAY_NAMES[p]} creator card`} className="w-[150px] sm:w-[220px] h-auto rounded-[6.4%/4.571%] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]" />
             </Link>
           ))}
         </div>
-
-        <div className="grid sm:grid-cols-4 gap-3 mt-6">
+      </PageHero>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {RARITIES.map(([name, rule, grad]) => (
             <div key={name} className={`${CARD} p-3.5`}>
               <div className={`h-1.5 w-12 rounded-full bg-gradient-to-r ${grad}`} />
               <p className="text-sm font-semibold text-neutral-900 mt-2.5">{name}</p>
-              <p className="text-xs text-neutral-500 mt-0.5">{rule}</p>
+              <p className="text-xs text-neutral-700 mt-0.5">{rule}</p>
             </div>
           ))}
         </div>
@@ -124,11 +123,11 @@ export default function BadgePage() {
                 <CopyField label="HTML" value={codes.html} />
                 <CopyField label="Markdown (GitHub, Notion)" value={codes.markdown} />
                 <CopyField label="Image link" value={codes.img} />
-                <p className="text-xs text-neutral-500 leading-relaxed">
+                <p className="text-xs text-neutral-700 leading-relaxed">
                   Not showing your card? We don&apos;t track that account yet.{' '}
                   <Link to={`/${pulled.platform}/${encodeURIComponent(pulled.username)}`} className="underline hover:text-neutral-800">Open its profile</Link> to add it, and the card fills in after the next daily update.
                 </p>
-                <details className="text-xs text-neutral-500">
+                <details className="text-xs text-neutral-700">
                   <summary className="cursor-pointer hover:text-neutral-800">Need something smaller? Compact badge</summary>
                   <div className="mt-3"><CopyField label="Compact badge HTML" value={codes.compact} /></div>
                 </details>

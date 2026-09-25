@@ -1,6 +1,7 @@
 import SEO from '../components/SEO';
 import { Link } from 'react-router-dom';
 import { BarChart3, Users, TrendingUp, Globe, Database, RefreshCw, PenLine } from 'lucide-react';
+import PageHero from '../components/PageHero';
 
 export default function About() {
   return (
@@ -12,15 +13,7 @@ export default function About() {
 
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">About</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">About ShinyPull</h1>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500">
-              Comprehensive social media analytics for creators and fans
-            </p>
-          </div>
-        </div>
+        <PageHero center eyebrow="About" title="About ShinyPull" subtitle={`Every creator's numbers, on every platform, in one place.`} />
 
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-8 mb-6">

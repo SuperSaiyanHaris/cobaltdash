@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Server, Code, Zap, Coffee, Megaphone, MessageSquare, ArrowRight, Check, Link2 } from 'lucide-react';
 import { PLATFORM_COUNT } from '../lib/constants';
 import SEO from '../components/SEO';
+import PageHero from '../components/PageHero';
 
 const BUYMEACOFFEE_URL = 'https://buymeacoffee.com/shinypull';
 
@@ -63,19 +64,9 @@ export default function Support() {
 
       <div className="min-h-screen bg-[#fafaf9]">
         {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16 text-center">
-            <p className={`${MICRO} mb-3`}>Support</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Support ShinyPull
-            </h1>
-            <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-xl mx-auto mb-7">
-              We track live data across all {PLATFORM_COUNT} platforms so you don't have to argue from memory. Turns out none of this is free. If ShinyPull has ever settled a Discord argument, you know what to do.
-            </p>
-
-            <BMCButton size="lg" />
-          </div>
-        </div>
+        <PageHero center eyebrow="Support" title="Support ShinyPull" subtitle={`We track live data across all ${PLATFORM_COUNT} platforms so you don't have to argue from memory. Turns out none of this is free. If ShinyPull has ever settled a Discord argument, you know what to do.`}>
+          <BMCButton size="lg" />
+        </PageHero>
 
         <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
 
@@ -87,7 +78,7 @@ export default function Support() {
                 <div key={reason.title} className={`${CARD} p-6 hover:border-neutral-300 transition-colors`}>
                   <reason.icon className={`w-5 h-5 ${reason.tint} mb-4`} />
                   <h3 className="font-medium text-neutral-900 mb-1.5">{reason.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{reason.description}</p>
+                  <p className="text-sm text-neutral-700 leading-relaxed">{reason.description}</p>
                 </div>
               ))}
             </div>
@@ -103,7 +94,7 @@ export default function Support() {
               <Megaphone className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-neutral-900 mb-1">Spread the Word</h3>
-                <p className="text-sm text-neutral-500">Tell a creator, a manager, or anyone who obsesses over stats. Word of mouth is how this thing grows.</p>
+                <p className="text-sm text-neutral-700">Tell a creator, a manager, or anyone who obsesses over stats. Word of mouth is how this thing grows.</p>
                 <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-neutral-900 group-hover:gap-2 transition-all duration-200">
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
                   {copied ? 'Link copied!' : 'Copy link'}
@@ -118,7 +109,7 @@ export default function Support() {
               <MessageSquare className="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-neutral-900 mb-1">Send Feedback</h3>
-                <p className="text-sm text-neutral-500">Bug report, feature idea, creator request. Good feedback shapes what gets built next.</p>
+                <p className="text-sm text-neutral-700">Bug report, feature idea, creator request. Good feedback shapes what gets built next.</p>
                 <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-neutral-900 group-hover:gap-2 transition-all duration-200">
                   Contact us <ArrowRight className="w-3.5 h-3.5" />
                 </span>
@@ -129,7 +120,7 @@ export default function Support() {
           {/* Closing CTA */}
           <div className={`${CARD} p-8 sm:p-10 text-center`}>
             <p className={`${MICRO} mb-3`}>Still thinking about it?</p>
-            <p className="text-sm text-neutral-500 mb-7 max-w-md mx-auto">
+            <p className="text-sm text-neutral-700 mb-7 max-w-md mx-auto">
               One coffee funds a week of data collection. The data never stops. Your support makes sure neither do we.
             </p>
             <BMCButton label="ok fine, here's a coffee" size="lg" />

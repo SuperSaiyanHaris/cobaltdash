@@ -16,6 +16,8 @@ import { HUBS, getHub, getHubsByPlatform } from '../lib/hubs';
 import { HUB_INTROS } from '../lib/hubIntros';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
+import PageHero from '../components/PageHero';
+import RankingsPodium from '../components/rankings/RankingsPodium';
 
 const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600';
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
@@ -60,7 +62,7 @@ function RankBadge({ rank }) {
   return (
     <span className="inline-flex items-center gap-1.5 flex-shrink-0 w-10">
       {medal && <span className={`w-1.5 h-1.5 rounded-full ${medal}`} />}
-      <span className={`text-sm font-semibold tabular-nums ${rank <= 3 ? 'text-neutral-900' : 'text-neutral-400'}`}>{rank}</span>
+      <span className={`text-sm font-semibold tabular-nums ${rank <= 3 ? 'text-neutral-900' : 'text-neutral-600'}`}>{rank}</span>
     </span>
   );
 }
@@ -150,41 +152,23 @@ function Hub({ hub }) {
       {schema && <StructuredData schema={schema} />}
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {/* Header */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <Link
-              to="/best"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-neutral-900 transition-colors mb-4"
-            >
-              <ArrowLeft className="w-3 h-3" />
-              All categories
+        <PageHero
+          eyebrow={meta.eyebrow}
+          title={`Best ${hub.title} ${titleCase(hub.noun)}`}
+          subtitle={HUB_INTROS[hub.slug] || `Ranked by ${meta.metric.toLowerCase()}. Updated daily.`}
+        >
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link to="/best" className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-white/20 hover:border-white/50 text-sm font-semibold text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" /> All categories
             </Link>
-            <div className="flex items-end justify-between gap-6">
-              <div>
-                <p className={`${MICRO} mb-3 flex items-center gap-1.5`}>
-                  {Icon && <Icon className={`w-3 h-3 ${meta.tint}`} />}
-                  {meta.eyebrow}
-                </p>
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-                  Best {hub.title} {titleCase(hub.noun)}
-                </h1>
-                <p className="mt-2 text-sm text-neutral-500">
-                  Ranked by {meta.metric.toLowerCase()}. Updated daily.
-                </p>
-                {HUB_INTROS[hub.slug] && (
-                  <p className="mt-4 text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl">
-                    {HUB_INTROS[hub.slug]}
-                  </p>
-                )}
-              </div>
-              <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-medium text-emerald-600 tracking-wide">UPDATED DAILY</span>
-              </div>
-            </div>
+            <span className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-white/[0.06] border border-white/15 text-sm font-semibold text-white/90">
+              {Icon && <Icon className={`w-4 h-4 ${meta.tint}`} />} Ranked by {meta.metric.toLowerCase()} · updated daily
+            </span>
           </div>
-        </div>
+          {!loading && creators.length >= 3 && (
+            <RankingsPodium creators={creators.slice(0, 3).map((c) => ({ ...c, platform: hub.platform }))} />
+          )}
+        </PageHero>
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           {/* Only the parent-rankings link sits above the table. The full
@@ -193,7 +177,7 @@ function Hub({ hub }) {
           <div className="flex flex-wrap gap-1.5 mb-6">
             <Link
               to={meta.rankingsPath}
-              className="flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+              className="flex items-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium border bg-white border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
             >
               {Icon && <Icon className={`w-4 h-4 ${meta.tint}`} />}
               {meta.rankingsLabel}
@@ -223,7 +207,7 @@ function Hub({ hub }) {
               <div className="px-6 py-16 text-center">
                 <ChartNoAxesColumnIncreasing className="w-6 h-6 text-neutral-300 mx-auto mb-4" />
                 <p className="text-neutral-900 font-medium mb-1">No artists tracked here yet</p>
-                <p className="text-sm text-neutral-500">This category will fill in as data comes in</p>
+                <p className="text-sm text-neutral-700">This category will fill in as data comes in</p>
               </div>
             )}
 
@@ -254,7 +238,7 @@ function Hub({ hub }) {
                       <p className="font-medium text-neutral-900 truncate">{c.display_name}</p>
                       {/* On mobile the metric column is hidden, so surface the
                           number under the name instead of losing it. */}
-                      <p className="md:hidden text-xs text-neutral-500 tabular-nums mt-0.5">
+                      <p className="md:hidden text-xs text-neutral-700 tabular-nums mt-0.5">
                         {formatNumber(c.subscribers)} {meta.metricShort}
                       </p>
                     </div>
@@ -283,7 +267,7 @@ function Hub({ hub }) {
             <div className="mt-6 flex justify-center">
               <Link
                 to={meta.rankingsPath}
-                className="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors group"
+                className="inline-flex items-center gap-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors group"
               >
                 See the full {meta.name.toLowerCase()} rankings
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -300,7 +284,7 @@ function Hub({ hub }) {
                 <Link
                   key={h.slug}
                   to={`/best/${h.slug}`}
-                  className="flex items-center h-9 px-3.5 rounded-lg text-sm font-medium border bg-white border-neutral-200 text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+                  className="flex items-center h-9 px-3.5 rounded-lg text-sm font-medium border bg-white border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
                 >
                   {h.title}
                 </Link>
@@ -328,17 +312,11 @@ export function HubIndex() {
         keywords="best creators by category, best youtubers by category, best gaming youtubers, best artists by genre, creator category rankings"
       />
       <div className="min-h-screen bg-[#fafaf9]">
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <p className={`${MICRO} mb-3`}>Categories</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Best creators by category
-            </h1>
-            <p className="mt-2 text-sm text-neutral-500">
-              Ranked lists by category. Updated daily.
-            </p>
-          </div>
-        </div>
+        <PageHero
+          eyebrow="Categories"
+          title="Best creators by category."
+          subtitle="Ranked lists for every niche and genre, from gaming to K-pop. Updated daily."
+        />
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           {platforms.map((platform) => {

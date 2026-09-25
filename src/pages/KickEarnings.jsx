@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import SEO from '../components/SEO';
-import KickIcon from '../components/KickIcon';
 import CreatorAvatar from '../components/CreatorAvatar';
 import { supabase } from '../lib/supabase';
 import { formatNumber } from '../lib/utils';
 import { KICK_SUB_PRICE, kickSubEarnings, formatMoney } from '../lib/earnings';
+import PageHero from '../components/PageHero';
 
 const PER_SUB = kickSubEarnings(1).perSub;
 const LEADERBOARD_SIZE = 100;
 
 const CARD = 'bg-white border border-neutral-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
-const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500';
+const MICRO = 'text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700';
 
 
 const FAQ = [
@@ -53,19 +53,14 @@ export default function KickEarnings() {
         title="How Much Do Kick Streamers Make? Estimated Sub Earnings (2026)"
         description="Estimated monthly Kick subscription earnings for the top 100 Kick streamers, from real paid subscriber counts at $4.99 with Kick's 95% creator share. Updated daily."
       />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <div className="flex items-center gap-2 text-green-700">
-          <KickIcon className="w-5 h-5" />
-          <span className={MICRO}>Kick earnings</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mt-3 tracking-tight text-balance">How much do Kick streamers make?</h1>
-        <p className="text-[15px] leading-relaxed text-neutral-700 mt-4 max-w-2xl text-pretty">
-          Kick is the one big streaming platform that publishes the number that pays: active paid subscribers. A sub costs ${KICK_SUB_PRICE} and Kick
-          passes 95% to the streamer, so sub income is simple arithmetic. These are ceilings for subscription income only, from real daily counts.
-        </p>
-
+      <PageHero
+        eyebrow="Kick earnings"
+        title="How much do Kick streamers make?"
+        subtitle={`Kick publishes the number that pays: active paid subscribers. A sub costs $${KICK_SUB_PRICE} and Kick passes 95% to the streamer, so sub income is simple arithmetic. These are ceilings for subscription income only, from daily counts.`}
+      />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
         {/* Calculator */}
-        <div className={`${CARD} p-5 sm:p-6 mt-8`}>
+        <div className={`${CARD} p-5 sm:p-6`}>
           <p className={MICRO}>Sub earnings calculator</p>
           <div className="flex flex-col sm:flex-row sm:items-end gap-5 mt-4">
             <label className="flex-1">
@@ -80,8 +75,8 @@ export default function KickEarnings() {
               />
             </label>
             <div className="sm:text-right">
-              <p className="text-3xl font-bold tabular-nums text-neutral-900 leading-none">up to {formatMoney(monthly)}<span className="text-base font-medium text-neutral-500">/mo</span></p>
-              <p className="text-sm text-neutral-500 mt-1.5">{formatMoney(monthly * 12)} per year &middot; ${PER_SUB.toFixed(2)} per sub</p>
+              <p className="text-3xl font-bold tabular-nums text-neutral-900 leading-none">up to {formatMoney(monthly)}<span className="text-base font-medium text-neutral-700">/mo</span></p>
+              <p className="text-sm text-neutral-700 mt-1.5">{formatMoney(monthly * 12)} per year &middot; ${PER_SUB.toFixed(2)} per sub</p>
             </div>
           </div>
         </div>
@@ -89,7 +84,7 @@ export default function KickEarnings() {
         {/* Leaderboard */}
         <div className="flex items-baseline justify-between gap-3 mt-10">
           <h2 className="text-xl font-semibold text-neutral-900">Top {LEADERBOARD_SIZE} Kick streamers by estimated sub earnings</h2>
-          {updated && <span className="text-xs text-neutral-500 flex-shrink-0">Updated {updated}</span>}
+          {updated && <span className="text-xs text-neutral-700 flex-shrink-0">Updated {updated}</span>}
         </div>
         <div className={`${CARD} mt-4 overflow-hidden`}>
           <div className={`hidden sm:grid grid-cols-12 gap-3 px-5 py-3 border-b border-neutral-200/80 ${MICRO}`}>
@@ -111,12 +106,12 @@ export default function KickEarnings() {
                 to={`/kick/${r.username}`}
                 className="grid grid-cols-12 gap-3 items-center px-5 py-3 border-t border-neutral-100 first:border-t-0 hover:bg-neutral-50 transition-colors"
               >
-                <div className="col-span-1 text-sm tabular-nums text-neutral-500">{r.rank_position}</div>
+                <div className="col-span-1 text-sm tabular-nums text-neutral-700">{r.rank_position}</div>
                 <div className="col-span-7 sm:col-span-5 flex items-center gap-3 min-w-0">
                   <CreatorAvatar src={r.profile_image} name={r.display_name || r.username} size="sm" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-neutral-900 truncate">{r.display_name || r.username}</p>
-                    <p className="text-xs text-neutral-500 sm:hidden tabular-nums">{formatNumber(r.subscribers)} subs &middot; {formatMoney(m * 12)}/yr</p>
+                    <p className="text-xs text-neutral-700 sm:hidden tabular-nums">{formatNumber(r.subscribers)} subs &middot; {formatMoney(m * 12)}/yr</p>
                   </div>
                 </div>
                 <div className="hidden sm:block col-span-2 text-right text-sm tabular-nums text-neutral-700">{(r.subscribers || 0).toLocaleString('en-US')}</div>
@@ -126,7 +121,7 @@ export default function KickEarnings() {
             );
           })}
         </div>
-        <p className="flex items-start gap-2 text-xs text-neutral-500 mt-3 leading-relaxed">
+        <p className="flex items-start gap-2 text-xs text-neutral-700 mt-3 leading-relaxed">
           <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
           Subscriptions only, at the US price, before payment fees and taxes. Tips, sponsorships and incentive payouts are not public and not included.
           See the <Link to="/methodology" className="underline hover:text-neutral-800">methodology</Link>.

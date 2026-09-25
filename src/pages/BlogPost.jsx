@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Calendar, Clock, ArrowLeft, ArrowRight, Loader2, PenLine } from 'lucide-react';
 import SEO from '../components/SEO';
 import NewsletterSignup from '../components/NewsletterSignup';
@@ -8,7 +8,6 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import ShareButtons from '../components/ShareButtons';
 import BlogContent from '../components/BlogContent';
 import { getPostBySlug, getRelatedPosts } from '../services/blogService';
-import { getCategoryTheme } from '../lib/blogTheme';
 import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
 
 // middleware.js embeds a <script id="__BLOG_DATA__"> alongside the visible
@@ -33,7 +32,6 @@ function readEmbeddedBlogData(slug) {
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   // ?preview=1 lets drafts render for review before publishing. Draft slugs
   // are unguessable and posts are public content anyway, so no gating needed.
@@ -134,87 +132,54 @@ export default function BlogPost() {
       <StructuredData schema={breadcrumbSchema} />
 
       <div className="min-h-screen bg-[#fafaf9]">
-        {(() => {
-          const theme = getCategoryTheme(post.category);
-          return (
-            <div className={`relative h-64 md:h-96 bg-gradient-to-br ${theme.heroFrom} ${theme.heroVia} ${theme.heroTo} overflow-hidden`}>
-              {post.image && (
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-luminosity"
-                />
-              )}
-              {/* Dark gradient scrim keeps the back button + any overlaid text legible on the cover image */}
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
-
-              <button
-                onClick={() => navigate('/blog')}
-                className="absolute top-4 left-4 flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm border border-white/10 rounded-lg text-white hover:bg-white/80 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Blog
-              </button>
-            </div>
-          );
-        })()}
-
-        <div className="max-w-4xl mx-auto px-4 -mt-32 relative z-10">
-          {/* Article Header */}
-          <article className="bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden">
-            <div className="p-5 sm:p-8 md:p-12">
-              {/* Breadcrumbs */}
-              <Breadcrumbs 
-                items={[
-                  { label: 'Home', path: '/' },
-                  { label: 'Blog', path: '/blog' },
-                  { label: post.title, path: `/blog/${post.slug}` }
-                ]}
-              />
-
-              {/* Category */}
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${getCategoryTheme(post.category).pill}`}>
+        <section className="relative isolate z-20 bg-[#0a0a0f] text-white">
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />
+          <div className="relative max-w-4xl mx-auto px-4 pt-8 sm:pt-10 pb-12 sm:pb-14">
+            <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" /> All posts
+            </Link>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center h-8 px-3 rounded-full bg-white/[0.08] border border-white/15 text-xs font-bold uppercase tracking-[0.14em] text-amber-300">
                 {post.category}
               </span>
               {isPreview && !post.is_published && (
-                <span className="inline-block ml-2 px-3 py-1 rounded-full text-sm font-semibold mb-4 bg-neutral-900 text-white">
-                  DRAFT
-                </span>
+                <span className="inline-flex items-center h-8 px-3 rounded-full bg-white text-neutral-950 text-xs font-black uppercase tracking-[0.14em]">Draft</span>
               )}
+            </div>
+            <h1 className="mt-4 text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.08] text-balance">{post.title}</h1>
+            {post.description && <p className="mt-4 text-base sm:text-lg text-white/75 leading-relaxed max-w-3xl">{post.description}</p>}
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-white/80">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                {post.published_at
+                  ? new Date(post.published_at.includes('T') ? post.published_at : `${post.published_at}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                  : 'Not yet published'}
+              </span>
+              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{post.read_time}</span>
+              <Link to="/about#editorial-team" className="hover:text-white underline-offset-2 hover:underline">By {post.author}</Link>
+            </div>
+          </div>
+        </section>
 
-              {/* Title */}
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-                {post.title}
-              </h1>
-
-              {/* Meta */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-700 mb-8 pb-8 border-b border-neutral-200">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {post.published_at
-                    ? new Date(post.published_at.includes('T') ? post.published_at : `${post.published_at}T12:00:00`).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })
-                    : 'Not yet published'}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {post.read_time}
-                </span>
-                <Link to="/about#editorial-team" className="hover:text-neutral-900 underline-offset-2 hover:underline">
-                  By {post.author}
-                </Link>
-
-                {/* Share Buttons */}
-                <div className="ml-auto">
-                  <ShareButtons 
-                    url={postUrl} 
-                    title={post.title} 
-                    description={post.description} 
-                  />
-                </div>
+        <div className="max-w-4xl mx-auto px-4 pt-8 relative z-10">
+          {post.image && (
+            <img
+              src={post.image}
+              alt={post.title}
+              className="w-full aspect-[16/9] object-cover rounded-2xl border border-neutral-200 mb-6"
+            />
+          )}
+          <article className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="p-5 sm:p-8 md:p-12">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-8 pb-6 border-b border-neutral-200">
+                <Breadcrumbs
+                  items={[
+                    { label: 'Home', path: '/' },
+                    { label: 'Blog', path: '/blog' },
+                    { label: post.title, path: `/blog/${post.slug}` }
+                  ]}
+                />
+                <ShareButtons url={postUrl} title={post.title} description={post.description} />
               </div>
 
               {/* Content */}
@@ -262,7 +227,7 @@ export default function BlogPost() {
                         <h3 className="font-bold text-neutral-900 group-hover:text-indigo-600 transition-colors mb-2">
                           {related.title}
                         </h3>
-                        <p className="text-sm text-neutral-500">{related.read_time}</p>
+                        <p className="text-sm text-neutral-700">{related.read_time}</p>
                       </div>
                     </article>
                   </Link>
@@ -276,7 +241,7 @@ export default function BlogPost() {
             <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-3 tracking-tight">
               Track any creator's growth.
             </h2>
-            <p className="text-sm text-neutral-500 mb-6 max-w-md mx-auto">
+            <p className="text-sm text-neutral-700 mb-6 max-w-md mx-auto">
               Daily subscriber and follower counts across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music.
             </p>
             <Link

@@ -6,6 +6,7 @@ import NewsletterSignup from '../components/NewsletterSignup';
 import { getAllPosts, getAllCategories } from '../services/blogService';
 import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
 import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
+import PageHero from '../components/PageHero';
 
 const PAGE_SIZE = 9;
 
@@ -141,11 +142,11 @@ export default function Blog() {
         className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
           selectedCategories.includes('all')
             ? 'bg-neutral-100 text-neutral-900'
-            : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50'
+            : 'text-neutral-700 hover:text-neutral-800 hover:bg-neutral-50'
         }`}
       >
         <span>All Posts</span>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500 font-semibold tabular-nums">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold tabular-nums">
           {posts.length}
         </span>
       </button>
@@ -159,7 +160,7 @@ export default function Blog() {
             key={category}
             onClick={() => onSelect(category)}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              isActive ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900'
+              isActive ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700 hover:text-neutral-900'
             }`}
           >
             <div className="flex items-center gap-2.5">
@@ -184,18 +185,12 @@ export default function Blog() {
 
       <div className="min-h-screen bg-[#fafaf9]">
 
-        {/* Header — white block, hairline rule, typographic */}
-        <div className="bg-white border-b border-neutral-200/80">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-            <div className="max-w-6xl mx-auto text-center">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-600 mb-3">Blog</p>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">Creator Resources</h1>
-              <p className="mt-2 text-sm sm:text-base text-neutral-500 max-w-2xl mx-auto">
-                Platform news, rankings breakdowns, and creator economy analysis, backed by the data we track every day
-              </p>
-            </div>
-          </div>
-        </div>
+        <PageHero
+          center
+          eyebrow="Blog"
+          title="The stories behind the numbers."
+          subtitle="Platform news, rankings breakdowns and creator economy analysis, backed by the data we track every day."
+        />
 
         {/* Sidebar + Content */}
         <section className="w-full px-4 sm:px-6 lg:px-8 py-12">
@@ -260,7 +255,7 @@ export default function Blog() {
 
                 {/* Search bar */}
                 <div className="relative mb-8">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Search posts..."
@@ -271,7 +266,7 @@ export default function Blog() {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-700 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-600 hover:text-neutral-700 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -284,7 +279,7 @@ export default function Blog() {
                     <BookOpen className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
                     <p className="text-neutral-600 text-lg">No posts found.</p>
                     {searchQuery && (
-                      <button onClick={() => setSearchQuery('')} className="mt-3 text-sm text-neutral-500 hover:text-neutral-800 underline transition-colors">
+                      <button onClick={() => setSearchQuery('')} className="mt-3 text-sm text-neutral-700 hover:text-neutral-800 underline transition-colors">
                         Clear search
                       </button>
                     )}
@@ -317,7 +312,7 @@ export default function Blog() {
                           <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-3 group-hover:text-neutral-700 transition-colors">
                             {featuredPost.title}
                           </h2>
-                          <p className="text-neutral-500 text-sm leading-relaxed mb-5 line-clamp-2">
+                          <p className="text-neutral-700 text-sm leading-relaxed mb-5 line-clamp-2">
                             {featuredPost.description}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-neutral-600">
@@ -403,7 +398,7 @@ export default function Blog() {
                   <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-neutral-900 mb-3">
                     Track Your Channel's Growth
                   </h2>
-                  <p className="text-sm text-neutral-500 mb-6 max-w-2xl mx-auto">
+                  <p className="text-sm text-neutral-700 mb-6 max-w-2xl mx-auto">
                     Use ShinyPull's free analytics to monitor your subscribers, views, and compare your growth with top creators.
                   </p>
                   <Link
