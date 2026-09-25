@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Eye, Clock, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search, List, LayoutGrid } from 'lucide-react';
@@ -25,7 +25,6 @@ import { PLATFORM_COUNT, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib
 import CountUp from '../components/CountUp';
 import RankingsPodium from '../components/rankings/RankingsPodium';
 import RankingsCardGrid from '../components/rankings/RankingsCardGrid';
-import { cardImageUrl } from '../lib/cardUrl';
 import { cardTier } from '../lib/badgeCard';
 import logger from '../lib/logger';
 
@@ -739,9 +738,6 @@ function PlatformRankings({ urlPlatform }) {
   };
   // Creators tracked on this platform: the total behind each row's rarity.
   const [platformTotal, setPlatformTotal] = useState(null);
-  // Desktop hover preview of a row's holographic card.
-  const [hoverCard, setHoverCard] = useState(null); // { creator, top }
-  const hoverTimer = useRef(null);
 
   const rankTypes = [
     { id: 'subscribers', name: selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' ? 'Top Followers' : selectedPlatform === 'music' ? 'Top Listeners' : selectedPlatform === 'kick' ? 'Top Paid Subs' : 'Top Subscribers', icon: Users },
@@ -1150,7 +1146,7 @@ function PlatformRankings({ urlPlatform }) {
               </div>
             </div>
           ) : (
-          <div className="relative" onMouseLeave={() => { clearTimeout(hoverTimer.current); setHoverCard(null); }}>
+          <div>
           {/* Rankings Table */}
           <div className={`${CARD} overflow-hidden`}>
             {/* Sticky Table Header */}
@@ -1242,8 +1238,7 @@ function PlatformRankings({ urlPlatform }) {
                 return (
                   <div
                     key={`sponsored-${creator.listingId}`}
-                    onMouseEnter={() => { clearTimeout(hoverTimer.current); setHoverCard(null); }}
-                    className="relative z-30 px-3 sm:px-4 py-2 border-b border-neutral-100"
+                    className="relative px-3 sm:px-4 py-2 border-b border-neutral-100"
                   >
                     <div className={`rounded-2xl p-[1.5px] transition-shadow duration-700 ${isPremium ? 'sponsor-foil' : 'bg-gradient-to-r from-amber-200 via-amber-300 to-amber-200'} ${isHighlighted ? 'ring-2 ring-amber-500 ring-offset-2' : ''}`}>
                       <Link
@@ -1300,12 +1295,6 @@ function PlatformRankings({ urlPlatform }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
-                  onMouseEnter={(e) => {
-                    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-                    const { offsetTop: top, offsetHeight: height } = e.currentTarget;
-                    clearTimeout(hoverTimer.current);
-                    hoverTimer.current = setTimeout(() => setHoverCard({ creator, top, height }), 220);
-                  }}
                   className="relative grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 hover:bg-neutral-50 transition-colors group"
                 >
                   {/* Thin platform-tinted rule on hover — the one allowed accent */}
@@ -1404,23 +1393,6 @@ function PlatformRankings({ urlPlatform }) {
             })}
           </div>
 
-          {/* Hover preview of the row's card (desktop, fine pointers only).
-              Sits under the ad rows (z-30) so it never covers a paid slot. */}
-          {hoverCard && (
-            <div
-              aria-hidden="true"
-              className="hidden lg:block absolute z-20 pointer-events-none left-[30%] animate-fade-in"
-              style={{ top: Math.max(0, hoverCard.top + hoverCard.height / 2 - 112) }}
-            >
-              <img
-                src={cardImageUrl(hoverCard.creator.platform, hoverCard.creator.username)}
-                alt=""
-                width="250"
-                height="350"
-                className="w-[160px] h-auto rounded-[6.4%/4.571%] shadow-[0_28px_60px_-14px_rgba(0,0,0,0.5)]"
-              />
-            </div>
-          )}
           </div>
           )}
 
