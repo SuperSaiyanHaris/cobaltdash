@@ -1,32 +1,46 @@
 name: Daily Stats Collection
 
+# Each platform collects in its own parallel job (COLLECT_ONLY), so a run takes
+# as long as the slowest platform (Twitch, rate-limited to ~40 min) rather than
+# all of them back to back. Afterwards one job rolls up hours watched and
+# refreshes the rankings cache, even if a platform job failed, so the others'
+# fresh numbers still reach the site.
+#
+# Rumble (delisted) and Substack (collected by the collect-substack edge
+# function) are intentionally not in the matrix.
+
 on:
   schedule:
-    # Run 3x daily (every 8 hours) — public repo has unlimited minutes
-    - cron: '0 6 * * *'   # 06:00 UTC (1 AM EST)
-    - cron: '0 14 * * *'  # 14:00 UTC (9 AM EST)
-    - cron: '0 22 * * *'  # 22:00 UTC (5 PM EST)
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+    - cron: '0 6 * * *'   # 06:00 UTC (1-2 AM ET)
+    - cron: '0 14 * * *'  # 14:00 UTC (9-10 AM ET)
+    - cron: '0 22 * * *'  # 22:00 UTC (5-6 PM ET)
+  workflow_dispatch:
+
+# Never run two collections at once: a late-starting scheduled run queues
+# behind the current one instead of overlapping it.
+concurrency:
+  group: daily-stats-collection
+  cancel-in-progress: false
 
 jobs:
-  collect-stats:
+  collect:
+    name: collect (${{ matrix.platform }})
     runs-on: ubuntu-latest
-
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [youtube, twitch, kick, bluesky, mastodon, music]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Collect daily stats
+      - run: npm ci
+      - name: Collect ${{ matrix.platform }} stats
         env:
+          COLLECT_ONLY: ${{ matrix.platform }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
@@ -37,22 +51,26 @@ jobs:
           LASTFM_CLIENT_ID: ${{ secrets.LASTFM_CLIENT_ID }}
         run: node scripts/collectDailyStats.js
 
+  rollup:
+    needs: collect
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
       - name: Aggregate hours watched (Twitch + Kick)
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/aggregateHoursWatched.js
-
       - name: Refresh rankings cache
+        if: always()
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/refreshRankingsCache.js
-
-      - name: Report completion
-        if: success()
-        run: echo "✅ Daily stats collection completed successfully"
-
-      - name: Report failure
-        if: failure()
-        run: echo "❌ Daily stats collection failed"

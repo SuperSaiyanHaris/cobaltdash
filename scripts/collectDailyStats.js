@@ -16,8 +16,11 @@ const LASTFM_API_KEY = process.env.LASTFM_CLIENT_ID;
 // Batch sizes
 const YOUTUBE_BATCH_SIZE = 50;  // YouTube allows up to 50 channel IDs per request
 const TWITCH_BATCH_SIZE = 100;  // Twitch allows up to 100 logins per request
-const TWITCH_FOLLOWER_DELAY_MS = 80;   // 80ms = ~12.5/s, just under Twitch's 800/min app-token cap.
-                                        // (Was 150ms which left half the budget unused — runtime was 1h+.)
+// Twitch allows 800 requests/min per app token. Every Twitch call goes through
+// twitchSlot(), a shared pacer at 12/s (720/min) so concurrent follower
+// lookups can use the budget fully without tripping 429s.
+const TWITCH_RATE_PER_SEC = 12;
+const TWITCH_CONCURRENCY = 8;
 const KICK_BATCH_SIZE = 50;    // Kick allows up to 50 slugs per request
 const BLUESKY_BATCH_SIZE = 25;  // AT Protocol getProfiles allows up to 25 actors per request
 
@@ -26,6 +29,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 let twitchAccessToken = null;
+let twitchNextSlot = 0;
+
+async function twitchSlot() {
+  const now = Date.now();
+  const at = Math.max(now, twitchNextSlot);
+  twitchNextSlot = at + 1000 / TWITCH_RATE_PER_SEC;
+  if (at > now) await new Promise((r) => setTimeout(r, at - now));
+}
+
+async function pooled(items, limit, worker) {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) { const idx = i++; await worker(items[idx], idx); }
+  }));
+}
 
 const LASTFM_BASE = 'https://ws.audioscrobbler.com/2.0/';
 const MBID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -101,6 +119,7 @@ async function fetchTwitchUsersBatch(usernames) {
   const token = await getTwitchAccessToken();
 
   const params = usernames.map((u) => `login=${encodeURIComponent(u)}`).join('&');
+  await twitchSlot();
   const response = await fetch(`https://api.twitch.tv/helix/users?${params}`, {
     headers: {
       'Client-ID': TWITCH_CLIENT_ID,
@@ -108,6 +127,11 @@ async function fetchTwitchUsersBatch(usernames) {
     },
   });
 
+  if (!response.ok) {
+    // A 429/5xx here used to parse as an empty list, silently marking all 100
+    // users "not found". Throw so the batch is counted as failed instead.
+    throw new Error(`Twitch users API ${response.status}`);
+  }
   const data = await response.json();
 
   // Create a map of username -> user data
@@ -130,6 +154,7 @@ async function fetchTwitchFollowers(broadcasterId) {
   const token = await getTwitchAccessToken();
 
   for (let attempt = 0; attempt < 4; attempt++) {
+    await twitchSlot();
     const response = await fetch(
       `https://api.twitch.tv/helix/channels/followers?broadcaster_id=${broadcasterId}&first=1`,
       {
@@ -163,33 +188,6 @@ async function fetchTwitchFollowers(broadcasterId) {
   }
 
   throw new Error(`Followers API: rate limited, max retries exceeded`);
-}
-
-/**
- * Fetch total view count from VODs for a Twitch user
- * Since Twitch deprecated the view_count field, we sum up views from recent VODs
- */
-async function fetchTwitchVODViews(broadcasterId) {
-  const token = await getTwitchAccessToken();
-
-  try {
-    const response = await fetch(
-      `https://api.twitch.tv/helix/videos?user_id=${broadcasterId}&first=100&type=archive`,
-      {
-        headers: {
-          'Client-ID': TWITCH_CLIENT_ID,
-          'Authorization': `Bearer ${token}`,
-        },
-      }
-    );
-
-    const data = await response.json();
-    const totalViews = (data.data || []).reduce((sum, video) => sum + (video.view_count || 0), 0);
-    return totalViews;
-  } catch (err) {
-    console.warn(`Failed to fetch VOD views: ${err.message}`);
-    return 0;
-  }
 }
 
 // ========== BLUESKY API HELPERS ==========
@@ -531,10 +529,7 @@ async function collectDailyStats() {
       // this run, which looks like an API failure but is really a paging bug.
       .order('id')
       .range(from, from + pageSize - 1);
-    if (fetchError) {
-      console.error('❌ Error fetching creators:', fetchError.message);
-      return;
-    }
+    if (fetchError) throw new Error(`fetching creators: ${fetchError.message}`);
     creators = creators.concat(data);
     if (data.length < pageSize) break;
     from += pageSize;
@@ -587,6 +582,27 @@ async function collectDailyStats() {
   // Per-creator metadata updates (latest post, banner, verified) — separate
   // from creator_stats because these are mutable "current state" fields.
   const creatorUpdates = [];
+  let dbErrors = 0;
+  let savedCount = 0;
+
+  // Saved after EACH platform, not once at the end: the whole run used to be
+  // held in memory until the last step, so a crash or GitHub's 6-hour job
+  // timeout late in the run lost every platform's readings for that run.
+  const flush = async (label) => {
+    const batch = statsToUpsert.splice(0);
+    for (const group of chunk(batch, 1000)) {
+      const { error: upsertError } = await supabase
+        .from('creator_stats')
+        .upsert(group, { onConflict: 'creator_id,recorded_at' });
+      if (upsertError) {
+        dbErrors++;
+        console.error(`   ❌ Database upsert error (${label}):`, upsertError.message);
+      } else {
+        savedCount += group.length;
+      }
+    }
+    if (batch.length) console.log(`   💾 Saved ${batch.length} ${label} readings`);
+  };
 
   // ========== YOUTUBE (batch by 50) ==========
   if (youtubeCreators.length > 0 && YOUTUBE_API_KEY) {
@@ -636,6 +652,8 @@ async function collectDailyStats() {
     }
   }
 
+  await flush('YouTube');
+
   // ========== TWITCH (batch user lookup, parallel followers) ==========
   if (twitchCreators.length > 0 && TWITCH_CLIENT_ID && TWITCH_CLIENT_SECRET) {
     console.log('\n🎮 Processing Twitch creators...');
@@ -650,25 +668,23 @@ async function collectDailyStats() {
         // Get all user info in one request
         const userMap = await fetchTwitchUsersBatch(usernames);
 
-        // Fetch followers sequentially with a delay to stay under Twitch's 800 req/min limit
-        const results = [];
-        for (const creator of batch) {
+        // Followers only (one call per creator). The VOD-views call was
+        // dropped 2026-09-25: it fed only the Twitch "Most Views" tab, which
+        // was replaced by hours watched (Twitch retired public view counts).
+        const results = new Array(batch.length);
+        await pooled(batch, TWITCH_CONCURRENCY, async (creator, idx) => {
           const userData = userMap.get(creator.username.toLowerCase());
           if (!userData) {
-            results.push({ creator, error: 'User not found' });
-            continue;
+            results[idx] = { creator, error: 'User not found' };
+            return;
           }
           try {
-            const [followers, vodViews] = await Promise.all([
-              fetchTwitchFollowers(userData.id),
-              fetchTwitchVODViews(userData.id),
-            ]);
-            results.push({ creator, stats: { followers, total_views: vodViews } });
+            const followers = await fetchTwitchFollowers(userData.id);
+            results[idx] = { creator, stats: { followers } };
           } catch (err) {
-            results.push({ creator, error: err.message });
+            results[idx] = { creator, error: err.message };
           }
-          await new Promise(r => setTimeout(r, TWITCH_FOLLOWER_DELAY_MS));
-        }
+        });
 
         for (const result of results) {
           if (result.error) {
@@ -686,7 +702,6 @@ async function collectDailyStats() {
               recorded_at: today,
               subscribers: result.stats.followers,
               followers: result.stats.followers,
-              total_views: result.stats.total_views,
               total_posts: 0,
             });
             console.log(`   ✅ ${result.creator.display_name}: ${(result.stats.followers / 1000000).toFixed(1)}M followers`);
@@ -698,12 +713,10 @@ async function collectDailyStats() {
         errorCount += batch.length;
       }
 
-      // Small delay between batches
-      if (i < twitchBatches.length - 1) {
-        await new Promise((r) => setTimeout(r, 100));
-      }
     }
   }
+
+  await flush('Twitch');
 
   // ========== KICK (batch by 50) ==========
   if (kickCreators.length > 0 && KICK_CLIENT_ID && KICK_CLIENT_SECRET) {
@@ -755,6 +768,8 @@ async function collectDailyStats() {
     }
   }
 
+  await flush('Kick');
+
   // ========== BLUESKY (batch by 25, no auth required) ==========
   if (blueskyCreators.length > 0) {
     console.log('\n🦋 Processing Bluesky creators...');
@@ -801,6 +816,8 @@ async function collectDailyStats() {
       }
     }
   }
+
+  await flush('Bluesky');
 
   // ========== MASTODON (sequential per handle, ~10/sec, no batch API) ==========
   // Mastodon is federated — each handle maps to a specific instance, so requests
@@ -856,6 +873,8 @@ async function collectDailyStats() {
       await new Promise((r) => setTimeout(r, 100));
     }
   }
+
+  await flush('Mastodon');
 
   // ========== RUMBLE (HTML scrape, sequential ~1 req/sec) ==========
   // No public API. Each fetch is a full HTML page (~50-100KB). For 1K creators
@@ -914,6 +933,8 @@ async function collectDailyStats() {
       await new Promise((r) => setTimeout(r, 800));
     }
   }
+
+  await flush('Rumble');
 
   // ========== SUBSTACK (one leaderboard sweep, match by publication id) ==========
   // Substack data is a single bulk fetch of the category leaderboards, not a
@@ -979,6 +1000,8 @@ async function collectDailyStats() {
     }
   }
 
+  await flush('Substack');
+
   // ========== MUSIC / LAST.FM (individual requests, ~5 req/s) ==========
   if (musicCreators.length > 0 && LASTFM_API_KEY) {
     console.log('\n🎵 Processing Music artists (Last.fm)...');
@@ -1010,23 +1033,7 @@ async function collectDailyStats() {
     }
   }
 
-  // ========== BULK UPSERT TO DATABASE ==========
-  if (statsToUpsert.length > 0) {
-    console.log(`\n💾 Saving ${statsToUpsert.length} stats entries to database...`);
-
-    // Upsert in chunks of 1000 to avoid request size limits
-    const dbBatches = chunk(statsToUpsert, 1000);
-    for (const batch of dbBatches) {
-      const { error: upsertError } = await supabase
-        .from('creator_stats')
-        .upsert(batch, { onConflict: 'creator_id,recorded_at' });
-
-      if (upsertError) {
-        console.error('   ❌ Database upsert error:', upsertError.message);
-      }
-    }
-    console.log('   ✅ Database updated');
-  }
+  await flush('Music');
 
   // ========== UPDATE CREATOR METADATA (latest post, banner, verified) ==========
   // Done as one-by-one updates because PostgREST's upsert clobbers fields we
@@ -1045,6 +1052,7 @@ async function collectDailyStats() {
         .update({ ...fields, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (!updateErr) metaOk++;
+      else dbErrors++;
     }
     console.log(`   ✅ Updated ${metaOk}/${creatorUpdates.length} creator rows`);
   }
@@ -1052,7 +1060,7 @@ async function collectDailyStats() {
   // ========== SUMMARY ==========
   console.log('\n' + '='.repeat(60));
   console.log('📊 Collection complete!');
-  console.log(`   ✅ Success: ${successCount}`);
+  console.log(`   ✅ Success: ${successCount} (${savedCount} saved)`);
   console.log(`   ❌ Errors: ${errorCount}`);
   console.log(`   📝 Total: ${creators.length}`);
 
@@ -1060,10 +1068,23 @@ async function collectDailyStats() {
   console.log(`\n📡 API calls made:`);
   console.log(`   YouTube: ${Math.ceil(youtubeCreators.length / YOUTUBE_BATCH_SIZE)} (batched ${YOUTUBE_BATCH_SIZE}/request)`);
   console.log(`   Twitch Users: ${Math.ceil(twitchCreators.length / TWITCH_BATCH_SIZE)} (batched ${TWITCH_BATCH_SIZE}/request)`);
-  console.log(`   Twitch Followers: ${twitchCreators.length} (individual requests)`);
+  console.log(`   Twitch Followers: ${twitchCreators.length} (individual, paced at ${TWITCH_RATE_PER_SEC}/s)`);
   console.log(`   Kick: ${Math.ceil(kickCreators.length / KICK_BATCH_SIZE)} (batched ${KICK_BATCH_SIZE}/request)`);
   console.log(`   Bluesky: ${Math.ceil(blueskyCreators.length / BLUESKY_BATCH_SIZE)} (batched ${BLUESKY_BATCH_SIZE}/request, no auth)`);
   console.log(`   Music: ${musicCreators.length} (individual, Last.fm)`);
+  return dbErrors;
 }
 
-collectDailyStats().catch(console.error);
+collectDailyStats()
+  .then((dbErrors) => {
+    // Per-creator API misses (dead/renamed accounts) are normal and logged;
+    // failing to SAVE is not, so that fails the job visibly.
+    if (dbErrors) {
+      console.error(`❌ ${dbErrors} database write(s) failed`);
+      process.exit(1);
+    }
+  })
+  .catch((err) => {
+    console.error('❌ Collection failed:', err.message);
+    process.exit(1);
+  });
