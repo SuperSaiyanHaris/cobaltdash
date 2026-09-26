@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,6 +59,7 @@ export default function Header() {
   // Header just dispatches openAuthPanel events; App owns the panel state.
   const openAuth = () => window.dispatchEvent(new CustomEvent('openAuthPanel'));
   const mobileMenuRef = useRef(null);
+  const mobileSheetRef = useRef(null);
 
   // No divider line while the page sits at the top (it read as a hard seam
   // against dark heroes and panels); the soft shadow appears once content
@@ -80,7 +82,7 @@ export default function Header() {
   useEffect(() => {
     if (!mobileMenuOpen) return;
     function handleClick(e) {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target) && !(mobileSheetRef.current && mobileSheetRef.current.contains(e.target))) {
         setMobileMenuOpen(false);
       }
     }
@@ -325,8 +327,12 @@ export default function Header() {
             holds what the floating bottom bar doesn't (Dashboard, Compare,
             Rankings, Blog and Search live there), plus rankings by platform
             and the account. The bottom bar hides while this is open. */}
-        {mobileMenuOpen && (
-          <nav className="md:hidden fixed inset-x-0 top-16 bottom-0 z-50 overflow-y-auto bg-[#0a0a0f] text-white px-4 pt-5 pb-10" aria-label="Menu">
+        {/* Portaled to <body>: the header's backdrop-blur makes it the
+            containing block for fixed children, which squashed this sheet
+            into the 64px header. Clicks inside still count as "inside the
+            menu" via mobileSheetRef. */}
+        {mobileMenuOpen && createPortal(
+          <nav ref={mobileSheetRef} className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[60] overflow-y-auto bg-[#0a0a0f] text-white px-4 pt-5 pb-10" aria-label="Menu">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mb-3">Explore</p>
             <div className="grid grid-cols-2 gap-2">
               {moreLinks.map((link) => {
@@ -414,7 +420,8 @@ export default function Header() {
                 <Link key={to} to={to} onClick={() => setMobileMenuOpen(false)} className="py-1 hover:text-white">{label}</Link>
               ))}
             </div>
-          </nav>
+          </nav>,
+          document.body,
         )}
       </div>
     </header>

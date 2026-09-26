@@ -60,7 +60,7 @@ export default function Footer() {
         <NewsletterSignup variant="bar" className="border border-white/10" />
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-[calc(env(safe-area-inset-bottom)+7rem)] md:pb-10">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-10">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-x-6 gap-y-9 mb-10">
 
           {/* Brand */}
