@@ -49,123 +49,104 @@ const LEGAL_LINKS = [
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const linkCls = 'block py-1.5 text-sm font-medium text-white/75 hover:text-white transition-colors';
+  const headCls = 'text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mb-3';
 
   return (
-    <footer className="bg-white border-t border-neutral-200 mt-auto">
+    // Dark to match the site's hero bands. The extra bottom padding on phones
+    // keeps the last line clear of the floating bottom nav bar.
+    <footer className="relative bg-[#0a0a0f] text-white mt-auto">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
-        <NewsletterSignup variant="bar" />
+        <NewsletterSignup variant="bar" className="border border-white/10" />
       </div>
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-10">
+
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-[calc(env(safe-area-inset-bottom)+7rem)] md:pb-10">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-x-6 gap-y-9 mb-10">
 
           {/* Brand */}
           <div className="col-span-2 md:col-span-2 md:pr-8">
-            <Link to="/" aria-label="ShinyPull home" className="flex items-baseline gap-[3px] mb-3 group">
-              <span className="text-[22px] leading-none font-bold tracking-tight text-neutral-900">ShinyPu</span>
+            <Link to="/" aria-label="ShinyPull home" className="inline-flex items-baseline gap-[3px] mb-3">
+              <span className="text-[22px] leading-none font-bold tracking-tight text-white">ShinyPu</span>
               <span aria-hidden="true" className="inline-block w-[5px] h-[14px] rounded-[2px] bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
               <span aria-hidden="true" className="inline-block w-[5px] h-[19px] rounded-[2px] -ml-px bg-gradient-to-b from-indigo-500 via-purple-500 to-fuchsia-500" />
             </Link>
-            <p className="text-sm text-neutral-600 leading-relaxed max-w-sm">
-              Creator analytics across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack, and Music. Updated daily.
+            <p className="text-sm text-white/70 leading-relaxed max-w-sm">
+              Every creator&apos;s numbers across YouTube, TikTok, Twitch, Kick, Bluesky, Mastodon, Substack and Music. Updated daily.
             </p>
-
-            {/* CTA — Get featured */}
-            <Link
-              to="/promote"
-              className="inline-flex items-center gap-1.5 mt-5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs font-semibold text-amber-700 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Promote your creator
-            </Link>
-
-            {/* Follow on X / TikTok */}
-            <div className="flex items-center gap-4 mt-3 ml-2">
+            <div className="flex flex-wrap items-center gap-2.5 mt-5">
+              <Link
+                to="/promote"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-amber-400 hover:bg-amber-300 text-neutral-950 text-xs font-bold transition-colors"
+              >
+                Promote your creator
+              </Link>
               <a
                 href="https://x.com/ShinyPull"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Follow ShinyPull on X"
-                className="inline-flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 transition-colors text-xs font-medium"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 hover:border-white/50 text-white transition-colors"
               >
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor" aria-hidden="true">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
-                Follow on X
               </a>
               <a
                 href="https://www.tiktok.com/@shinypull"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Follow ShinyPull on TikTok"
-                className="inline-flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 transition-colors text-xs font-medium"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 hover:border-white/50 transition-colors"
               >
-                <TikTokIcon className="w-3.5 h-3.5" />
-                Follow on TikTok
+                <TikTokIcon className="w-4 h-4" />
               </a>
             </div>
           </div>
 
-          {/* Product */}
-          <div>
-            <h3 className="text-xs font-semibold mb-4 text-neutral-900 uppercase tracking-wider">Product</h3>
-            <ul className="space-y-2.5 text-sm">
-              {FEATURE_LINKS.map(([to, label]) => (
-                <li key={to}>
-                  {/* py-1.5 -my-1.5: expands the tap target to clear 24px
-                      (flagged by PageSpeed) without changing the list's
-                      visual row spacing -- the negative margin cancels the
-                      padding out of the layout box space-y-2.5 measures. */}
-                  <Link to={to} className="block py-1.5 -my-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Platforms — laid out in a 2-column grid (column-major flow) so the
-              list reads top-to-bottom in each column instead of a tall single
-              stack. col-span-2 of the outer 6-col grid gives the inner columns
-              breathing room. Adding a new platform automatically extends both
-              columns evenly via gridTemplateRows. */}
+          {/* Product: two columns on phones so it isn't one long list */}
           <div className="col-span-2 md:col-span-2">
-            <h3 className="text-xs font-semibold mb-4 text-neutral-900 uppercase tracking-wider">Platforms</h3>
-            <ul
-              className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm"
-              style={{ gridAutoFlow: 'column', gridTemplateRows: `repeat(${Math.ceil(PLATFORM_LINKS.length / 2)}, minmax(0, 1fr))` }}
-            >
-              {PLATFORM_LINKS.map(([to, label, Icon]) => (
-                <li key={to}>
-                  <Link to={to} className="flex items-center gap-2 py-1.5 -my-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </Link>
-                </li>
+            <h3 className={headCls}>Product</h3>
+            <ul className="grid grid-cols-2 gap-x-6">
+              {FEATURE_LINKS.map(([to, label]) => (
+                <li key={to}><Link to={to} className={linkCls}>{label}</Link></li>
               ))}
             </ul>
           </div>
 
           {/* Company */}
-          <div>
-            <h3 className="text-xs font-semibold mb-4 text-neutral-900 uppercase tracking-wider">Company</h3>
-            <ul className="space-y-2.5 text-sm">
+          <div className="col-span-2 md:col-span-2">
+            <h3 className={headCls}>Company</h3>
+            <ul className="grid grid-cols-2 gap-x-6">
               {COMPANY_LINKS.map(([to, label]) => (
-                <li key={to}>
-                  <Link to={to} className="block py-1.5 -my-1.5 text-neutral-600 hover:text-neutral-900 transition-colors">
-                    {label}
-                  </Link>
-                </li>
+                <li key={to}><Link to={to} className={linkCls}>{label}</Link></li>
               ))}
             </ul>
+          </div>
+
+          {/* Platforms as a chip row */}
+          <div className="col-span-2 md:col-span-6">
+            <h3 className={headCls}>Rankings by platform</h3>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORM_LINKS.map(([to, label, Icon]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full border border-white/15 hover:border-white/50 text-sm font-semibold text-white transition-colors"
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-neutral-200 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-neutral-500">
-          <p>&copy; {currentYear} ShinyPull. Statistics are provided for informational purposes only.</p>
-          <div className="flex items-center gap-4">
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-white/65">
+          <p>&copy; {currentYear} ShinyPull</p>
+          <div className="flex items-center gap-5">
             {LEGAL_LINKS.map(([to, label]) => (
-              <Link key={to} to={to} className="py-1.5 -my-1.5 hover:text-neutral-900 transition-colors">
+              <Link key={to} to={to} className="py-1.5 font-medium hover:text-white transition-colors">
                 {label}
               </Link>
             ))}

@@ -4,6 +4,14 @@ import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpe
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
 import useRankingsHint from '../hooks/useRankingsHint';
+import YouTubeIcon from './YouTubeIcon';
+import TikTokIcon from './TikTokIcon';
+import TwitchIcon from './TwitchIcon';
+import KickIcon from './KickIcon';
+import BlueskyIcon from './BlueskyIcon';
+import MusicIcon from './MusicIcon';
+import MastodonIcon from './MastodonIcon';
+import SubstackIcon from './SubstackIcon';
 
 // Feature launcher entries. `tint` is the only color each gets — a muted icon
 // tint for wayfinding, no gradient boxes (precision system).
@@ -12,15 +20,20 @@ import useRankingsHint from '../hooks/useRankingsHint';
 // grid is a fixed 400px, 2-column layout with a `line-clamp-2` description —
 // anything much longer wraps into a mid-word ellipsis cutoff instead of a
 // clean 2-line wrap. This has broken before; don't reintroduce it.
+const PLATFORM_CHIPS = [
+  ['youtube', 'YouTube', YouTubeIcon], ['tiktok', 'TikTok', TikTokIcon], ['twitch', 'Twitch', TwitchIcon], ['kick', 'Kick', KickIcon],
+  ['bluesky', 'Bluesky', BlueskyIcon], ['music', 'Music', MusicIcon], ['mastodon', 'Mastodon', MastodonIcon], ['substack', 'Substack', SubstackIcon],
+];
+
 const moreLinks = [
   { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
-  { path: '/milestones', label: 'Milestones', description: 'Real threshold crossings', icon: Milestone, tint: 'text-indigo-500' },
+  { path: '/milestones', label: 'Milestones', description: 'Big numbers crossed', icon: Milestone, tint: 'text-indigo-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
   { path: '/kick/earnings', label: 'Kick Earnings', description: 'Top streamers\' sub income', icon: Calculator, tint: 'text-green-600' },
   { path: '/badge', label: 'Creator Cards', description: 'Your holographic card', icon: BadgeCheck, tint: 'text-indigo-500' },
   { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },
   { path: '/blog', label: 'Blog', description: 'Creator economy insights', icon: BookOpen, tint: 'text-cyan-500' },
-  { path: '/support', label: 'Support', description: 'Get help from our team', icon: Heart, tint: 'text-rose-500' },
+  { path: '/support', label: 'Support', description: 'Help keep it running', icon: Heart, tint: 'text-rose-500' },
 ];
 
 // The 3 primary destinations, always visible as a floating center pill on
@@ -75,7 +88,10 @@ export default function Header() {
     document.addEventListener('touchstart', handleClick);
     // The floating bottom nav would otherwise peek out under the open menu.
     document.body.dataset.mobileMenu = 'open';
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
+      document.body.style.overflow = prevOverflow;
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
       delete document.body.dataset.mobileMenu;
@@ -305,150 +321,98 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Nav */}
+        {/* Mobile menu: a dark full-screen sheet under the header. It only
+            holds what the floating bottom bar doesn't (Dashboard, Compare,
+            Rankings, Blog and Search live there), plus rankings by platform
+            and the account. The bottom bar hides while this is open. */}
         {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-neutral-200 bg-white">
-            <div className="flex flex-col gap-1">
-
-              {/* Quick access — same boxed-icon treatment as Features below,
-                  so these two don't read as plain leftover rows the eye skips
-                  past on the way to the grid. */}
-              <div>
-                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest px-1 mb-2">Quick access</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      window.dispatchEvent(new CustomEvent('openCommandPalette'));
-                    }}
-                    className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-neutral-50 transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <Search className="w-4 h-4 text-indigo-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-neutral-900 text-sm leading-tight">Search</p>
-                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Find any creator</p>
-                    </div>
-                  </button>
+          <nav className="md:hidden fixed inset-x-0 top-16 bottom-0 z-50 overflow-y-auto bg-[#0a0a0f] text-white px-4 pt-5 pb-10" aria-label="Menu">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mb-3">Explore</p>
+            <div className="grid grid-cols-2 gap-2">
+              {moreLinks.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.path);
+                return (
                   <Link
-                    to="/rankings"
+                    key={link.path}
+                    to={link.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
-                      isActive('/rankings') ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                    className={`flex items-center gap-3 p-3 rounded-2xl border transition-colors ${
+                      active ? 'bg-white text-neutral-950 border-white' : 'bg-white/[0.04] border-white/10 hover:border-white/30'
                     }`}
                   >
-                    <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
-                      <ChartNoAxesColumnIncreasing className="w-4 h-4 text-amber-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-neutral-900 text-sm leading-tight">Rankings</p>
-                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Top creators live</p>
-                    </div>
+                    <span className={`flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0 ${active ? 'bg-neutral-950 text-white' : 'bg-white/10'}`}>
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold truncate">{link.label}</span>
+                      <span className={`block text-[11px] truncate ${active ? 'text-neutral-600' : 'text-white/60'}`}>{link.description}</span>
+                    </span>
                   </Link>
-                  <Link
-                    to="/compare"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
-                      isActive('/compare') ? 'bg-neutral-100' : 'hover:bg-neutral-50'
-                    }`}
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0">
-                      <Scale className="w-4 h-4 text-violet-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-neutral-900 text-sm leading-tight">Compare</p>
-                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Side-by-side stats</p>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
-                      isActive('/dashboard') ? 'bg-neutral-100' : 'hover:bg-neutral-50'
-                    }`}
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <LayoutDashboard className="w-4 h-4 text-indigo-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-neutral-900 text-sm leading-tight">Dashboard</p>
-                      <p className="text-xs text-neutral-500 leading-tight mt-0.5">Your followed creators</p>
-                    </div>
-                  </Link>
-                </div>
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Features grid */}
-              <div className="mt-3 pt-3 border-t border-neutral-200">
-                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest px-1 mb-2">Features</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {moreLinks.map(link => {
-                    const Icon = link.icon;
-                    const active = isActive(link.path);
-                    return (
-                      <Link
-                        key={link.path}
-                        to={link.path}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
-                          active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-neutral-50 border border-neutral-200/80 flex items-center justify-center flex-shrink-0">
-                          <Icon className={`w-4 h-4 ${link.tint}`} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-neutral-900 text-sm leading-tight truncate">{link.label}</p>
-                          {link.badge && (
-                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 leading-none">
-                              {link.badge}
-                            </span>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mt-7 mb-3">Rankings</p>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORM_CHIPS.map(([p, label, Icon]) => (
+                <Link
+                  key={p}
+                  to={`/rankings/${p}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-full border text-sm font-semibold transition-colors ${
+                    location.pathname === `/rankings/${p}` ? 'bg-white text-neutral-950 border-white' : 'border-white/15 hover:border-white/50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Link>
+              ))}
+            </div>
 
-              {/* Mobile Auth */}
-              <div className="mt-4 pt-4 border-t border-neutral-200">
-                {isAuthenticated ? (
-                  <>
-                    <div className="px-4 py-2">
-                      <p className="text-xs text-neutral-500 truncate">{user?.email}</p>
-                    </div>
+            <div className="mt-8 pt-6 border-t border-white/10">
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-white text-neutral-950 text-sm font-black flex-shrink-0">
+                      {(user?.user_metadata?.display_name || user?.email || '?').slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold truncate">{user?.user_metadata?.display_name || user?.email?.split('@')[0]}</span>
+                      <span className="block text-xs text-white/65 truncate">{user?.email}</span>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
                     <Link
                       to="/account"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+                      className="flex items-center justify-center gap-2 h-12 rounded-xl bg-white text-neutral-950 text-sm font-bold"
                     >
-                      <Settings className="w-5 h-5" />
-                      Account Settings
+                      <Settings className="w-4 h-4" /> Account
                     </Link>
                     <button
-                      onClick={() => {
-                        signOut();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-700 hover:bg-red-50 hover:text-red-600 transition-colors w-full"
+                      onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                      className="flex items-center justify-center gap-2 h-12 rounded-xl border border-white/25 text-sm font-bold text-white"
                     >
-                      <LogOut className="w-5 h-5" />
-                      Sign Out
+                      <LogOut className="w-4 h-4" /> Sign out
                     </button>
-                  </>
-                ) : (
-                  <Link
-                    to="/auth/sign-in"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 py-3 px-6 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-colors w-full"
-                  >
-                    Sign in
-                  </Link>
-                )}
-              </div>
+                  </div>
+                </>
+              ) : (
+                <Link
+                  to="/auth/sign-in"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center h-12 rounded-xl bg-white text-neutral-950 text-sm font-bold"
+                >
+                  Sign in
+                </Link>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-white/75">
+              {[['/about', 'About'], ['/faq', 'FAQ'], ['/methodology', 'Methodology'], ['/contact', 'Contact']].map(([to, label]) => (
+                <Link key={to} to={to} onClick={() => setMobileMenuOpen(false)} className="py-1 hover:text-white">{label}</Link>
+              ))}
             </div>
           </nav>
         )}
