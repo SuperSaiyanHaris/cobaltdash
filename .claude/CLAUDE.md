@@ -83,6 +83,13 @@ sessions never see it. Anything a cloud session must know goes here.
   `CARD_DESIGN_VERSION` in `src/lib/cardUrl.js` when the art changes). Render
   markless (`mark=0`) wherever a card is rotated or faded; upright cards may
   show the logo. Card corners use `rounded-[6.4%/4.571%]`.
+- Link previews are built from the cards. Profiles use
+  `/og/card/:platform/:username.jpg` (`api/share-card.js`, rendered by
+  `api/_shareCard.js` with resvg and our bundled fonts; never sharp's SVG
+  text, which has no fonts on Vercel). Other pages use `public/og/*.jpg`,
+  regenerated at build by `scripts/generateOgImages.mjs`. Card data for both
+  comes from `src/lib/cardData.js`. Bump `SHARE_CARD_V` in `middleware.js`
+  when the preview design changes.
 - Rarity comes from `cardTier(rank, total)`: Legendary = top 10 or top 0.1%,
   Epic = top 1%, Rare = top 10%, else Common. `getCardsByRarity()` draws per
   band. Home shows Legendary/Epic/Rare; the sign-in wall shows all four.
