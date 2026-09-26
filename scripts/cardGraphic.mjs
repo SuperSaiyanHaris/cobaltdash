@@ -165,11 +165,16 @@ async function main() {
     return;
   }
 
-  const W = layout === 'square' ? 1080 : 1600;
-  const H = layout === 'square' ? 1080 : 900;
+  const W = layout === 'square' || layout === 'pull' ? 1080 : 1600;
+  const H = layout === 'square' || layout === 'pull' ? 1080 : 900;
   let text;
   let cards = [];
-  if (!creators.length) {
+  if (layout === 'pull') {
+    // Reply image: the card is the whole point, big and centered, like a
+    // pull you just opened. Optional small kicker on top, no headline.
+    text = kicker ? `<text x="${W / 2}" y="78" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="30" letter-spacing="6" fill="#a3a3a3">${esc(kicker.toUpperCase())}</text>` : '';
+    cards = await placeCards(creators, { cx: W / 2, cy: H / 2 + 22, height: creators.length === 1 ? 900 : 820 });
+  } else if (!creators.length) {
     text = textBlock({ x: 80, y: layout === 'square' ? 330 : 250, width: W - 160, align: 'middle', headlineSize: layout === 'square' ? 110 : 132 });
   } else if (layout === 'square') {
     text = textBlock({ x: 60, y: 70, width: W - 120, align: 'middle', headlineSize: 92 });
@@ -179,7 +184,8 @@ async function main() {
     const single = creators.length === 1;
     cards = await placeCards(creators, { cx: single ? 1210 : 1110, cy: H / 2 + 10, height: single ? 700 : 640 });
   }
-  const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${text}${wordmark(layout === 'square' ? 60 : 96, H - 56)}</svg>`);
+  const mark = layout === 'pull' ? '' : wordmark(layout === 'square' ? 60 : 96, H - 56);
+  const overlay = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${text}${mark}</svg>`);
 
   const img = await sharp(background(W, H))
     .composite([...cards, { input: overlay, left: 0, top: 0 }])

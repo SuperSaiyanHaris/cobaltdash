@@ -66,17 +66,17 @@ function cardMarkup(data, i, showMark) {
     .replace(/▲ \+/g, '+').replace(/▼ −/g, '−');
 }
 
-function background() {
+function background(w = W, h = H) {
   return `<defs>
   <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="14" cy="14" r="1.3" fill="#fff" fill-opacity=".10"/></pattern>
   <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></linearGradient>
-  <mask id="dotmask"><rect width="${W}" height="${H}" fill="url(#fade)"/></mask>
+  <mask id="dotmask"><rect width="${w}" height="${h}" fill="url(#fade)"/></mask>
   <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="16"/></filter>
   <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient>
   <linearGradient id="brandtext" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#818cf8"/><stop offset=".55" stop-color="#c084fc"/><stop offset="1" stop-color="#e879f9"/></linearGradient>
 </defs>
-<rect width="${W}" height="${H}" fill="#0a0a0f"/>
-<rect width="${W}" height="${H}" fill="url(#dots)" mask="url(#dotmask)"/>`;
+<rect width="${w}" height="${h}" fill="#0a0a0f"/>
+<rect width="${w}" height="${h}" fill="url(#dots)" mask="url(#dotmask)"/>`;
 }
 
 // The ShinyPull mark (from its real geometry) plus the wordmark.
@@ -115,9 +115,9 @@ function truncate(s, max) {
   return a.length > max ? a.slice(0, max - 1).join('') + '…' : s;
 }
 
-async function rasterize(svg) {
+async function rasterize(svg, width = W) {
   const png = new Resvg(svg, {
-    fitTo: { mode: 'width', value: W },
+    fitTo: { mode: 'width', value: width },
     font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: 'Inter', sansSerifFamily: 'Inter' },
     shapeRendering: 2,
     textRendering: 1,
@@ -233,4 +233,36 @@ ${text}
 <text x="${left}" y="${H - 58}" font-family="${BODY}" font-size="21" font-weight="600" fill="#8a8a93">${esc(footer)}</text>
 </svg>`;
   return rasterize(svg);
+}
+
+/**
+ * The X profile banner (1500x500): lockup and a line of copy on the left,
+ * a fanned hand of cards on the right. X lays the avatar over the bottom-left
+ * corner, so nothing important sits below y=360 on the left.
+ */
+export async function renderBanner({ headline, sub, cards }) {
+  const BW = 1500, BH = 500;
+  const prepared = await Promise.all(cards.map(prepCard));
+  const n = prepared.length;
+  const mid = (n - 1) / 2;
+  const height = 360, spread = 142, cx = 1118, cy = 258;
+  // Paint outside-in so the center card sits on top.
+  const order = prepared.map((_, i) => i).sort((a, b) => Math.abs(b - mid) - Math.abs(a - mid));
+  const hands = order.map((i) => {
+    const off = i - mid;
+    const angle = off * 7;
+    return placeCard(cardMarkup(prepared[i], i, angle === 0), { cx: cx + off * spread, cy: cy + Math.abs(off) * 14, height, angle });
+  }).join('\n');
+  const left = 88;
+  let text = lockup(left, 96);
+  headline.forEach((l, i) => {
+    text += `<text x="${left - 3}" y="${218 + i * 60}" font-family="${DISPLAY}" font-size="54" font-weight="700" letter-spacing="-2" fill="#fff">${esc(l)}</text>`;
+  });
+  text += `<text x="${left}" y="${218 + headline.length * 60 + 6}" font-family="${BODY}" font-size="24" font-weight="600" fill="#b4b4bc">${esc(sub)}</text>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${BW}" height="${BH}" viewBox="0 0 ${BW} ${BH}">
+${background(BW, BH)}
+${hands}
+${text}
+</svg>`;
+  return rasterize(svg, BW);
 }
