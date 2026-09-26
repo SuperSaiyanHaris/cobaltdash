@@ -11,7 +11,7 @@
 // separate asset and deliberately not touched here.
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
-import { writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 import { markSvgInner } from '../src/lib/brandMark.js';
@@ -54,7 +54,14 @@ writeFileSync('public/favicon.svg', markFile(false));
 writeFileSync('public/logo-mark.svg', markFile(true));
 writeFileSync('public/logo.png', await sharp(png(squareSvg(512, 0.86), 512)).png().toBuffer());
 writeFileSync('public/apple-touch-icon.png', await sharp(png(squareSvg(180, 0.72, '#0a0a0f'), 180)).png().toBuffer());
-console.log('public/: favicon.svg, logo-mark.svg, logo.png, apple-touch-icon.png');
+// The card back (flip animations on Home, sign-in, 404) embeds the mark
+// between <!--brand-mark--> markers; swap it in place.
+const back = readFileSync('public/card-back.svg', 'utf8');
+writeFileSync('public/card-back.svg', back.replace(
+  /(<!--brand-mark--><g transform="[^"]*">)[\s\S]*?(<\/g><!--\/brand-mark-->)/,
+  (_, open, close) => `${open}${markSvgInner('bk')}${close}`,
+));
+console.log('public/: favicon.svg, logo-mark.svg, logo.png, apple-touch-icon.png, card-back.svg');
 
 const extras = process.argv[2];
 if (extras) {

@@ -13,12 +13,11 @@
 <rect x="7" y="7" width="236" height="336" rx="11" fill="url(#p)"/>
 <rect x="18" y="18" width="214" height="314" rx="9" fill="none" stroke="url(#f)" stroke-opacity=".45"/>
 <circle cx="125" cy="160" r="58" fill="none" stroke="url(#f)" stroke-width="3"/>
-<g transform="translate(89 124) scale(.72)">
-<rect width="100" height="100" rx="24" fill="url(#m)"/>
-<rect x="28" y="54" width="12" height="22" rx="4" fill="#fff"/>
-<rect x="44" y="40" width="12" height="36" rx="4" fill="#fff"/>
-<rect x="60" y="26" width="12" height="50" rx="4" fill="#fff"/>
-</g>
+<!--brand-mark--><g transform="translate(78 113) scale(.94)"><defs><linearGradient id="bkf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD76A"/><stop offset=".35" stop-color="#FFF3C4"/><stop offset=".6" stop-color="#C084FC"/><stop offset="1" stop-color="#5EC8FF"/></linearGradient></defs>
+<rect x="20.5" y="6.5" width="59" height="87" rx="10" fill="#0a0a0f" stroke="url(#bkf)" stroke-width="7"/>
+<rect x="32" y="53" width="9" height="28" rx="3" fill="url(#bkf)"/>
+<rect x="45.5" y="39" width="9" height="42" rx="3" fill="url(#bkf)"/>
+<rect x="59" y="23" width="9" height="58" rx="3" fill="url(#bkf)"/></g><!--/brand-mark-->
 <text x="125" y="258" text-anchor="middle" font-family="-apple-system,Segoe UI,Inter,sans-serif" font-size="17" font-weight="900" letter-spacing="5" fill="#fafafa">SHINYPULL</text>
 <text x="125" y="280" text-anchor="middle" font-family="-apple-system,Segoe UI,Inter,sans-serif" font-size="8.5" font-weight="700" letter-spacing="3" fill="#8b8b96">CREATOR CARDS</text>
 </g>
