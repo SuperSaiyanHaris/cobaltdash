@@ -89,6 +89,10 @@
       "destination": "/api/:path*"
     },
     {
+      "source": "/og/card/:platform/:file",
+      "destination": "/api/share-card?platform=:platform&file=:file"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }
@@ -110,6 +114,11 @@
   "functions": {
     "api/cron/*.js": {
       "maxDuration": 300
+    },
+    "api/share-card.js": {
+      "includeFiles": "scripts/assets/fonts/**",
+      "memory": 1024,
+      "maxDuration": 15
     }
   }
 }
