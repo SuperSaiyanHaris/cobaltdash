@@ -159,7 +159,7 @@ export default function NewsletterSignup({ variant = 'card', className = '' }) {
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full sm:w-auto sm:min-w-[200px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-60"
+              className="w-full sm:w-auto sm:min-w-[200px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-60"
             >
               {status === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Subscribe'}
             </button>

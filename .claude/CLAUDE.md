@@ -105,6 +105,32 @@ sessions never see it. Anything a cloud session must know goes here.
 - Text on light backgrounds is neutral-600 at the lightest; no faint grays.
 - Hover stays quiet (no lift). Follow the existing typography tiers.
 
+# Branding: button colors (owner decision, 2026-09-26)
+
+Three roles, no others:
+- **Brand purple (`bg-brand hover:bg-brand-hover`, #7C3AED / #6D28D9, white
+  text): the one main action on a screen.** Pull a card, Search, sign in /
+  sign up, subscribe, send, the empty-state "request/track this creator",
+  "Search creators". At most one purple button in view. Solid color only,
+  never a gradient or multi-color button.
+- **Black (`bg-neutral-900`, white text) on light pages, white on dark
+  bands: everything supporting.** Filters, tabs, toggles, load more,
+  selected pills, settings forms, contact links, admin.
+- **Gold (amber-400) only for paid placement:** Get Featured, sponsor bands,
+  /promote pricing, sponsored slots. Nothing unrelated to sponsorship is gold.
+- Third-party brand buttons keep their own color (e.g. Buy Me a Coffee).
+
+# Branding: logo
+
+- The mark is three rising foil bars inside a foil-edged card
+  (`src/lib/brandMark.js`). `node scripts/brandAssets.mjs` regenerates the
+  favicon, apple-touch-icon, `logo.png`, `logo-mark.svg` and the card back.
+- The card back shows the bars only (the card is already the frame).
+- The header/footer wordmark ("ShinyPu" + two animated purple bars) is a
+  separate asset and stays as is.
+- When changing brand assets, search the repo for the old mark's shapes and
+  colors, not just file references; inline copies exist.
+
 # Copy rules
 
 - No em dashes in user-facing copy.

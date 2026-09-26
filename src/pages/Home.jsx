@@ -676,7 +676,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
-                className="inline-flex items-center gap-1.5 px-6 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="inline-flex items-center gap-1.5 px-6 py-3 bg-brand hover:bg-brand-hover text-white font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <Search className="w-4 h-4" />
                 Search creators

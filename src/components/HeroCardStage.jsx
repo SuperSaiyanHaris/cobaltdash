@@ -192,7 +192,7 @@ export default function HeroCardStage({ creators }) {
         <button
           type="button"
           onClick={() => { clearTimeout(timerRef.current); pull(); }}
-          className="hero-pull-btn inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-neutral-900"
+          className="hero-pull-btn inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white"
         >
           <span aria-hidden="true">✦</span> Pull a card
         </button>

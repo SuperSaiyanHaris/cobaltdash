@@ -562,7 +562,7 @@ export default function Search() {
             <button
               type="submit"
               disabled={loading}
-              className="h-12 px-7 bg-amber-400 hover:bg-amber-300 disabled:opacity-90 disabled:cursor-wait text-neutral-950 text-sm font-bold rounded-xl transition-colors"
+              className="h-12 px-7 bg-brand hover:bg-brand-hover disabled:opacity-90 disabled:cursor-wait text-white text-sm font-bold rounded-xl transition-colors"
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
@@ -633,7 +633,7 @@ export default function Search() {
                       <button
                         onClick={() => handleRequestCreator()}
                         disabled={!normalizedUsername}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-neutral-900 hover:bg-neutral-800"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-brand hover:bg-brand-hover"
                       >
                         <Clock className="w-4 h-4" />
                         Request @{normalizedUsername || '...'}
@@ -699,7 +699,7 @@ export default function Search() {
                         <button
                           onClick={() => handleRequestCreator()}
                           disabled={!normalizedUsername || normalizedUsername.trim().length < 2}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-neutral-900 hover:bg-neutral-800"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-brand hover:bg-brand-hover"
                         >
                           <Clock className="w-4 h-4" />
                           Track this {selectedPlatform === 'substack' ? 'newsletter' : 'account'}
@@ -856,7 +856,7 @@ export default function Search() {
                           <button
                             onClick={() => handleRequestCreator()}
                             disabled={!normalizedUsername}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-neutral-900 hover:bg-neutral-800"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-brand hover:bg-brand-hover"
                           >
                             <Clock className="w-4 h-4" />
                             Request @{normalizedUsername || '...'}

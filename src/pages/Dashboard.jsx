@@ -634,7 +634,7 @@ export default function Dashboard() {
                     <>
                       <p className="text-xl font-extrabold text-neutral-900">Your collection is empty.</p>
                       <p className="mt-2 text-[15px] text-neutral-700">Follow a creator and their card shows up here.</p>
-                      <Link to="/search" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors text-sm">
+                      <Link to="/search" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white font-bold rounded-xl hover:bg-brand-hover transition-colors text-sm">
                         <Search className="w-4 h-4" /> Find creators
                       </Link>
                     </>
@@ -686,7 +686,7 @@ export default function Dashboard() {
                 <div className={`${PANEL} p-14 text-center`}>
                   <p className="text-xl font-extrabold text-neutral-900">No saved matchups yet.</p>
                   <p className="mt-2 text-[15px] text-neutral-700">Put two creators head to head on Compare and hit Save.</p>
-                  <Link to="/compare" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-bold rounded-xl hover:bg-neutral-800 transition-colors text-sm">
+                  <Link to="/compare" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white font-bold rounded-xl hover:bg-brand-hover transition-colors text-sm">
                     <Scale className="w-4 h-4" /> Go to Compare
                   </Link>
                 </div>

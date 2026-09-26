@@ -111,7 +111,7 @@ export default function BadgePage() {
               aria-label="Username"
               className="flex-1 rounded-lg border border-neutral-300 px-3 py-2.5 text-sm"
             />
-            <button type="submit" className="rounded-lg bg-neutral-900 text-white px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800">Pull my card</button>
+            <button type="submit" className="rounded-lg bg-brand text-white px-5 py-2.5 text-sm font-semibold hover:bg-brand-hover">Pull my card</button>
           </div>
 
           {codes && (

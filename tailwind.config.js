@@ -12,6 +12,10 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
+        // Brand purple (from the logo). Main call to action only, one per
+        // view; see "Button colors" in .claude/CLAUDE.md. #7C3AED keeps white
+        // text above WCAG AA contrast.
+        brand: { DEFAULT: "#7C3AED", hover: "#6D28D9" },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',

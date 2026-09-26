@@ -486,11 +486,11 @@ h1, h2, h3, h4 {
 }
 .hero-stage:hover .hero-glare { opacity: 1; }
 .hero-pull-btn {
-  background: linear-gradient(90deg, #fde68a, #f0abfc, #67e8f9);
+  background: #7C3AED; /* brand purple, see tailwind brand color */
   box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.hero-pull-btn:hover { transform: translateY(-1px); }
+.hero-pull-btn:hover { background: #6D28D9; }
 .hero-pull-btn:active { transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) {
   .hero-flip, .hero-tilt { transition: none; }

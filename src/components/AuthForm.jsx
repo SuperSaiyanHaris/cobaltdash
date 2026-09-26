@@ -186,7 +186,7 @@ export default function AuthForm({ mode, setMode, onSuccess, contextMessage, sho
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-neutral-900 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+          className="w-full bg-brand text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1"
         >
           {loading ? 'Loading…' : mode === 'signup' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Sign in'}
         </button>
