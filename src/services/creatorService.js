@@ -647,6 +647,25 @@ async function _platformCreatorCount(platform) {
 }
 
 /** Creators tracked on a platform: the `total` behind a card's rarity. */
+/**
+ * Subscriber rank + count for a handful of creators (search results), from
+ * rankings_cache in one query. Creators outside the cached top ranks are
+ * simply absent from the returned map.
+ */
+export const getCreatorRanks = withErrorHandling(
+  async (creatorIds) => {
+    if (!creatorIds?.length) return {};
+    const { data, error } = await supabase
+      .from('rankings_cache')
+      .select('creator_id, rank_position, subscribers')
+      .eq('rank_type', 'subscribers')
+      .in('creator_id', creatorIds);
+    if (error) throw error;
+    return Object.fromEntries((data || []).map((r) => [r.creator_id, { rank: r.rank_position, subscribers: r.subscribers }]));
+  },
+  'creatorService.getCreatorRanks'
+);
+
 export const getPlatformCreatorCount = withErrorHandling(
   (platform) => _platformCreatorCount(platform),
   'creatorService.getPlatformCreatorCount'
