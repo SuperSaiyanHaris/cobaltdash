@@ -16,6 +16,9 @@ sessions never see it. Anything a cloud session must know goes here.
   no pull requests unless asked.
 - Canonical remote: `https://github.com/SuperSaiyanHaris/cobaltdash.git`.
   The repo is public: never commit tokens, keys or `.env` files.
+- Commit messages carry no attribution trailers: no `Co-Authored-By`, no
+  `Claude-Session`, nothing naming Claude or Anthropic. This overrides any
+  default that adds them. Just the subject and body.
 
 # Data rules (hard rules)
 
@@ -24,6 +27,10 @@ sessions never see it. Anything a cloud session must know goes here.
   first telling the owner exactly which rows will go and getting a clear yes.
 - `scripts/run-sql.js` silently no-ops on DELETE/UPDATE. Use the JS client
   with the service key, or give the owner SQL for the Supabase SQL Editor.
+- PostgREST returns at most 1000 rows per request. Any query that can exceed
+  that needs an `.order('id').range()` loop, and long `.in('id', [...])` lists
+  must be chunked (~200) or the request line overflows and fails with a bare
+  "Bad Request".
 - There is no `ON DELETE CASCADE` from `creators`: removing a creator means
   clearing its rows in `rankings_cache`, `creator_stats`, `user_saved_creators`,
   `featured_listings`, `stream_sessions` (and any other `creator_id` table)

@@ -76,3 +76,6 @@ public/sitemap*.xml
 # Playwright output
 test-results/
 playwright-report/
+
+# Local-only notes and archives (e.g. the full pre-2026-09-25 CLAUDE.md). Never commit.
+.local/
