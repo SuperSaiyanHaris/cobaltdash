@@ -932,7 +932,7 @@ const OG_CARDS = [
   [/^\/badge$/,                    'badge'],
 ];
 
-const SHARE_CARD_V = 1;
+const SHARE_CARD_V = 2;
 
 function ogCardFor(pathname) {
   for (const [re, name] of OG_CARDS) {

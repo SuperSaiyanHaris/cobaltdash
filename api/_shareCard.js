@@ -17,6 +17,7 @@ import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { renderCard, cardTier, CARD_PLATFORMS, compactCount, escapeXml as esc } from '../src/lib/badgeCard.js';
+import { markSvgInner } from '../src/lib/brandMark.js';
 
 export const SHARE_W = 1200;
 export const SHARE_H = 630;
@@ -79,15 +80,11 @@ function background(w = W, h = H) {
 <rect width="${w}" height="${h}" fill="url(#dots)" mask="url(#dotmask)"/>`;
 }
 
-// The ShinyPull mark (from its real geometry) plus the wordmark.
+// The ShinyPull mark (src/lib/brandMark.js) plus the wordmark.
 function lockup(x, y) {
-  const s = 44, u = s / 64;
-  const bars = [14, 24, 32].map((h, i) => {
-    const bx = x + (64 - 3 * 8 - 2 * 3) / 2 * u + i * (8 + 3) * u;
-    return `<rect x="${bx.toFixed(1)}" y="${(y + s - 16 * u - h * u).toFixed(1)}" width="${(8 * u).toFixed(1)}" height="${(h * u).toFixed(1)}" rx="${(2.5 * u).toFixed(1)}" fill="#fff"/>`;
-  }).join('');
-  return `<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${16 * u}" fill="url(#brand)"/>${bars}
-<text x="${x + s + 14}" y="${y + s / 2 + 11}" font-family="${BODY}" font-size="30" font-weight="700" letter-spacing="-0.8" fill="#fff">ShinyPu<tspan fill="url(#brandtext)">ll</tspan></text>`;
+  const s = 48;
+  return `<g transform="translate(${x - 4} ${y - 2}) scale(${s / 100})">${markSvgInner('lockup')}</g>
+<text x="${x + s + 6}" y="${y + s / 2 + 9}" font-family="${BODY}" font-size="30" font-weight="700" letter-spacing="-0.8" fill="#fff">ShinyPu<tspan fill="url(#brandtext)">ll</tspan></text>`;
 }
 
 // Place a card (250x350 native) centered at cx,cy with the given height and
