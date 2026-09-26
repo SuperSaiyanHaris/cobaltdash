@@ -14,7 +14,7 @@ import sharp from 'sharp';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 
-import { markSvgInner } from '../src/lib/brandMark.js';
+import { markSvgInner, markBarsInner } from '../src/lib/brandMark.js';
 
 const FONTS = ['Inter-Bold.ttf'].map((f) => fileURLToPath(new URL(`./assets/fonts/${f}`, import.meta.url)));
 
@@ -54,12 +54,13 @@ writeFileSync('public/favicon.svg', markFile(false));
 writeFileSync('public/logo-mark.svg', markFile(true));
 writeFileSync('public/logo.png', await sharp(png(squareSvg(512, 0.86), 512)).png().toBuffer());
 writeFileSync('public/apple-touch-icon.png', await sharp(png(squareSvg(180, 0.72, '#0a0a0f'), 180)).png().toBuffer());
-// The card back (flip animations on Home, sign-in, 404) embeds the mark
+// The card back (flip animations on Home, sign-in, 404) embeds the bars only
+// (the card is already the frame)
 // between <!--brand-mark--> markers; swap it in place.
 const back = readFileSync('public/card-back.svg', 'utf8');
 writeFileSync('public/card-back.svg', back.replace(
   /(<!--brand-mark--><g transform="[^"]*">)[\s\S]*?(<\/g><!--\/brand-mark-->)/,
-  (_, open, close) => `${open}${markSvgInner('bk')}${close}`,
+  (_, open, close) => `${open}${markBarsInner('bk')}${close}`,
 ));
 console.log('public/: favicon.svg, logo-mark.svg, logo.png, apple-touch-icon.png, card-back.svg');
 

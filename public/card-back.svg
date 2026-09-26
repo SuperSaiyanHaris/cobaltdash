@@ -10,8 +10,7 @@
 <rect x="7" y="7" width="236" height="336" rx="11" fill="#0b0b12"/>
 <rect x="7" y="7" width="236" height="336" rx="11" fill="url(#p)"/>
 <rect x="18" y="18" width="214" height="314" rx="9" fill="none" stroke="url(#f)" stroke-opacity=".45"/>
-<!--brand-mark--><g transform="translate(22 50) scale(2.06)"><defs><linearGradient id="bkf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD76A"/><stop offset=".35" stop-color="#FFF3C4"/><stop offset=".6" stop-color="#C084FC"/><stop offset="1" stop-color="#5EC8FF"/></linearGradient></defs>
-<rect x="20.5" y="6.5" width="59" height="87" rx="10" fill="#0a0a0f" stroke="url(#bkf)" stroke-width="7"/>
+<!--brand-mark--><g transform="translate(-39 -10.6) scale(3.28)"><defs><linearGradient id="bkf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD76A"/><stop offset=".35" stop-color="#FFF3C4"/><stop offset=".6" stop-color="#C084FC"/><stop offset="1" stop-color="#5EC8FF"/></linearGradient></defs>
 <rect x="32" y="53" width="9" height="28" rx="3" fill="url(#bkf)"/>
 <rect x="45.5" y="39" width="9" height="42" rx="3" fill="url(#bkf)"/>
 <rect x="59" y="23" width="9" height="58" rx="3" fill="url(#bkf)"/></g><!--/brand-mark-->
