@@ -114,6 +114,15 @@ export default function CreatorComments({ creatorId, name }) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [focusId, comments.length]);
 
+  useEffect(() => {
+    if (!reportFor) return;
+    const onDown = (e) => { if (!e.target.closest('[data-report-menu]')) setReportFor(null); };
+    const onKey = (e) => { if (e.key === 'Escape') setReportFor(null); };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [reportFor]);
+
   const patch = (id, fn) => {
     setComments((list) => list.map((row) => (row.id === id ? fn(row) : row)));
     setReplies((map) => Object.fromEntries(Object.entries(map).map(([k, list]) => [k, list.map((row) => (row.id === id ? fn(row) : row))])));
@@ -254,10 +263,10 @@ export default function CreatorComments({ creatorId, name }) {
             ) : reported.has(c.id) ? (
               <span className="text-xs text-neutral-600">Reported. Thanks.</span>
             ) : isAuthenticated ? (
-              <div className="relative">
-                <button type="button" onClick={() => setReportFor(reportFor === c.id ? null : c.id)} className="text-xs text-neutral-600 hover:text-neutral-900">Report</button>
+              <div className="relative" data-report-menu>
+                <button type="button" aria-expanded={reportFor === c.id} onClick={() => setReportFor(reportFor === c.id ? null : c.id)} className="text-xs text-neutral-600 hover:text-neutral-900">Report</button>
                 {reportFor === c.id && (
-                  <div className="absolute right-0 top-6 z-10 w-52 bg-white border border-neutral-200 rounded-lg shadow-lg py-1">
+                  <div className="absolute right-0 top-6 z-30 w-52 bg-white border border-neutral-200 rounded-lg shadow-lg py-1">
                     {REPORT_REASONS.map(([k, l]) => (
                       <button key={k} type="button" onClick={() => report(c, k)} className="block w-full text-left px-3 py-2 text-sm text-neutral-800 hover:bg-neutral-50">{l}</button>
                     ))}
@@ -347,13 +356,13 @@ export default function CreatorComments({ creatorId, name }) {
 
       {/* Comments and their replies */}
       {comments.length > 0 ? (
-        <div className={`${CARD} mt-3 divide-y divide-neutral-100 overflow-hidden`}>
+        <div className={`${CARD} mt-3 divide-y divide-neutral-100`}>
           {comments.map((c) => {
             const kids = replies[c.id] || [];
             const open = expanded.has(c.id);
             const shown = open ? kids : kids.slice(0, SHOWN_REPLIES);
             return (
-              <div key={c.id} className={`p-4 ${focusId === c.id ? 'bg-violet-50/40' : ''}`}>
+              <div key={c.id} className={`p-4 first:rounded-t-xl last:rounded-b-xl ${focusId === c.id ? 'bg-violet-50/40' : ''}`}>
                 {renderComment(c, c)}
                 {(shown.length > 0 || replyTo === c.id) && (
                   <div className="mt-3 ml-3 sm:ml-12 pl-3 sm:pl-4 border-l-2 border-neutral-100 space-y-4">
