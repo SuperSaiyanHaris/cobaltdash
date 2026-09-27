@@ -55,6 +55,85 @@ export function buildYouTubeSeries(statsHistory, rangeDays, now = new Date()) {
   }));
 }
 
+// A stored 0 (or null) lifetime view total on a channel that has videos is
+// YouTube returning no total, not a real 0. Show it as a missing reading
+// (views: null) instead of a -7.5M / +7.5M swing. The stored row is untouched.
+export function markMissingViews(series) {
+  return series.map((d) => (d.views > 0 || !(d.videos > 0) ? d : { ...d, views: null }));
+}
+
+const dayDiff = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000);
+const shortDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/**
+ * Classifies each YouTube daily reading so the table tells the truth about
+ * YouTube's view total, which for big channels often doesn't refresh for a
+ * day or two and then catches up in one jump. Display only; stored rows are
+ * never changed. Input is ascending (from markMissingViews); output is
+ * ascending with, per row:
+ *   kind: 'first' | 'normal' | 'lag' | 'catchup' | 'pending' | 'flat' | 'missing'
+ *   delta   views change vs the previous valid reading (normal/catchup/flat)
+ *   days    calendar days that delta covers (catch-ups and gaps > 1)
+ *   revenueViews  views to price for this row; spread evenly across a
+ *           lag + catch-up run (approx: true) so no day of a busy channel
+ *           reads as $0, while the column still sums to the real total
+ *   note    tooltip text
+ */
+export function buildDailyReadings(series) {
+  const rows = series.map((d) => ({ ...d, kind: d.views == null ? 'missing' : 'normal', delta: null, days: 1, revenueViews: null, approx: false, note: null }));
+  for (const r of rows) if (r.kind === 'missing') r.note = 'No view total from YouTube this day';
+  const valid = rows.filter((r) => r.kind !== 'missing');
+  if (!valid.length) return rows;
+  valid[0].kind = 'first';
+
+  let anchor = valid[0]; // last reading where the total moved (or the first)
+  let flats = [];        // unchanged readings since anchor
+  const recentMoves = []; // whether each of the last readings moved, for "active"
+  for (let i = 1; i < valid.length; i++) {
+    const r = valid[i];
+    if (r.views === anchor.views) { flats.push(r); recentMoves.push(false); continue; }
+    const delta = r.views - anchor.views;
+    const days = dayDiff(anchor.date, r.date);
+    if (flats.length && delta > 0) {
+      // YouTube held the total, then caught up: views landed late, not zero.
+      const perDay = delta / days;
+      let prevDate = anchor.date;
+      for (const f of flats) {
+        f.kind = 'lag';
+        f.revenueViews = perDay * dayDiff(prevDate, f.date);
+        f.approx = true;
+        f.note = `YouTube updated these views on ${shortDate(r.date)}`;
+        prevDate = f.date;
+      }
+      r.kind = 'catchup';
+      r.revenueViews = perDay * dayDiff(prevDate, r.date);
+      r.approx = true;
+      r.note = `${shortDate(flats[0].date)} to ${shortDate(r.date)} came in together, split evenly across ${days} days`;
+    } else {
+      for (const f of flats) { f.kind = 'flat'; f.delta = 0; }
+      r.revenueViews = delta > 0 ? delta : null;
+      if (days > 1) r.note = `Covers ${days} days`;
+    }
+    r.delta = delta;
+    r.days = days;
+    anchor = r;
+    flats = [];
+    recentMoves.push(true);
+  }
+  // Trailing unchanged readings: on a channel whose total moved in the week
+  // before, YouTube just hasn't refreshed yet. On a quiet channel it's a
+  // genuinely flat day.
+  if (flats.length) {
+    const before = recentMoves.slice(0, recentMoves.length - flats.length).slice(-7);
+    const active = before.some(Boolean);
+    for (const f of flats) {
+      if (active) { f.kind = 'pending'; f.note = "YouTube hasn't refreshed this total yet"; }
+      else { f.kind = 'flat'; f.delta = 0; }
+    }
+  }
+  return rows;
+}
+
 // Real prior-30-days-vs-current-30-days views comparison, computed from raw
 // history rather than asserted — returns null (not a guess) when there isn't
 // enough history to compute it honestly.

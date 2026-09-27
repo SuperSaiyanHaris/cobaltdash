@@ -532,7 +532,15 @@ async function collectDailyStats() {
 
         for (const creator of batch) {
           const stats = statsMap.get(creator.platform_id);
-          if (stats && stats.subscribers > 0) {
+          // A channel with videos can't have 0 lifetime views: that's YouTube
+          // returning no view total (seen 2026-09-23, 7.48M -> 0 -> 7.50M).
+          // Writing it would store a fake 0 and could overwrite a good row
+          // from an earlier run today, so skip the creator for this run.
+          const missingViews = stats && stats.total_views === 0 && stats.total_posts > 0;
+          if (missingViews) {
+            console.log(`   ⚠️  ${creator.display_name}: Skipping — API returned 0 views for a channel with videos`);
+            errorCount++;
+          } else if (stats && stats.subscribers > 0) {
             statsToUpsert.push({
               creator_id: creator.id,
               recorded_at: today,

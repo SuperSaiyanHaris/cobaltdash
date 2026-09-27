@@ -2,7 +2,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'rec
 import { ChartSkeleton, TextBoneSkeleton } from '../../components/Skeleton';
 import { ExternalLink, Eye, MessageCircle, Play, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { buildYouTubeSeries, computeViewsMomentum, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
+import { buildDailyReadings, buildYouTubeSeries, computeViewsMomentum, markMissingViews, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
 import { formatNumber, formatRelativeTime } from '../../lib/utils';
 import { useMemo, useState } from 'react';
 
@@ -72,7 +72,9 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
   const rank = rankContext?.rank;
   const band = getPercentileBand(rank, total);
 
-  const series = useMemo(() => buildYouTubeSeries(statsHistory, chartRange), [statsHistory, chartRange]);
+  const series = useMemo(() => markMissingViews(buildYouTubeSeries(statsHistory, chartRange)), [statsHistory, chartRange]);
+  const readings = useMemo(() => buildDailyReadings(series), [series]);
+  const readingByDate = useMemo(() => new Map(readings.map((r) => [r.date, r])), [readings]);
   const momentum = useMemo(() => computeViewsMomentum(statsHistory), [statsHistory]);
 
   const METRICS = [
@@ -81,18 +83,36 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
     { value: 'videos', label: 'Videos', dataKey: 'videos' },
   ];
   const currentMetric = METRICS.find((m) => m.value === chartMetric) || METRICS[0];
-  const values = series.map((d) => d[currentMetric.dataKey]);
+  // Missing readings (views: null) are skipped: the line bridges them.
+  const values = series.map((d) => d[currentMetric.dataKey]).filter((v) => v != null);
   const minV = values.length ? Math.min(...values) : 0;
   const maxV = values.length ? Math.max(...values) : 0;
   const span = maxV - minV || 1;
   const pad = span * 0.12;
-  const relData = series.map((d) => ({ ...d, rel: d[currentMetric.dataKey] - minV }));
+  const relData = series.map((d) => ({ ...d, rel: d[currentMetric.dataKey] == null ? null : d[currentMetric.dataKey] - minV }));
   const heroValue = currentMetric.value === 'views' ? formatNumber(creator.totalViews)
     : currentMetric.value === 'subscribers' ? formatNumber(creator.subscribers)
     : formatNumber(creator.totalPosts);
-  const netGrowth = values.length >= 2 ? values[values.length - 1] - values[0] : 0;
+  const netGrowth = values.length >= 2 ? values[values.length - 1] - values[0] : 0; // first/last valid readings
 
-  const dailyReadingsRows = [...series].reverse();
+  const dailyReadingsRows = [...readings].reverse();
+  // Best single day: only one-day moves count, so a 3-day catch-up can't
+  // pose as a record day.
+  const bestViewsDay = readings.reduce((m, r) => (r.kind === 'normal' && r.days === 1 && r.delta > m ? r.delta : m), 0);
+  const MUTED = 'text-neutral-600';
+  const deltaCell = (r) => {
+    if (r.kind === 'first') return { text: '—', cls: MUTED };
+    if (r.kind === 'lag') return { text: 'not updated', cls: MUTED };
+    if (r.kind === 'pending') return { text: 'pending', cls: MUTED };
+    if (r.kind === 'missing') return { text: 'no reading', cls: MUTED };
+    if (r.kind === 'flat') return { text: '+0', cls: MUTED };
+    return { text: fmtSigned(r.delta) + (r.days > 1 ? ` · ${r.days} days` : ''), cls: r.delta < 0 ? 'text-red-600' : 'text-emerald-600' };
+  };
+  const revenueCell = (r) => {
+    if (r.kind === 'pending') return { text: 'pending', cls: MUTED };
+    if (!(r.revenueViews > 0)) return { text: '—', cls: MUTED };
+    return { text: (r.approx ? '≈' : '') + formatEarningsSingle(r.revenueViews / 1000 * cpm), cls: 'text-emerald-600' };
+  };
 
   // Distinguishes "still fetching stats, real data incoming" from "confirmed,
   // this creator genuinely has under 2 readings" — see statsReady's comment
@@ -193,12 +213,12 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                     return (
                       <div className="bg-white border border-neutral-200 rounded-lg shadow-lg px-3 py-2">
                         <p className="text-xs text-neutral-700">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                        <p className="text-sm font-semibold text-neutral-900 tabular-nums">{formatNumber(raw)}</p>
+                        <p className="text-sm font-semibold text-neutral-900 tabular-nums">{raw == null ? 'no reading' : formatNumber(raw)}</p>
                       </div>
                     );
                   }}
                 />
-                <Area type="monotone" dataKey="rel" stroke="#059669" strokeWidth={2} fill="url(#ytVerdictGradient)" dot={false} activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }} animationDuration={900} />
+                <Area type="monotone" dataKey="rel" connectNulls stroke="#059669" strokeWidth={2} fill="url(#ytVerdictGradient)" dot={false} activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }} animationDuration={900} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -330,17 +350,18 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                 </tr>
               </thead>
               <tbody>
-                {dailyReadingsRows.map((row, i) => {
-                  const prev = dailyReadingsRows[i + 1];
-                  const delta = prev ? row.views - prev.views : null;
+                {dailyReadingsRows.map((row) => {
+                  const d = deltaCell(row);
+                  const rev = revenueCell(row);
+                  const hint = row.note ? 'underline decoration-dotted decoration-neutral-400 underline-offset-4 cursor-help' : '';
                   return (
                     <tr key={row.date} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
                       <td className="px-5 py-3 text-neutral-900 tabular-nums">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
-                      <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">{formatNumber(row.views)}</td>
-                      <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta != null ? fmtSigned(delta) : '—'}</td>
+                      <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">{row.views == null ? '—' : formatNumber(row.views)}</td>
+                      <td className={`px-5 py-3 text-right tabular-nums ${d.cls}`}><span title={row.note || undefined} className={hint}>{d.text}</span></td>
                       <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{formatNumber(row.subscribers)}</td>
                       <td className="px-5 py-3 text-right text-neutral-700 tabular-nums">{row.videos}</td>
-                      <td className="px-5 py-3 text-right text-emerald-600 tabular-nums">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</td>
+                      <td className={`px-5 py-3 text-right tabular-nums ${rev.cls}`}><span title={row.note || undefined} className={hint}>{rev.text}</span></td>
                     </tr>
                   );
                 })}
@@ -349,23 +370,26 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
           </div>
           {/* Mobile: list, not a table — tables don't survive 390px */}
           <div className="md:hidden divide-y divide-neutral-100">
-            {dailyReadingsRows.map((row, i) => {
-              const prev = dailyReadingsRows[i + 1];
-              const delta = prev ? row.views - prev.views : null;
+            {dailyReadingsRows.map((row) => {
+              const d = deltaCell(row);
+              const rev = revenueCell(row);
               return (
-                <div key={row.date} className="flex items-center gap-4 px-4 py-3">
+                <div key={row.date} className="px-4 py-3">
+                <div className="flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-neutral-900">{new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                     <p className="text-xs text-neutral-700 mt-0.5 tabular-nums">{formatNumber(row.subscribers)} subs &middot; {row.videos} videos</p>
-                  </div>
+                    </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold tabular-nums text-emerald-600">{delta != null ? fmtSigned(delta) : '—'}</p>
+                    <p className={`text-sm font-semibold tabular-nums ${d.cls}`}>{d.text}</p>
                     <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-600 mt-0.5">&Delta; views</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold tabular-nums text-emerald-600">{delta > 0 ? formatEarningsSingle(delta / 1000 * cpm) : '—'}</p>
+                    <p className={`text-sm font-semibold tabular-nums ${rev.cls}`}>{rev.text}</p>
                     <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-600 mt-0.5">est. revenue</p>
                   </div>
+                </div>
+                {row.note && <p className="text-xs text-neutral-600 mt-1.5">{row.note}</p>}
                 </div>
               );
             })}
@@ -472,13 +496,15 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
               const idx = scrubIndex == null ? relData.length - 1 : scrubIndex;
               const pt = relData[idx];
               const prevPt = relData[idx - 1];
-              const delta = pt && prevPt ? pt[currentMetric.dataKey] - prevPt[currentMetric.dataKey] : null;
+              const reading = currentMetric.value === "views" && pt ? readingByDate.get(pt.date) : null;
+              const delta = pt && prevPt && pt[currentMetric.dataKey] != null && prevPt[currentMetric.dataKey] != null ? pt[currentMetric.dataKey] - prevPt[currentMetric.dataKey] : null;
+              const dayText = reading ? (reading.kind === "normal" || reading.kind === "catchup" ? `${fmtSigned(reading.delta)} ${reading.days > 1 ? `over ${reading.days} days` : "that day"}` : reading.kind === "first" ? null : deltaCell(reading).text) : delta != null ? `${fmtSigned(delta)} that day` : null;
               return pt ? (
                 <>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-700">{new Date(pt.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                   <div className="flex items-end gap-3 mt-2">
-                    <p className="text-4xl font-bold tabular-nums text-neutral-900 leading-none">{formatNumber(pt[currentMetric.dataKey])}</p>
-                    {delta != null && <p className="text-sm font-semibold text-emerald-600 tabular-nums pb-1">{fmtSigned(delta)} that day</p>}
+                    <p className="text-4xl font-bold tabular-nums text-neutral-900 leading-none">{pt[currentMetric.dataKey] == null ? "—" : formatNumber(pt[currentMetric.dataKey])}</p>
+                    {dayText && <p className="text-sm font-semibold text-emerald-600 tabular-nums pb-1">{dayText}</p>}
                   </div>
                   <p className="text-xs text-neutral-700 mt-1.5">drag across the chart to read any day</p>
                 </>
@@ -508,7 +534,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                     </linearGradient>
                   </defs>
                   <YAxis domain={[0 - pad, span + pad]} axisLine={false} tickLine={false} tick={{ fill: '#a3a3a3', fontSize: 10 }} tickFormatter={(v) => (v <= 0 ? '+0' : '+' + formatNumber(v))} width={48} />
-                  <Area type="monotone" dataKey="rel" stroke="#059669" strokeWidth={2.5} fill="url(#ytDrilldownGradient)" dot={false} />
+                  <Area type="monotone" dataKey="rel" connectNulls stroke="#059669" strokeWidth={2.5} fill="url(#ytDrilldownGradient)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -526,7 +552,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
             <div className="mt-5 border border-neutral-200/80 rounded-xl overflow-hidden divide-y divide-neutral-100">
               <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Total views</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{formatNumber(creator.totalViews)}</span></div>
               <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Net over {chartRange >= 9999 ? 'all time' : `${chartRange}d`}</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(netGrowth)}</span></div>
-              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Best day</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(Math.max(...relData.map((d, i) => i > 0 ? d[currentMetric.dataKey] - relData[i - 1][currentMetric.dataKey] : 0)))}</span></div>
+              <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Best day</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(currentMetric.value === "views" ? bestViewsDay : Math.max(0, ...relData.map((d, i) => (i > 0 && d[currentMetric.dataKey] != null && relData[i - 1][currentMetric.dataKey] != null ? d[currentMetric.dataKey] - relData[i - 1][currentMetric.dataKey] : 0))))}</span></div>
               <div className="flex items-center px-4 py-3"><span className="text-sm text-neutral-600">Daily average</span><span className="flex-1" /><span className="text-sm font-semibold tabular-nums">{fmtSigned(Math.round(netGrowth / Math.max(1, relData.length - 1)))}</span></div>
             </div>
 

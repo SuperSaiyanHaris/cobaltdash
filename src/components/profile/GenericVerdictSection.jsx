@@ -178,6 +178,10 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
   const nearestMilestone = config.noMilestone ? null : findNextMilestone(primaryCount, metrics?.dailyAverage?.subs);
 
   const platformName = PLATFORM_DISPLAY_NAMES[platform] || platform;
+  // TikTok and Substack report big counts in rounded steps (every tracked
+  // Substack account over 100K is a round thousand, checked 2026-09-26), so
+  // their daily tables sit flat for days while the account grows.
+  const countIsRounded = (platform === "tiktok" || platform === "substack") && primaryCount >= 100000;
   const hasThirdTabContent = config.thirdTab === 'latestPost' ? !!creator.latestPost
     : config.thirdTab === 'topTracks' ? musicTracks?.length > 0
     : false;
@@ -415,6 +419,11 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
 
       {activeTab === 'daily' && (
         <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden mt-4">
+          {countIsRounded && (
+            <p className="px-5 py-3 text-xs text-neutral-600 border-b border-neutral-100 bg-neutral-50">
+              {platformName} reports counts this large in rounded steps, so days can read +0 while the account keeps growing.
+            </p>
+          )}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
