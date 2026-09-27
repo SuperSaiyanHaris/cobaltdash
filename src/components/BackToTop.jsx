@@ -50,7 +50,7 @@ export default function BackToTop({ hasBottomNav = false }) {
       {isVisible && (
         <button
           onClick={scrollToTop}
-          className={`fixed right-4 md:bottom-8 md:right-8 z-50 p-2.5 md:p-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full shadow-lg shadow-black/10 transition-[bottom] duration-300 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 ${!hasBottomNav ? 'bottom-4' : ''}`}
+          className={`fixed right-4 md:bottom-8 md:right-8 z-50 p-2.5 md:p-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-full shadow-[0_8px_24px_-6px_rgba(0,0,0,0.35)] transition-[bottom,background-color] duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${!hasBottomNav ? 'bottom-4' : ''}`}
           style={
             hasBottomNav
               ? { bottom: `calc(env(safe-area-inset-bottom) + ${collapsed ? collapsedBottom : expandedBottom}px)` }
