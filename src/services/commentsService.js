@@ -79,6 +79,7 @@ export const markRepliesSeen = () => call({ action: 'replies_seen' });
 export const setHandle = (handle) => call({ action: 'handle', handle });
 export const removeComment = (id) => call({ action: 'remove', id });
 export const moderateComment = (id, status) => call({ action: 'moderate', id, status });
+export const setCommentBan = (userId, banned) => call({ action: 'ban', userId, banned });
 
 async function get(query) {
   const { data: { session } } = await supabase.auth.getSession();

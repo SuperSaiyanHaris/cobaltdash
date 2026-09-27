@@ -54,7 +54,10 @@ sessions never see it. Anything a cloud session must know goes here.
   "@handle". `/replies` (account menu, unread badge) lists replies under your
   comments plus replies that @mention you; `commenter_profiles.replies_seen_at`
   tracks read state. No emails. Admin accounts may take reserved handles
-  (@shinypull shows an Official badge). Comments aren't server-rendered or
+  (@shinypull shows an Official badge). Admin "Remove and ban" sets
+  `commenter_profiles.banned_at` and hides all of that person's comments; a
+  banned account can't post, reply, rename, vote or report (API check plus
+  `comment_user_ok()` in the vote/report RLS). Unban is in the Banned list. Comments aren't server-rendered or
   indexed.
 
 # Supported platforms

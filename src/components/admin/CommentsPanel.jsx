@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { adminQueue, moderateComment } from '../../services/commentsService';
+import { adminQueue, moderateComment, setCommentBan } from '../../services/commentsService';
 import { formatRelativeTimeShort } from '../../lib/utils';
 
 // Admin review for profile comments. Comments post instantly once they pass
@@ -11,6 +11,7 @@ import { formatRelativeTimeShort } from '../../lib/utils';
 const LISTS = [
   ['review', 'To review', 'New comments. Reported or heavily downvoted ones are at the top.'],
   ['removed', 'Removed', 'Taken down after review. Restore brings one back.'],
+  ['banned', 'Banned', 'Accounts that can\x27t comment, reply, vote or report. Unban lets them back in (their removed comments stay removed).'],
 ];
 
 export default function CommentsPanel() {
@@ -27,10 +28,22 @@ export default function CommentsPanel() {
     try { await moderateComment(id, status); await load(); } catch (e) { setError(e.message); } finally { setBusy(null); }
   };
 
+  const ban = async (c) => {
+    const handle = c.commenter_profiles?.handle;
+    if (!window.confirm(`Ban @${handle}? This removes all of their comments and replies, and they can't comment, reply, vote or report anymore.`)) return;
+    setBusy(c.id);
+    try { await setCommentBan(c.user_id, true); await load(); } catch (e) { setError(e.message); } finally { setBusy(null); }
+  };
+  const unban = async (p) => {
+    setBusy(p.user_id);
+    try { await setCommentBan(p.user_id, false); await load(); } catch (e) { setError(e.message); } finally { setBusy(null); }
+  };
+
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!data) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-neutral-600" /></div>;
 
   const rows = data[list] || [];
+  const bannedIds = new Set((data.banned || []).map((p) => p.user_id));
   return (
     <div>
       <div className="flex flex-wrap gap-2">
@@ -42,8 +55,17 @@ export default function CommentsPanel() {
       </div>
       <p className="text-sm text-neutral-700 mt-3">{LISTS.find(([k]) => k === list)[2]}</p>
       <div className="mt-4 bg-white border border-neutral-200/80 rounded-xl divide-y divide-neutral-100">
-        {rows.length === 0 && <p className="p-5 text-sm text-neutral-700">{list === 'review' ? 'All caught up.' : 'Nothing removed.'}</p>}
-        {rows.map((c) => (
+        {rows.length === 0 && <p className="p-5 text-sm text-neutral-700">{list === 'review' ? 'All caught up.' : list === 'banned' ? 'Nobody is banned.' : 'Nothing removed.'}</p>}
+        {list === 'banned' && rows.map((p) => (
+          <div key={p.user_id} className="p-4 flex items-center gap-4">
+            <div className="flex-1 min-w-0 text-sm">
+              <span className="font-semibold text-neutral-900">@{p.handle}</span>
+              <span className="text-neutral-700"> · banned {formatRelativeTimeShort(p.banned_at)}</span>
+            </div>
+            <button type="button" disabled={busy === p.user_id} onClick={() => unban(p)} className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-neutral-300 text-neutral-900 disabled:opacity-60">Unban</button>
+          </div>
+        ))}
+        {list !== 'banned' && rows.map((c) => (
           <div key={c.id} className={`p-4 flex gap-4 ${c.flagged ? 'bg-red-50/40' : ''}`}>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-700">
@@ -63,9 +85,13 @@ export default function CommentsPanel() {
                 <>
                   <button type="button" disabled={busy === c.id} onClick={() => act(c.id, 'visible')} className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-neutral-900 text-white disabled:opacity-60">Looks fine</button>
                   <button type="button" disabled={busy === c.id} onClick={() => act(c.id, 'hidden')} className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-red-300 text-red-700 disabled:opacity-60">Remove</button>
+                  <button type="button" disabled={busy === c.id} onClick={() => ban(c)} className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-600 text-white disabled:opacity-60">Remove and ban</button>
                 </>
               ) : (
-                <button type="button" disabled={busy === c.id} onClick={() => act(c.id, 'visible')} className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-neutral-300 text-neutral-900 disabled:opacity-60">Restore</button>
+                <>
+                  <button type="button" disabled={busy === c.id} onClick={() => act(c.id, 'visible')} className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-neutral-300 text-neutral-900 disabled:opacity-60">Restore</button>
+                  {!bannedIds.has(c.user_id) && <button type="button" disabled={busy === c.id} onClick={() => ban(c)} className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-red-600 text-white disabled:opacity-60">Ban</button>}
+                </>
               )}
             </div>
           </div>

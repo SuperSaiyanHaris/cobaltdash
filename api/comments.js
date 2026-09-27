@@ -35,8 +35,9 @@ async function postComment(res, supabase, user, { creatorId, body, parentId }) {
   const local = localCheck(text);
   if (local) return fail(res, 422, local.message, { reason: local.reason });
 
-  const { data: profile } = await supabase.from('commenter_profiles').select('handle').eq('user_id', user.id).maybeSingle();
+  const { data: profile } = await supabase.from('commenter_profiles').select('handle, banned_at').eq('user_id', user.id).maybeSingle();
   if (!profile) return fail(res, 409, 'Pick a public name first.', { needsHandle: true });
+  if (profile.banned_at) return fail(res, 403, "Your account can't post comments.");
 
   const { data: creator } = await supabase.from('creators').select('id').eq('id', creatorId).maybeSingle();
   if (!creator) return fail(res, 404, 'Creator not found.');
@@ -70,6 +71,9 @@ async function setHandle(res, supabase, user, { handle }, isAdmin) {
   const h = String(handle ?? '').trim().toLowerCase();
   const problem = handleProblem(h, { allowReserved: isAdmin });
   if (problem) return fail(res, 422, problem);
+
+  const { data: mine } = await supabase.from('commenter_profiles').select('banned_at').eq('user_id', user.id).maybeSingle();
+  if (mine?.banned_at) return fail(res, 403, "Your account can't post comments.");
 
   const { data: taken } = await supabase.from('commenter_profiles').select('user_id').ilike('handle', likeEscape(h)).maybeSingle();
   if (taken && taken.user_id !== user.id) return fail(res, 409, 'That name is taken. Try another.');
@@ -117,13 +121,29 @@ const needsLook = (c) => c.report_count > 0 || c.status === 'hidden' || (c.down_
 
 async function adminQueue(res, supabase) {
   const cols = 'id, creator_id, user_id, parent_id, body, status, reviewed, up_count, down_count, report_count, created_at, commenter_profiles(handle), creators(platform, username, display_name)';
-  const [review, removed] = await Promise.all([
+  const [review, removed, banned] = await Promise.all([
     supabase.from('creator_comments').select(cols).eq('reviewed', false).neq('status', 'removed').order('created_at', { ascending: false }).limit(200),
     supabase.from('creator_comments').select(cols).eq('status', 'hidden').eq('reviewed', true).order('created_at', { ascending: false }).limit(100),
+    supabase.from('commenter_profiles').select('user_id, handle, banned_at').not('banned_at', 'is', null).order('banned_at', { ascending: false }).limit(200),
   ]);
   const toReview = (review.data || []).map((c) => ({ ...c, flagged: needsLook(c) }))
     .sort((a, b) => (b.flagged - a.flagged) || (new Date(b.created_at) - new Date(a.created_at)));
-  return res.status(200).json({ review: toReview, removed: removed.data || [] });
+  return res.status(200).json({ review: toReview, removed: removed.data || [], banned: banned.data || [] });
+}
+
+// Ban: stops the account commenting, replying, voting and reporting, and
+// takes down everything they've posted (restorable one by one from Removed).
+async function setBan(res, supabase, { userId, banned }) {
+  if (!userId) return fail(res, 400, 'Missing user.');
+  const { error } = await supabase.from('commenter_profiles').update({ banned_at: banned ? new Date().toISOString() : null }).eq('user_id', userId);
+  if (error) return fail(res, 500, "Couldn't update that account.");
+  let removed = 0;
+  if (banned) {
+    const { data } = await supabase.from('creator_comments').update({ status: 'hidden', reviewed: true })
+      .eq('user_id', userId).in('status', ['visible', 'held']).select('id');
+    removed = data?.length || 0;
+  }
+  return res.status(200).json({ ok: true, removed });
 }
 
 // "Looks fine" shows it and marks it reviewed; "Remove" hides it and marks it
@@ -166,6 +186,7 @@ export default async function handler(req, res) {
     case 'remove': return removeOwn(res, supabase, user, body);
     case 'replies_seen': return markRepliesSeen(res, supabase, user);
     case 'moderate': return isAdmin ? moderate(res, supabase, body) : fail(res, 403, 'Forbidden');
+    case 'ban': return isAdmin && body.userId !== user.id ? setBan(res, supabase, body) : fail(res, 403, 'Forbidden');
     default: return fail(res, 400, 'Bad request');
   }
 }
