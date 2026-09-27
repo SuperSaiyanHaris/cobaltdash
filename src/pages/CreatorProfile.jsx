@@ -27,6 +27,7 @@ import StructuredData, { createBreadcrumbSchema } from '../components/Structured
 import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
 import { addRecentlyViewed } from '../lib/recentlyViewed';
+import { reportAction } from '../services/progressService';
 import logger from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
@@ -212,6 +213,11 @@ export default function CreatorProfile() {
     })();
     return () => { cancelled = true; };
   }, [dbCreatorId, platform]);
+
+  // ShinyPass: opening a creator profile earns a little XP (3 a day).
+  useEffect(() => {
+    if (dbCreatorId && user?.id) reportAction('explore', dbCreatorId);
+  }, [dbCreatorId, user?.id]);
 
   // Live-refresh stats while the tab is visible.
   // Polls supabase for the latest creator_stats row every 60s — cheap query, no external API hits.

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Star, Users, Loader2, Scale, Clock, ChevronRight, Check, X, Trash2,
-  Settings, TrendingUp, Search, LayoutGrid, List,
+  Users, Loader2, Scale, ChevronRight, Check, X, Trash2,
+  Settings, TrendingUp, Search, LayoutGrid, List, Flame, Gift, SlidersHorizontal,
 } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
@@ -26,6 +26,8 @@ import { PLATFORM_IDS, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/c
 import { cardImageUrl } from '../lib/cardUrl';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
+import { useProgress, loadProgress } from '../services/progressService';
+import { UserCardSvg } from '../components/pass/PassArt';
 
 /**
  * Dashboard, redesigned 2026-09-25 as "your collection": a dark band with a
@@ -69,6 +71,12 @@ const METRIC_LABEL = {
 };
 
 const VIEW_KEY = 'sp-dashboard-view';
+const SORTS = [
+  { id: 'live', label: 'Live first' },
+  { id: 'growth', label: 'Top growth today' },
+  { id: 'followers', label: 'Most followed' },
+  { id: 'name', label: 'Name A-Z' },
+];
 const CARD_RADIUS = 'rounded-[6.4%/4.571%]';
 const PANEL = 'bg-white border border-neutral-200 rounded-2xl';
 const SAMPLE_HAND = [
@@ -122,6 +130,69 @@ function CardHand({ cards }) {
   );
 }
 
+function FilterRow({ active, onClick, children, count }) {
+  return (
+    <button type="button" onClick={onClick} className={`w-full flex items-center gap-3 px-3 h-11 rounded-xl text-left text-[15px] font-semibold transition-colors ${active ? 'bg-neutral-900 text-white' : 'text-neutral-900 hover:bg-neutral-100'}`}>
+      <span className="flex-1 flex items-center gap-2 min-w-0">{children}</span>
+      {count !== undefined && <span className={`tabular-nums text-sm ${active ? 'text-white/80' : 'text-neutral-600'}`}>{count}</span>}
+      {active && <Check className="w-4 h-4" />}
+    </button>
+  );
+}
+
+/**
+ * Platform + sort in one place: a bottom sheet on phones, a popover under
+ * the Filter button on larger screens.
+ */
+function FilterPanel({ onClose, selectedPlatform, setSelectedPlatform, sortBy, setSortBy, platformCounts, total, liveCount }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const onDown = (e) => { if (window.innerWidth >= 640 && ref.current && !ref.current.contains(e.target) && !e.target.closest('[aria-label="Filter and sort"]')) onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [onClose]);
+
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/40 sm:hidden" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={ref}
+        role="dialog"
+        aria-label="Filter and sort"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.35)]
+          sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-12 sm:w-80 sm:rounded-2xl sm:border sm:border-neutral-200 sm:p-3 sm:shadow-[0_20px_40px_-16px_rgba(0,0,0,0.3)]"
+      >
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-neutral-300 sm:hidden" />
+        <p className="px-3 pt-1 pb-2 text-xs font-bold uppercase tracking-[0.14em] text-neutral-600">Show</p>
+        <FilterRow active={selectedPlatform === 'all'} onClick={() => setSelectedPlatform('all')} count={total}>All creators</FilterRow>
+        {liveCount > 0 && (
+          <FilterRow active={selectedPlatform === 'live'} onClick={() => setSelectedPlatform('live')} count={liveCount}>
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live now
+          </FilterRow>
+        )}
+        {PLATFORM_IDS.filter((p) => platformCounts[p]).map((p) => {
+          const Icon = platformIcons[p];
+          const active = selectedPlatform === p;
+          return (
+            <FilterRow key={p} active={active} onClick={() => setSelectedPlatform(p)} count={platformCounts[p]}>
+              {Icon && <Icon className={`w-4 h-4 ${active ? 'text-white' : platformTint[p]}`} />}{PLATFORM_DISPLAY_NAMES[p]}
+            </FilterRow>
+          );
+        })}
+        <p className="px-3 pt-4 pb-2 text-xs font-bold uppercase tracking-[0.14em] text-neutral-600">Sort</p>
+        {SORTS.map((o) => <FilterRow key={o.id} active={sortBy === o.id} onClick={() => setSortBy(o.id)}>{o.label}</FilterRow>)}
+        <div className="mt-4 flex gap-2 sm:hidden">
+          <button onClick={() => { setSelectedPlatform('all'); setSortBy('live'); }} className="flex-1 h-12 rounded-xl border border-neutral-300 text-[15px] font-bold text-neutral-900">Reset</button>
+          <button onClick={onClose} className="flex-1 h-12 rounded-xl bg-neutral-900 text-white text-[15px] font-bold">Done</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
 
@@ -141,6 +212,8 @@ export default function Dashboard() {
   const [selectedPlatform, setSelectedPlatform] = useState('all');
   const [sortBy, setSortBy] = useState('live');
   const [compareMode, setCompareMode] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const passState = useProgress();
   const [selectedForCompare, setSelectedForCompare] = useState([]);
   const [view, setView] = useState(() => {
     try { return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'cards'; } catch { return 'cards'; }
@@ -223,6 +296,7 @@ export default function Dashboard() {
     if (user) {
       loadFollowedCreators();
       loadSavedCompares();
+      loadProgress().catch(() => {});
     }
     setRecentlyViewed(getRecentlyViewed().filter((c) => isActivePlatform(c.platform)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -337,8 +411,6 @@ export default function Dashboard() {
     .filter(x => x.g !== null && x.g > 0)
     .sort((a, b) => b.g - a.g)[0] || null;
 
-  const hand = [...followedCreators].sort((a, b) => countOf(b) - countOf(a)).slice(0, 5)
-    .map(c => ({ platform: c.platform, username: c.username }));
 
   const toggleSelect = (id) => {
     setSelectedForCompare(prev => prev.includes(id)
@@ -352,7 +424,7 @@ export default function Dashboard() {
 
   const growthLine = (c, dark = false) => {
     const g = getGrowth(c.id, primaryField(c));
-    if (g === null) return <span className={dark ? 'text-white/50' : 'text-neutral-500'}>No change yet</span>;
+    if (g === null) return <span className={dark ? 'text-white/50' : 'text-neutral-600'}>No change yet</span>;
     if (g === 0) return <span className={dark ? 'text-white/60' : 'text-neutral-600'}>No change today</span>;
     return (
       <span className={g > 0 ? (dark ? 'text-emerald-400' : 'text-emerald-700') : (dark ? 'text-red-400' : 'text-red-600')}>
@@ -417,7 +489,7 @@ export default function Dashboard() {
             {selected && <Check className="w-3 h-3 text-white" />}
           </span>
         )}
-        <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-xl" className="!w-12 !h-12 flex-shrink-0" />
+        <CreatorAvatar src={creator.profile_image} name={creator.display_name} size="lg" rounded="rounded-xl" className="!w-10 !h-10 sm:!w-12 sm:!h-12 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-bold text-neutral-900 truncate text-[15px]">{creator.display_name}</p>
@@ -433,13 +505,13 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-lg font-extrabold text-neutral-900 tabular-nums leading-none">{creatorStats[creator.id]?.current ? formatNumber(countOf(creator)) : '–'}</p>
-          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-600">{METRIC_LABEL[creator.platform] || 'followers'}</p>
+          <p className="text-base sm:text-lg font-extrabold text-neutral-900 tabular-nums leading-none">{creatorStats[creator.id]?.current ? formatNumber(countOf(creator)) : '-'}</p>
+          <p className="hidden sm:block mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-600">{METRIC_LABEL[creator.platform] || 'followers'}</p>
           <p className="mt-1 text-xs font-semibold tabular-nums">{growthLine(creator)}</p>
         </div>
       </div>
     );
-    const cls = `block w-full text-left ${PANEL} p-4 transition-colors ${selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'hover:border-neutral-400'} ${full ? 'opacity-40' : ''}`;
+    const cls = `block w-full text-left ${PANEL} px-3.5 py-3 sm:p-4 transition-colors ${selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'hover:border-neutral-400'} ${full ? 'opacity-40' : ''}`;
     return compareMode ? (
       <button key={creator.id} type="button" onClick={() => toggleSelect(creator.id)} disabled={full} className={cls}>{inner}</button>
     ) : (
@@ -448,27 +520,32 @@ export default function Dashboard() {
   };
 
   const renderCollection = (list) => view === 'cards' ? (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-7">
+    <div className="grid grid-cols-2 min-[520px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 sm:gap-x-4 gap-y-6 sm:gap-y-7">
       {list.map(renderCardTile)}
     </div>
   ) : (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
       {list.map(renderRow)}
     </div>
   );
 
   const tabs = [
-    { id: 'following', label: 'Following', icon: Star, count: followedCreators.length },
-    { id: 'compares', label: 'Saved compares', icon: Scale, count: savedCompares.length },
-    { id: 'recent', label: 'Recently viewed', icon: Clock, count: recentlyViewed.length },
+    { id: 'following', label: 'Following', count: followedCreators.length },
+    { id: 'compares', label: 'Matchups', count: savedCompares.length },
+    { id: 'recent', label: 'Recent', count: recentlyViewed.length },
   ];
 
-  const pill = (active) => `inline-flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-    active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-800 border border-neutral-300 hover:border-neutral-900'
+  const activeFilters = [
+    selectedPlatform !== 'all' && { key: 'platform', label: selectedPlatform === 'live' ? 'Live now' : PLATFORM_DISPLAY_NAMES[selectedPlatform], clear: () => setSelectedPlatform('all') },
+    sortBy !== 'live' && { key: 'sort', label: SORTS.find((x) => x.id === sortBy)?.label, clear: () => setSortBy('live') },
+  ].filter(Boolean);
+  const iconBtn = (active = false) => `inline-flex items-center justify-center gap-2 h-10 min-w-10 px-3 rounded-xl text-sm font-bold transition-colors ${
+    active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-900 border border-neutral-300 hover:border-neutral-900'
   }`;
-  const chip = (active) => `inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-    active ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-800 border border-neutral-300 hover:border-neutral-900'
-  }`;
+
+  const pass = passState?.progress;
+  const passMe = passState && { handle: passState.handle || 'you', avatar: passState.avatar || user.user_metadata?.avatar_url || null, ...pass };
+  const packReady = passState?.packs?.available?.[0];
 
   return (
     <>
@@ -476,37 +553,52 @@ export default function Dashboard() {
 
       <div className="min-h-screen bg-[#fafaf9]">
 
-        {/* ── Dark band: welcome, stats, your hand ── */}
-        <section className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
+        {/* ── Dark band: you, your card, today ── */}
+        <section className="relative isolate z-20 bg-[#0a0a0f] text-white">
           <DotGrid />
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-10 sm:pb-14 grid lg:grid-cols-[1.15fr,0.85fr] gap-10 items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Your collection</p>
-              <h1 className="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] text-balance">
-                Welcome back, {displayName}.
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-7 sm:pt-12 pb-8 sm:pb-12 flex items-center gap-5 sm:gap-10">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Your collection</p>
+              <h1 className="mt-2 text-[26px] leading-[1.1] sm:text-5xl font-extrabold tracking-tight text-balance break-words">
+                Welcome back, {passState?.handle ? `@${passState.handle}` : displayName}.
               </h1>
 
-              <div className="mt-7 grid grid-cols-3 gap-3 max-w-md">
-                {[
-                  { label: 'Following', value: followedCreators.length },
-                  { label: 'Live now', value: liveCount, live: liveCount > 0 },
-                  { label: 'Saved matchups', value: savedCompares.length },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-2xl bg-white/[0.06] border border-white/10 px-4 py-3">
-                    <p className="text-2xl sm:text-3xl font-extrabold tabular-nums leading-none flex items-center gap-2">
-                      {s.live && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
-                      {s.value}
-                    </p>
-                    <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">{s.label}</p>
-                  </div>
-                ))}
-              </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:text-[15px] font-semibold text-white/80 tabular-nums">
+                <span>{followedCreators.length} following</span>
+                <span aria-hidden="true" className="text-white/35">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  {liveCount > 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}{liveCount} live now
+                </span>
+                <span aria-hidden="true" className="text-white/35">·</span>
+                <span>{savedCompares.length} saved matchups</span>
+              </p>
+
+              {/* ShinyPass strip */}
+              {pass && (
+                <Link to="/pass" className="group mt-5 sm:mt-6 flex items-center gap-3 sm:gap-4 max-w-md rounded-2xl border border-white/10 bg-white/[0.05] hover:border-white/35 px-3.5 sm:px-4 py-3 transition-colors">
+                  {passMe && <span className="min-[400px]:hidden w-11 flex-shrink-0 -my-1 rotate-[-4deg]"><UserCardSvg me={passMe} /></span>}
+                  <span className="flex-shrink-0 text-center">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">Level</span>
+                    <span className="block text-2xl font-black tabular-nums leading-none">{pass.level}</span>
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center justify-between gap-2 text-xs font-semibold text-white/75 tabular-nums">
+                      <span className="truncate">{pass.level >= 99 ? 'Max level' : `${formatNumber(pass.into)} / ${formatNumber(pass.need)} XP`}</span>
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap"><Flame className="w-3.5 h-3.5 text-orange-300" />{pass.streak || 0}-day streak</span>
+                    </span>
+                    <span className="mt-1.5 block h-2 rounded-full bg-white/10 overflow-hidden">
+                      <span className="block h-full rounded-full" style={{ width: `${Math.max(3, pass.pct * 100)}%`, background: 'linear-gradient(90deg, #5EC8FF, #C084FC 60%, #FFD76A)' }} />
+                    </span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white flex-shrink-0" />
+                </Link>
+              )}
 
               {/* Live now + today's biggest mover */}
               {!loadingCreators && (liveCount > 0 || topMover) && (
-                <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                <div className="mt-4 flex gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {liveCreatorsList.slice(0, 4).map((c) => (
-                    <Link key={c.id} to={`/${c.platform}/${c.username}`} className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/15 hover:border-white/40 pl-1 pr-3 py-1 transition-colors">
+                    <Link key={c.id} to={`/${c.platform}/${c.username}`} className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/15 hover:border-white/40 pl-1 pr-3 py-1 transition-colors">
                       <CreatorAvatar src={c.profile_image} name={c.display_name} size="xs" rounded="rounded-full" />
                       <span className="text-sm font-semibold">{c.display_name}</span>
                       <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.12em] text-red-400">
@@ -515,7 +607,7 @@ export default function Dashboard() {
                     </Link>
                   ))}
                   {topMover && (
-                    <Link to={`/${topMover.c.platform}/${topMover.c.username}`} className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/15 hover:border-white/40 pl-1 pr-3 py-1 transition-colors">
+                    <Link to={`/${topMover.c.platform}/${topMover.c.username}`} className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-white/[0.08] border border-white/15 hover:border-white/40 pl-1 pr-3 py-1 transition-colors">
                       <CreatorAvatar src={topMover.c.profile_image} name={topMover.c.display_name} size="xs" rounded="rounded-full" />
                       <span className="text-sm font-semibold">{topMover.c.display_name}</span>
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 tabular-nums">
@@ -526,10 +618,16 @@ export default function Dashboard() {
                 </div>
               )}
 
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <Link to="/search" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors">
-                  <Search className="w-4 h-4" /> Find creators
-                </Link>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5 sm:gap-3">
+                {packReady && followedCreators.length > 0 ? (
+                  <Link to="/pass" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold transition-colors">
+                    <Gift className="w-4 h-4" /> Open your pack
+                  </Link>
+                ) : (
+                  <Link to="/search" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors">
+                    <Search className="w-4 h-4" /> Find creators
+                  </Link>
+                )}
                 <Link to="/compare" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/25 hover:border-white/60 text-white text-sm font-bold transition-colors">
                   <Scale className="w-4 h-4" /> Compare
                 </Link>
@@ -539,24 +637,29 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="hidden sm:block">
-              {hand.length > 0 ? <CardHand cards={hand} /> : <CardHand cards={SAMPLE_HAND} />}
-            </div>
+            {/* Your card */}
+            <Link to="/pass" aria-label="Your ShinyPass card" className="hidden min-[400px]:block flex-shrink-0 w-[112px] sm:w-[200px] lg:w-[250px] self-start sm:self-center rotate-[3deg] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.95)]">
+              {passMe
+                ? <UserCardSvg me={passMe} />
+                : <div className="aspect-[5/7] rounded-[6.4%/4.571%] bg-white/[0.06] border border-white/10 animate-pulse" />}
+            </Link>
           </div>
         </section>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-9 pb-10">
 
-          {/* Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
+          {/* Tabs: plain underline */}
+          <div className="flex gap-6 sm:gap-8 overflow-x-auto border-b border-neutral-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((tab) => {
               const active = activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={pill(active)}>
-                  <Icon className="w-4 h-4" />
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`-mb-px pb-3 pt-1 inline-flex items-center gap-1.5 text-[15px] sm:text-base font-bold whitespace-nowrap border-b-2 transition-colors ${active ? 'text-neutral-950 border-neutral-950' : 'text-neutral-600 border-transparent hover:text-neutral-900'}`}
+                >
                   {tab.label}
-                  <span className={`tabular-nums ${active ? 'text-white/80' : 'text-neutral-600'}`}>{tab.count}</span>
+                  <span className={`tabular-nums text-sm ${active ? 'text-neutral-700' : 'text-neutral-600'}`}>{tab.count}</span>
                 </button>
               );
             })}
@@ -564,63 +667,59 @@ export default function Dashboard() {
 
           {/* ── FOLLOWING ── */}
           {activeTab === 'following' && (
-            <div className="mt-6">
+            <div className="mt-5">
               {!loadingCreators && followedCreators.length > 0 && (
-                <div className="flex flex-col gap-3 mb-7">
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <button onClick={() => setSelectedPlatform('all')} className={chip(selectedPlatform === 'all')}>
-                      All <span className="tabular-nums opacity-80">{followedCreators.length}</span>
-                    </button>
-                    {liveCount > 0 && (
-                      <button onClick={() => setSelectedPlatform('live')} className={chip(selectedPlatform === 'live')}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Live <span className="tabular-nums opacity-80">{liveCount}</span>
+                <div className="mb-5 sm:mb-6">
+                  <div className="flex items-center gap-2">
+                    <p className="flex-1 min-w-0 text-sm font-semibold text-neutral-700 tabular-nums">
+                      {sortedCreators.length} {sortedCreators.length === 1 ? 'creator' : 'creators'}
+                    </p>
+                    <div className="relative">
+                      <button onClick={() => setFilterOpen((v) => !v)} className={iconBtn(filterOpen || activeFilters.length > 0)} aria-expanded={filterOpen} aria-label="Filter and sort">
+                        <SlidersHorizontal className="w-4 h-4" /><span className="hidden sm:inline">Filter</span>
+                        {activeFilters.length > 0 && <span className="tabular-nums text-xs rounded-full bg-white text-neutral-900 w-5 h-5 inline-flex items-center justify-center">{activeFilters.length}</span>}
+                      </button>
+                      {filterOpen && (
+                        <FilterPanel
+                          onClose={() => setFilterOpen(false)}
+                          selectedPlatform={selectedPlatform}
+                          setSelectedPlatform={setSelectedPlatform}
+                          sortBy={sortBy}
+                          setSortBy={setSortBy}
+                          platformCounts={platformCounts}
+                          total={followedCreators.length}
+                          liveCount={liveCount}
+                        />
+                      )}
+                    </div>
+                    {followedCreators.length >= 2 && (
+                      <button onClick={() => { setCompareMode((v) => !v); setSelectedForCompare([]); }} className={iconBtn(compareMode)} aria-pressed={compareMode} aria-label="Pick creators to compare">
+                        <Scale className="w-4 h-4" /><span className="hidden sm:inline">Compare</span>
                       </button>
                     )}
-                    {PLATFORM_IDS.filter(p => platformCounts[p]).map(p => {
-                      const Icon = platformIcons[p];
-                      const active = selectedPlatform === p;
-                      return (
-                        <button key={p} onClick={() => setSelectedPlatform(p)} className={chip(active)}>
-                          {Icon && <Icon className={`w-3.5 h-3.5 ${active ? 'text-white' : platformTint[p]}`} />}
-                          {PLATFORM_DISPLAY_NAMES[p]} <span className="tabular-nums opacity-80">{platformCounts[p]}</span>
+                    <div className="inline-flex h-10 rounded-xl border border-neutral-300 bg-white p-0.5">
+                      {[{ id: 'cards', Icon: LayoutGrid, label: 'Cards' }, { id: 'list', Icon: List, label: 'List' }].map(({ id, Icon, label }) => (
+                        <button
+                          key={id}
+                          onClick={() => changeView(id)}
+                          aria-label={`${label} view`}
+                          aria-pressed={view === id}
+                          className={`inline-flex items-center justify-center w-9 rounded-[10px] transition-colors ${view === id ? 'bg-neutral-900 text-white' : 'text-neutral-800 hover:text-neutral-950'}`}
+                        >
+                          <Icon className="w-4 h-4" />
                         </button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <label className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-800">
-                      Sort
-                      <select
-                        value={sortBy}
-                        onChange={e => setSortBy(e.target.value)}
-                        className="h-9 text-sm font-semibold bg-white border border-neutral-300 text-neutral-900 rounded-full px-3 focus:outline-none focus:border-neutral-900 cursor-pointer"
-                      >
-                        <option value="live">Live first</option>
-                        <option value="growth">Top growth today</option>
-                        <option value="followers">Most followed</option>
-                        <option value="name">Name A-Z</option>
-                      </select>
-                    </label>
-                    <div className="ml-auto flex items-center gap-2">
-                      {followedCreators.length >= 2 && !compareMode && (
-                        <button onClick={() => setCompareMode(true)} className={chip(false)}>
-                          <Scale className="w-4 h-4" /> Pick to compare
-                        </button>
-                      )}
-                      <div className="inline-flex rounded-full border border-neutral-300 bg-white p-0.5">
-                        {[{ id: 'cards', Icon: LayoutGrid, label: 'Cards' }, { id: 'list', Icon: List, label: 'List' }].map(({ id, Icon, label }) => (
-                          <button
-                            key={id}
-                            onClick={() => changeView(id)}
-                            aria-label={`${label} view`}
-                            className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-semibold transition-colors ${view === id ? 'bg-neutral-900 text-white' : 'text-neutral-800 hover:text-neutral-950'}`}
-                          >
-                            <Icon className="w-4 h-4" /><span className="hidden sm:inline">{label}</span>
-                          </button>
-                        ))}
-                      </div>
+                      ))}
                     </div>
                   </div>
+                  {activeFilters.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {activeFilters.map((f) => (
+                        <button key={f.key} onClick={f.clear} className="inline-flex items-center gap-1.5 h-8 pl-3 pr-2 rounded-lg bg-neutral-900 text-white text-sm font-semibold">
+                          {f.label} <X className="w-3.5 h-3.5" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

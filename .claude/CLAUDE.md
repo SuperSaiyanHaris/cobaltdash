@@ -33,7 +33,8 @@ sessions never see it. Anything a cloud session must know goes here.
   "Bad Request".
 - There is no `ON DELETE CASCADE` from `creators`: removing a creator means
   clearing its rows in `rankings_cache`, `creator_stats`, `user_saved_creators`,
-  `featured_listings`, `stream_sessions`, `creator_comments` (and any other
+  `featured_listings`, `stream_sessions`, `creator_comments`,
+  `listing_vouchers`, `user_progress.shiny_creator_id` (and any other
   `creator_id` table) first.
 
 # Profile comments
@@ -59,6 +60,32 @@ sessions never see it. Anything a cloud session must know goes here.
   banned account can't post, reply, rename, vote or report (API check plus
   `comment_user_ok()` in the vote/report RLS). Unban is in the Banned list. Comments aren't server-rendered or
   indexed.
+
+# ShinyPass (user levels, 2026-09-27)
+
+- Free, permanent 1-99 track for signed-in users: `/pass`, public pages
+  `/u/:handle` (noindex, respects `user_progress.is_private`), user card in
+  the Dashboard hero. Rules and numbers live in `src/lib/shinyPass.js`
+  (XP to next level = 60 + 4*L^1.5, about 160K XP total, ~3 years of daily
+  use). Card rarity by level: Common 1-24, Rare 25+, Epic 50+, Legendary 75+.
+- Every write goes through `api/progress.js` (and `api/comments.js` for
+  comment XP) with the service key. Grants use the `grant_xp()` SQL function
+  (idempotent per (user, action, ref), daily caps); revokes set
+  `xp_events.revoked_at`, never delete. Schema:
+  `supabase/migrations/20260927e_shinypass.sql` + `..f_shinypass_functions.sql`.
+- XP sources: daily visit + streak (sync once a day), comments (taken back if
+  removed), upvotes from accounts older than 3 days, follows, saved
+  matchups, profile visits. The server verifies each event really happened.
+- Packs every 10 levels and at 99 (`PACKS`), art in `src/lib/packArt.js`,
+  opening animation in `src/components/pass/PackOpening.jsx`. Packs are
+  earned only, never sold. Contents are cosmetic, XP, streak freezes, and
+  a free 1-month Basic Featured Listing voucher (5%, 10% from level 60,
+  guaranteed at 50 and 99). Redeeming creates a `featured_listings` row with
+  `source = 'reward'` and no Stripe subscription, so it lapses by itself.
+  Vouchers and totals: /admin > ShinyPass.
+- "OG 2026" badge: every account created in 2026. Scout badge is awarded by
+  pg_cron `award-scout-badges` (daily, `award_scout_badges()`).
+- Copy on X/blog about this feature follows the same copy rules.
 
 # Supported platforms
 

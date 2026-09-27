@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import logger from '../lib/logger';
 import { withErrorHandling, AuthenticationError } from '../lib/errorHandler';
+import { reportAction } from './progressService';
 
 /**
  * Ensure user exists in users table
@@ -58,6 +59,8 @@ export const followCreator = withErrorHandling(
       throw error;
     }
 
+    // ShinyPass XP (once per creator, verified server-side).
+    reportAction('follow', creatorId);
     return true;
   },
   'followService.followCreator'

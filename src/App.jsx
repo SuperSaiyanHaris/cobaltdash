@@ -72,6 +72,11 @@ const HubPage = lazyWithRetry(() => import('./pages/HubPage'));
 const HubIndex = lazyWithRetry(() => import('./pages/HubPage').then((m) => ({ default: m.HubIndex })));
 const NewsletterUnsubscribe = lazyWithRetry(() => import('./pages/NewsletterUnsubscribe'));
 const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
+const ShinyPass = lazyWithRetry(() => import('./pages/ShinyPass'));
+// ShinyPass sync + XP toasts. Lazy so the progress client stays off the
+// critical path (it renders nothing, so its Suspense fallback is null).
+const PassSync = lazyWithRetry(() => import('./components/pass/PassSync'));
+const PublicProfile = lazyWithRetry(() => import('./pages/PublicProfile'));
 
 // cmdk (command palette) and sonner (toasts) are 23 KB gzip between them, and
 // neither is needed to paint anything. Both are pulled out of the critical
@@ -229,6 +234,12 @@ function AuthPanelHost() {
 }
 
 // Extracted so we can call useLocation() to suppress chrome on share pages
+// Signed-out visitors never download the ShinyPass sync code.
+function PassSyncWhenSignedIn() {
+  const { user } = useAuth();
+  return user ? <Suspense fallback={null}><PassSync /></Suspense> : null;
+}
+
 function LayoutWrapper() {
   const location = useLocation();
   const isShareRoute = location.pathname.startsWith('/s/');
@@ -237,6 +248,7 @@ function LayoutWrapper() {
     <MobileNavProvider>
     <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
       <RouteChangeTracker />
+      <PassSyncWhenSignedIn />
       <ScrollToTop />
       <BackToTop hasBottomNav={!isShareRoute} />
       {!isShareRoute && <Header />}
@@ -259,6 +271,8 @@ function LayoutWrapper() {
           <Route path="/milestones" element={<Milestones />} />
           <Route path="/live/:platform/:username" element={<LiveCount />} />
           <Route path="/s/:platform/:username" element={<ShareProfile />} />
+          <Route path="/pass" element={<ShinyPass />} />
+          <Route path="/u/:handle" element={<PublicProfile />} />
           <Route path="/:platform/:username" element={<CreatorProfile />} />
           <Route path="/auth/sign-in" element={<AuthPage initialMode="signin" />} />
           <Route path="/auth/sign-up" element={<AuthPage initialMode="signup" />} />

@@ -6,6 +6,9 @@ import { formatRelativeTimeShort } from '../../lib/utils';
 import {
   listComments, listReplies, getComment, myVotes, vote, reportComment, myHandle, postComment, setHandle, removeComment,
 } from '../../services/commentsService';
+import { progressFor } from '../../services/progressService';
+import { LevelChip, BadgePill } from '../pass/BadgeChip';
+import { RINGS } from '../../lib/shinyPass';
 
 // Comments on a creator's profile, with one level of replies. Loads only when
 // scrolled near, so the profile's first paint is untouched. Posting goes
@@ -47,6 +50,7 @@ export default function CreatorComments({ creatorId, name }) {
   const [sort, setSort] = useState('top');
   const [comments, setComments] = useState([]);
   const [replies, setReplies] = useState({}); // parentId -> [reply]
+  const [passInfo, setPassInfo] = useState({}); // userId -> { xp, equipped, badges }
   const [expanded, setExpanded] = useState(() => new Set(focusId ? [focusId] : []));
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -88,6 +92,7 @@ export default function CreatorComments({ creatorId, name }) {
       for (const r of kids) (byParent[r.parent_id] ||= []).push(r);
       setComments((prev) => (replace ? rows : [...prev, ...rows.filter((r) => !prev.some((p) => p.id === r.id))]));
       setReplies((prev) => ({ ...(replace ? {} : prev), ...byParent }));
+      progressFor([...rows, ...kids].map((r) => r.user_id)).then((m) => setPassInfo((prev) => ({ ...prev, ...m }))).catch(() => {});
       setTotal(count);
       setPage(nextPage);
       if (user) {
@@ -235,13 +240,23 @@ export default function CreatorComments({ creatorId, name }) {
     const mine = user && c.user_id === user.id;
     const v = votes[c.id] || 0;
     const handle = c.commenter_profiles?.handle || 'someone';
+    const info = passInfo[c.user_id];
+    const ring = info?.equipped?.ring && RINGS[info.equipped.ring];
     const pill = (on, onCls) => `inline-flex items-center gap-1.5 ${isReply ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]'} rounded-full border tabular-nums transition-colors ${on ? onCls : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'}`;
     return (
       <div id={`c-${c.id}`} className={`flex gap-3 ${c.status === 'held' ? 'opacity-80' : ''}`}>
-        <Avatar handle={handle} url={c.commenter_profiles?.avatar_url} small={isReply} />
+        {ring ? (
+          <span className="self-start rounded-full p-[2px] flex-shrink-0" style={{ background: `conic-gradient(from 20deg, ${ring.a}, ${ring.b}, ${ring.a})` }}>
+            <Avatar handle={handle} url={c.commenter_profiles?.avatar_url} small={isReply} />
+          </span>
+        ) : <Avatar handle={handle} url={c.commenter_profiles?.avatar_url} small={isReply} />}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-sm font-semibold text-neutral-900">{mine ? 'You' : handle}</span>
+            {c.commenter_profiles?.handle
+              ? <Link to={`/u/${handle}`} className="text-sm font-semibold text-neutral-900 hover:underline">{mine ? 'You' : handle}</Link>
+              : <span className="text-sm font-semibold text-neutral-900">{mine ? 'You' : handle}</span>}
+            {info && handle !== OFFICIAL && <LevelChip xp={info.xp} />}
+            {info?.equipped?.badge && info.badges.includes(info.equipped.badge) && <BadgePill badge={info.equipped.badge} />}
             {handle === OFFICIAL && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-neutral-900 text-white">Official</span>}
             {c.follows_creator && handle !== OFFICIAL && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-50 text-violet-700">Follows {name}</span>}
             <span className="text-xs text-neutral-600">{formatRelativeTimeShort(c.created_at)}</span>

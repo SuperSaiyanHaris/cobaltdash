@@ -532,3 +532,33 @@ h1, h2, h3, h4 {
 
 /* Hide the floating mobile bottom nav while the header's mobile menu is open. */
 body[data-mobile-menu="open"] nav[aria-label="Primary"] { display: none; }
+
+/* ShinyPass: an openable pack bobs gently on the track. */
+@keyframes sp-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[sp-bob_2\.4s_ease-in-out_infinite\] { animation: none; }
+}
+
+/* ShinyPass shiny variant: a moving foil edge and holo stripes over a
+   creator card. Background-position only, no glow. */
+.sp-shiny-edge {
+  background: linear-gradient(120deg, #FF7AD9, #FFF3C4, #67E8F9, #C084FC, #FFD76A, #FF7AD9);
+  background-size: 300% 300%;
+  animation: sp-shift 5s linear infinite;
+}
+.sp-shiny-foil {
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,0) 0 14px, rgba(255,255,255,.10) 14px 20px, rgba(255,122,217,.08) 20px 26px, rgba(103,232,249,.08) 26px 32px);
+  background-size: 200% 200%;
+  animation: sp-shift 7s linear infinite;
+  mix-blend-mode: screen;
+}
+@keyframes sp-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sp-shiny-edge, .sp-shiny-foil { animation: none; }
+}

@@ -45,6 +45,8 @@ export const config = {
     '/badge/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)/:username',
     // Holographic trading card (SVG image), same data as the badge
     '/card/:platform(youtube|tiktok|twitch|kick|bluesky|music|mastodon|substack)/:username',
+    // ShinyPass public pages; handles may contain dots.
+    '/u/:handle',
   ],
 };
 
@@ -1088,6 +1090,16 @@ function getMeta(pathname, searchParams) {
     };
   }
 
+  // /u/:handle: a user's ShinyPass page. noindex for now (thin, user-made).
+  const userMatch = pathname.match(/^\/u\/([a-z0-9_.]{3,20})$/i);
+  if (userMatch) {
+    return {
+      title: `@${userMatch[1]} on ShinyPull`,
+      description: `@${userMatch[1]}'s ShinyPull card, level and badges.`,
+      noindex: true,
+    };
+  }
+
   // /blog/:slug — enriched by getBlogContent when the DB is reachable
   const blogMatch = pathname.match(/^\/blog\/([^/]+)$/);
   if (blogMatch && blogMatch[1] !== 'admin') {
@@ -1100,6 +1112,7 @@ function getMeta(pathname, searchParams) {
   // Static pages — keep this map exhaustive so every public route gets accurate social previews
   const staticPages = {
     '/blog':         { title: 'Blog - ShinyPull',                description: 'Creator economy insights, platform trends, and analytics tips from ShinyPull.' },
+    '/pass':         { title: 'ShinyPass - ShinyPull',           description: 'Level up your own ShinyPull card from 1 to 99, keep your streak alive and open a pack every 10 levels.' },
     '/dashboard':    { title: 'Dashboard - ShinyPull',           description: 'Track your followed creators and see their latest stats in one place.', noindex: true },
     '/account':      { title: 'Account - ShinyPull',             description: 'Manage your ShinyPull account and Featured Listings.', noindex: true },
     '/reports':      { title: 'Reports - ShinyPull',             description: 'Build custom reports and export creator stats across platforms.', noindex: true },

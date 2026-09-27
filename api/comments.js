@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit } from './_ratelimit.js';
 import { isFromOurSite, ALLOWED_ORIGINS } from './_guard.js';
 import { localCheck, handleProblem, MESSAGES } from './_moderation.js';
+import { grantAction, revokeAction } from './_xp.js';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
 const DAILY_LIMIT = 20;
@@ -64,7 +65,9 @@ async function postComment(res, supabase, user, { creatorId, body, parentId }) {
     follows_creator: !!follow,
   }).select('id, creator_id, user_id, parent_id, body, status, follows_creator, up_count, down_count, created_at').single();
   if (error) return fail(res, 500, "Couldn't post that. Try again.");
-  return res.status(201).json({ comment: { ...row, commenter_profiles: { handle: profile.handle } } });
+  // ShinyPass: 15 XP, up to 5 comments a day, taken back if it's removed.
+  const xp = await grantAction(supabase, user.id, 'comment', row.id);
+  return res.status(201).json({ comment: { ...row, commenter_profiles: { handle: profile.handle } }, xpGranted: xp !== null });
 }
 
 async function setHandle(res, supabase, user, { handle }, isAdmin) {
@@ -87,6 +90,7 @@ async function setHandle(res, supabase, user, { handle }, isAdmin) {
 async function removeOwn(res, supabase, user, { id }) {
   const { data, error } = await supabase.from('creator_comments').update({ status: 'removed' }).eq('id', id).eq('user_id', user.id).select('id');
   if (error || !data?.length) return fail(res, 404, 'Comment not found.');
+  await revokeAction(supabase, user.id, 'comment', id);
   return res.status(200).json({ ok: true });
 }
 
@@ -150,8 +154,9 @@ async function setBan(res, supabase, { userId, banned }) {
 // reviewed; "Restore" brings a removed one back.
 async function moderate(res, supabase, { id, status }) {
   if (!['visible', 'hidden'].includes(status)) return fail(res, 400, 'Bad status.');
-  const { error } = await supabase.from('creator_comments').update({ status, reviewed: true }).eq('id', id);
+  const { data: rows, error } = await supabase.from('creator_comments').update({ status, reviewed: true }).eq('id', id).select('user_id');
   if (error) return fail(res, 500, "Couldn't update that comment.");
+  if (status === 'hidden' && rows?.[0]) await revokeAction(supabase, rows[0].user_id, 'comment', id);
   return res.status(200).json({ ok: true });
 }
 

@@ -93,6 +93,10 @@ export default function Account() {
       .select('id, platform, placement_tier, status, cancel_at_period_end, active_from, active_until, is_mod_free, created_at, creators(display_name, username, profile_image, platform)')
       .eq('purchased_by_user_id', user.id)
       .eq('status', 'active')
+      // Reward listings (ShinyPass vouchers) have no subscription to flip
+      // their status, so an ended one is hidden by date instead. Paid ones
+      // are left alone: Stripe can renew them a little after active_until.
+      .or(`source.neq.reward,active_until.gt.${new Date().toISOString()}`)
       .order('created_at', { ascending: false });
     setFeaturedListings(data || []);
   }, [user]);

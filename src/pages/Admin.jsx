@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, ShieldAlert, FileText, Mail, Users, FileSpreadsheet, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, ShieldAlert, FileText, Mail, Users, FileSpreadsheet, MessageCircle, Gift } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import BlogPostsPanel from '../components/admin/BlogPostsPanel';
@@ -8,6 +8,7 @@ import SubscribersPanel from '../components/admin/SubscribersPanel';
 import UsersPanel from '../components/admin/UsersPanel';
 import ReportsPanel from '../components/admin/ReportsPanel';
 import CommentsPanel from '../components/admin/CommentsPanel';
+import ShinyPassPanel from '../components/admin/ShinyPassPanel';
 
 const TABS = [
   { id: 'blog', label: 'Blog Posts', icon: FileText },
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'reports', label: 'Reports', icon: FileSpreadsheet },
   { id: 'comments', label: 'Comments', icon: MessageCircle },
+  { id: 'pass', label: 'ShinyPass', icon: Gift },
 ];
 
 export default function Admin() {
@@ -123,6 +125,7 @@ export default function Admin() {
           {activeTab === 'users' && <UsersPanel />}
           {activeTab === 'reports' && <ReportsPanel />}
           {activeTab === 'comments' && <CommentsPanel />}
+          {activeTab === 'pass' && <ShinyPassPanel />}
         </div>
       </div>
     </>

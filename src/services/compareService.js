@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { reportAction } from './progressService';
 
 /**
  * Get all saved comparisons for a user
@@ -28,6 +29,8 @@ export async function saveCompare(userId, name, creatorsParam) {
     .single();
 
   if (error) throw error;
+  // ShinyPass XP (once per matchup, verified server-side).
+  reportAction('compare', data?.id);
   return data;
 }
 

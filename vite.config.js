@@ -47,6 +47,11 @@ export default defineConfig({
             // drags them back in and the lazy mount buys nothing.
             { name: 'vendor-overlay', priority: 65, test: /node_modules[\\/](sonner|cmdk)[\\/]/ },
             { name: 'vendor-ui', priority: 60, test: /node_modules[\\/](framer-motion|motion-dom|motion-utils|lucide-react)[\\/]/ },
+            // Small shared app modules every page touches. Pinned so the
+            // default splitter can't spin the TikTok mark (8 KB, used by the
+            // entry's TikTokIcon and by lazy card chunks) into its own extra
+            // modulepreload.
+            { name: 'constants', priority: 10, test: /src[\\/]lib[\\/](constants|tiktokMark)\.js$/ },
           ],
         },
       },

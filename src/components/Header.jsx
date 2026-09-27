@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck, MessageCircle } from 'lucide-react';
+import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck, MessageCircle, Gift } from 'lucide-react';
 import { unreadReplies } from '../services/commentsService';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
@@ -293,6 +293,14 @@ export default function Header() {
                           Dashboard
                         </Link>
                         <Link
+                          to="/pass"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 w-full transition-colors"
+                        >
+                          <Gift className="w-4 h-4 text-neutral-400" />
+                          ShinyPass
+                        </Link>
+                        <Link
                           to="/replies"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 w-full transition-colors"
@@ -422,6 +430,13 @@ export default function Header() {
                   >
                     <MessageCircle className="w-4 h-4" /> <span className="flex-1">Replies</span>
                     {unread > 0 && <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{unread}</span>}
+                  </Link>
+                  <Link
+                    to="/pass"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 h-12 px-4 mt-2 rounded-xl bg-white/10 text-white text-sm font-bold"
+                  >
+                    <Gift className="w-4 h-4" /> <span className="flex-1">ShinyPass</span>
                   </Link>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <Link
