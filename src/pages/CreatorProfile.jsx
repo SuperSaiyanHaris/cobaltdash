@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { ExternalLink, Clock, Radio, Star, Share2, Scale } from 'lucide-react';
+import { ExternalLink, Clock, Radio, Star, Share2, Scale, MessageCircle } from 'lucide-react';
 import YouTubeIcon from '../components/YouTubeIcon';
 import TwitchIcon from '../components/TwitchIcon';
 import KickIcon from '../components/KickIcon';
@@ -1069,6 +1069,14 @@ export default function CreatorProfile() {
                 >
                   <Scale className="w-4 h-4" /> Compare
                 </button>
+                {dbCreatorId && (
+                  <button
+                    onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="inline-flex items-center gap-2 h-11 px-4 rounded-xl border border-white/25 hover:border-white/60 text-white text-sm font-bold transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Comments
+                  </button>
+                )}
                 <button
                   onClick={handleShareClick}
                   className={`inline-flex items-center gap-2 h-11 px-4 rounded-xl text-sm font-bold transition-colors ${showSharePanel ? 'bg-white text-neutral-950' : 'border border-white/25 hover:border-white/60 text-white'}`}
