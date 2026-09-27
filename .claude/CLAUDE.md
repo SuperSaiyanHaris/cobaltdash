@@ -63,11 +63,19 @@ sessions never see it. Anything a cloud session must know goes here.
 
 # ShinyPass (user levels, 2026-09-27)
 
-- Free, permanent 1-99 track for signed-in users: `/pass`, public pages
+- Free yearly 1-99 track for signed-in users: `/pass`, public pages
   `/u/:handle` (noindex, respects `user_progress.is_private`), user card in
   the Dashboard hero. Rules and numbers live in `src/lib/shinyPass.js`
-  (XP to next level = 60 + 4*L^1.5, about 160K XP total, ~3 years of daily
-  use). Card rarity by level: Common 1-24, Rare 25+, Epic 50+, Legendary 75+.
+  (XP to next level = 40 + 0.6*L^1.5, about 27K XP total, ~6 months of
+  daily use). Card rarity by level: Common 1-24, Rare 25+, Epic 50+,
+  Legendary 75+.
+- Seasons (owner decision 2026-09-27): a season is a year and turns over on
+  Oct 1 America/New_York (Season 1: launch to 2027-09-30). SQL
+  `current_season()` and JS `seasonForDate()` must agree. `ensure_season()`
+  banks the old season's XP in `season_results` and resets XP to 0; level,
+  XP, packs (`pack_openings` keyed by season) and level drops reset.
+  Badges, cosmetics, streaks and vouchers are kept. Reaching 99 awards
+  `season{N}_99` ("Season N Max"). Change both functions together.
 - Every write goes through `api/progress.js` (and `api/comments.js` for
   comment XP) with the service key. Grants use the `grant_xp()` SQL function
   (idempotent per (user, action, ref), daily caps); revokes set

@@ -12,7 +12,7 @@ function freshDb() {
   return {
     user_progress: [], xp_events: [], user_badges: [], user_items: [], pack_openings: [], listing_vouchers: [],
     commenter_profiles: [{ user_id: USER.id, handle: 'tester', avatar_url: null, banned_at: null, created_at: USER.created_at }],
-    creators: [CREATOR], user_saved_creators: [], saved_compares: [], featured_listings: [], creator_comments: [],
+    creators: [CREATOR], user_saved_creators: [], saved_compares: [], featured_listings: [], creator_comments: [], season_results: [],
   };
 }
 
@@ -38,7 +38,7 @@ function query(table) {
   };
   function run() {
     if (op === 'insert') {
-      if (table === 'pack_openings' && payload.some((p) => db.pack_openings.some((r) => r.user_id === p.user_id && r.pack_level === p.pack_level))) {
+      if (table === 'pack_openings' && payload.some((p) => db.pack_openings.some((r) => r.user_id === p.user_id && r.season === p.season && r.pack_level === p.pack_level))) {
         return { data: null, error: { code: '23505' } };
       }
       const made = payload.map((p) => ({ id: `id${++seq}`, status: table === 'listing_vouchers' ? 'unused' : undefined, expires_at: new Date(Date.now() + 90 * 86400000).toISOString(), ...p }));
@@ -80,6 +80,12 @@ function rpc(name, a) {
     return Promise.resolve({ data: p.xp, error: null });
   }
   if (name === 'credit_upvotes' || name === 'valid_upvotes') return Promise.resolve({ data: 0, error: null });
+  if (name === 'ensure_season') {
+    if (!db.user_progress.some((r) => r.user_id === a.p_user)) {
+      db.user_progress.push({ user_id: a.p_user, season: 1, xp: 0, streak: 0, best_streak: 0, streak_freezes: 0, upvotes_credited: 0, equipped: {}, showcase: [], is_private: false, last_active_date: null });
+    }
+    return Promise.resolve({ data: 1, error: null });
+  }
   if (name === 'add_streak_freezes') {
     const p = db.user_progress.find((r) => r.user_id === a.p_user);
     p.streak_freezes += a.p_n;
@@ -176,6 +182,7 @@ describe('api/progress', () => {
     const r = await call({ action: 'sync' });
     const drops = r.body.gained.filter((g) => g.kind === 'drop').map((g) => g.level);
     expect(drops).toEqual([5, 15]);
+    expect(db.xp_events.filter((e) => e.action === 'drop').map((e) => e.ref)).toEqual(['1:5', '1:15']);
     expect(db.user_items.map((i) => `${i.kind}:${i.item_key}`)).toEqual(['title:lurker', 'ring:mint']);
     const again = await call({ action: 'sync' });
     expect(again.body.gained.filter((g) => g.kind === 'drop')).toEqual([]);
@@ -192,6 +199,8 @@ describe('api/progress', () => {
     expect(r.body.pulled.some((i) => i.kind === 'frame' && i.key === 'cardstock')).toBe(true);
     expect(r.body.progress.equipped.frame).toBe('cardstock');
     expect(r.body.packs.opened).toEqual([10]);
+    expect(db.pack_openings[0].season).toBe(1);
+    expect(r.body.season).toMatchObject({ number: 1, lastDay: '2027-09-30' });
     expect(r.body.items.some((i) => i.kind === 'frame')).toBe(true); // inventory, not the pull
     const again = await call({ action: 'open', level: 10 });
     expect(again.body.already).toBe(true);

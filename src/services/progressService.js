@@ -40,7 +40,7 @@ function announce(gained) {
   if (gained?.length) window.dispatchEvent(new CustomEvent('shinypass:gain', { detail: gained }));
 }
 
-const STATE_KEYS = ['progress', 'badges', 'items', 'packs', 'vouchers', 'today', 'handle', 'avatar', 'showcaseSlots', 'showcaseCreators'];
+const STATE_KEYS = ['progress', 'season', 'pastSeasons', 'badges', 'items', 'packs', 'vouchers', 'today', 'handle', 'avatar', 'showcaseSlots', 'showcaseCreators'];
 // Daily caps per event type, mirrored from XP_RULES so a capped action
 // doesn't cost a request (the server enforces them either way).
 const DAILY_XP_CAP = { follow: 25, compare: 20, explore: 12 };

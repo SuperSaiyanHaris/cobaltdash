@@ -544,7 +544,7 @@ export default function Dashboard() {
   }`;
 
   const pass = passState?.progress;
-  const passMe = passState && { handle: passState.handle || 'you', avatar: passState.avatar || user.user_metadata?.avatar_url || null, ...pass };
+  const passMe = passState && { handle: passState.handle || 'you', avatar: passState.avatar || user.user_metadata?.avatar_url || null, ...pass, seasonNumber: passState.season?.number };
   const packReady = passState?.packs?.available?.[0];
 
   return (
@@ -578,7 +578,7 @@ export default function Dashboard() {
                 <Link to="/pass" className="group mt-5 sm:mt-6 flex items-center gap-3 sm:gap-4 max-w-md rounded-2xl border border-white/10 bg-white/[0.05] hover:border-white/35 px-3.5 sm:px-4 py-3 transition-colors">
                   {passMe && <span className="min-[400px]:hidden w-11 flex-shrink-0 -my-1 rotate-[-4deg]"><UserCardSvg me={passMe} /></span>}
                   <span className="flex-shrink-0 text-center">
-                    <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">Level</span>
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">{passState?.season ? `S${passState.season.number} · Lv` : "Level"}</span>
                     <span className="block text-2xl font-black tabular-nums leading-none">{pass.level}</span>
                   </span>
                   <span className="flex-1 min-w-0">

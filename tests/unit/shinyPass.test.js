@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   xpToNext, TOTAL_XP, levelFromXp, tierForLevel, rollPack, PACKS, PACK_BY_LEVEL, voucherChance,
   RARITY_ORDER, streakBonus, unlockAt, LEVEL_DROPS, MAX_LEVEL,
+  seasonForDate, seasonLastDay, seasonDaysLeft, badgeMeta, seasonMaxBadge,
 } from '../../src/lib/shinyPass.js';
 import { renderUserCard } from '../../src/lib/userCard.js';
 import { renderPack, tearClip } from '../../src/lib/packArt.js';
@@ -19,11 +20,11 @@ function mulberry(seed) {
 }
 
 describe('level curve', () => {
-  it('is increasing and puts 99 about three years out at 150 XP a day', () => {
+  it('is increasing and puts 99 about six months out at 150 XP a day', () => {
     for (let l = 1; l < MAX_LEVEL - 1; l++) expect(xpToNext(l + 1)).toBeGreaterThan(xpToNext(l));
     const days = TOTAL_XP[MAX_LEVEL] / 150;
-    expect(days).toBeGreaterThan(900);
-    expect(days).toBeLessThan(1300);
+    expect(days).toBeGreaterThan(150);
+    expect(days).toBeLessThan(210);
     // The first pack comes within about a week of daily use.
     expect(TOTAL_XP[10] / 150).toBeLessThan(10);
   });
@@ -52,6 +53,25 @@ describe('level curve', () => {
     for (const lvl of Object.keys(LEVEL_DROPS)) expect(PACK_BY_LEVEL[lvl]).toBeUndefined();
     expect(unlockAt(25)).toMatchObject({ tier: 'RARE', drop: LEVEL_DROPS[25] });
     expect(unlockAt(3)).toBeNull();
+  });
+});
+
+describe('seasons', () => {
+  it('turns over on Oct 1, with launch week in Season 1', () => {
+    expect(seasonForDate('2026-09-27')).toBe(1);
+    expect(seasonForDate('2026-12-31')).toBe(1);
+    expect(seasonForDate('2027-09-30')).toBe(1);
+    expect(seasonForDate('2027-10-01')).toBe(2);
+    expect(seasonForDate('2029-03-15')).toBe(3);
+    expect(seasonLastDay(1)).toBe('2027-09-30');
+    expect(seasonDaysLeft(1, '2027-09-30')).toBe(1);
+    expect(seasonDaysLeft(1, '2027-09-01')).toBe(30);
+  });
+
+  it('names a max badge for every season', () => {
+    expect(badgeMeta(seasonMaxBadge(3)).name).toBe('Season 3 Max');
+    expect(badgeMeta('og2026').name).toBe('OG 2026');
+    expect(badgeMeta('nope')).toBeNull();
   });
 });
 

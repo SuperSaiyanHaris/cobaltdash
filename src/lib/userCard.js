@@ -8,7 +8,7 @@
 // `uid` keeps gradient ids unique when several cards share a page.
 
 import { TIERS, escapeXml, compactCount } from './badgeCard.js';
-import { tierForLevel, PACK_BY_KEY, RINGS, TITLES, BADGES, MAX_LEVEL } from './shinyPass.js';
+import { tierForLevel, PACK_BY_KEY, RINGS, TITLES, badgeMeta, MAX_LEVEL } from './shinyPass.js';
 import { markBarsInner } from './brandMark.js';
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif";
@@ -35,6 +35,7 @@ const safeUrl = (u) => (typeof u === 'string' && /^https:\/\/[^\s"'<>]+$/.test(u
  * @param {number} u.streak
  * @param {object} [u.equipped]      { frame, ring, title, badge }
  * @param {string} [u.uid]
+ * @param {number} [u.season]
  * @param {boolean} [u.still]     no animation (thumbnails, grids, reduced motion)
  */
 export function renderUserCard(u) {
@@ -50,7 +51,7 @@ export function renderUserCard(u) {
   const m = MOTION[tierKey];
   const ring = eq.ring && RINGS[eq.ring];
   const title = eq.title && TITLES[eq.title] ? TITLES[eq.title].name : 'ShinyPass member';
-  const badge = eq.badge && BADGES[eq.badge];
+  const badge = eq.badge && badgeMeta(eq.badge);
   const handle = escapeXml(String(u.handle || 'you').slice(0, 18));
   const initials = escapeXml(String(u.handle || '?').slice(0, 1).toUpperCase());
   const pct = level >= MAX_LEVEL ? 1 : Math.max(0, Math.min(1, (u.into || 0) / (u.need || 1)));
@@ -125,7 +126,7 @@ ${badgeChip}
 <text x="${W - 22}" y="309" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing=".6" fill="#C4C4CE">${compactCount(u.xp || 0)} XP TOTAL</text>
 <line x1="22" y1="317" x2="${W - 22}" y2="317" stroke="#fff" stroke-opacity=".08"/>
 <text x="22" y="333" font-family="${FONT}" font-size="9.5" font-weight="700" fill="${(u.streak || 0) > 0 ? '#FDBA74' : '#C4C4CE'}">${(u.streak || 0) > 0 ? `${u.streak}-day streak` : 'No streak yet'}</text>
-<text x="${W - 22}" y="333" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#C4C4CE">${String(level).padStart(2, '0')}/${MAX_LEVEL} · SHINYPASS</text>
+<text x="${W - 22}" y="333" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#C4C4CE">${String(level).padStart(2, '0')}/${MAX_LEVEL} · SEASON ${Math.max(1, Number(u.season) || 1)}</text>
 ${sparkles}${shine}
 </g>
 <rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" rx="15.5" fill="none" stroke="#fff" stroke-opacity=".25"/>

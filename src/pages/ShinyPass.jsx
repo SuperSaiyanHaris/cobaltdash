@@ -13,7 +13,7 @@ import PassTrack from '../components/pass/PassTrack';
 import PackOpening from '../components/pass/PackOpening';
 import Locker from '../components/pass/Locker';
 import { BadgePill } from '../components/pass/BadgeChip';
-import { XP_RULES, PACKS, PACK_BY_LEVEL, TOTAL_XP, MAX_LEVEL, streakBonus, voucherChance, SLOT_WEIGHTS } from '../lib/shinyPass';
+import { XP_RULES, PACKS, PACK_BY_LEVEL, TOTAL_XP, MAX_LEVEL, streakBonus, voucherChance, SLOT_WEIGHTS, seasonForDate, seasonLastDay } from '../lib/shinyPass';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -83,10 +83,10 @@ function SignedOut() {
       <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 grid lg:grid-cols-[1.1fr,0.9fr] gap-12 items-center">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass</p>
-          <h1 className="mt-3 text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.02] text-balance">Your own card. 99 levels. Ten packs to rip open.</h1>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass · Season {seasonForDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()))}</p>
+          <h1 className="mt-3 text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.02] text-balance">Your own card. 99 levels a season. Ten packs to rip open.</h1>
           <p className="mt-5 text-base sm:text-lg text-white/75 max-w-xl text-pretty">
-            Show up, follow creators, comment and save matchups. Your card levels up with you, from Common to Legendary, and every 10 levels you open a pack.
+            Show up, follow creators, comment and save matchups. Your card levels up with you, from Common to Legendary, and every 10 levels you open a pack. A new season starts every October 1, and everything you unlock stays yours.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <BadgePill badge="og2026" dark size="md" />
@@ -121,6 +121,7 @@ export default function ShinyPass() {
   const me = useMemo(() => state && {
     handle: state.handle || 'you',
     publicHandle: state.handle || null,
+    seasonNumber: state.season?.number,
     avatar: state.avatar || user?.user_metadata?.avatar_url || null,
     ...state.progress,
   }, [state, user]);
@@ -145,6 +146,8 @@ export default function ShinyPass() {
   }
 
   const p = state.progress;
+  const season = state.season || { number: 1, lastDay: seasonLastDay(1), daysLeft: 0 };
+  const endLabel = new Date(`${season.lastDay}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const nextPack = PACKS.find((k) => k.level > p.level);
   const toNextPack = nextPack ? TOTAL_XP[nextPack.level] - p.xp : 0;
   const available = state.packs.available;
@@ -169,7 +172,7 @@ export default function ShinyPass() {
           </div>
 
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass · Season {season.number}</p>
             <h1 className="mt-2 text-4xl sm:text-6xl font-extrabold tracking-tight leading-none">Level {p.level}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {state.handle
@@ -219,7 +222,7 @@ export default function ShinyPass() {
           <div className="flex items-end justify-between mb-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-extrabold">The track</h2>
-              <p className="mt-1 text-sm text-white/75">A pack every 10 levels. Your card levels up at 25, 50 and 75.</p>
+              <p className="mt-1 text-sm text-white/75">A pack every 10 levels. Your card levels up at 25, 50 and 75. Season {season.number} ends {endLabel}, {season.daysLeft} days to go.</p>
             </div>
           </div>
           <PassTrack level={p.level} pct={p.pct} opened={state.packs.opened} onPack={onPack} />
@@ -327,7 +330,7 @@ function OddsAndRules({ light = false }) {
               </div>
             ))}
             <p className="col-span-5 mt-2 text-sm text-neutral-700">
-              The level 50 Prism pack and the level 99 Final Pull each have 5 items and always include a free month of a Featured Listing. Level 99 takes about {Math.round(TOTAL_XP[MAX_LEVEL] / 150 / 365)} years of daily visits.
+              The level 50 Prism pack and the level 99 Final Pull each have 5 items and always include a free month of a Featured Listing. Reaching level 99 takes about {Math.round(TOTAL_XP[MAX_LEVEL] / 150 / 30)} months of daily visits. Levels and packs reset every October 1; your badges, cosmetics, streak and vouchers stay.
             </p>
           </div>
         </div>

@@ -75,7 +75,7 @@ export default function PublicProfile() {
 
   const p = data.progress;
   const eq = p.equipped || {};
-  const me = { handle: data.handle, avatar: data.avatar, ...p };
+  const me = { handle: data.handle, avatar: data.avatar, ...p, seasonNumber: data.season };
   const title = eq.title && TITLES[eq.title]?.name;
 
   async function share() {
@@ -97,12 +97,17 @@ export default function PublicProfile() {
             <UserCardSvg me={me} />
           </div>
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass · Level {p.level}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass · Season {data.season || 1} · Level {p.level}</p>
             <h1 className="mt-2 text-4xl sm:text-6xl font-extrabold tracking-tight leading-none break-words">@{data.handle}</h1>
             {title && <p className="mt-2 text-lg font-semibold text-white/80">“{title}”</p>}
             <div className="mt-5 flex flex-wrap justify-center sm:justify-start gap-2">
               {data.badges.map((b) => <BadgePill key={b.badge} badge={b.badge} dark size="md" />)}
             </div>
+            {data.pastSeasons?.length > 0 && (
+              <p className="mt-3 text-sm font-semibold text-white/75">
+                {data.pastSeasons.map((s) => `Season ${s.season}: level ${s.level}`).join(' · ')}
+              </p>
+            )}
             <div className="mt-7 grid grid-cols-3 gap-4 max-w-md mx-auto sm:mx-0 text-left">
               {[
                 { label: 'Level', value: p.level },

@@ -20,6 +20,7 @@ import { isFromOurSite, ALLOWED_ORIGINS } from './_guard.js';
 import { todayNY, grantAction, grantRaw } from './_xp.js';
 import {
   levelFromXp, xpToNext, streakBonus, rollPack, PACKS, PACK_BY_LEVEL, LEVEL_DROPS, STREAK_BADGES, MAX_LEVEL,
+  seasonMaxBadge, seasonLastDay, seasonDaysLeft, seasonForDate,
 } from '../src/lib/shinyPass.js';
 import { PLATFORM_IDS } from '../src/lib/constants.js';
 
@@ -45,12 +46,19 @@ const fail = (res, status, message) => res.status(status).json({ error: message 
 const likeEscape = (s) => s.replace(/[_%\\]/g, (c) => `\\${c}`);
 const rnd = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 
+/** Creates the row if needed and rolls a new season over. Returns the season. */
+async function ensureSeason(supabase, userId) {
+  const { data } = await supabase.rpc('ensure_season', { p_user: userId });
+  return Number(data) || 1;
+}
+
 async function ensureProgress(supabase, user) {
-  await supabase.from('user_progress').upsert({ user_id: user.id }, { onConflict: 'user_id', ignoreDuplicates: true });
+  const season = await ensureSeason(supabase, user.id);
   const year = new Date(user.created_at).getUTCFullYear();
   if (year === 2026) {
     await supabase.from('user_badges').upsert({ user_id: user.id, badge: 'og2026', earned_at: user.created_at }, { onConflict: 'user_id,badge', ignoreDuplicates: true });
   }
+  return season;
 }
 
 const award = (supabase, userId, badge) =>
@@ -60,22 +68,21 @@ const award = (supabase, userId, badge) =>
 const addFreezes = (supabase, userId, n) => supabase.rpc('add_streak_freezes', { p_user: userId, p_n: n });
 
 /** Grant the fixed drops for every level reached (idempotent via a 0-XP marker). */
-async function grantLevelDrops(supabase, userId, level, gained) {
+async function grantLevelDrops(supabase, userId, level, season, gained) {
   const due = Object.keys(LEVEL_DROPS).filter((lvl) => Number(lvl) <= level);
   if (due.length) {
     // One read for what's already granted, so a normal sync costs one query.
     const { data: done } = await supabase.from('xp_events').select('ref').eq('user_id', userId).eq('action', 'drop');
     const have = new Set((done || []).map((d) => d.ref));
-    for (const lvl of due.filter((l) => !have.has(l))) {
-      const drop = LEVEL_DROPS[lvl];
-      await grantDrop(supabase, userId, lvl, drop, gained);
+    for (const lvl of due.filter((l) => !have.has(`${season}:${l}`))) {
+      await grantDrop(supabase, userId, lvl, season, LEVEL_DROPS[lvl], gained);
     }
   }
-  if (level >= MAX_LEVEL) await award(supabase, userId, 'level99');
+  if (level >= MAX_LEVEL) await award(supabase, userId, seasonMaxBadge(season));
 }
 
-async function grantDrop(supabase, userId, lvl, drop, gained) {
-  const marker = await grantRaw(supabase, userId, 'drop', lvl, 0);
+async function grantDrop(supabase, userId, lvl, season, drop, gained) {
+  const marker = await grantRaw(supabase, userId, 'drop', `${season}:${lvl}`, 0);
   if (marker === null) return;
   if (drop.kind === 'freeze') await addFreezes(supabase, userId, 1);
   else await supabase.from('user_items').insert({ user_id: userId, kind: drop.kind, item_key: drop.key, source_level: Number(lvl) });
@@ -84,14 +91,16 @@ async function grantDrop(supabase, userId, lvl, drop, gained) {
 
 async function state(supabase, user) {
   const today = todayNY();
-  const [prog, badges, items, packs, vouchers, events, profile] = await Promise.all([
+  const season = await ensureSeason(supabase, user.id);
+  const [prog, badges, items, packs, vouchers, events, profile, past] = await Promise.all([
     supabase.from('user_progress').select('*').eq('user_id', user.id).single(),
     supabase.from('user_badges').select('badge, earned_at').eq('user_id', user.id).order('earned_at'),
     supabase.from('user_items').select('id, kind, item_key, source_level, obtained_at').eq('user_id', user.id).order('obtained_at'),
-    supabase.from('pack_openings').select('pack_level, items, opened_at').eq('user_id', user.id),
+    supabase.from('pack_openings').select('pack_level, items, opened_at').eq('user_id', user.id).eq('season', season),
     supabase.from('listing_vouchers').select('id, source_level, status, expires_at, creator_id, listing_id, created_at, redeemed_at, creators(platform, username, display_name)').eq('user_id', user.id).order('created_at'),
     supabase.from('xp_events').select('action, xp').eq('user_id', user.id).eq('day', today).is('revoked_at', null),
     supabase.from('commenter_profiles').select('handle, avatar_url').eq('user_id', user.id).maybeSingle(),
+    supabase.from('season_results').select('season, xp').eq('user_id', user.id).order('season'),
   ]);
   const p = prog.data || { xp: 0 };
   const lv = levelFromXp(p.xp);
@@ -107,6 +116,8 @@ async function state(supabase, user) {
   for (const e of events.data || []) byAction[e.action] = (byAction[e.action] || 0) + e.xp;
   return {
     progress: { ...p, ...lv },
+    season: { number: season, lastDay: seasonLastDay(season), daysLeft: seasonDaysLeft(season, today) },
+    pastSeasons: (past.data || []).map((r) => ({ season: r.season, xp: r.xp, level: levelFromXp(r.xp).level })),
     badges: badges.data || [],
     items: items.data || [],
     packs: {
@@ -124,7 +135,7 @@ async function state(supabase, user) {
 }
 
 async function sync(supabase, user) {
-  await ensureProgress(supabase, user);
+  const season = await ensureProgress(supabase, user);
   const gained = [];
   const today = todayNY();
   // Streak + freeze in one locked SQL step (record_visit); no row back means
@@ -146,7 +157,7 @@ async function sync(supabase, user) {
   if (totalUps >= 100) await award(supabase, user.id, 'voice');
 
   const { data: now } = await supabase.from('user_progress').select('xp').eq('user_id', user.id).single();
-  await grantLevelDrops(supabase, user.id, levelFromXp(now.xp).level, gained);
+  await grantLevelDrops(supabase, user.id, levelFromXp(now.xp).level, season, gained);
   return gained;
 }
 
@@ -177,13 +188,14 @@ async function openPack(supabase, user, { level }) {
   const packLevel = Number(level);
   const pack = PACK_BY_LEVEL[packLevel];
   if (!pack) return { status: 400, error: 'No pack at that level.' };
+  const season = await ensureSeason(supabase, user.id);
   const { data: p } = await supabase.from('user_progress').select('xp, equipped').eq('user_id', user.id).single();
   if (!p || levelFromXp(p.xp).level < packLevel) return { status: 403, error: `Reach level ${packLevel} to open this pack.` };
 
   const raw = rollPack(packLevel, rnd);
-  const { error: claimErr } = await supabase.from('pack_openings').insert({ user_id: user.id, pack_level: packLevel, items: raw });
+  const { error: claimErr } = await supabase.from('pack_openings').insert({ user_id: user.id, season, pack_level: packLevel, items: raw });
   if (claimErr) {
-    const { data: prev } = await supabase.from('pack_openings').select('items').eq('user_id', user.id).eq('pack_level', packLevel).maybeSingle();
+    const { data: prev } = await supabase.from('pack_openings').select('items').eq('user_id', user.id).eq('season', season).eq('pack_level', packLevel).maybeSingle();
     return prev ? { items: prev.items, already: true } : { status: 500, error: "Couldn't open that pack. Try again." };
   }
 
@@ -191,7 +203,7 @@ async function openPack(supabase, user, { level }) {
   const have = new Set((owned || []).map((o) => `${o.kind}:${o.item_key}`));
   const resolved = [];
   for (const [i, item] of raw.entries()) {
-    const ref = `${packLevel}:${i}`;
+    const ref = `${season}:${packLevel}:${i}`;
     if (COSMETIC.has(item.kind) && have.has(`${item.kind}:${item.key}`)) {
       const amount = Math.round(xpToNext(packLevel) * 0.25);
       await grantRaw(supabase, user.id, 'pack', ref, amount);
@@ -212,7 +224,7 @@ async function openPack(supabase, user, { level }) {
     }
     resolved.push(item);
   }
-  await supabase.from('pack_openings').update({ items: resolved }).eq('user_id', user.id).eq('pack_level', packLevel);
+  await supabase.from('pack_openings').update({ items: resolved }).eq('user_id', user.id).eq('season', season).eq('pack_level', packLevel);
   if (!p.equipped?.frame) {
     await supabase.from('user_progress').update({ equipped: { ...(p.equipped || {}), frame: pack.key } }).eq('user_id', user.id);
   }
@@ -339,24 +351,34 @@ async function publicProfile(res, supabase, handle) {
   if (!/^[a-z0-9_.]{3,20}$/.test(h)) return fail(res, 404, 'Not found.');
   const { data: prof } = await supabase.from('commenter_profiles').select('user_id, handle, avatar_url, banned_at, created_at').ilike('handle', likeEscape(h)).maybeSingle();
   if (!prof || prof.banned_at) return fail(res, 404, 'Not found.');
-  const { data: p } = await supabase.from('user_progress').select('xp, streak, best_streak, equipped, showcase, shiny_creator_id, is_private, last_active_date').eq('user_id', prof.user_id).maybeSingle();
+  const { data: p } = await supabase.from('user_progress').select('xp, season, streak, best_streak, equipped, showcase, shiny_creator_id, is_private, last_active_date').eq('user_id', prof.user_id).maybeSingle();
   // Short edge cache and no stale window, so going private takes effect fast.
   res.setHeader('Cache-Control', 'public, s-maxage=20');
   if (!p || p.is_private) return res.status(200).json({ handle: prof.handle, private: true });
 
   const showIds = [...(p.showcase || []), p.shiny_creator_id].filter(Boolean);
-  const [badges, creators, comments, follows] = await Promise.all([
+  const [badges, creators, comments, follows, past] = await Promise.all([
     supabase.from('user_badges').select('badge, earned_at').eq('user_id', prof.user_id).order('earned_at'),
     showIds.length ? supabase.from('creators').select('id, platform, username, display_name, profile_image').in('id', showIds) : Promise.resolve({ data: [] }),
     supabase.from('creator_comments').select('id, body, created_at, up_count, creators(platform, username, display_name)').eq('user_id', prof.user_id).eq('status', 'visible').order('created_at', { ascending: false }).limit(6),
     supabase.from('user_saved_creators').select('id', { count: 'exact', head: true }).eq('user_id', prof.user_id),
+    supabase.from('season_results').select('season, xp').eq('user_id', prof.user_id).order('season'),
   ]);
+  // Someone who hasn't visited since a new season began is shown at level 1
+  // of the new season, with their last season listed as finished.
+  const current = seasonForDate(todayNY());
+  const stale = (p.season || 1) < current;
+  const seasonXp = stale ? 0 : p.xp;
+  const pastSeasons = [...(past.data || []), ...(stale ? [{ season: p.season || 1, xp: p.xp }] : [])]
+    .map((r) => ({ season: r.season, xp: r.xp, level: levelFromXp(r.xp).level }));
   const byId = Object.fromEntries((creators.data || []).filter((c) => PLATFORM_IDS.includes(c.platform)).map((c) => [c.id, c]));
   return res.status(200).json({
     handle: prof.handle,
     avatar: prof.avatar_url,
     joined: prof.created_at,
-    progress: { ...levelFromXp(p.xp), xp: p.xp, streak: p.streak, best_streak: p.best_streak, equipped: p.equipped || {} },
+    progress: { ...levelFromXp(seasonXp), xp: seasonXp, streak: p.streak, best_streak: p.best_streak, equipped: p.equipped || {} },
+    season: current,
+    pastSeasons,
     badges: badges.data || [],
     showcase: (p.showcase || []).map((id) => byId[id]).filter(Boolean),
     shiny: p.shiny_creator_id ? byId[p.shiny_creator_id] || null : null,

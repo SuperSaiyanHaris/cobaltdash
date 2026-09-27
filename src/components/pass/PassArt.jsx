@@ -34,6 +34,7 @@ export const UserCardSvg = memo(function UserCardSvg({ me, className = '', equip
     need: me.need,
     xp: me.xp,
     streak: me.streak,
+    season: me.seasonNumber,
     equipped: equippedOverride || me.equipped,
     still: still || !!reduce,
   });

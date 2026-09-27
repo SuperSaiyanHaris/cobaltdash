@@ -10,7 +10,7 @@ import { getFollowedCreators } from '../../services/followService';
 import CreatorAvatar from '../CreatorAvatar';
 import { UserCardSvg } from './PassArt';
 import { BadgeIcon } from './BadgeChip';
-import { PACK_BY_KEY, RINGS, TITLES, BADGES } from '../../lib/shinyPass';
+import { PACK_BY_KEY, RINGS, TITLES, BADGES, badgeMeta, seasonMaxBadge } from '../../lib/shinyPass';
 import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 
 const TABS = [
@@ -211,7 +211,8 @@ export default function Locker({ state, me }) {
 
         {tab === 'badge' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {Object.entries(BADGES).map(([key, b]) => {
+            {[...new Set([...Object.keys(BADGES), seasonMaxBadge(p.season || 1), ...earned])].filter((k) => badgeMeta(k)).map((key) => {
+              const b = badgeMeta(key);
               const has = earned.has(key);
               return (
                 <div key={key} className={`flex items-start gap-3 rounded-2xl border p-4 ${has ? 'border-neutral-200 bg-white' : 'border-dashed border-neutral-300 bg-neutral-50'}`}>

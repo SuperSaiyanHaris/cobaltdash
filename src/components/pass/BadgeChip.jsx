@@ -1,20 +1,20 @@
 // Small ShinyPass marks shown next to a handle (comments, replies, public
 // page): the level chip in its card-rarity color and the pinned badge.
+import { createElement } from 'react';
 import { Gem, Flame, MessageCircle, LayoutGrid, Telescope, Crown, Award } from 'lucide-react';
-import { BADGES, tierForLevel, levelFromXp } from '../../lib/shinyPass';
+import { badgeMeta, tierForLevel, levelFromXp } from '../../lib/shinyPass';
 import { TIERS } from '../../lib/badgeCard';
 
 const ICONS = { Gem, Flame, MessageCircle, LayoutGrid, Telescope, Crown };
 
 export function BadgeIcon({ badge, className = 'w-3.5 h-3.5' }) {
-  const b = BADGES[badge];
-  const Icon = (b && ICONS[b.icon]) || Award;
-  return <Icon className={className} style={{ color: b?.b || '#737373' }} strokeWidth={2.4} />;
+  const b = badgeMeta(badge);
+  return createElement(ICONS[b?.icon] || Award, { className, style: { color: b?.b || '#737373' }, strokeWidth: 2.4 });
 }
 
 /** Pinned badge as a compact pill. `dark` for use on dark bands. */
 export function BadgePill({ badge, dark = false, size = 'sm' }) {
-  const b = BADGES[badge];
+  const b = badgeMeta(badge);
   if (!b) return null;
   return (
     <span

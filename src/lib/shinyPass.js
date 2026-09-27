@@ -1,17 +1,35 @@
-// ShinyPass: the free, permanent 1-99 progression track for signed-in users.
+// ShinyPass: the free, yearly 1-99 progression track for signed-in users.
 // Pure data and maths, shared by the site (src/) and the API (api/progress.js)
 // so the numbers a user sees are the numbers the server enforces. No fetches,
 // no randomness of its own: rollPack() takes the random source as an argument
 // (the server passes crypto), which keeps it unit-testable.
 //
-// Levels are permanent. XP to go from level L to L+1 is 60 + 4 * L^1.5,
-// about 160,000 XP in total to reach 99: roughly three years for someone
-// active every day (~150 XP/day with the daily caps below), longer for
-// everyone else. Packs arrive every 10 levels and at 99.
+// Seasons last a year and turn over on Oct 1 (Season 1: launch to Sep 30,
+// 2027). Level, XP and packs reset each season; badges, cosmetics, streaks
+// and vouchers are kept. XP to go from level L to L+1 is 40 + 0.6 * L^1.5,
+// about 27,000 XP to reach 99: roughly six months for someone active every
+// day (~150 XP/day with the daily caps below), so finishing a season is a
+// real achievement but doable. Packs arrive every 10 levels and at 99.
 
 export const MAX_LEVEL = 99;
 
-export const xpToNext = (level) => Math.round(60 + 4 * Math.pow(level, 1.5));
+export const xpToNext = (level) => Math.round(40 + 0.6 * Math.pow(level, 1.5));
+
+// ── Seasons ───────────────────────────────────────────────────────────────
+// Mirrors current_season() in supabase/migrations/20260927h_shinypass_seasons.sql.
+/** Season for a YYYY-MM-DD day in New York. */
+export function seasonForDate(day) {
+  const [y, m] = String(day).split('-').map(Number);
+  return Math.max(1, (m >= 10 ? y : y - 1) - 2025);
+}
+/** Last day of a season, YYYY-MM-DD. */
+export const seasonLastDay = (season) => `${2026 + season}-09-30`;
+/** Whole days left in a season, counting today. */
+export function seasonDaysLeft(season, today) {
+  const end = Date.UTC(...seasonLastDay(season).split('-').map((n, i) => (i === 1 ? Number(n) - 1 : Number(n))));
+  const now = Date.UTC(...String(today).split('-').map((n, i) => (i === 1 ? Number(n) - 1 : Number(n))));
+  return Math.max(0, Math.round((end - now) / 86400000) + 1);
+}
 
 // Cumulative XP needed to *reach* each level. TOTAL_XP[1] = 0.
 export const TOTAL_XP = (() => {
@@ -213,9 +231,19 @@ export const BADGES = {
   voice:    { name: 'Voice',       desc: 'Your comments collected 100 upvotes.',   icon: 'MessageCircle', a: '#7DD3FC', b: '#2563EB' },
   collector:{ name: 'Collector',   desc: 'Following creators on all 8 platforms.', icon: 'LayoutGrid',    a: '#6EE7B7', b: '#0D9488' },
   scout:    { name: 'Scout',       desc: 'Followed a creator before their card moved up a rarity.', icon: 'Telescope', a: '#C4B5FD', b: '#7C3AED' },
-  level99:  { name: 'Level 99',    desc: 'Reached the end of ShinyPass.', icon: 'Crown', a: '#FFD76A', b: '#FFF3C4' },
 };
 export const STREAK_BADGES = [[7, 'streak7'], [10, 'streak10'], [30, 'streak30'], [100, 'streak100']];
+
+/** Key of the badge for reaching level 99 in a season. */
+export const seasonMaxBadge = (season) => `season${season}_99`;
+
+/** Badge details for any key, including the per-season "Max" badges. */
+export function badgeMeta(key) {
+  if (BADGES[key]) return BADGES[key];
+  const m = /^season(\d+)_99$/.exec(String(key));
+  if (m) return { name: `Season ${m[1]} Max`, desc: `Reached level 99 in Season ${m[1]}.`, icon: 'Crown', a: '#FFD76A', b: '#E0A526' };
+  return null;
+}
 
 // Fixed drops halfway between packs, granted automatically on level up.
 export const LEVEL_DROPS = {
