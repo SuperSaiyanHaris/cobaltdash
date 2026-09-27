@@ -358,10 +358,16 @@ export default function CreatorComments({ creatorId, name }) {
                 {(shown.length > 0 || replyTo === c.id) && (
                   <div className="mt-3 ml-3 sm:ml-12 pl-3 sm:pl-4 border-l-2 border-neutral-100 space-y-4">
                     {shown.map((r) => <div key={r.id}>{renderComment(r, c)}</div>)}
-                    {!open && kids.length > SHOWN_REPLIES && (
-                      <button type="button" onClick={() => setExpanded((s) => new Set(s).add(c.id))} className="text-xs font-semibold text-violet-700 hover:text-violet-900">
-                        View {kids.length - SHOWN_REPLIES} more {kids.length - SHOWN_REPLIES === 1 ? 'reply' : 'replies'}
-                      </button>
+                    {kids.length > SHOWN_REPLIES && (
+                      open ? (
+                        <button type="button" onClick={() => { setExpanded((s) => { const n = new Set(s); n.delete(c.id); return n; }); document.getElementById(`c-${c.id}`)?.scrollIntoView({ block: 'nearest' }); }} className="text-xs font-semibold text-violet-700 hover:text-violet-900">
+                          Hide replies
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => setExpanded((s) => new Set(s).add(c.id))} className="text-xs font-semibold text-violet-700 hover:text-violet-900">
+                          View {kids.length - SHOWN_REPLIES} more {kids.length - SHOWN_REPLIES === 1 ? 'reply' : 'replies'}
+                        </button>
+                      )
                     )}
                     {replyTo === c.id && (
                       needsName ? (
