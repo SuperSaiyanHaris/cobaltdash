@@ -560,7 +560,7 @@ export default function Home() {
                 <RotatingHeadlineWord />
               </h1>
               <p className="mt-5 text-base sm:text-lg text-white/60 max-w-lg mx-auto lg:mx-0 text-pretty">
-                Live stats, growth and rankings for {heroCreatorCount} creators across {PLATFORM_COUNT} platforms. Every one of them has a holographic card.
+                Live stats, growth and rankings for {heroCreatorCount} creators across {PLATFORM_COUNT} platforms.
               </p>
 
               {/* Glass search — the page's primary action */}

@@ -93,6 +93,11 @@ sessions never see it. Anything a cloud session must know goes here.
 - Rarity comes from `cardTier(rank, total)`: Legendary = top 10 or top 0.1%,
   Epic = top 1%, Rare = top 10%, else Common. `getCardsByRarity()` draws per
   band. Home shows Legendary/Epic/Rare; the sign-in wall shows all four.
+- Card motion escalates with rarity (`MOTION` in `badgeCard.js`): Common a
+  slow glint only, Rare adds drifting foil, Epic adds holo stripes and a
+  spinning ring, Legendary adds a double glint, prism sweep, sparkles and a
+  moving gold number. Keep it cheap: SMIL only, no filters/blur, glints on
+  chained begins so nothing repaints between sweeps.
 - Rankings: podium header, Table/Cards toggle, foil sponsored rows (Premium
   at ranks 4-5 and 9-10, Basic at 15, 20, 25...), rarity chips on the
   subscribers tab.

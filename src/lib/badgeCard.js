@@ -42,6 +42,25 @@ export const TIERS = {
   COMMON:    { name: 'COMMON',    a: '#D4D4D8', b: '#FAFAFA', c: '#A1A1AA', d: '#E4E4E7' },
 };
 
+// How much each rarity moves. It escalates: Common gets one slow glint,
+// Rare adds drifting foil, Epic adds shimmering holo stripes and a spinning
+// ring, Legendary adds a double glint, a prism sweep, twinkling sparkles and
+// a moving gold number. Cost matters because pages show dozens of cards: the
+// glint runs on a chained begin (begin="…;g.end+gap") so between sweeps no
+// animation is active and the browser has nothing to repaint, and Common
+// (most cards) has no continuous animation at all. No filters or blurs.
+const MOTION = {
+  COMMON:    { foil: 0,   sweep: 1.6, gap: 8,   shine: .22 },
+  RARE:      { foil: 8,   sweep: 1.4, gap: 4.5, shine: .32 },
+  EPIC:      { foil: 5,   sweep: 1.2, gap: 3.2, shine: .4, stripes: 3, ring: 7 },
+  LEGENDARY: { foil: 3.5, sweep: 1.1, gap: 2.2, shine: .5, stripes: 2.2, ring: 4.5, legendary: true },
+};
+
+// Four-point sparkle, unit size, centered on 0,0.
+const SPARKLE = 'M0-1C.12-.28.28-.12 1 0C.28.12.12.28 0 1C-.12.28-.28.12-1 0C-.28-.12-.12-.28 0-1Z';
+// x, y, size, delay (s). Around the art window and name, clear of the logo.
+const SPARKLES = [[40, 66, 7, 0], [212, 176, 6, .7], [56, 196, 5, 1.4], [206, 62, 4.5, 2.1], [30, 262, 5, 1.05], [222, 250, 6, 1.75]];
+
 /** Rarity for a platform rank (1 = biggest). Unranked creators are COMMON. */
 export function cardTier(rank, total) {
   if (!rank || !total) return TIERS.COMMON;
@@ -169,16 +188,28 @@ export function renderCard(c) {
     : `<circle cx="${W / 2}" cy="126" r="50" fill="${p.color}" fill-opacity=".25"/><text x="${W / 2}" y="142" text-anchor="middle" font-family="${FONT}" font-size="44" font-weight="800" fill="${t.b}">${initials}</text>`;
   const rankChip = c.rank ? `<g transform="translate(${W / 2 + 44} 178)"><rect x="-4" y="-2" width="${String(c.rank).length * 5.5 + 16}" height="15" rx="7.5" fill="#0B0B12" stroke="${t.a}" stroke-opacity=".7"/><text x="${(String(c.rank).length * 5.5 + 16) / 2 - 4}" y="9" text-anchor="middle" font-family="${FONT}" font-size="8" font-weight="800" fill="${t.a}">#${c.rank}</text></g>` : '';
   const label = `${escapeXml(c.name || c.username)}: ${count !== null ? compactCount(count) : 'no data'} ${p.unit} on ${p.name}`;
+  const m = MOTION[t.name] || MOTION.COMMON;
+  const foilAnim = m.foil ? `<animateTransform attributeName="gradientTransform" type="translate" values="-0.5 -0.5;0.5 0.5;-0.5 -0.5" dur="${m.foil}s" repeatCount="indefinite"/>` : '';
+  const glint = `<animate id="${id}g" attributeName="x" from="-220" to="420" dur="${m.sweep}s" begin="1s;${id}g.end+${m.gap}s"/>`;
+  const shine = `<rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)">${glint}</rect>`
+    + (m.legendary ? `<rect x="-220" y="-60" width="22" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)"><animate attributeName="x" from="-220" to="420" dur="${m.sweep}s" begin="${id}g.begin+0.22s"/></rect>` : '');
+  const numGrad = m.legendary
+    ? `<linearGradient id="${id}num" x1="0" y1="0" x2="1" y2="0" spreadMethod="reflect"><stop offset="0" stop-color="${t.a}"/><stop offset=".5" stop-color="${t.b}"/><stop offset="1" stop-color="${t.a}"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0" dur="3s" repeatCount="indefinite"/></linearGradient>`
+    : `<linearGradient id="${id}num" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.b}"/><stop offset="1" stop-color="${t.a}"/></linearGradient>`;
+  const ringGrad = m.ring ? `<linearGradient id="${id}ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.b}"/><stop offset=".35" stop-color="${t.a}"/><stop offset=".65" stop-color="${t.c}"/><stop offset="1" stop-color="${t.d}"/><animateTransform attributeName="gradientTransform" type="rotate" values="0 .5 .5;360 .5 .5" dur="${m.ring}s" repeatCount="indefinite"/></linearGradient>` : '';
+  const prism = m.legendary ? `<g clip-path="url(#${id}win)"><rect x="-200" y="-40" width="130" height="300" fill="url(#${id}prism)" transform="rotate(20)"><animate attributeName="x" values="-200;380" dur="3.6s" repeatCount="indefinite"/></rect></g>` : '';
+  const sparkles = m.legendary ? SPARKLES.map(([x, y, s, d]) => `<path d="${SPARKLE}" fill="${t.b}" transform="translate(${x} ${y})"><animateTransform attributeName="transform" type="scale" additive="sum" values="0;0;${s};0" keyTimes="0;.55;.75;1" dur="2.8s" begin="-${d}s" repeatCount="indefinite"/></path>`).join('') : '';
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} (${t.name} card)">
 <title>${label} · ${t.name} · ShinyPull</title>
 <defs>
-<linearGradient id="${id}foil" x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect"><stop offset="0" stop-color="${t.a}"/><stop offset=".2" stop-color="${t.b}"/><stop offset=".38" stop-color="${t.d}"/><stop offset=".55" stop-color="${t.c}"/><stop offset=".72" stop-color="${t.b}"/><stop offset=".86" stop-color="${p.color}"/><stop offset="1" stop-color="${t.a}"/><animateTransform attributeName="gradientTransform" type="translate" values="-0.5 -0.5;0.5 0.5;-0.5 -0.5" dur="6s" repeatCount="indefinite"/></linearGradient>
-<linearGradient id="${id}num" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.b}"/><stop offset="1" stop-color="${t.a}"/></linearGradient>
+<linearGradient id="${id}foil" x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect"><stop offset="0" stop-color="${t.a}"/><stop offset=".2" stop-color="${t.b}"/><stop offset=".38" stop-color="${t.d}"/><stop offset=".55" stop-color="${t.c}"/><stop offset=".72" stop-color="${t.b}"/><stop offset=".86" stop-color="${p.color}"/><stop offset="1" stop-color="${t.a}"/>${foilAnim}</linearGradient>
+${numGrad}${ringGrad}
 <radialGradient id="${id}art" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="${p.color}" stop-opacity=".55"/><stop offset=".6" stop-color="${t.c}" stop-opacity=".18"/><stop offset="1" stop-color="#0B0B12" stop-opacity="0"/></radialGradient>
-<pattern id="${id}holo" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="4" height="10" fill="#fff" opacity=".05"/></pattern>
-<linearGradient id="${id}shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".38"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<pattern id="${id}holo" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="4" height="10" fill="#fff" opacity="${m.stripes ? .08 : .05}"/>${m.stripes ? `<animateTransform attributeName="patternTransform" type="translate" additive="sum" values="0 0;10 0" dur="${m.stripes}s" repeatCount="indefinite"/>` : ''}</pattern>
+<linearGradient id="${id}shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="${m.shine}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
 <clipPath id="${id}clip"><rect width="${W}" height="${H}" rx="16"/></clipPath>
+${m.legendary ? `<linearGradient id="${id}prism" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F472B6" stop-opacity="0"/><stop offset=".3" stop-color="#F472B6" stop-opacity=".22"/><stop offset=".5" stop-color="#FDE68A" stop-opacity=".26"/><stop offset=".7" stop-color="#67E8F9" stop-opacity=".22"/><stop offset="1" stop-color="#67E8F9" stop-opacity="0"/></linearGradient><clipPath id="${id}win"><rect x="18" y="48" width="${W - 36}" height="160" rx="10"/></clipPath>` : ''}
 <clipPath id="${id}av"><circle cx="${W / 2}" cy="126" r="50"/></clipPath>
 </defs>
 <g clip-path="url(#${id}clip)">
@@ -190,8 +221,9 @@ export function renderCard(c) {
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="#12121A"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}art)"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}holo)"/>
+${prism}
 <rect x="18.5" y="48.5" width="${W - 37}" height="159" rx="9.5" fill="none" stroke="url(#${id}foil)" stroke-opacity=".7"/>
-<circle cx="${W / 2}" cy="126" r="56" fill="none" stroke="url(#${id}foil)" stroke-width="4"/>
+<circle cx="${W / 2}" cy="126" r="56" fill="none" stroke="url(#${id}${m.ring ? 'ring' : 'foil'})" stroke-width="4"/>
 ${art}
 ${rankChip}
 <text x="${W / 2}" y="232" text-anchor="middle" font-family="${FONT}" font-size="18" font-weight="800" fill="#FAFAFA">${escapeXml(name)}</text>
@@ -201,7 +233,7 @@ ${rankChip}
 <line x1="22" y1="312" x2="${W - 22}" y2="312" stroke="#fff" stroke-opacity=".08"/>
 ${hasDelta ? `<text x="22" y="329" font-family="${FONT}" font-size="9.5" font-weight="700" fill="${up ? '#34D399' : '#F87171'}">${up ? '▲ +' : '▼ −'}${compactCount(c.delta30)} <tspan fill="#C4C4CE" font-weight="600">30d</tspan></text>` : ''}
 <text x="${W - 22}" y="329" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing="1.2" fill="#C4C4CE">${cardNo} · SHINYPULL</text>
-<rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)"><animate attributeName="x" values="-220;-220;420" keyTimes="0;.55;1" dur="4.5s" repeatCount="indefinite"/></rect>
+${sparkles}${shine}
 ${c.showMark === false ? '' : platformMark(c.platform in CARD_PLATFORMS ? c.platform : 'youtube', W - 20, 28)}
 </g>
 <rect x=".5" y=".5" width="${W - 1}" height="${H - 1}" rx="15.5" fill="none" stroke="#fff" stroke-opacity=".25"/>
