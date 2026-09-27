@@ -33,7 +33,7 @@ const MORE_LINKS = [
   { Icon: Flame, label: 'Trending this month', to: '/trending' },
   { Icon: Trophy, label: 'Milestones', to: '/milestones' },
   { Icon: DollarSign, label: 'Kick earnings', to: '/kick/earnings' },
-  { Icon: IdCard, label: 'Creator cards', to: '/badge' },
+  { Icon: IdCard, label: 'Creator cards', to: '/card' },
 ];
 
 const TILE = 'group relative min-w-0 flex flex-col bg-white border border-neutral-200/80 rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-neutral-300 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.18)] transition-[border-color,box-shadow]';

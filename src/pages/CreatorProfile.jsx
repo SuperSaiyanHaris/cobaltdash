@@ -1117,7 +1117,7 @@ export default function CreatorProfile() {
                       </button>
                     </div>
                     <p className="mt-2 text-xs text-neutral-700 leading-relaxed">
-                      A live holographic card for your site, stream panels or README. It updates itself and links back here. <Link to="/badge" className="font-semibold underline">More options</Link>
+                      A live holographic card for your site, stream panels or README. It updates itself and links back here. <Link to="/card" className="font-semibold underline">More options</Link>
                     </p>
                   </div>
                 )}

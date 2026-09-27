@@ -31,7 +31,7 @@ const moreLinks = [
   { path: '/milestones', label: 'Milestones', description: 'Big numbers crossed', icon: Milestone, tint: 'text-indigo-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
   { path: '/kick/earnings', label: 'Kick Earnings', description: 'Top streamers\' sub income', icon: Calculator, tint: 'text-green-600' },
-  { path: '/badge', label: 'Creator Cards', description: 'Your holographic card', icon: BadgeCheck, tint: 'text-indigo-500' },
+  { path: '/card', label: 'Creator Cards', description: 'Your holographic card', icon: BadgeCheck, tint: 'text-indigo-500' },
   { path: '/promote', label: 'Get Featured', description: 'Promote your creator on ShinyPull', icon: Megaphone, tint: 'text-amber-500' },
   { path: '/blog', label: 'Blog', description: 'Creator economy insights', icon: BookOpen, tint: 'text-cyan-500' },
   { path: '/support', label: 'Support', description: 'Help keep it running', icon: Heart, tint: 'text-rose-500' },

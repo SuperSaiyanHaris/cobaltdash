@@ -53,7 +53,7 @@ sessions never see it. Anything a cloud session must know goes here.
 # Infrastructure
 
 - Vite + React SPA with Tailwind and framer-motion, hosted on Vercel Pro.
-  `middleware.js` (edge) server-renders SEO content and serves `/badge` and
+  `middleware.js` (edge) server-renders SEO content and serves the `/badge/...` and
   `/card` SVGs. Serverless functions live in `api/`.
 - Supabase: Postgres + PostgREST, RLS on, `rankings_cache` refreshed by
   pg_cron and by the daily workflow.
@@ -92,7 +92,12 @@ sessions never see it. Anything a cloud session must know goes here.
   when the preview design changes.
 - Rarity comes from `cardTier(rank, total)`: Legendary = top 10 or top 0.1%,
   Epic = top 1%, Rare = top 10%, else Common. `getCardsByRarity()` draws per
-  band. Home shows Legendary/Epic/Rare; the sign-in wall shows all four.
+  band. Home shows Legendary/Epic/Rare; the sign-in wall and the `/card`
+  page show all four.
+- The card page is `/card` (moved from `/badge` on 2026-09-26; `/badge`
+  301s there in `middleware.js`, and React redirects it too). The embed
+  images `/badge/:platform/:username` and `/card/:platform/:username` are
+  separate and must keep working: creators have them on their sites.
 - Card motion escalates with rarity (`MOTION` in `badgeCard.js`): Common a
   slow glint only, Rare adds drifting foil, Epic adds holo stripes and a
   spinning ring, Legendary adds a double glint, prism sweep, sparkles and a

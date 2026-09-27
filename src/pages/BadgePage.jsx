@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
 import { PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import { cardImageUrl } from '../lib/cardUrl';
+import { getCardsByRarity } from '../services/creatorService';
 import PageHero from '../components/PageHero';
 
 // Creator card maker. The card itself is an SVG rendered at the edge
@@ -12,7 +13,17 @@ import PageHero from '../components/PageHero';
 // compact /badge/... image still works for older embeds. Every embed links
 // back to the creator's ShinyPull profile, so each one is a backlink.
 const PLATFORMS = ['youtube', 'twitch', 'kick', 'tiktok', 'bluesky', 'mastodon', 'music', 'substack'];
-const EXAMPLES = [['youtube', 'mrbeast'], ['twitch', 'caedrel'], ['kick', 'xqc']];
+// Hero showcase: one live card per rarity, left to right from Legendary to
+// Common, each from a different platform (shuffled per visit). Card backs
+// hold the slots until the draw comes back.
+const SHOWCASE_TIERS = ['legendary', 'epic', 'rare', 'common'];
+const SHOWCASE_PLATFORMS = ['youtube', 'twitch', 'kick', 'tiktok'];
+
+function drawShowcase() {
+  const plats = [...SHOWCASE_PLATFORMS].sort(() => Math.random() - 0.5);
+  return Promise.all(SHOWCASE_TIERS.map((tier, i) =>
+    getCardsByRarity([plats[i]], { [tier]: 1 }).then((rows) => rows?.[0] || null).catch(() => null)));
+}
 const RARITIES = [
   ['Legendary', 'Top 10 on the platform, or the top 0.1%', 'from-amber-300 via-yellow-100 to-orange-400'],
   ['Epic', 'Top 1%', 'from-fuchsia-400 via-purple-200 to-violet-500'],
@@ -60,6 +71,13 @@ export default function BadgePage() {
   const [username, setUsername] = useState('');
   const [pulled, setPulled] = useState(null);
   const codes = pulled ? codesFor(pulled.platform, pulled.username) : null;
+  const [showcase, setShowcase] = useState([null, null, null, null]);
+
+  useEffect(() => {
+    let live = true;
+    drawShowcase().then((cards) => { if (live) setShowcase(cards); });
+    return () => { live = false; };
+  }, []);
 
   const submit = (e) => {
     e.preventDefault();
@@ -79,12 +97,17 @@ export default function BadgePage() {
         title="Pull your creator card."
         subtitle="Every creator we track has a holographic card with their live count, 30-day growth and rank. Its rarity comes from where they stand on their platform. Grab yours for your site, stream panels, Linktree, GitHub or media kit. It updates itself every day."
       >
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-5">
-          {EXAMPLES.map(([p, u]) => (
-            <Link key={p} to={`/${p}/${u}`} className="block">
-              <img src={cardImageUrl(p, u)} width="250" height="350" alt={`${u} ${PLATFORM_DISPLAY_NAMES[p]} creator card`} className="w-[150px] sm:w-[220px] h-auto rounded-[6.4%/4.571%] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]" />
-            </Link>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 justify-items-center gap-4 sm:gap-5 max-w-[880px] mx-auto">
+          {showcase.map((c, i) => {
+            const cls = 'w-[150px] sm:w-[190px] lg:w-[205px] h-auto rounded-[6.4%/4.571%] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]';
+            return c ? (
+              <Link key={`${c.platform}/${c.username}`} to={`/${c.platform}/${c.username}`} className="block">
+                <img src={cardImageUrl(c.platform, c.username)} width="250" height="350" alt={`${c.display_name || c.username} ${PLATFORM_DISPLAY_NAMES[c.platform]} creator card, ${SHOWCASE_TIERS[i]}`} className={cls} />
+              </Link>
+            ) : (
+              <img key={`back-${i}`} src="/card-back.svg" width="250" height="350" alt="" aria-hidden="true" className={cls} />
+            );
+          })}
         </div>
       </PageHero>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-12">

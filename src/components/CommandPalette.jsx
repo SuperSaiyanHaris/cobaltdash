@@ -38,7 +38,7 @@ const PAGES = [
   { label: 'Compare', hint: 'Head to head', to: '/compare', Icon: Scale },
   { label: 'Trending', hint: 'Fastest growing', to: '/trending', Icon: TrendingUp },
   { label: 'Dashboard', hint: 'Your collection', to: '/dashboard', Icon: LayoutDashboard },
-  { label: 'Creator cards', hint: 'Get your card', to: '/badge', Icon: BadgeCheck },
+  { label: 'Creator cards', hint: 'Get your card', to: '/card', Icon: BadgeCheck },
   { label: 'Get featured', hint: 'Sponsored slots', to: '/promote', Icon: Megaphone },
   { label: 'Milestones', hint: 'Big numbers crossed', to: '/milestones', Icon: Milestone },
   { label: 'YouTube earnings', hint: 'Money calculator', to: '/youtube/money-calculator', Icon: Calculator },

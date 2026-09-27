@@ -146,7 +146,7 @@ export default function HeroCardStage({ creators }) {
 
 
         <Link
-          to={current ? `/${current.platform}/${current.username}` : '/badge'}
+          to={current ? `/${current.platform}/${current.username}` : '/card'}
           aria-label={current ? `${current.display_name}'s ${platformName} stats` : 'Creator cards'}
           className="relative z-10 block w-[200px] h-[280px] sm:w-[250px] sm:h-[350px] rounded-[6.4%/4.571%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
@@ -196,7 +196,7 @@ export default function HeroCardStage({ creators }) {
         >
           <span aria-hidden="true">✦</span> Pull a card
         </button>
-        <Link to="/badge" className="group inline-flex items-center gap-1 text-[13px] text-white/80 hover:text-white transition-colors">
+        <Link to="/card" className="group inline-flex items-center gap-1 text-[13px] text-white/80 hover:text-white transition-colors">
           Every creator has one. Get yours
           <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
         </Link>

@@ -62,7 +62,7 @@ test('Kick earnings calculator and leaderboard', async ({ page }) => {
 });
 
 test('card maker pulls a live holographic card and gives embed code', async ({ page }) => {
-  await page.goto('/badge');
+  await page.goto('/card');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/creator card/i);
   await page.getByLabel('Platform').selectOption('twitch');
   await page.getByLabel('Username').fill('kaicenat');

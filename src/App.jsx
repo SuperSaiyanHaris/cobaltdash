@@ -252,7 +252,8 @@ function LayoutWrapper() {
           <Route path="/compare" element={<Compare />} />
           <Route path="/youtube/money-calculator" element={<Calculator />} />
           <Route path="/kick/earnings" element={<KickEarnings />} />
-          <Route path="/badge" element={<BadgePage />} />
+          <Route path="/card" element={<BadgePage />} />
+          <Route path="/badge" element={<Navigate to="/card" replace />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/milestones" element={<Milestones />} />
           <Route path="/live/:platform/:username" element={<LiveCount />} />

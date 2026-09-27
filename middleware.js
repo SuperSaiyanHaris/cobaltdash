@@ -929,7 +929,7 @@ const OG_CARDS = [
   [/^\/blog(\/|$)/,                'blog'],
   [/^\/youtube\/money-calculator/, 'calculator'],
   [/^\/kick\/earnings$/,           'calculator'],
-  [/^\/badge$/,                    'badge'],
+  [/^\/card$/,                     'badge'],
 ];
 
 const SHARE_CARD_V = 2;
@@ -1043,7 +1043,7 @@ function getMeta(pathname, searchParams) {
     };
   }
 
-  if (pathname === '/badge') {
+  if (pathname === '/card') {
     return {
       title: 'Get Your Holographic Creator Card - ShinyPull',
       description: 'Pull your free holographic ShinyPull card: live follower count, 30-day growth and platform rank, with Legendary, Epic, Rare or Common rarity. Embed it anywhere.',
@@ -1141,6 +1141,13 @@ export default async function middleware(request) {
   const badgeMatch = url.pathname.match(/^\/badge\/(\w+)\/([^/]+)$/);
   if (badgeMatch && PLATFORM_NAMES[badgeMatch[1]]) {
     return handleBadge(badgeMatch[1], decodeURIComponent(badgeMatch[2]));
+  }
+
+  // The card page moved from /badge to /card (2026-09-26). Old links on X,
+  // blog posts and creators' sites keep working. Embed images under
+  // /badge/:platform/:username are untouched (handled above).
+  if (url.pathname === '/badge' || url.pathname === '/badge/') {
+    return Response.redirect(new URL(`/card${url.search}`, url), 301);
   }
 
   const meta = getMeta(url.pathname, url.searchParams);

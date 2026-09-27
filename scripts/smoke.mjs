@@ -88,7 +88,7 @@ const checks = [
     const n = (idx.text.match(/<sitemap>/g) || []).length;
     expect(idx.status === 200 && n >= 3, `sitemap index: status ${idx.status}, ${n} children`);
     const core = await get('/sitemap-core.xml');
-    expect(core.text.includes('/kick/earnings') && core.text.includes('/badge<'), 'core sitemap missing new pages');
+    expect(core.text.includes('/kick/earnings') && core.text.includes('/card<'), 'core sitemap missing new pages');
 
   }],
   ['removed platforms redirect away (Rumble)', async () => {
