@@ -441,12 +441,17 @@ h1, h2, h3, h4 {
 
 /* Home hero card stage (src/components/HeroCardStage.jsx). */
 .hero-stage { perspective: 1100px; }
+/* The fanned cards are the face-down deck (card backs). */
 .hero-fan {
-  opacity: 0.5;
+  opacity: 0.85;
   filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.45s ease;
 }
 .hero-fan-left  { transform: translateX(-46%) translateY(16px) rotate(-11deg); }
 .hero-fan-right { transform: translateX(46%) translateY(16px) rotate(11deg); }
+/* "Pull a card": the top card of the deck slides in under the flipping
+   card, then the deck resets behind it. */
+.hero-fan-right.is-drawing { transform: translateX(0) translateY(0) rotate(0deg) scale(0.96); opacity: 0; }
 .hero-tilt {
   position: relative;
   transform-style: preserve-3d;
@@ -493,7 +498,7 @@ h1, h2, h3, h4 {
 .hero-pull-btn:hover { background: #6D28D9; }
 .hero-pull-btn:active { transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) {
-  .hero-flip, .hero-tilt { transition: none; }
+  .hero-flip, .hero-tilt, .hero-fan { transition: none; }
 }
 
 /* Home "Show up at the top" band: the sponsored row's gold foil edge and a

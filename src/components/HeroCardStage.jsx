@@ -5,10 +5,11 @@ import { useReducedMotion } from 'framer-motion';
 import { cardImageUrl } from '../lib/cardUrl';
 import { CARD_PLATFORMS, renderMarkOverlay } from '../lib/badgeCard';
 
-// Home hero centerpiece: a hand of real holographic creator cards
-// (/card/..., rendered by middleware.js). The front card tilts toward the
-// pointer with a moving glare, and every few seconds (or on "Pull a card")
-// flips to the ShinyPull card back and turns over on the next creator.
+// Home hero centerpiece: a real holographic creator card (/card/...,
+// rendered by middleware.js) in front of a face-down deck (two card backs).
+// The front card tilts toward the pointer with a moving glare, and every few
+// seconds (or on "Pull a card") the top card of the deck slides in while the
+// front card flips to its back and turns over on the next creator.
 //
 // Brand rules: the 3D-moving cards are all the markless render (mark=0).
 // The platform logo is a separate flat layer (renderMarkOverlay) sitting
@@ -43,6 +44,8 @@ export default function HeroCardStage({ creators }) {
   const [faceUp, setFaceUp] = useState(false);
   // True once the flip has fully stopped: the flat logo only shows then.
   const [settled, setSettled] = useState(false);
+  // The deck's top card is sliding in during a pull.
+  const [drawing, setDrawing] = useState(false);
   const tiltRef = useRef(null);
   const busyRef = useRef(false);
   const timerRef = useRef(null);
@@ -81,9 +84,11 @@ export default function HeroCardStage({ creators }) {
     busyRef.current = true;
     setSettled(false);
     setFaceUp(false);
+    setDrawing(true);
     await Promise.all([preload(nextSrc), new Promise((r) => setTimeout(r, FLIP_MS))]);
     setIdx(next);
     setFaceUp(true);
+    setDrawing(false);
     setTimeout(() => { busyRef.current = false; }, FLIP_MS);
   }, [creators, idx, n, reduceMotion]);
 
@@ -107,8 +112,6 @@ export default function HeroCardStage({ creators }) {
     if (tiltRef.current) tiltRef.current.style.transform = '';
   };
 
-  const left = n >= 3 ? creators[(idx - 1 + n) % n] : null;
-  const right = n >= 3 ? creators[(idx + 1) % n] : null;
   const platformName = current ? (CARD_PLATFORMS[current.platform]?.name || current.platform) : '';
 
   return (
@@ -119,31 +122,25 @@ export default function HeroCardStage({ creators }) {
         onPointerLeave={onPointerLeave}
       >
 
-        {left && (
-          <img
-            src={cardImageUrl(left.platform, left.username, { mark: false })}
-            alt=""
-            aria-hidden="true"
-            width="250"
-            height="350"
-            loading="lazy"
-            draggable="false"
-            className="hero-fan hero-fan-left absolute w-[176px] sm:w-[220px] h-auto select-none pointer-events-none"
-          />
-        )}
-        {right && (
-          <img
-            src={cardImageUrl(right.platform, right.username, { mark: false })}
-            alt=""
-            aria-hidden="true"
-            width="250"
-            height="350"
-            loading="lazy"
-            draggable="false"
-            className="hero-fan hero-fan-right absolute w-[176px] sm:w-[220px] h-auto select-none pointer-events-none"
-          />
-        )}
-
+        {/* The face-down deck. Our own mark on the back, so rotating it is fine. */}
+        <img
+          src="/card-back.svg"
+          alt=""
+          aria-hidden="true"
+          width="250"
+          height="350"
+          draggable="false"
+          className="hero-fan hero-fan-left absolute w-[176px] sm:w-[220px] h-auto select-none pointer-events-none"
+        />
+        <img
+          src="/card-back.svg"
+          alt=""
+          aria-hidden="true"
+          width="250"
+          height="350"
+          draggable="false"
+          className={`hero-fan hero-fan-right absolute w-[176px] sm:w-[220px] h-auto select-none pointer-events-none ${drawing ? 'is-drawing' : ''}`}
+        />
 
         <Link
           to={current ? `/${current.platform}/${current.username}` : '/card'}

@@ -717,6 +717,36 @@ export const getCardsByRarity = withErrorHandling(
   'creatorService.getCardsByRarity'
 );
 
+/**
+ * Drops YouTube channels whose 30-day "growth" is a back catalog coming back
+ * (videos made public again bring their lifetime views with them), not new
+ * viewers. The Late Late Show went 79 -> 1,949 videos in Sep 2026 and
+ * "gained" 4.75B views. Signal: the video count jumped 1.5x and by 50+ in the
+ * same window. Stored numbers are untouched; this only filters the Rising and
+ * Trending lists. Other platforms' growth is followers, which restores don't
+ * inflate.
+ */
+export async function excludeCatalogRestores(platform, rows) {
+  if (platform !== 'youtube' || !rows?.length) return rows || [];
+  const from = new Date(Date.now() - 32 * 86400000).toISOString().slice(0, 10);
+  const to = new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from('creator_stats')
+    .select('creator_id, total_posts, recorded_at')
+    .in('creator_id', rows.map((r) => r.creator_id))
+    .gte('recorded_at', from)
+    .lte('recorded_at', to)
+    .order('recorded_at', { ascending: true });
+  if (error) return rows;
+  const then = new Map();
+  for (const s of data || []) if (!then.has(s.creator_id) && s.total_posts > 0) then.set(s.creator_id, s.total_posts);
+  return rows.filter((r) => {
+    const before = then.get(r.creator_id);
+    if (!before || !r.total_posts) return true;
+    return !(r.total_posts >= before * 1.5 && r.total_posts - before >= 50);
+  });
+}
+
 export const getTopCreatorsByPlatform = withErrorHandling(
   async () => {
     const now = Date.now();

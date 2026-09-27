@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, TrendingUp } from 'lucide-react';
 import CreatorAvatar from './CreatorAvatar';
-import { getRankedCreators } from '../services/creatorService';
+import { getRankedCreators, excludeCatalogRestores } from '../services/creatorService';
 import { getRecentlyViewed } from '../lib/recentlyViewed';
 import { cardImageUrl } from '../lib/cardUrl';
 import { isActivePlatform, PLATFORM_DISPLAY_NAMES } from '../lib/constants';
@@ -30,7 +30,7 @@ export default function SearchDiscover({ platform }) {
   useEffect(() => {
     let live = true;
     getRankedCreators(platform, 'subscribers', 6).then((d) => live && setTop(d || [])).catch(() => live && setTop([]));
-    getRankedCreators(platform, 'growth', 5).then((d) => live && setRising((d || []).filter((c) => c.growth_30d > 0))).catch(() => live && setRising([]));
+    getRankedCreators(platform, 'growth', 10).then((d) => excludeCatalogRestores(platform, d)).then((d) => live && setRising((d || []).filter((c) => c.growth_30d > 0).slice(0, 5))).catch(() => live && setRising([]));
     return () => { live = false; };
   }, [platform]);
 

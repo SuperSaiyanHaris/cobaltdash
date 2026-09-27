@@ -8,7 +8,7 @@ import KickIcon from '../components/KickIcon';
 import TikTokIcon from '../components/TikTokIcon';
 import BlueskyIcon from '../components/BlueskyIcon';
 import MastodonIcon from '../components/MastodonIcon';
-import { getRankedCreators } from '../services/creatorService';
+import { getRankedCreators, excludeCatalogRestores } from '../services/creatorService';
 import { formatNumber } from '../lib/utils';
 import CreatorAvatar from '../components/CreatorAvatar';
 import PageHero from '../components/PageHero';
@@ -40,7 +40,7 @@ export default function Trending() {
       return;
     }
     setLoading(true);
-    getRankedCreators(activePlatform, 'growth', 25).then(data => {
+    getRankedCreators(activePlatform, 'growth', 25).then(data => excludeCatalogRestores(activePlatform, data)).then(data => {
       const filtered = (data || []).filter(c => c.growth30d > 0);
       setCreators(filtered);
       setCache(prev => ({ ...prev, [activePlatform]: filtered }));
