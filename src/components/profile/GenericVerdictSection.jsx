@@ -421,7 +421,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
         <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden mt-4">
           {countIsRounded && (
             <p className="px-5 py-3 text-xs text-neutral-600 border-b border-neutral-100 bg-neutral-50">
-              {platformName} reports counts this large in rounded steps, so days can read +0 while the account keeps growing.
+              {platformName} rounds big {platform === 'substack' ? 'subscriber' : 'follower'} counts, so some days show +0 even while the account is growing.
             </p>
           )}
           <div className="hidden md:block overflow-x-auto">

@@ -102,9 +102,9 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
   const MUTED = 'text-neutral-600';
   const deltaCell = (r) => {
     if (r.kind === 'first') return { text: '—', cls: MUTED };
-    if (r.kind === 'lag') return { text: 'not updated', cls: MUTED };
+    if (r.kind === 'lag') return { text: `added ${r.addedOn}`, cls: MUTED };
     if (r.kind === 'pending') return { text: 'pending', cls: MUTED };
-    if (r.kind === 'missing') return { text: 'no reading', cls: MUTED };
+    if (r.kind === 'missing') return { text: 'no data', cls: MUTED };
     if (r.kind === 'flat') return { text: '+0', cls: MUTED };
     return { text: fmtSigned(r.delta) + (r.days > 1 ? ` · ${r.days} days` : ''), cls: r.delta < 0 ? 'text-red-600' : 'text-emerald-600' };
   };
@@ -213,7 +213,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
                     return (
                       <div className="bg-white border border-neutral-200 rounded-lg shadow-lg px-3 py-2">
                         <p className="text-xs text-neutral-700">{new Date(payload[0].payload.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                        <p className="text-sm font-semibold text-neutral-900 tabular-nums">{raw == null ? 'no reading' : formatNumber(raw)}</p>
+                        <p className="text-sm font-semibold text-neutral-900 tabular-nums">{raw == null ? 'no data' : formatNumber(raw)}</p>
                       </div>
                     );
                   }}

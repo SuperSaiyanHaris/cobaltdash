@@ -81,7 +81,7 @@ const shortDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', {
  */
 export function buildDailyReadings(series) {
   const rows = series.map((d) => ({ ...d, kind: d.views == null ? 'missing' : 'normal', delta: null, days: 1, revenueViews: null, approx: false, note: null }));
-  for (const r of rows) if (r.kind === 'missing') r.note = 'No view total from YouTube this day';
+  for (const r of rows) if (r.kind === 'missing') r.note = 'No view count for this day.';
   const valid = rows.filter((r) => r.kind !== 'missing');
   if (!valid.length) return rows;
   valid[0].kind = 'first';
@@ -102,17 +102,18 @@ export function buildDailyReadings(series) {
         f.kind = 'lag';
         f.revenueViews = perDay * dayDiff(prevDate, f.date);
         f.approx = true;
-        f.note = `YouTube updated these views on ${shortDate(r.date)}`;
+        f.addedOn = shortDate(r.date);
+        f.note = `YouTube didn't update this channel's views that day. They were added on ${shortDate(r.date)}.`;
         prevDate = f.date;
       }
       r.kind = 'catchup';
       r.revenueViews = perDay * dayDiff(prevDate, r.date);
       r.approx = true;
-      r.note = `${shortDate(flats[0].date)} to ${shortDate(r.date)} came in together, split evenly across ${days} days`;
+      r.note = `Includes views from the ${days - 1 === 1 ? 'day' : `${days - 1} days`} before, so revenue is shared evenly across all ${days} days.`;
     } else {
       for (const f of flats) { f.kind = 'flat'; f.delta = 0; }
       r.revenueViews = delta > 0 ? delta : null;
-      if (days > 1) r.note = `Covers ${days} days`;
+      if (days > 1) r.note = `Views gained over ${days} days.`;
     }
     r.delta = delta;
     r.days = days;
@@ -127,7 +128,7 @@ export function buildDailyReadings(series) {
     const before = recentMoves.slice(0, recentMoves.length - flats.length).slice(-7);
     const active = before.some(Boolean);
     for (const f of flats) {
-      if (active) { f.kind = 'pending'; f.note = "YouTube hasn't refreshed this total yet"; }
+      if (active) { f.kind = 'pending'; f.note = "YouTube hasn't updated these views yet. Check back tomorrow."; }
       else { f.kind = 'flat'; f.delta = 0; }
     }
   }
