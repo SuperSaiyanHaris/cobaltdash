@@ -60,6 +60,7 @@ const KickEarnings = lazyWithRetry(() => import('./pages/KickEarnings'));
 const BadgePage = lazyWithRetry(() => import('./pages/BadgePage'));
 const Support = lazyWithRetry(() => import('./pages/Support'));
 const Account = lazyWithRetry(() => import('./pages/Account'));
+const Replies = lazyWithRetry(() => import('./pages/Replies'));
 const Promote = lazyWithRetry(() => import('./pages/Promote'));
 const Refunds = lazyWithRetry(() => import('./pages/Refunds'));
 const ShareProfile = lazyWithRetry(() => import('./pages/ShareProfile'));
@@ -264,6 +265,7 @@ function LayoutWrapper() {
           <Route path="/auth/reset" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/replies" element={<Replies />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />

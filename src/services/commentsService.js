@@ -4,16 +4,31 @@
 import { supabase } from '../lib/supabase';
 
 export const PAGE_SIZE = 10;
-const COLS = 'id, creator_id, user_id, body, status, follows_creator, up_count, down_count, created_at, commenter_profiles(handle, avatar_url)';
+const COLS = 'id, creator_id, user_id, parent_id, body, status, follows_creator, up_count, down_count, created_at, commenter_profiles(handle, avatar_url)';
 
 export async function listComments(creatorId, { sort = 'top', page = 0 } = {}) {
-  let q = supabase.from('creator_comments').select(COLS, { count: 'exact' }).eq('creator_id', creatorId).in('status', ['visible', 'held']);
+  let q = supabase.from('creator_comments').select(COLS, { count: 'exact' }).eq('creator_id', creatorId).is('parent_id', null).in('status', ['visible', 'held']);
   q = sort === 'new'
     ? q.order('created_at', { ascending: false })
     : q.order('up_count', { ascending: false }).order('down_count', { ascending: true }).order('created_at', { ascending: false });
   const { data, error, count } = await q.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
   if (error) throw error;
   return { comments: data || [], total: count || 0 };
+}
+
+/** All replies under the given top-level comments, oldest first. */
+export async function listReplies(parentIds) {
+  if (!parentIds.length) return [];
+  const { data, error } = await supabase.from('creator_comments').select(COLS).in('parent_id', parentIds)
+    .in('status', ['visible', 'held']).order('created_at', { ascending: true }).limit(500);
+  if (error) throw error;
+  return data || [];
+}
+
+/** One comment by id (a link from the Replies page can point below page 1). */
+export async function getComment(id) {
+  const { data } = await supabase.from('creator_comments').select(COLS).eq('id', id).is('parent_id', null).maybeSingle();
+  return data;
 }
 
 export async function myVotes(ids, userId) {
@@ -59,10 +74,22 @@ async function call(payload) {
   return json;
 }
 
-export const postComment = (creatorId, body) => call({ action: 'post', creatorId, body });
+export const postComment = (creatorId, body, parentId = null) => call({ action: 'post', creatorId, body, parentId });
+export const markRepliesSeen = () => call({ action: 'replies_seen' });
 export const setHandle = (handle) => call({ action: 'handle', handle });
 export const removeComment = (id) => call({ action: 'remove', id });
 export const moderateComment = (id, status) => call({ action: 'moderate', id, status });
+
+async function get(query) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
+  const res = await fetch(`/api/comments?${query}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+  return res.ok ? res.json() : null;
+}
+
+/** Replies to the signed-in person, and how many are unread. */
+export const repliesInbox = () => get('replies=list');
+export const unreadReplies = () => get('replies=count').then((r) => r?.unread || 0);
 
 export async function adminQueue() {
   const { data: { session } } = await supabase.auth.getSession();

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck } from 'lucide-react';
+import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck, MessageCircle } from 'lucide-react';
+import { unreadReplies } from '../services/commentsService';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
 import useRankingsHint from '../hooks/useRankingsHint';
@@ -52,6 +53,10 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, isAuthenticated } = useAuth();
+  // Unread replies to the signed-in person's comments, for the account menu.
+  // Checked on sign-in and at most every 2 minutes while navigating.
+  const [unread, setUnread] = useState(0);
+  const unreadChecked = useRef(0);
   const showRankingsHint = useRankingsHint();
 
   // AuthPanel is rendered at the App level (see App.jsx) — Header's backdrop-blur
@@ -70,6 +75,18 @@ export default function Header() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) { setUnread(0); unreadChecked.current = 0; return; }
+    if (Date.now() - unreadChecked.current < 120000) return;
+    unreadChecked.current = Date.now();
+    unreadReplies().then(setUnread).catch(() => {});
+  }, [isAuthenticated, location.pathname]);
+  useEffect(() => {
+    const clear = () => setUnread(0);
+    window.addEventListener('repliesSeen', clear);
+    return () => window.removeEventListener('repliesSeen', clear);
   }, []);
 
   // Close menus on route change
@@ -251,8 +268,9 @@ export default function Header() {
                         className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-neutral-200 transition-all"
                         aria-label="Account menu"
                       >
-                        <div className="w-8 h-8 bg-neutral-900 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="relative w-8 h-8 bg-neutral-900 rounded-full flex items-center justify-center text-white text-xs font-semibold">
                           {initials}
+                          {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-brand ring-2 ring-white" aria-label={`${unread} new replies`} />}
                         </div>
                       </button>
                     );
@@ -273,6 +291,15 @@ export default function Header() {
                         >
                           <LayoutDashboard className="w-4 h-4 text-neutral-400" />
                           Dashboard
+                        </Link>
+                        <Link
+                          to="/replies"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 w-full transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4 text-neutral-400" />
+                          <span className="flex-1">Replies</span>
+                          {unread > 0 && <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[11px] font-bold flex items-center justify-center">{unread}</span>}
                         </Link>
                         <Link
                           to="/account"
@@ -388,7 +415,15 @@ export default function Header() {
                       <span className="block text-xs text-white/65 truncate">{user?.email}</span>
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
+                  <Link
+                    to="/replies"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 h-12 px-4 mt-4 rounded-xl bg-white/10 text-white text-sm font-bold"
+                  >
+                    <MessageCircle className="w-4 h-4" /> <span className="flex-1">Replies</span>
+                    {unread > 0 && <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{unread}</span>}
+                  </Link>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
                     <Link
                       to="/account"
                       onClick={() => setMobileMenuOpen(false)}

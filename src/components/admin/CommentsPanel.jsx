@@ -49,7 +49,7 @@ export default function CommentsPanel() {
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-700">
                 {c.flagged && <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-semibold">Needs a look</span>}
                 <span className="font-semibold text-neutral-900">@{c.commenter_profiles?.handle}</span>
-                <span>on</span>
+                <span>{c.parent_id ? 'replied on' : 'on'}</span>
                 {c.creators && <Link to={`/${c.creators.platform}/${c.creators.username}`} className="underline">{c.creators.display_name}</Link>}
                 <span>{formatRelativeTimeShort(c.created_at)}</span>
                 {c.status === 'hidden' && <span className="px-1.5 py-0.5 rounded bg-neutral-100">hidden</span>}

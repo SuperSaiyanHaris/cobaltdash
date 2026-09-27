@@ -63,12 +63,13 @@ export function localCheck(body) {
 
 const RESERVED = /^(admin|administrator|mod|moderator|shinypull|shiny_pull|support|official|staff|system|null|undefined|anonymous|deleted)$/;
 
-/** Handle rules: 3 to 20 of a-z 0-9 _ . and nothing rude or official-looking. */
-export function handleProblem(raw) {
+/** Handle rules: 3 to 20 of a-z 0-9 _ . and nothing rude. Official-looking
+ * names (shinypull, admin...) are reserved for admin accounts. */
+export function handleProblem(raw, { allowReserved = false } = {}) {
   const h = String(raw ?? '').trim().toLowerCase();
   if (!/^[a-z0-9_.]{3,20}$/.test(h)) return 'Use 3 to 20 letters, numbers, dots or underscores.';
   if (/^[._]|[._]$|[._]{2}/.test(h)) return "Dots and underscores can't start, end or repeat.";
-  if (RESERVED.test(h.replace(/[._]/g, ''))) return "That name isn't available.";
+  if (!allowReserved && RESERVED.test(h.replace(/[._]/g, ''))) return "That name isn't available.";
   if (profanityIn(h.replace(/[._]/g, ' ')).length || profanityIn(h.replace(/[._]/g, '')).length) return "That name isn't available.";
   return null;
 }

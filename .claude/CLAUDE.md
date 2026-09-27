@@ -50,8 +50,12 @@ sessions never see it. Anything a cloud session must know goes here.
   `reviewed = false` and waits in /admin > Comments > To review, where the
   owner marks it fine or removes it (checked daily, no email). Reported,
   auto-hidden (3 reports) or heavily downvoted ones sort to the top.
-- No replies in v1 (`parent_id` is reserved). Comments aren't server-rendered
-  or indexed.
+- Replies are one level deep (`parent_id`); replying to a reply prefixes
+  "@handle". `/replies` (account menu, unread badge) lists replies under your
+  comments plus replies that @mention you; `commenter_profiles.replies_seen_at`
+  tracks read state. No emails. Admin accounts may take reserved handles
+  (@shinypull shows an Official badge). Comments aren't server-rendered or
+  indexed.
 
 # Supported platforms
 
