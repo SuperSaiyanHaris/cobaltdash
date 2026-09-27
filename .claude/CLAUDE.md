@@ -44,10 +44,12 @@ sessions never see it. Anything a cloud session must know goes here.
   `comment_votes`, `comment_reports` (schema and RLS in
   `supabase/migrations/20260927_creator_comments.sql`).
 - Every write goes through `api/comments.js`, which runs `api/_moderation.js`:
-  local rules (no links/emails/phones, swearing blocked via `obscenity`,
-  directed self-harm phrases), then a Claude Haiku classifier. If the
-  classifier can't answer, the comment is `held` for the admin Comments tab,
-  never posted unchecked. Three reports hide a comment.
+  no links/emails/phones, swearing blocked via `obscenity` (catches disguised
+  spellings), directed self-harm phrases. No paid services (the owner said no
+  AI moderation, 2026-09-27). Comments post instantly; each starts
+  `reviewed = false` and waits in /admin > Comments > To review, where the
+  owner marks it fine or removes it (checked daily, no email). Reported,
+  auto-hidden (3 reports) or heavily downvoted ones sort to the top.
 - No replies in v1 (`parent_id` is reserved). Comments aren't server-rendered
   or indexed.
 

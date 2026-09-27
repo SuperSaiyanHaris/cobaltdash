@@ -1,12 +1,14 @@
 // Profile comments: posting, handles, removal and the admin queue.
 // Reads, votes and reports go straight to Supabase under RLS (see
 // supabase/migrations/20260927_creator_comments.sql); everything that creates
-// or changes a comment comes through here so it's always moderated first.
+// or changes a comment comes through here so the word filter always runs
+// first. No paid services: comments post instantly once they pass, and the
+// owner reviews new ones in /admin (Comments > To review).
 
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit } from './_ratelimit.js';
 import { isFromOurSite, ALLOWED_ORIGINS } from './_guard.js';
-import { localCheck, handleProblem, classify, MESSAGES } from './_moderation.js';
+import { localCheck, handleProblem, MESSAGES } from './_moderation.js';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
 const DAILY_LIMIT = 20;
@@ -31,7 +33,7 @@ async function postComment(res, supabase, user, { creatorId, body }) {
   const { data: profile } = await supabase.from('commenter_profiles').select('handle').eq('user_id', user.id).maybeSingle();
   if (!profile) return fail(res, 409, 'Pick a public name first.', { needsHandle: true });
 
-  const { data: creator } = await supabase.from('creators').select('id, display_name, username').eq('id', creatorId).maybeSingle();
+  const { data: creator } = await supabase.from('creators').select('id').eq('id', creatorId).maybeSingle();
   if (!creator) return fail(res, 404, 'Creator not found.');
 
   const since = new Date(Date.now() - 86400000).toISOString();
@@ -42,21 +44,13 @@ async function postComment(res, supabase, user, { creatorId, body }) {
   const local = localCheck(text);
   if (local) return fail(res, 422, local.message, { reason: local.reason });
 
-  const verdict = await classify(text, { creatorName: creator.display_name || creator.username });
-  if (verdict.category && verdict.category !== 'none') {
-    return fail(res, 422, MESSAGES[verdict.category] || MESSAGES.harassment, { reason: verdict.category });
-  }
-  // Classifier couldn't vouch for it (down, timed out): hold for review, never post unchecked.
-  const status = verdict.category === 'none' ? 'visible' : 'held';
-
   const { data: follow } = await supabase.from('user_saved_creators').select('id').eq('user_id', user.id).eq('creator_id', creatorId).maybeSingle();
   const { data: row, error } = await supabase.from('creator_comments').insert({
     creator_id: creatorId,
     user_id: user.id,
     body: text,
-    status,
+    status: 'visible',
     follows_creator: !!follow,
-    moderation: verdict.category ? { category: 'none' } : { error: verdict.error },
   }).select('id, creator_id, user_id, body, status, follows_creator, up_count, down_count, created_at').single();
   if (error) return fail(res, 500, "Couldn't post that. Try again.");
   return res.status(201).json({ comment: { ...row, commenter_profiles: { handle: profile.handle } } });
@@ -66,8 +60,6 @@ async function setHandle(res, supabase, user, { handle }) {
   const h = String(handle ?? '').trim().toLowerCase();
   const problem = handleProblem(h);
   if (problem) return fail(res, 422, problem);
-  const verdict = await classify(`Username: ${h}`);
-  if (verdict.category && verdict.category !== 'none') return fail(res, 422, "That name isn't available.");
 
   const { data: taken } = await supabase.from('commenter_profiles').select('user_id').ilike('handle', h.replace(/[_%\\]/g, '\\$&')).maybeSingle();
   if (taken && taken.user_id !== user.id) return fail(res, 409, 'That name is taken. Try another.');
@@ -84,19 +76,26 @@ async function removeOwn(res, supabase, user, { id }) {
   return res.status(200).json({ ok: true });
 }
 
+// A comment needs a look when it has reports or is heavily downvoted; those
+// sort to the top of the review list.
+const needsLook = (c) => c.report_count > 0 || c.status === 'hidden' || (c.down_count >= 5 && c.down_count > c.up_count * 2);
+
 async function adminQueue(res, supabase) {
-  const cols = 'id, creator_id, user_id, body, status, up_count, down_count, report_count, moderation, created_at, commenter_profiles(handle), creators(platform, username, display_name)';
-  const [held, reported, recent] = await Promise.all([
-    supabase.from('creator_comments').select(cols).in('status', ['held', 'hidden']).order('created_at', { ascending: false }).limit(100),
-    supabase.from('creator_comments').select(cols).gt('report_count', 0).eq('status', 'visible').order('report_count', { ascending: false }).limit(100),
-    supabase.from('creator_comments').select(cols).eq('status', 'visible').order('created_at', { ascending: false }).limit(100),
+  const cols = 'id, creator_id, user_id, body, status, reviewed, up_count, down_count, report_count, created_at, commenter_profiles(handle), creators(platform, username, display_name)';
+  const [review, removed] = await Promise.all([
+    supabase.from('creator_comments').select(cols).eq('reviewed', false).neq('status', 'removed').order('created_at', { ascending: false }).limit(200),
+    supabase.from('creator_comments').select(cols).eq('status', 'hidden').eq('reviewed', true).order('created_at', { ascending: false }).limit(100),
   ]);
-  return res.status(200).json({ held: held.data || [], reported: reported.data || [], recent: recent.data || [] });
+  const toReview = (review.data || []).map((c) => ({ ...c, flagged: needsLook(c) }))
+    .sort((a, b) => (b.flagged - a.flagged) || (new Date(b.created_at) - new Date(a.created_at)));
+  return res.status(200).json({ review: toReview, removed: removed.data || [] });
 }
 
+// "Looks fine" shows it and marks it reviewed; "Remove" hides it and marks it
+// reviewed; "Restore" brings a removed one back.
 async function moderate(res, supabase, { id, status }) {
   if (!['visible', 'hidden'].includes(status)) return fail(res, 400, 'Bad status.');
-  const { error } = await supabase.from('creator_comments').update({ status }).eq('id', id);
+  const { error } = await supabase.from('creator_comments').update({ status, reviewed: true }).eq('id', id);
   if (error) return fail(res, 500, "Couldn't update that comment.");
   return res.status(200).json({ ok: true });
 }

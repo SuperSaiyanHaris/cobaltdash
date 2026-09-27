@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localCheck, handleProblem, profanityIn, collapseSpaced, classify } from '../../api/_moderation.js';
+import { localCheck, handleProblem, profanityIn, collapseSpaced } from '../../api/_moderation.js';
 
 const reason = (t) => localCheck(t)?.reason ?? null;
 
@@ -64,18 +64,5 @@ describe('handleProblem', () => {
     expect(handleProblem('ShinyPull')).not.toBe(null);
     expect(handleProblem('admin')).not.toBe(null);
     expect(handleProblem('shit_lord')).not.toBe(null);
-  });
-});
-
-describe('classify', () => {
-  const reply = (body, ok = true) => async () => ({ ok, status: ok ? 200 : 500, json: async () => body });
-  it('reads the category from the model reply', async () => {
-    const r = await classify('x', { apiKey: 'k', fetchImpl: reply({ content: [{ text: '{"category":"harassment"}' }] }) });
-    expect(r).toEqual({ category: 'harassment' });
-  });
-  it('reports an error instead of guessing (so the comment is held)', async () => {
-    expect((await classify('x', { apiKey: 'k', fetchImpl: reply({}, false) })).error).toBeTruthy();
-    expect((await classify('x', { apiKey: 'k', fetchImpl: reply({ content: [{ text: 'sure!' }] }) })).error).toBe('bad_output');
-    expect((await classify('x', { apiKey: '' })).error).toBe('no_key');
   });
 });
