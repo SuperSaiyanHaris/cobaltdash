@@ -25,6 +25,7 @@ import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
 import PageHero from '../components/PageHero';
+import SearchDiscover from '../components/SearchDiscover';
 
 const platformIcons = {
   youtube: YouTubeIcon,
@@ -579,6 +580,9 @@ export default function Search() {
               retryText="Reload Page"
             />
           )}
+
+          {/* Before a search: recently viewed, top 6 cards, risers */}
+          {!searched && !loading && !error && <SearchDiscover key={selectedPlatform} platform={selectedPlatform} />}
 
           {/* Loading State */}
           {loading && (
