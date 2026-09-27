@@ -156,6 +156,19 @@ export default function Terms() {
                 </ul>
               </Section>
 
+              <Section title="Community Rules" id="community-rules">
+                <p className="mb-2">Signed-in users can comment on creator profiles. Keep comments about the creator and their content. These aren't allowed:</p>
+                <ul className="list-disc list-inside text-neutral-700 space-y-1">
+                  <li>Swearing, slurs or hate aimed at anyone</li>
+                  <li>Sexual content of any kind</li>
+                  <li>Threats, or encouraging anyone to hurt themselves or others</li>
+                  <li>Harassment, insults or mocking someone's looks, family or personal life</li>
+                  <li>Personal information, such as addresses, phone numbers or schools</li>
+                  <li>Links, ads, giveaways or spam</li>
+                </ul>
+                <p className="mt-3">Every comment is checked before it appears, and people can report anything that gets through. We may hold, hide or remove any comment, and suspend accounts that keep breaking these rules. If you&apos;re going through something hard, you can call or text 988 (US) any time.</p>
+              </Section>
+
               <Section title="Intellectual Property">
                 <p>
                   All content, features, and functionality of ShinyPull are owned by us and protected by
@@ -239,9 +252,9 @@ export default function Terms() {
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, id, children }) {
   return (
-    <section className="mb-8">
+    <section id={id} className="mb-8 scroll-mt-24">
       <h2 className="text-xl font-bold text-neutral-900 mb-4">{title}</h2>
       <div className="text-neutral-700 leading-relaxed">{children}</div>
     </section>

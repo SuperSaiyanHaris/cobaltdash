@@ -35,6 +35,7 @@ import RarityPill from '../components/RarityPill';
 import FlipCard from '../components/FlipCard';
 import GenericVerdictSection, { GENERIC_PLATFORM_CONFIG } from '../components/profile/GenericVerdictSection';
 import SimilarCreators from '../components/profile/SimilarCreators';
+import CreatorComments from '../components/profile/CreatorComments';
 import YouTubeVerdictSection from '../components/profile/YouTubeVerdictSection';
 
 // How far back getCreatorStats reaches for the chart/daily-readings history.
@@ -1193,6 +1194,10 @@ export default function CreatorProfile() {
                 musicTracks={musicTracks}
                 musicAlbums={musicAlbums}
               />
+            )}
+
+            {dbCreatorId && (
+              <CreatorComments creatorId={dbCreatorId} name={creator.displayName || creator.username} />
             )}
 
             <SimilarCreators

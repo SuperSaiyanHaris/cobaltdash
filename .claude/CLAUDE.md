@@ -33,8 +33,23 @@ sessions never see it. Anything a cloud session must know goes here.
   "Bad Request".
 - There is no `ON DELETE CASCADE` from `creators`: removing a creator means
   clearing its rows in `rankings_cache`, `creator_stats`, `user_saved_creators`,
-  `featured_listings`, `stream_sessions` (and any other `creator_id` table)
-  first.
+  `featured_listings`, `stream_sessions`, `creator_comments` (and any other
+  `creator_id` table) first.
+
+# Profile comments
+
+- Signed-in users comment on profiles (`CreatorComments.jsx`, above Similar
+  creators). Tables: `commenter_profiles` (public handle; never show
+  `users.display_name`, it often holds an email), `creator_comments`,
+  `comment_votes`, `comment_reports` (schema and RLS in
+  `supabase/migrations/20260927_creator_comments.sql`).
+- Every write goes through `api/comments.js`, which runs `api/_moderation.js`:
+  local rules (no links/emails/phones, swearing blocked via `obscenity`,
+  directed self-harm phrases), then a Claude Haiku classifier. If the
+  classifier can't answer, the comment is `held` for the admin Comments tab,
+  never posted unchecked. Three reports hide a comment.
+- No replies in v1 (`parent_id` is reserved). Comments aren't server-rendered
+  or indexed.
 
 # Supported platforms
 
