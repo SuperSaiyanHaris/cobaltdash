@@ -567,3 +567,12 @@ body[data-mobile-menu="open"] nav[aria-label="Primary"] { display: none; }
    vh cap runs under the toolbar. dvh follows the visible viewport. */
 .sheet-90 { max-height: 90vh; max-height: 90dvh; }
 .sheet-85 { max-height: 85vh; max-height: 85dvh; }
+
+/* iOS 15 and older have no container units (cqw): keep pulled-item cards
+   laid out with fixed sizes instead of letting them collapse. */
+@supports not (width: 1cqw) {
+  .sp-face > .absolute { inset: 4px; }
+  .sp-face p { font-size: 12px; }
+  .sp-face span { font-size: 10px; }
+  .sp-face [class*="cqw"] { max-width: 70%; }
+}

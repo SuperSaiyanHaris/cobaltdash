@@ -48,7 +48,7 @@ const Tile = memo(function Tile({ r, status, selected, onSelect, pct = 0 }) {
 });
 
 // (Tile is memoized so choosing a level re-renders two tiles, not 99.)
-export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = false }) {
+export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = false, bodyHidden = false }) {
   const p = state.progress;
   const season = state.season || { number: 1, daysLeft: 0, lastDay: '' };
   const opened = useMemo(() => new Set(state.packs.opened), [state.packs.opened]);
@@ -126,7 +126,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-4">
+      <div className={`grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-4 ${bodyHidden ? 'max-lg:hidden' : ''}`}>
         {/* Featured reward */}
         <div ref={stage} className={`sp-feature sp-r-${sel.rarity} scroll-mt-20`}>
           <div className="sp-art"><RewardVisual reward={sel} me={me} /></div>
@@ -134,7 +134,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
             <p className="font-arena italic font-extrabold uppercase tracking-[0.1em] text-[15px]" style={{ color: 'var(--ra)' }}>
               {selStatus === 'ready' ? 'Ready to open' : `Level ${sel.level} reward`}
             </p>
-            <h2 className="mt-1 font-arena italic font-black uppercase text-white text-[clamp(38px,6vw,60px)] leading-[.88] text-balance">{itemName(sel)}</h2>
+            <h2 className="mt-1 font-arena italic font-black uppercase text-white text-[clamp(30px,6vw,60px)] leading-[.9] text-balance">{itemName(sel)}</h2>
             <p className="mt-2 text-[14.5px] text-white/85 max-w-[36ch] leading-snug">{itemBlurb(sel)}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="sp-chip rar">{sel.rarity}</span>
@@ -204,8 +204,8 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
         </div>
       </div>
 
-      {/* The season's packs */}
-      <div className="flex flex-col gap-3">
+      {/* The season's packs (phones see packs in the pack guide instead) */}
+      <div className="hidden lg:flex flex-col gap-3">
         <div className="flex items-end justify-between gap-3">
           <h2 className="font-arena italic font-black uppercase text-white text-[26px] tracking-wide">Season packs</h2>
           <p className="text-[13px] text-white/70">{opened.size} of {PACKS.length} opened</p>
@@ -218,7 +218,13 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
               <button
                 key={k.key}
                 type="button"
-                onClick={() => (ready ? onOpenPack(k.level) : done ? onViewPack(k.level) : select(k.level))}
+                onClick={() => {
+                  if (ready) return onOpenPack(k.level);
+                  if (done) return onViewPack(k.level);
+                  // A pack you haven't reached: show what's inside it.
+                  window.dispatchEvent(new CustomEvent('shinypass:guide', { detail: k.key }));
+                  return document.getElementById('pack-guide')?.scrollIntoView({ behavior: smooth(), block: 'start' });
+                }}
                 className="snap-start flex-shrink-0 w-[30%] min-[480px]:w-[22%] sm:w-auto flex flex-col items-center gap-1.5"
                 aria-label={`${k.name} pack, level ${k.level}${ready ? ', ready to open' : done ? ', opened' : ''}`}
               >

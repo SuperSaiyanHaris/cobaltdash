@@ -5,6 +5,7 @@
 // A live preview (your card, its back and a comment) follows what you equip,
 // and on hover shows an item before you equip it.
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Check, Loader2, Search, X, Ticket, Sparkles, Plus } from 'lucide-react';
 import { equipItem, setShowcase, setShiny, redeemVoucher } from '../../services/progressService';
@@ -27,15 +28,27 @@ const TAB_GROUPS = [
   { label: 'Collection', tabs: [{ id: 'sets', label: 'Sets' }, { id: 'vouchers', label: 'Vouchers' }] },
 ];
 
-function EquipButton({ on, busy, onClick }) {
+/**
+ * One equip button everywhere. Equipped shows a check and turns into
+ * "Remove" on hover/focus, so it's clear a tap takes it off. `dark` for
+ * tiles on a dark background, `inline` for a compact right-aligned button.
+ */
+function EquipButton({ on, busy, onClick, dark = false, inline = false, label = 'Equip' }) {
+  const base = inline ? 'h-9 px-4' : 'mt-3 w-full h-10 sm:h-9';
+  const tone = on
+    ? (dark ? 'bg-white/15 text-white border border-white/25 hover:bg-white/25' : 'bg-neutral-100 text-neutral-900 border border-neutral-300 hover:border-neutral-500')
+    : (dark ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-700');
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={busy}
-      className={`mt-3 w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-xl text-sm font-bold transition-colors ${on ? 'bg-neutral-100 text-neutral-900 border border-neutral-300' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}
+      aria-pressed={on}
+      className={`sp-tap group/eq ${base} flex-shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-70 ${tone}`}
     >
-      {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : on ? <><Check className="w-4 h-4" /> Equipped</> : 'Equip'}
+      {busy ? <Loader2 className="w-4 h-4 animate-spin" />
+        : on ? <><span className="inline-flex items-center gap-1.5 group-hover/eq:hidden group-focus-visible/eq:hidden"><Check className="w-4 h-4" /> Equipped</span><span className="hidden group-hover/eq:inline group-focus-visible/eq:inline">Remove</span></>
+          : label}
     </button>
   );
 }
@@ -54,16 +67,16 @@ function PeekBar({ peek, onReset, dark = true }) {
 }
 
 /** Compact preview that stays in view while scrolling the items (phones). */
-function MiniPreview({ me, eq, peek, onReset }) {
+function MiniPreview({ me, eq, peek, onReset, onOpen }) {
   return (
-    <div className="lg:hidden sticky top-16 z-10 -mx-4 px-4 py-2 bg-[#fafaf9]/95 backdrop-blur-sm border-b border-neutral-200">
+    <div className="lg:hidden sticky top-[129px] z-10 -mx-4 px-4 py-2 bg-[#fafaf9]/95 backdrop-blur-sm border-b border-neutral-200">
       <div className="flex items-center gap-3">
-        <div className="w-11 flex-shrink-0"><UserCardSvg me={me} equippedOverride={eq} still /></div>
+        <button type="button" onClick={onOpen} aria-label="See your card up close" className="sp-tap w-11 flex-shrink-0"><UserCardSvg me={me} equippedOverride={eq} still /></button>
         <div className="min-w-0 flex-1 flex flex-col items-start gap-1">
           <Nameplate name={me?.handle || 'you'} nameKey={eq.name} flairKey={eq.flair} />
           {peek
             ? <button type="button" onClick={onReset} className="sp-tap self-start text-[12px] font-semibold text-neutral-800 underline">Previewing {peek.label} · show equipped</button>
-            : <span className="text-[12px] text-neutral-600">Tap an item's picture to try it on</span>}
+            : <span className="text-[12px] text-neutral-600">Tap an item's picture to try it on. Tap your card to flip it.</span>}
         </div>
       </div>
     </div>
@@ -157,6 +170,7 @@ export default function Locker({ state, me }) {
   const [redeemTarget, setRedeemTarget] = useState(null);
   const [now] = useState(() => Date.now());
   const [peek, setPeek] = useState(null);
+  const [cardSheet, setCardSheet] = useState(false);
 
   const p = state.progress;
   const eq = p.equipped || {};
@@ -181,6 +195,7 @@ export default function Locker({ state, me }) {
     return m;
   }, [state.items]);
   const earned = new Set(state.badges.map((b) => b.badge));
+  const activeGroup = TAB_GROUPS.find((g) => g.tabs.some((t) => t.id === tab)) || TAB_GROUPS[0];
   const counts = {
     ...Object.fromEntries(Object.entries(owned).map(([k, v]) => [k, v.size])),
     badge: earned.size,
@@ -202,7 +217,10 @@ export default function Locker({ state, me }) {
 
   async function run(key, fn) {
     setBusy(key); setError(null);
-    try { await fn(); } catch (e) { setError(e.message); }
+    try { await fn(); } catch (e) {
+      setError(e.message);
+      import('sonner').then(({ toast }) => toast(e.message || 'Something went wrong. Try again.')).catch(() => {});
+    }
     setBusy(null);
   }
   const equip = (slot, key) => run(`${slot}:${key}`, () => equipItem(slot, eq[slot] === key ? null : key));
@@ -218,9 +236,46 @@ export default function Locker({ state, me }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
-      <div className="min-w-0 lg:sticky lg:top-24"><Preview me={me} eq={shown} peek={peek} onReset={resetPeek} /></div>
+      <div className="hidden lg:block min-w-0 lg:sticky lg:top-24"><Preview me={me} eq={shown} peek={peek} onReset={resetPeek} /></div>
+      {cardSheet && createPortal(
+        <div className="fixed inset-0 z-[150] bg-black/70 flex items-end justify-center" onClick={() => setCardSheet(false)} role="dialog" aria-modal="true" aria-label="Your card">
+          <div className="w-full max-w-sm sheet-90 overflow-y-auto overscroll-contain rounded-t-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="relative">
+              <Preview me={me} eq={shown} peek={peek} onReset={resetPeek} />
+              <button onClick={() => setCardSheet(false)} aria-label="Close" className="sp-tap absolute top-3 right-3 p-2 rounded-xl text-white hover:bg-white/10"><X className="w-5 h-5" /></button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     <div className="min-w-0" onPointerOver={onTilePointer} onPointerLeave={(e) => { if (e.pointerType === 'mouse') resetPeek(); }} onClick={onTileClick}>
-      <div className="flex flex-col gap-2.5 pb-5 border-b border-neutral-200" role="tablist" aria-label="Locker">
+      <div className="lg:hidden pb-3 border-b border-neutral-200">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-neutral-200/70">
+          {TAB_GROUPS.map((g) => (
+            <button
+              key={g.label}
+              onClick={() => setTab(g.tabs[0].id)}
+              aria-pressed={activeGroup === g}
+              className={`sp-tap h-9 rounded-lg text-[13px] font-bold transition-colors ${activeGroup === g ? 'bg-neutral-900 text-white' : 'text-neutral-800'}`}
+            >
+              {g.label === 'Collection' ? 'Sets' : g.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2.5 flex flex-wrap gap-1.5" role="tablist" aria-label={`${activeGroup.label} items`}>
+          {activeGroup.tabs.map((t) => {
+            const n = counts[t.id] || 0;
+            const on = tab === t.id;
+            return (
+              <button key={t.id} role="tab" aria-selected={on} onClick={() => setTab(t.id)}
+                className={`sp-tap h-10 px-3.5 rounded-full text-[13.5px] font-bold whitespace-nowrap border transition-colors ${on ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-white border-neutral-200 text-neutral-800'}`}>
+                {t.label}{n > 0 && <span className={`ml-1.5 tabular-nums ${on ? 'text-white/70' : 'text-neutral-600'}`}>{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="hidden lg:flex flex-col gap-2.5 pb-5 border-b border-neutral-200" role="tablist" aria-label="Locker">
         {TAB_GROUPS.map((g) => (
           <div key={g.label} className="flex flex-wrap items-center gap-1.5">
             <span className="w-full sm:w-[92px] flex-shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-600">{g.label}</span>
@@ -243,7 +298,7 @@ export default function Locker({ state, me }) {
         ))}
       </div>
 
-      <MiniPreview me={me} eq={shown} peek={peek} onReset={resetPeek} />
+      <MiniPreview me={me} eq={shown} peek={peek} onReset={resetPeek} onOpen={() => setCardSheet(true)} />
       {error && <p className="mt-4 text-sm font-semibold text-red-600">{error}</p>}
 
       <div className="mt-6">
@@ -283,9 +338,7 @@ export default function Locker({ state, me }) {
             {[...owned.title].map((key) => (
               <div key={key} data-peek={`title:${key}`} className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4">
                 <p className="flex-1 font-extrabold text-neutral-900">“{TITLES[key]?.name}”</p>
-                <button onClick={() => equip('title', key)} disabled={busy === `title:${key}`} className={`h-9 px-4 rounded-xl text-sm font-bold ${eq.title === key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>
-                  {eq.title === key ? 'Equipped' : 'Equip'}
-                </button>
+                <EquipButton inline on={eq.title === key} busy={busy === `title:${key}`} onClick={() => equip('title', key)} />
               </div>
             ))}
             {owned.title.size === 0 && <Empty>Your first title unlocks at level {firstLevel('title')}.</Empty>}
@@ -301,9 +354,7 @@ export default function Locker({ state, me }) {
                   <div className="h-24 rounded-xl overflow-hidden border-2" style={{ borderColor: b.a }}><BannerSvg pack={b} still className="w-full h-full" /></div>
                   <div className="flex items-center justify-between mt-3">
                     <p className="font-bold text-neutral-900">{b.name} banner</p>
-                    <button onClick={() => equip('banner', key)} disabled={busy === `banner:${key}`} className={`h-9 px-4 rounded-xl text-sm font-bold ${eq.banner === key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>
-                      {eq.banner === key ? 'Equipped' : 'Equip'}
-                    </button>
+                    <EquipButton inline on={eq.banner === key} busy={busy === `banner:${key}`} onClick={() => equip('banner', key)} />
                   </div>
                 </div>
               );
@@ -325,9 +376,7 @@ export default function Locker({ state, me }) {
                     {tab === 'back' && <CardBackArt k={key} className="h-full" />}
                   </div>
                   <p className="mt-2 text-sm font-bold text-white text-center truncate">{cat[key].name}</p>
-                  <button onClick={() => equip(tab, key)} disabled={busy === `${tab}:${key}`} className={`mt-2 h-9 rounded-xl text-sm font-bold ${eq[tab] === key ? 'bg-white/15 text-white border border-white/25' : 'bg-white text-neutral-950 hover:bg-neutral-100'}`}>
-                    {eq[tab] === key ? 'Equipped' : 'Equip'}
-                  </button>
+                  <EquipButton dark on={eq[tab] === key} busy={busy === `${tab}:${key}`} onClick={() => equip(tab, key)} />
                 </div>
               );
             })}
@@ -448,7 +497,9 @@ export default function Locker({ state, me }) {
               {hasShiny ? (
                 <>
                   <p className="mt-1 text-sm text-neutral-700">Pick a creator you follow. Their card gets your own foil on your page.</p>
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto">
+                  {follows === null && <p className="mt-4 flex items-center gap-2 text-sm text-neutral-700"><Loader2 className="w-4 h-4 animate-spin" /> Loading the creators you follow</p>}
+                  {follows?.length === 0 && <p className="mt-4 text-sm text-neutral-700">Follow a creator first, then pick them here.</p>}
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto overscroll-contain">
                     {(follows || []).map((c) => (
                       <button key={c.id} onClick={() => run('shiny', () => setShiny(p.shiny_creator_id === c.id ? null : c.id))}
                         className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-left ${p.shiny_creator_id === c.id ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-900 hover:border-neutral-400'}`}>

@@ -185,7 +185,7 @@ export function ItemFace({ item, me, className = '' }) {
     // (iPhone Safari, DuckDuckGo) let the content stretch the old box and
     // clipped the card's bottom edge.
     <div
-      className={`relative w-full ${CARD_RADIUS} overflow-hidden [container-type:inline-size] ${className}`}
+      className={`sp-face relative w-full ${CARD_RADIUS} overflow-hidden [container-type:inline-size] ${className}`}
       style={{ background: `linear-gradient(140deg, ${r.a}, #ffffff 22%, ${r.b} 45%, ${r.a} 70%, ${r.b})` }}
     >
       <div aria-hidden="true" style={{ paddingTop: '140%' }} />

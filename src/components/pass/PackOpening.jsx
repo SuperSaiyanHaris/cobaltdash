@@ -134,13 +134,6 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
   const squeeze = Math.min(1, Math.max(0.55, (vh - 200) / 540));
   const fanPos = (i, n, final) => {
     const mid = (n - 1) / 2, off = i - mid;
-    if (final && isMobile) {
-      // Phones: a tidy two-column grid so every item is readable.
-      const rows = Math.ceil(n / 2), row = Math.floor(i / 2), col = i % 2;
-      const sc = Math.min(1, (vw - 44) / 2 / cardW, (vh - 190) / (rows * (cardW * 1.4 + 12)));
-      const lone = n % 2 === 1 && i === n - 1;
-      return { x: lone ? 0 : (col - 0.5) * (cardW * sc + 12), y: (row - (rows - 1) / 2) * (cardW * 1.4 * sc + 12), rotate: 0, scale: sc };
-    }
     if (final) {
       // Tablets and small laptops: shrink the fan until all n cards fit.
       const fit = Math.min(1, (vw - 48) / (n * (cardW + 18)));
@@ -218,7 +211,26 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
         </AnimatePresence>
 
         {/* The cards */}
-        {(stage === 'stack' || stage === 'done') && items && items.map((item, i) => {
+        {/* Phones: the finished pull is a scrollable two-column grid at a
+            readable size (a fan of 5-6 cards would shrink every card). */}
+        {stage === 'done' && isMobile && items && (
+          <div className="absolute inset-0 overflow-y-auto overscroll-contain px-4 pt-2 pb-4">
+            <div className="flex flex-wrap justify-center gap-3">
+              {items.map((item, i) => (
+                <motion.div
+                  key={i}
+                  className="w-[calc(50%-6px)]"
+                  initial={reduce ? false : { opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduce ? 0 : i * 0.06, duration: 0.3 }}
+                >
+                  <ItemFace item={item} me={me} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+        {(stage === 'stack' || (stage === 'done' && !isMobile)) && items && items.map((item, i) => {
           const isOut = i < revealed;
           const final = stage === 'done';
           const r = RARITY[item.rarity] || RARITY.common;

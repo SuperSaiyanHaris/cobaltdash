@@ -302,7 +302,11 @@ export function renderPack(pack, o = {}) {
 
   const numSize = 150;
   const numY = 190;
-  const numAttrs = `x="${CX}" y="${numY}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${numSize}" letter-spacing="-5"`;
+  // o.fit: squeeze text to the pack width (for renderers without the
+  // condensed display face, like the share image).
+  const numFit = o.fit ? ` textLength="${lvl.length * 62}" lengthAdjust="spacingAndGlyphs"` : '';
+  const nameFit = o.fit ? ` textLength="${Math.min(W - 26, name.length * nameSize * 0.46)}" lengthAdjust="spacingAndGlyphs"` : '';
+  const numAttrs = `x="${CX}" y="${numY}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${numSize}" letter-spacing="-5"${numFit}`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(pack.name)} pack, level ${pack.level}">
 <defs>
@@ -324,7 +328,7 @@ ${m.body}
 <line x1="0" y1="${TEAR_Y}" x2="${W}" y2="${TEAR_Y}" stroke="${m.ink}" stroke-opacity=".45" stroke-width="1.2" stroke-dasharray="5 4"/>
 <rect x="0" y="206" width="${W}" height="64" fill="#0a0a0f" fill-opacity=".92"/>
 <rect x="0" y="206" width="${W}" height="2" fill="${a}"/><rect x="0" y="268" width="${W}" height="2" fill="${a}"/>
-<text x="${CX}" y="${238 + nameSize * 0.2}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${nameSize}" letter-spacing=".5" fill="url(#${id}name)">${name}</text>
+<text x="${CX}" y="${238 + nameSize * 0.2}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${nameSize}" letter-spacing=".5" fill="url(#${id}name)"${nameFit}>${name}</text>
 <text x="${CX}" y="262" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="800" font-size="11.5" letter-spacing="2.4" fill="#fff" fill-opacity=".8">${pack.items} ITEMS · SEASON ${season}</text>
 <text x="16" y="${H - 34}" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="15" letter-spacing="1.2" fill="${m.ink}">LV ${lvl} PACK</text>
 <g transform="translate(${W - 50} ${H - 64}) scale(.36)"><rect x="4" y="4" width="92" height="92" rx="18" fill="#0a0a0f" fill-opacity=".85"/>${markBarsInner(`${id}mk`)}</g>

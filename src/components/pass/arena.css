@@ -79,3 +79,10 @@
 .sp-dots button.on::after { background: #fff; }
 
 @media (prefers-reduced-motion: reduce) { .sp-tile { transition: none; } }
+/* Narrow phones: tapping a tile names it on the stage, so tiles show just
+   their icon (labels stay on Open and the next level). */
+@media (max-width: 420px) {
+  .sp-tile:not(.ready):not(.current) .l { display: none; }
+  .sp-tile:not(.ready):not(.current) .g { width: 62%; height: 62%; margin-bottom: 0; }
+  .sp-feature .sp-art { height: 170px; }
+}
