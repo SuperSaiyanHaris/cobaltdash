@@ -74,7 +74,15 @@ async function call(payload) {
   return json;
 }
 
-export const postComment = (creatorId, body, parentId = null) => call({ action: 'post', creatorId, body, parentId });
+export const postComment = async (creatorId, body, parentId = null) => {
+  const r = await call({ action: 'post', creatorId, body, parentId });
+  // Comment XP lands on the server; show it and pay any level it crosses.
+  if (r?.xpGranted) {
+    window.dispatchEvent(new CustomEvent('shinypass:gain', { detail: [{ kind: 'xp', action: 'comment', xp: typeof r.xp === 'number' ? r.xp : 15, label: 'Posted a comment' }] }));
+    import('./progressService').then((m) => m.refreshProgress()).catch(() => {});
+  }
+  return r;
+};
 export const markRepliesSeen = () => call({ action: 'replies_seen' });
 export const setHandle = (handle) => call({ action: 'handle', handle });
 export const removeComment = (id) => call({ action: 'remove', id });

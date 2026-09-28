@@ -101,6 +101,21 @@ async function grantLevelDrops(supabase, userId, level, season, gained) {
   if (level >= MAX_LEVEL) await award(supabase, userId, seasonMaxBadge(season));
 }
 
+/**
+ * Pay whatever is due right now: upvotes received since the last check and
+ * the track drops of every level reached. Both steps are idempotent, so this
+ * runs on every load and after every XP action; rewards never wait for the
+ * next daily sync.
+ */
+async function settle(supabase, user, gained = []) {
+  const season = await ensureSeason(supabase, user.id);
+  const { data: ups } = await supabase.rpc('credit_upvotes', { p_user: user.id, p_day: todayNY() });
+  if (ups > 0) gained.push({ kind: 'xp', action: 'upvote', xp: ups * 3 });
+  const { data: p } = await supabase.from('user_progress').select('xp').eq('user_id', user.id).maybeSingle();
+  if (p) await grantLevelDrops(supabase, user.id, levelFromXp(p.xp, season).level, season, gained);
+  return gained;
+}
+
 async function state(supabase, user) {
   const today = todayNY();
   const season = await ensureSeason(supabase, user.id);
@@ -422,12 +437,7 @@ export default async function handler(req, res) {
       return res.status(200).json(await adminOverview(supabase));
     }
     if (req.method === 'GET') {
-      // Levels gained since the daily sync (comments, follows, pack XP) pay
-      // their track drops on the next load, not the next day.
-      const season = await ensureSeason(supabase, user.id);
-      const { data: p } = await supabase.from('user_progress').select('xp').eq('user_id', user.id).maybeSingle();
-      const gained = [];
-      if (p) await grantLevelDrops(supabase, user.id, levelFromXp(p.xp, season).level, season, gained);
+      const gained = await settle(supabase, user);
       return res.status(200).json({ ...(await state(supabase, user)), ...(gained.length ? { gained } : {}) });
     }
     const body = req.body || {};
@@ -438,13 +448,16 @@ export default async function handler(req, res) {
       }
       case 'event': {
         const r = await event(supabase, user, body);
-        // New state only when something changed, saving the client a GET.
-        return res.status(200).json(r !== null ? { granted: true, xp: r, ...(await state(supabase, user)) } : { granted: false });
+        if (r === null) return res.status(200).json({ granted: false });
+        // The XP may cross a level: pay its drops in the same request.
+        const gained = await settle(supabase, user);
+        return res.status(200).json({ granted: true, xp: r, gained, ...(await state(supabase, user)) });
       }
       case 'open': {
         const r = await openPack(supabase, user, body);
         if (r.error) return fail(res, r.status, r.error);
-        return res.status(200).json({ ...(await state(supabase, user)), pulled: r.items, already: !!r.already });
+        const gained = r.already ? [] : await settle(supabase, user);
+        return res.status(200).json({ ...(await state(supabase, user)), pulled: r.items, already: !!r.already, gained });
       }
       case 'equip': {
         const err = await equip(supabase, user, body);

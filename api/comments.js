@@ -67,7 +67,7 @@ async function postComment(res, supabase, user, { creatorId, body, parentId }) {
   if (error) return fail(res, 500, "Couldn't post that. Try again.");
   // ShinyPass: 15 XP, up to 5 comments a day, taken back if it's removed.
   const xp = await grantAction(supabase, user.id, 'comment', row.id);
-  return res.status(201).json({ comment: { ...row, commenter_profiles: { handle: profile.handle } }, xpGranted: xp !== null });
+  return res.status(201).json({ comment: { ...row, commenter_profiles: { handle: profile.handle } }, xpGranted: xp !== null, xp });
 }
 
 async function setHandle(res, supabase, user, { handle }, isAdmin) {

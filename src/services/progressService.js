@@ -57,7 +57,7 @@ function keepState(json) {
   return json;
 }
 
-async function doLoad(force) {
+async function doLoad(force, fresh) {
   const { data: { session } } = await supabase.auth.getSession();
   const t = session?.access_token;
   if (!t) { set(null); userId = null; return null; }
@@ -78,15 +78,35 @@ async function doLoad(force) {
     return current;
   }
   // Several components ask on mount; a fresh copy is good enough.
-  if (current && Date.now() - loadedAt < 30000) return current;
+  if (!fresh && current && Date.now() - loadedAt < 30000) return current;
+  const before = current?.progress?.level;
   const res = await fetch('/api/progress', { headers: { Authorization: `Bearer ${t}` } });
-  if (res.ok) keepState(await res.json());
+  if (res.ok) {
+    const json = keepState(await res.json());
+    announce(json?.gained);
+    announceLevel(before);
+  }
   return current;
+}
+
+function announceLevel(before) {
+  const now = current?.progress?.level;
+  if (before && now > before) announce([{ kind: 'level', level: now }]);
 }
 
 /** Load state; once per day also records the visit and streak. */
 export function loadProgress({ force = false } = {}) {
-  if (!inflight) inflight = doLoad(force).finally(() => { inflight = null; });
+  if (!inflight) inflight = doLoad(force, false).finally(() => { inflight = null; });
+  return inflight;
+}
+
+/**
+ * Fetch fresh state now (after an action that earned XP, or on the periodic
+ * check), paying any level rewards that are due and announcing them.
+ */
+export function refreshProgress() {
+  if (!userId) return Promise.resolve(current);
+  if (!inflight) inflight = doLoad(false, true).finally(() => { inflight = null; });
   return inflight;
 }
 
@@ -101,13 +121,23 @@ export function reportAction(type, ref) {
       if (!r?.granted) return;
       keepState(r);
       const labels = { follow: 'Followed a creator', compare: 'Saved a matchup', explore: 'Explored a creator' };
-      announce([{ kind: 'xp', action: type, label: labels[type] }]);
-      if (before && current?.progress?.level > before) announce([{ kind: 'level', level: current.progress.level }]);
+      announce([{ kind: 'xp', action: type, label: labels[type] }, ...(r.gained || [])]);
+      announceLevel(before);
     })
     .catch(() => {});
 }
 
-export const openPack = (level) => call({ action: 'open', level }).then(keepState);
+export const openPack = (level) => {
+  const before = current?.progress?.level;
+  return call({ action: 'open', level }).then((r) => {
+    keepState(r);
+    // Pack XP can cross a level; say so once the pull has been shown.
+    if (r?.gained?.length || (before && current?.progress?.level > before)) {
+      setTimeout(() => { announce(r.gained); announceLevel(before); }, 4000);
+    }
+    return r;
+  });
+};
 export const equipItem = (slot, key) => call({ action: 'equip', slot, key }).then(keepState);
 export const setShowcase = (creatorIds) => call({ action: 'showcase', creatorIds }).then(keepState);
 export const setShiny = (creatorId) => call({ action: 'shiny', creatorId }).then(keepState);

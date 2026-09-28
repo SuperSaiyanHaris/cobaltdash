@@ -226,6 +226,15 @@ describe('api/progress', () => {
     expect(again.body.gained).toBeUndefined();
   });
 
+  it('pays the drop in the same request when an action crosses a level', async () => {
+    await call({ action: 'sync' });
+    progress().xp = TOTAL_XP[16] - 1;
+    db.user_saved_creators.push({ id: 'f1', user_id: USER.id, creator_id: CREATOR.id });
+    const r = await call({ action: 'event', type: 'follow', ref: CREATOR.id });
+    expect(r.body.granted).toBe(true);
+    expect(r.body.gained.filter((g) => g.kind === 'drop').map((g) => g.level)).toContain(16);
+  });
+
   it('refuses a pack below its level, opens it once at the level, and re-returns the same pull', async () => {
     await call({ action: 'sync' });
     let r = await call({ action: 'open', level: 10 });
