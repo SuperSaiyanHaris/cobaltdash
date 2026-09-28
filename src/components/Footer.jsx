@@ -19,6 +19,7 @@ const FEATURE_LINKS = [
   ['/youtube/money-calculator',  'Money Calculator'],
   ['/kick/earnings',             'Kick Earnings'],
   ['/card',                     'Creator Cards'],
+  ['/pass',                     'ShinyPass Season Pass'],
   ['/blog',                      'Blog'],
 ];
 

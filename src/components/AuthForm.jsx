@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Lock, Star, Scale, Clock, BarChart3, Info, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Star, Scale, BarChart3, Info, CheckCircle, AlertCircle, Gift } from 'lucide-react';
 
 /**
  * Shared auth form used by BOTH the slide-out AuthPanel (contextual "sign in to
@@ -226,10 +226,10 @@ export default function AuthForm({ mode, setMode, onSuccess, contextMessage, sho
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-4">What you get</p>
           <div className="space-y-3.5">
             {[
+              { Icon: Gift,       title: 'Free ShinyPass',     body: 'Level your own card to 99, open packs, and keep the OG 2026 badge.' },
               { Icon: Star,       title: 'Follow creators',    body: 'Build a personal feed of the creators you care about.' },
               { Icon: BarChart3,  title: 'Personal dashboard', body: 'Track followed creators, live status, growth at a glance.' },
               { Icon: Scale,      title: 'Save comparisons',   body: 'Pin head-to-head matchups and revisit them anytime.' },
-              { Icon: Clock,      title: 'Recently viewed',    body: 'Jump back to the profiles you were just looking at.' },
             ].map((b) => (
               <div key={b.title} className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">

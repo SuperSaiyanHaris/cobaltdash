@@ -197,8 +197,9 @@ function hand(count) {
  * A page preview: eyebrow, headline lines and a subline on the left, a fanned
  * hand of cards on the right.
  */
-export async function renderPageShare({ eyebrow, headline, sub, accent = '#a5b4fc', cards = [], footer = 'shinypull.com' }) {
-  const prepared = await Promise.all(cards.map(prepCard));
+export async function renderPageShare({ eyebrow, headline, sub, accent = '#a5b4fc', cards = [], footer = 'shinypull.com', art = '' }) {
+  // `art`: ready-made SVG markup for the right side instead of creator cards.
+  const prepared = art ? [] : await Promise.all(cards.map(prepCard));
   const left = 72;
   const slots = hand(prepared.length);
   const cx = prepared.length === 1 ? 930 : prepared.length === 4 ? 880 : 872;
@@ -206,7 +207,7 @@ export async function renderPageShare({ eyebrow, headline, sub, accent = '#a5b4f
 
   // Paint back to front: supporting cards, then the headliner.
   const order = prepared.map((_, i) => i).sort((a, b) => (slots[a].top ? 1 : 0) - (slots[b].top ? 1 : 0));
-  const hands = order.map((i) => {
+  const hands = art || order.map((i) => {
     const s = slots[i];
     return placeCard(cardMarkup(prepared[i], i, s.angle === 0), { cx: cx + s.dx, cy: H / 2 + 12 + Math.abs(s.angle) * 1.5, height, angle: s.angle });
   }).join('\n');

@@ -115,6 +115,17 @@ sessions never see it. Anything a cloud session must know goes here.
   Comment flair (`FLAIRS`, kind `flair`) renders via `pass/Nameplate.jsx`.
   The locker on /pass has a live preview (card, back, comment) that also
   previews on hover (`data-peek="slot:key"`).
+- Mobile /pass (below 1024px) shows one section at a time via the sticky
+  Track / Locker / Packs / Earn switcher at the top (`ShinyPass.jsx`,
+  `max-lg:hidden` per section); desktop shows everything. The season packs
+  strip is desktop only; `PackGuide.jsx` covers packs on phones.
+- Promotion (2026-09-28): Home `HomePassPromo` (static
+  `public/pass/promo-packs.svg`, written by `scripts/generateOgImages.mjs`
+  so the home page loads no pack code), header More menu, footer, signup
+  benefits, signed-out Dashboard line, follow and comment sign-in prompts,
+  /card, public pages. /pass has a server-rendered FAQ with FAQPage JSON-LD
+  in `middleware.js` (`getPassContent`); its strings duplicate
+  `src/lib/passFaq.js`, so change both. Share image `public/og/pass.jpg`.
 - "OG 2026" badge: every account created in 2026. Scout badge is awarded by
   pg_cron `award-scout-badges` (daily, `award_scout_badges()`).
 - Copy on X/blog about this feature follows the same copy rules.

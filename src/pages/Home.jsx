@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 import { formatNumber } from '../lib/utils';
 import { cardImageUrl } from '../lib/cardUrl';
 import HomeSponsorBand from '../components/HomeSponsorBand';
+import HomePassPromo from '../components/HomePassPromo';
 import HeroCardStage from '../components/HeroCardStage';
 import HomeProductBento from '../components/HomeProductBento';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
@@ -656,6 +657,9 @@ export default function Home() {
 
         {/* ============== CHAMPIONS ============== */}
         <ChampionsGrid tops={topByPlatform} />
+
+        {/* ============== SHINYPASS ============== */}
+        <HomePassPromo />
 
         {/* ============== SPONSORED PLACEMENT ============== */}
         <HomeSponsorBand topCreators={topCreators} />

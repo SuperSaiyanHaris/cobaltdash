@@ -28,6 +28,7 @@ const PLATFORM_CHIPS = [
 ];
 
 const moreLinks = [
+  { path: '/pass', label: 'ShinyPass', description: 'Free season pass: 99 levels, 10 packs', icon: Gift, tint: 'text-violet-500' },
   { path: '/trending', label: 'Trending', description: 'Fastest growing creators', icon: TrendingUp, tint: 'text-emerald-500' },
   { path: '/milestones', label: 'Milestones', description: 'Big numbers crossed', icon: Milestone, tint: 'text-indigo-500' },
   { path: '/youtube/money-calculator', label: 'Earnings Calc', description: 'Estimate YouTube revenue', icon: Calculator, tint: 'text-teal-500' },
@@ -430,13 +431,6 @@ export default function Header() {
                   >
                     <MessageCircle className="w-4 h-4" /> <span className="flex-1">Replies</span>
                     {unread > 0 && <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">{unread}</span>}
-                  </Link>
-                  <Link
-                    to="/pass"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 h-12 px-4 mt-2 rounded-xl bg-white/10 text-white text-sm font-bold"
-                  >
-                    <Gift className="w-4 h-4" /> <span className="flex-1">ShinyPass</span>
                   </Link>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <Link

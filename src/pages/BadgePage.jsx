@@ -158,6 +158,7 @@ export default function BadgePage() {
             </div>
           )}
         </form>
+        <p className="mt-4 text-sm text-neutral-700">Want a card of your own? Level one up with the free <Link to="/pass" className="font-semibold text-neutral-900 underline underline-offset-2">ShinyPass</Link>.</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 mt-12">Questions</h2>
         <div className="mt-4 space-y-5 max-w-2xl">

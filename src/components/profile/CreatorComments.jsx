@@ -322,7 +322,7 @@ export default function CreatorComments({ creatorId, name }) {
       {!isAuthenticated ? (
         <div className={`${CARD} mt-5 p-4 flex flex-wrap items-center gap-3`}>
           <MessageCircle className="w-5 h-5 text-neutral-600" aria-hidden="true" />
-          <p className="flex-1 min-w-[180px] text-sm text-neutral-700">Sign in to comment and vote. It's free and takes a few seconds.</p>
+          <p className="flex-1 min-w-[180px] text-sm text-neutral-700">Sign in to comment and vote. Comments earn <Link to="/pass" className="font-semibold text-neutral-900 underline underline-offset-2">ShinyPass</Link> XP.</p>
           <button type="button" onClick={openAuth} className="rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2 text-sm font-semibold">Sign in</button>
         </div>
       ) : needsName ? (

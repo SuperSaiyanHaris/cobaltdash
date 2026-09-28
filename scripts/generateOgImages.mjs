@@ -16,6 +16,8 @@ import 'dotenv/config';
 import { writeFileSync, mkdirSync } from 'fs';
 import { loadCardData, restGet, platformTotal } from '../src/lib/cardData.js';
 import { rarityBands } from '../src/lib/badgeCard.js';
+import { renderPack } from '../src/lib/packArt.js';
+import { PACK_BY_KEY } from '../src/lib/shinyPass.js';
 import { renderPageShare } from '../api/_shareCard.js';
 
 const OUT = 'public/og';
@@ -74,21 +76,48 @@ const PAGES = {
                 cards: () => Promise.all([byRank('twitch', 5), byRank('youtube', 5), byRank('tiktok', 4)]) },
   badge:      { eyebrow: 'Holographic creator cards', headline: ['Pull your', 'creator card.'], sub: 'Legendary to Common. Always free.',
                 cards: () => rarityFan('twitch') },
+  pass:       { eyebrow: 'ShinyPass · Season 1 · Free', accent: '#fcd34d', headline: ['99 levels.', 'A pack every 10.'], sub: 'Level up your own card. Free to join.',
+                art: passPacks },
 };
+
+// Three ShinyPass packs, fanned, for the /pass preview.
+function passPacks() {
+  const pick = [['chrome', -9, 760, 330], ['obsidian', 9, 1060, 330], ['final', 0, 910, 312]];
+  const w = 210, h = w * (352 / 220);
+  return pick.map(([key, angle, cx, cy]) => {
+    const svg = renderPack(PACK_BY_KEY[key], { still: true, fit: true, uid: `og${key}` })
+      .replace('<svg ', `<svg x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" `);
+    return `<g transform="rotate(${angle} ${cx} ${cy})">${svg}</g>`;
+  }).join('');
+}
 
 mkdirSync(OUT, { recursive: true });
 let made = 0, kept = 0, bytes = 0;
 for (const [key, spec] of Object.entries(PAGES)) {
   try {
-    const cards = await spec.cards();
-    if (!cards.length || cards.some((c) => !c)) throw new Error('cards unavailable');
-    const jpg = await renderPageShare({ ...spec, cards });
+    const cards = spec.art ? [] : await spec.cards();
+    if (!spec.art && (!cards.length || cards.some((c) => !c))) throw new Error('cards unavailable');
+    const jpg = await renderPageShare({ ...spec, cards, art: spec.art ? spec.art() : '' });
     writeFileSync(`${OUT}/${key}.jpg`, jpg);
     made++; bytes += jpg.length;
-    console.log(`  ${key}.jpg  ${Math.round(jpg.length / 1024)}KB  (${cards.map((c) => `${c.platform}/${c.username}`).join(', ')})`);
+    console.log(`  ${key}.jpg  ${Math.round(jpg.length / 1024)}KB  (${spec.art ? 'packs' : cards.map((c) => `${c.platform}/${c.username}`).join(', ')})`);
   } catch (err) {
     kept++;
     console.warn(`  ${key}.jpg  kept existing (${err.message})`);
   }
 }
 console.log(`\nOG previews: ${made} generated (${Math.round(bytes / 1024)}KB), ${kept} kept -> ${OUT}/`);
+
+// Home page ShinyPass promo: a still fan of three packs as a static SVG, so
+// the home page shows it as a lazy <img> without loading any pack code.
+{
+  const W2 = 720, H2 = 520, w = 230, h = w * (352 / 220);
+  const fan = [['chrome', -10, 210, 280], ['obsidian', 10, 510, 280], ['final', 0, 360, 260]].map(([key, angle, cx, cy]) => {
+    const svg = renderPack(PACK_BY_KEY[key], { still: true, fit: true, uid: `promo${key}` })
+      .replace('<svg ', `<svg x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" `);
+    return `<g transform="rotate(${angle} ${cx} ${cy})">${svg}</g>`;
+  }).join('');
+  mkdirSync('public/pass', { recursive: true });
+  writeFileSync('public/pass/promo-packs.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W2} ${H2}" width="${W2}" height="${H2}">${fan}</svg>`);
+  console.log('  public/pass/promo-packs.svg');
+}

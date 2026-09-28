@@ -651,6 +651,40 @@ async function getKickEarningsContent() {
   return { status: 'ok', title, description, html, jsonLd };
 }
 
+// Copy of src/lib/passFaq.js (the edge runtime can't import src); change
+// both together.
+const PASS_FAQ = [
+  ['What is ShinyPass?', 'A free season pass on ShinyPull. Your own card levels from 1 to 99, every level unlocks a reward, and every 10 levels you open a pack.'],
+  ['Is it free?', 'Yes. ShinyPass comes with every ShinyPull account. Packs are earned by leveling up and are never sold.'],
+  ['How do I earn XP?', 'Visit daily and keep your streak, follow creators, comment on creator profiles, collect upvotes on your comments, save matchups and open creator profiles.'],
+  ['Can I win a free Featured Listing?', 'Every pack has a chance at a free month of a Basic Featured Listing for any creator you pick: 5% per pack, 10% from level 60. The level 50 and level 99 packs always include one.'],
+  ['When does the season end?', 'Season 1 ends December 31, 2026. Season 2 starts January 1 and runs all of 2027.'],
+  ['Do I keep my rewards?', 'Levels and packs reset each season. Everything you unlock, from card frames to badges, stays yours.'],
+  ['What is the OG 2026 badge?', 'Every account created in 2026 gets the OG 2026 badge for good. It is only available this year.'],
+];
+
+// Server-rendered /pass: what ShinyPass is, how to earn, what's in the packs,
+// and the FAQ (with FAQPage structured data). Static, no DB call.
+function getPassContent() {
+  const packs = ['Cardstock', 'Chrome', 'Holo', 'Cosmic', 'Prism', 'Crystal', 'Obsidian', 'Platinum', 'Mythic', 'The Final Pull'];
+  let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
+  html += `<h1 style="font-size:1.5rem;font-weight:600">ShinyPass: a free season pass with 99 levels and 10 packs</h1>`;
+  html += `<p>ShinyPass levels up your own holographic ShinyPull card from 1 to 99 each season. Every level unlocks a reward: stickers, titles, avatar rings, name effects, card backs, banners, streak freezes and XP boosts. Your card turns Rare at level 25, Epic at 50 and Legendary at 75, and every 10 levels you open a pack.</p>`;
+  html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">How to earn XP</h2><ul>`;
+  for (const w of ['Visit ShinyPull once a day and keep your streak going', 'Follow creators', 'Comment on creator profiles and collect upvotes', 'Save creator matchups', 'Open creator profiles']) html += `<li>${w}</li>`;
+  html += `</ul><h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">The packs</h2>`;
+  html += `<p>There are 10 packs this season: ${packs.join(', ')}. Each pack has its own set of a card frame, an avatar ring, a name effect and a card back; complete a set to unlock its animated card effect. Every pack has a chance at a free month of a Featured Listing for any creator you pick, and the level 50 and 99 packs always include one.</p>`;
+  html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">ShinyPass questions</h2>`;
+  for (const [q, a] of PASS_FAQ) html += `<h3 style="font-size:1rem;font-weight:600;margin-top:1rem">${esc(q)}</h3><p>${esc(a)}</p>`;
+  html += `<p style="margin-top:1.5rem"><a href="/rankings" style="color:#171717">Creator rankings</a> · <a href="/card" style="color:#171717">Creator cards</a> · <a href="/" style="color:#171717">ShinyPull</a></p></div>`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: PASS_FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  };
+  return { status: 'ok', html, jsonLd };
+}
+
 async function getMilestonesContent() {
   const rows = await supabaseGet(
     `creator_milestones?select=platform,threshold,metric_value,crossed_at,creators(username,display_name)` +
@@ -932,6 +966,7 @@ const OG_CARDS = [
   [/^\/youtube\/money-calculator/, 'calculator'],
   [/^\/kick\/earnings$/,           'calculator'],
   [/^\/card$/,                     'badge'],
+  [/^\/pass$/,                     'pass'],
 ];
 
 const SHARE_CARD_V = 2;
@@ -1112,7 +1147,7 @@ function getMeta(pathname, searchParams) {
   // Static pages — keep this map exhaustive so every public route gets accurate social previews
   const staticPages = {
     '/blog':         { title: 'Blog - ShinyPull',                description: 'Creator economy insights, platform trends, and analytics tips from ShinyPull.' },
-    '/pass':         { title: 'ShinyPass - ShinyPull',           description: 'Level up your own ShinyPull card from 1 to 99, keep your streak alive and open a pack every 10 levels.' },
+    '/pass':         { title: 'ShinyPass: Free Season Pass, 99 Levels and Packs - ShinyPull', description: 'Level your own holographic card from 1 to 99 this season. A reward at every level, a pack every 10, and a chance at a free Featured Listing. Free to join.' },
     '/dashboard':    { title: 'Dashboard - ShinyPull',           description: 'Track your followed creators and see their latest stats in one place.', noindex: true },
     '/account':      { title: 'Account - ShinyPull',             description: 'Manage your ShinyPull account and Featured Listings.', noindex: true },
     '/reports':      { title: 'Reports - ShinyPull',             description: 'Build custom reports and export creator stats across platforms.', noindex: true },
@@ -1185,6 +1220,8 @@ export default async function middleware(request) {
       content = await getMilestonesContent();
     } else if (url.pathname === '/kick/earnings') {
       content = await getKickEarningsContent();
+    } else if (url.pathname === '/pass') {
+      content = getPassContent();
     } else if (blogMatch && blogMatch[1] !== 'admin') {
       content = await getBlogContent(decodeURIComponent(blogMatch[1]));
     } else if (
@@ -1213,8 +1250,8 @@ export default async function middleware(request) {
   }
 
   // Content-enriched meta wins over the generic route meta.
-  const title = content?.status === 'ok' ? content.title : meta.title;
-  const description = content?.status === 'ok' ? content.description : meta.description;
+  const title = (content?.status === 'ok' && content.title) || meta.title;
+  const description = (content?.status === 'ok' && content.description) || meta.description;
   const canonicalUrl = `${SITE_URL}${content?.status === 'ok' && content.canonicalPath ? content.canonicalPath : url.pathname}`;
   // Share card precedence: a blog post's own cover, else the card for this
   // route, else whatever index.html already carries (the home card).

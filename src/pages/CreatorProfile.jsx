@@ -717,7 +717,7 @@ export default function CreatorProfile() {
   const handleFollowToggle = async () => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('openAuthPanel', {
-        detail: { message: 'Sign in to follow creators and see their latest stats quicker!' }
+        detail: { message: 'Sign in to follow. Every follow also earns ShinyPass XP.' }
       }));
       return;
     }

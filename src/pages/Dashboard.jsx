@@ -355,6 +355,9 @@ export default function Dashboard() {
                 >
                   Start your collection <ChevronRight className="w-4 h-4" />
                 </button>
+                <p className="mt-4 text-sm text-white/70 max-w-lg mx-auto lg:mx-0">
+                  Your account also starts your free <Link to="/pass" className="font-semibold text-white underline underline-offset-2">ShinyPass</Link>: 99 levels and 10 packs this season.
+                </p>
               </div>
               <CardHand cards={SAMPLE_HAND} />
             </div>
