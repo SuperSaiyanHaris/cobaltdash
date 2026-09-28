@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   xpToNext, TOTAL_XP, levelFromXp, tierForLevel, rollPack, PACKS, PACK_BY_LEVEL, voucherChance,
-  RARITY_ORDER, streakBonus, unlockAt, LEVEL_DROPS, MAX_LEVEL,
+  RARITY_ORDER, streakBonus, TRACK, DROP_LEVELS, MAX_LEVEL,
   seasonForDate, seasonLastDay, seasonDaysLeft, badgeMeta, seasonMaxBadge,
 } from '../../src/lib/shinyPass.js';
 import { renderUserCard } from '../../src/lib/userCard.js';
@@ -48,11 +48,24 @@ describe('level curve', () => {
     expect(streakBonus(500)).toBe(50);
   });
 
-  it('puts packs every 10 levels plus 99, and drops between them', () => {
+  it('puts packs every 10 levels plus 99, and a reward on every level', () => {
     expect(PACKS.map((p) => p.level)).toEqual([10, 20, 30, 40, 50, 60, 70, 80, 90, 99]);
-    for (const lvl of Object.keys(LEVEL_DROPS)) expect(PACK_BY_LEVEL[lvl]).toBeUndefined();
-    expect(unlockAt(25)).toMatchObject({ tier: 'RARE', drop: LEVEL_DROPS[25] });
-    expect(unlockAt(3)).toBeNull();
+    for (let l = 1; l <= MAX_LEVEL; l++) expect(TRACK[l]).toMatchObject({ level: l });
+    for (const p of PACKS) expect(TRACK[p.level]).toMatchObject({ kind: 'pack', key: p.key });
+    expect(TRACK[25]).toMatchObject({ kind: 'tier', key: 'RARE' });
+    expect(TRACK[75]).toMatchObject({ kind: 'tier', key: 'LEGENDARY' });
+    for (const l of DROP_LEVELS) expect(PACK_BY_LEVEL[l]).toBeUndefined();
+  });
+
+  it('never repeats a cosmetic within a season, and the last level is legendary', () => {
+    const seen = new Set();
+    for (const r of TRACK.slice(1)) {
+      if (['pack', 'tier', 'boost', 'freeze'].includes(r.kind)) continue;
+      const k = `${r.kind}:${r.key}`;
+      expect(seen.has(k)).toBe(false);
+      seen.add(k);
+    }
+    expect(TRACK[99].rarity).toBe('legendary');
   });
 });
 
@@ -127,7 +140,7 @@ describe('art', () => {
     for (const p of PACKS) {
       const svg = renderPack(p, { uid: p.key });
       expect(svg.startsWith('<svg')).toBe(true);
-      expect(svg).toContain(`LEVEL ${p.level}`);
+      expect(svg).toContain(`LV ${p.level} PACK`);
     }
     expect(tearClip('top')).toMatch(/^polygon\(0 0, 100% 0,/);
     expect(tearClip('body')).toMatch(/100% 100%, 0 100%\)$/);

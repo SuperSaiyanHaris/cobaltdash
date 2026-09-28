@@ -10,6 +10,8 @@ export default {
         display: ['"Space Grotesk"', '"Inter"', 'system-ui', 'sans-serif'],
         body: ['"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
+        // ShinyPass (Arena) only; loaded by the pass pages, falls back to Impact.
+        arena: ['"Barlow Condensed"', '"Arial Narrow"', 'Impact', 'sans-serif'],
       },
       colors: {
         // Brand purple (from the logo). Main call to action only, one per

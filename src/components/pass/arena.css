@@ -1,0 +1,70 @@
+/* ShinyPass "Arena" styles. Imported only by the ShinyPass pages, so it ships
+   in their lazy chunk. Design rules still apply: flat dark bases, foil and
+   rarity color as fills and edges, neutral shadows only, no glow. */
+
+.sp-arena { --sp-ink: #0a0a0f; --sp-line: #2a2a38; font-family: 'Inter', system-ui, sans-serif; }
+.font-arena { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; }
+
+.sp-r-common    { --ra: #A1A1AA; --rb: #52525B; }
+.sp-r-uncommon  { --ra: #34D399; --rb: #047857; }
+.sp-r-rare      { --ra: #5EC8FF; --rb: #0369A1; }
+.sp-r-epic      { --ra: #C084FC; --rb: #6D28D9; }
+.sp-r-legendary { --ra: #FFD76A; --rb: #B45309; }
+
+/* HUD */
+.sp-hud { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--sp-line); background: linear-gradient(100deg, #171126, #0d0d15 70%); position: relative; overflow: hidden; }
+.sp-hud::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 18px 18px; pointer-events: none; }
+.sp-lvl { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: var(--sp-ink); padding: 10px 18px 12px; transform: skewX(-8deg); border-radius: 6px; line-height: .8; }
+.sp-lvl small { font-size: 13px; letter-spacing: 1.5px; font-weight: 800; }
+.sp-lvl b { font-size: 62px; font-weight: 900; }
+.sp-bar { position: relative; height: 16px; border-radius: 4px; overflow: hidden; background: #23232f; transform: skewX(-12deg); }
+.sp-bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #5EC8FF, #C084FC 70%, #FFD76A); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.sp-bar > u { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 9.6%, rgba(10,10,15,.85) 9.6% 10%); }
+@media (max-width: 480px) { .sp-hud { gap: 12px; padding: 14px; } .sp-lvl b { font-size: 48px; } .sp-lvl { padding: 8px 13px 10px; } }
+
+/* Featured stage */
+.sp-feature { position: relative; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; padding: 18px 20px 20px; border: 2px solid var(--ra); background: linear-gradient(160deg, var(--rb) 0%, #120e1e 58%); isolation: isolate; }
+.sp-feature::before { content: ""; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(-55deg, rgba(255,255,255,.05) 0 26px, transparent 26px 60px); }
+/* Phones: art on top, words below. From 860px: two columns, words left and
+   art right, so a long reward name can never run over the art. */
+.sp-feature .sp-art { position: relative; height: 230px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
+.sp-feature .sp-copy { position: relative; min-width: 0; }
+@media (min-width: 860px) {
+  .sp-feature { display: grid; grid-template-columns: minmax(0, 1fr) 40%; align-items: end; column-gap: 12px; min-height: 380px; }
+  .sp-feature .sp-art { grid-column: 2; grid-row: 1; height: 320px; margin: 0; align-self: center; }
+  .sp-feature .sp-copy { grid-column: 1; grid-row: 1; }
+}
+/* Packs and cards size to the art box height so they always fit. */
+.sp-art .sp-fit-pack { height: 100%; width: auto !important; max-width: 100%; aspect-ratio: 220 / 352; }
+.sp-art .sp-fit-card { height: 92%; width: auto !important; max-width: 100%; aspect-ratio: 250 / 350; }
+.sp-art .sp-fit-pack > svg, .sp-art .sp-fit-card > svg { width: 100%; height: 100%; }
+.sp-chip { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; padding: 4px 10px 3px; border-radius: 4px; background: #0a0a0f; border: 1px solid rgba(255,255,255,.22); color: #fff; }
+.sp-chip.rar { background: var(--ra); color: #0a0a0f; border-color: transparent; }
+
+/* Tier pages: one page of 10 at a time, snapping. Native scroll, so it
+   behaves like any other swipe on phones. */
+.sp-pages { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 12px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+.sp-pages::-webkit-scrollbar { display: none; }
+.sp-page { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.sp-tile { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; padding: 0; border: 2px solid transparent; background: linear-gradient(170deg, var(--ra) -30%, var(--rb) 55%, #16121f 110%); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: filter .15s ease; }
+.sp-tile::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-55deg, rgba(255,255,255,.07) 0 10px, transparent 10px 24px); pointer-events: none; }
+.sp-tile .n { position: absolute; left: 5px; top: 5px; z-index: 2; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 16px; line-height: 1; padding: 3px 6px 2px; border-radius: 3px; background: #0a0a0f; color: #fff; transform: skewX(-8deg); }
+.sp-tile .g { position: relative; z-index: 1; width: 56%; height: 56%; margin-bottom: 24px; }
+.sp-tile .l { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; min-height: 32px; padding: 5px 4px; display: flex; align-items: center; justify-content: center; text-align: center; background: rgba(10,10,15,.84); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 1.15; }
+.sp-tile.locked { filter: saturate(.35) brightness(.7); }
+.sp-tile.claimed .n { background: #fff; color: #0a0a0f; }
+.sp-tile .ok { position: absolute; right: 5px; top: 5px; z-index: 3; width: 22px; height: 22px; border-radius: 50%; background: #0a0a0f; color: #fff; display: flex; align-items: center; justify-content: center; }
+.sp-tile.current { border-color: #fff; }
+.sp-tile[aria-pressed="true"] { border-color: #fff; outline: 3px solid #0a0a0f; outline-offset: -5px; }
+.sp-tile.ready { border-color: #fff; }
+.sp-tile.ready .l { background: #fff; color: #0a0a0f; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+@media (hover: hover) { .sp-tile:hover { filter: brightness(1.08); } .sp-tile.locked:hover { filter: saturate(.45) brightness(.8); } }
+@media (max-width: 520px) { .sp-page { gap: 6px; } .sp-tile .l { font-size: 9px; min-height: 27px; padding: 4px 2px; } .sp-tile .n { font-size: 13px; } .sp-tile .g { margin-bottom: 20px; } }
+/* Each dot is a 26x24 tap target around a small slanted bar. */
+.sp-dots { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; }
+.sp-dots button { width: 26px; height: 24px; border: 0; padding: 0; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.sp-dots button::after { content: ""; width: 20px; height: 6px; border-radius: 2px; background: #2d2d3a; transform: skewX(-20deg); }
+.sp-dots button.done::after { background: #6b6b7b; }
+.sp-dots button.on::after { background: #fff; }
+
+@media (prefers-reduced-motion: reduce) { .sp-tile { transition: none; } }

@@ -1,32 +1,28 @@
-// ShinyPass: your card, the 1-99 track with its packs, ways to earn XP,
-// and the locker. Rules in src/lib/shinyPass.js, server in api/progress.js.
+// ShinyPass: the Arena track (HUD, featured reward, pages of levels, packs),
+// ways to earn XP, and the locker. Rules in src/lib/shinyPass.js, server in
+// api/progress.js.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Flame, Snowflake, Loader2, Gift, ExternalLink, Eye, EyeOff, Check, X } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, X } from 'lucide-react';
+import '../components/pass/arena.css';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress, loadProgress, openPack, setPrivate } from '../services/progressService';
 import { setHandle } from '../services/commentsService';
-import { UserCardSvg, PackSvg, ItemFace } from '../components/pass/PassArt';
-import PassTrack from '../components/pass/PassTrack';
+import { PackSvg, ItemFace } from '../components/pass/PassArt';
+import ArenaTrack from '../components/pass/ArenaTrack';
 import PackOpening from '../components/pass/PackOpening';
 import Locker from '../components/pass/Locker';
 import { BadgePill } from '../components/pass/BadgeChip';
-import { XP_RULES, PACKS, PACK_BY_LEVEL, TOTAL_XP, MAX_LEVEL, streakBonus, voucherChance, SLOT_WEIGHTS, seasonForDate, seasonLastDay } from '../lib/shinyPass';
+import useArenaFont from '../components/pass/useArenaFont';
+import {
+  XP_RULES, PACKS, PACK_BY_LEVEL, TOTAL_XP, MAX_LEVEL, streakBonus, voucherChance, SLOT_WEIGHTS,
+  seasonForDate, seasonLastDay, seasonDaysLeft, levelFromXp,
+} from '../lib/shinyPass';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
-
-function Stat({ label, value, icon: Icon }) {
-  return (
-    <div className="min-w-0">
-      <p className="flex items-center gap-1.5 text-2xl sm:text-3xl font-extrabold tabular-nums leading-none">
-        {Icon && <Icon className="w-5 h-5 text-white/80" />}{value}
-      </p>
-      <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">{label}</p>
-    </div>
-  );
-}
+const todayNY = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
 
 function HandleForm({ onDone }) {
   const [h, setH] = useState('');
@@ -42,7 +38,7 @@ function HandleForm({ onDone }) {
     <form onSubmit={save} className="flex flex-wrap items-center gap-2">
       <span className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 font-semibold">@</span>
-        <input value={h} onChange={(e) => setH(e.target.value.toLowerCase())} maxLength={20} placeholder="pick a public name"
+        <input value={h} onChange={(e) => setH(e.target.value.toLowerCase())} maxLength={20} placeholder="pick a public name" aria-label="Public name"
           className="h-10 w-56 pl-7 pr-3 rounded-xl bg-white/[0.08] border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60" />
       </span>
       <button disabled={busy || h.length < 3} className="h-10 px-4 rounded-xl bg-white text-neutral-950 text-sm font-bold disabled:opacity-50">{busy ? 'Saving' : 'Save'}</button>
@@ -64,7 +60,7 @@ function PackContents({ pack, items, me, onClose }) {
       <div className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
         <div className="relative flex items-center justify-between">
-          <p className="text-lg font-extrabold">{pack.name} pack</p>
+          <p className="font-arena italic font-black uppercase text-2xl">{pack.name} pack</p>
           <button onClick={onClose} aria-label="Close" className="p-2 rounded-xl hover:bg-white/10"><X className="w-5 h-5" /></button>
         </div>
         <div className="relative mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -75,43 +71,53 @@ function PackContents({ pack, items, me, onClose }) {
   );
 }
 
+// A sample season for signed-out visitors, so they can see what they'd earn.
+function demoState() {
+  const today = todayNY();
+  const n = seasonForDate(today);
+  const xp = TOTAL_XP[23] + 186;
+  return {
+    progress: { xp, ...levelFromXp(xp), streak: 8, best_streak: 12, streak_freezes: 1, equipped: { badge: 'og2026', title: 'statnerd', ring: 'mint', sticker: 'pog', frame: 'chrome' } },
+    season: { number: n, lastDay: seasonLastDay(n), daysLeft: seasonDaysLeft(n, today) },
+    badges: [{ badge: 'og2026' }, { badge: 'streak7' }],
+    packs: { opened: [10], available: [20], history: [] },
+    today: { xp: 65, byAction: {} },
+    handle: null,
+  };
+}
+
 function SignedOut() {
   const openAuth = () => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to start your ShinyPass' } }));
-  const preview = { handle: 'you', level: 12, into: 60, need: 226, xp: 2400, streak: 6, equipped: { badge: 'og2026', title: 'statnerd', frame: 'holo' } };
+  const demo = useMemo(() => demoState(), []);
+  const me = { handle: 'you', seasonNumber: demo.season.number, ...demo.progress };
   return (
     <section className="relative isolate bg-[#0a0a0f] text-white overflow-hidden">
       <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 grid lg:grid-cols-[1.1fr,0.9fr] gap-12 items-center">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass · Season {seasonForDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()))}</p>
-          <h1 className="mt-3 text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.02] text-balance">Your own card. 99 levels a season. Ten packs to rip open.</h1>
-          <p className="mt-5 text-base sm:text-lg text-white/75 max-w-xl text-pretty">
-            Show up, follow creators, comment and save matchups. Your card levels up with you, from Common to Legendary, and every 10 levels you open a pack. A new season starts every October 1, and everything you unlock stays yours.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <BadgePill badge="og2026" dark size="md" />
-            <span className="text-sm font-semibold text-white/75 self-center">Everyone who joins in 2026 keeps the OG badge for good.</span>
-          </div>
-          <button onClick={openAuth} className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold transition-colors">
-            Start your ShinyPass
-          </button>
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-12">
+        <p className="font-arena italic font-extrabold uppercase tracking-[0.14em] text-[15px] text-amber-300">ShinyPass · Season {demo.season.number}</p>
+        <h1 className="mt-2 font-arena italic font-black uppercase text-[clamp(44px,8vw,88px)] leading-[.86] text-balance max-w-[16ch]">99 levels. A reward at every one.</h1>
+        <p className="mt-4 text-base sm:text-lg text-white/80 max-w-2xl text-pretty">
+          Show up, follow creators, comment and save matchups. Your card levels up from Common to Legendary, every level unlocks something, and every 10 levels you rip open a pack. A new season starts every October 1, and everything you unlock stays yours.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button onClick={openAuth} className="px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-[15px] font-bold transition-colors">Start your ShinyPass</button>
+          <BadgePill badge="og2026" dark size="md" />
+          <span className="text-sm font-semibold text-white/75">Join in 2026 and keep the OG badge for good.</span>
         </div>
-        <div className="relative h-[380px] sm:h-[420px]">
-          <div className="absolute left-1/2 top-2 w-[200px] sm:w-[230px] -translate-x-[95%] rotate-[-7deg]"><PackSvg pack={PACKS[4]} /></div>
-          <div className="absolute left-1/2 top-0 w-[230px] sm:w-[260px] -translate-x-[15%] rotate-[5deg] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.9)]"><UserCardSvg me={preview} /></div>
-        </div>
+        <p className="mt-10 mb-3 font-arena italic font-extrabold uppercase tracking-[0.12em] text-[14px] text-white/60">Preview · a sample season</p>
+        <ArenaTrack me={me} state={demo} onOpenPack={openAuth} onViewPack={openAuth} demo />
       </div>
     </section>
   );
 }
 
 export default function ShinyPass() {
+  useArenaFont();
   const { user, loading: authLoading } = useAuth();
   const state = useProgress();
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(null);
   const [viewing, setViewing] = useState(null);
-  const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -138,7 +144,7 @@ export default function ShinyPass() {
   if (!user || !state) {
     return (
       <>
-        <SEO title="ShinyPass" description="Level up your own ShinyPull card from 1 to 99, keep your streak alive and open a pack every 10 levels." />
+        <SEO title="ShinyPass" description="Level up your own ShinyPull card from 1 to 99 each season, with a reward at every level and a pack every 10." />
         <SignedOut />
         <OddsAndRules />
       </>
@@ -146,18 +152,9 @@ export default function ShinyPass() {
   }
 
   const p = state.progress;
-  const season = state.season || { number: 1, lastDay: seasonLastDay(1), daysLeft: 0 };
-  const endLabel = new Date(`${season.lastDay}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const nextPack = PACKS.find((k) => k.level > p.level);
-  const toNextPack = nextPack ? TOTAL_XP[nextPack.level] - p.xp : 0;
-  const available = state.packs.available;
-
-  function onPack(level, { canOpen, isOpened }) {
-    if (canOpen) setOpening(PACK_BY_LEVEL[level]);
-    else if (isOpened) {
-      const h = state.packs.history.find((x) => x.pack_level === level);
-      if (h) setViewing({ pack: PACK_BY_LEVEL[level], items: h.items });
-    } else setNotice(`The ${PACK_BY_LEVEL[level].name} pack unlocks at level ${level}.`);
+  function viewPack(level) {
+    const h = state.packs.history.find((x) => x.pack_level === level);
+    if (h) setViewing({ pack: PACK_BY_LEVEL[level], items: h.items });
   }
 
   return (
@@ -166,75 +163,22 @@ export default function ShinyPass() {
 
       <section className="relative isolate z-20 bg-[#0a0a0f] text-white overflow-hidden">
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-10 grid md:grid-cols-[260px,1fr] lg:grid-cols-[300px,1fr] gap-8 lg:gap-14 items-center">
-          <div className="w-[220px] sm:w-[260px] lg:w-[300px] mx-auto md:mx-0 shadow-[0_34px_60px_-24px_rgba(0,0,0,0.95)]">
-            <UserCardSvg me={me} />
-          </div>
-
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">ShinyPass · Season {season.number}</p>
-            <h1 className="mt-2 text-4xl sm:text-6xl font-extrabold tracking-tight leading-none">Level {p.level}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {state.handle
-                ? <Link to={`/u/${state.handle}`} className="inline-flex items-center gap-1 text-[15px] font-semibold text-white/80 hover:text-white">@{state.handle} <ExternalLink className="w-3.5 h-3.5" /></Link>
-                : <span className="text-[15px] font-semibold text-white/80">Pick a public name to get your page:</span>}
-              {state.badges.slice(0, 3).map((b) => <BadgePill key={b.badge} badge={b.badge} dark />)}
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-10 sm:pb-14">
+          {!state.handle && (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              <span className="text-[14px] font-semibold text-white/85">Pick a public name to get your own page:</span>
+              <HandleForm />
             </div>
-            {!state.handle && <div className="mt-3"><HandleForm /></div>}
-
-            {/* XP bar */}
-            <div className="mt-6 max-w-xl">
-              <div className="flex items-end justify-between text-sm font-semibold">
-                <span className="text-white/80 tabular-nums">{p.level >= MAX_LEVEL ? 'Max level' : `${fmt(p.into)} / ${fmt(p.need)} XP`}</span>
-                <span className="text-white/70 tabular-nums">{fmt(p.xp)} XP total</span>
-              </div>
-              <div className="mt-2 h-3 rounded-full bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.max(3, p.pct * 100)}%`, background: 'linear-gradient(90deg, #5EC8FF, #C084FC 60%, #FFD76A)' }} />
-              </div>
-              {nextPack && (
-                <p className="mt-2.5 text-sm font-medium text-white/75">
-                  Next pack: <span className="font-bold text-white">{nextPack.name}</span> at level {nextPack.level}, {fmt(toNextPack)} XP away.
-                </p>
-              )}
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-4 max-w-md">
-              <Stat label="Day streak" value={p.streak || 0} icon={Flame} />
-              <Stat label="Best streak" value={p.best_streak || 0} />
-              <Stat label="Freezes" value={p.streak_freezes || 0} icon={Snowflake} />
-            </div>
-
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              {available.length > 0 ? (
-                <button onClick={() => setOpening(PACK_BY_LEVEL[available[0]])} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold transition-colors">
-                  <Gift className="w-4 h-4" /> Open your {PACK_BY_LEVEL[available[0]].name} pack{available.length > 1 ? ` (+${available.length - 1})` : ''}
-                </button>
-              ) : (
-                <a href="#earn" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors">Ways to earn XP</a>
-              )}
-              <p className="text-sm font-semibold text-white/75 tabular-nums">+{fmt(state.today.xp)} XP today</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Track */}
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 sm:pb-14">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold">The track</h2>
-              <p className="mt-1 text-sm text-white/75">A pack every 10 levels. Your card levels up at 25, 50 and 75. Season {season.number} ends {endLabel}, {season.daysLeft} days to go.</p>
-            </div>
-          </div>
-          <PassTrack level={p.level} pct={p.pct} opened={state.packs.opened} onPack={onPack} />
-          {notice && <p className="mt-2 text-sm font-semibold text-white/80">{notice}</p>}
+          )}
+          <ArenaTrack me={me} state={state} onOpenPack={(l) => setOpening(PACK_BY_LEVEL[l])} onViewPack={viewPack} />
         </div>
       </section>
 
       <div className="bg-[#fafaf9]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-14">
           <section id="earn" className="scroll-mt-24">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950">Ways to earn XP</h2>
-            <p className="mt-1.5 text-[15px] text-neutral-700">Daily caps reset at midnight Eastern.</p>
+            <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">Ways to earn XP</h2>
+            <p className="mt-2 text-[15px] text-neutral-700">Daily caps reset at midnight Eastern. An XP Boost adds 25% to everything here.</p>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {Object.entries(XP_RULES).map(([key, r]) => {
                 const earned = state.today.byAction[key] || 0;
@@ -264,8 +208,8 @@ export default function ShinyPass() {
           <section>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950">Your locker</h2>
-                <p className="mt-1.5 text-[15px] text-neutral-700">Everything you've unlocked. Equipped items show on your card, your comments and your page.</p>
+                <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">Your locker</h2>
+                <p className="mt-2 text-[15px] text-neutral-700">Everything you've unlocked. Equipped items show on your card, your comments and your page.</p>
               </div>
               {state.handle && (
                 <button
@@ -301,13 +245,13 @@ export default function ShinyPass() {
 
 function OddsAndRules({ light = false }) {
   const total = SLOT_WEIGHTS.reduce((s, e) => s + e.w, 0);
-  const names = { xp: 'XP bonus', ring: 'Avatar ring', title: 'Title', freeze: 'Streak Freeze', banner: 'Banner', showcase: 'Showcase slot', shiny: 'Shiny variant' };
-  const wrap = light ? '' : 'bg-[#fafaf9]';
+  const names = { xp: 'XP bonus', ring: 'Avatar ring', title: 'Title', sticker: 'Sticker', name: 'Name effect', back: 'Card back', freeze: 'Streak Freeze', banner: 'Banner', showcase: 'Showcase slot', shiny: 'Shiny variant' };
+  const season = seasonForDate(todayNY());
   return (
-    <section className={wrap}>
+    <section className={light ? '' : 'bg-[#fafaf9]'}>
       <div className={light ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12'}>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950">What's in a pack</h2>
-        <p className="mt-1.5 text-[15px] text-neutral-700 max-w-2xl">
+        <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">What's in a pack</h2>
+        <p className="mt-2 text-[15px] text-neutral-700 max-w-2xl">
           Packs are earned, never sold. Each one has its own card frame, then random items at the odds below. The last slot is always an uncommon or better item. Duplicates turn into XP.
         </p>
         <div className="mt-6 grid lg:grid-cols-2 gap-6">
@@ -325,7 +269,7 @@ function OddsAndRules({ light = false }) {
           <div className="grid grid-cols-5 gap-2 content-start">
             {PACKS.map((k) => (
               <div key={k.key} className="text-center">
-                <PackSvg pack={k} still />
+                <PackSvg pack={k} still season={season} />
                 <p className="mt-1 text-[10.5px] font-bold text-neutral-800 leading-tight">Lv {k.level}</p>
               </div>
             ))}
@@ -341,4 +285,3 @@ function OddsAndRules({ light = false }) {
     </section>
   );
 }
-

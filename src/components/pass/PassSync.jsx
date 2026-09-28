@@ -8,7 +8,7 @@ import { loadProgress, clearProgress } from '../../services/progressService';
 
 const ACTION_LABEL = { visit: 'Daily visit', upvote: 'Upvotes on your comments', follow: 'Followed a creator', compare: 'Saved a matchup', explore: 'Explored a creator' };
 
-function describe(gained, { PACK_BY_LEVEL, itemName }) {
+function describe(gained, { PACK_BY_LEVEL, itemName, RARITY_ORDER }) {
   const xp = gained.filter((g) => g.kind === 'xp');
   const out = [];
   if (xp.length) {
@@ -18,9 +18,16 @@ function describe(gained, { PACK_BY_LEVEL, itemName }) {
     if (streak) parts.push(`${streak.streak}-day streak`);
     out.push({ title: total ? `+${total} XP` : 'XP earned', body: parts.join(' · ') });
   }
+  // Many level rewards at once (a first visit, a big jump): one toast that
+  // names the best two, not one toast each.
+  const drops = gained.filter((g) => g.kind === 'drop');
+  if (drops.length > 2) {
+    const best = [...drops].sort((x, y) => RARITY_ORDER.indexOf(y.item.rarity) - RARITY_ORDER.indexOf(x.item.rarity)).slice(0, 2);
+    out.push({ title: `${drops.length} rewards unlocked`, body: `Including ${best.map((g) => itemName(g.item)).join(' and ')}.`, link: true });
+  }
   for (const g of gained) {
     if (g.kind === 'freeze-used') out.push({ title: 'Streak saved', body: `A Streak Freeze kept your ${g.streak}-day streak alive.` });
-    if (g.kind === 'drop') out.push({ title: `Level ${g.level} unlocked`, body: itemName(g.item), link: true });
+    if (g.kind === 'drop' && drops.length <= 2) out.push({ title: `Level ${g.level} unlocked`, body: itemName(g.item), link: true });
     if (g.kind === 'level') {
       const pack = PACK_BY_LEVEL[g.level];
       out.push(pack

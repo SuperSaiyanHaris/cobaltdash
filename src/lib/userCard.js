@@ -8,7 +8,7 @@
 // `uid` keeps gradient ids unique when several cards share a page.
 
 import { TIERS, escapeXml, compactCount } from './badgeCard.js';
-import { tierForLevel, PACK_BY_KEY, RINGS, TITLES, badgeMeta, MAX_LEVEL } from './shinyPass.js';
+import { tierForLevel, PACK_BY_KEY, RINGS, TITLES, STICKERS, badgeMeta, MAX_LEVEL } from './shinyPass.js';
 import { markBarsInner } from './brandMark.js';
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif";
@@ -52,6 +52,14 @@ export function renderUserCard(u) {
   const ring = eq.ring && RINGS[eq.ring];
   const title = eq.title && TITLES[eq.title] ? TITLES[eq.title].name : 'ShinyPass member';
   const badge = eq.badge && badgeMeta(eq.badge);
+  // Equipped sticker: a die-cut label slapped on the art window's corner.
+  const st = eq.sticker && STICKERS[eq.sticker];
+  const stickerSvg = st ? (() => {
+    const label = escapeXml(st.name.toUpperCase());
+    const w = Math.min(120, Math.max(34, label.length * 7.2 + 18));
+    const fitText = label.length > 5 ? ` textLength="${w - 14}" lengthAdjust="spacingAndGlyphs"` : '';
+    return `<g transform="translate(28 58) rotate(-7 ${w / 2} 11)"><rect x="-3" y="-3" width="${w + 6}" height="28" rx="9" fill="#FFFFFF"/><rect width="${w}" height="22" rx="7" fill="${st.a}"/><text x="${w / 2}" y="15.5" text-anchor="middle" font-family="'Barlow Condensed','Arial Narrow',Impact,sans-serif" font-style="italic" font-weight="900" font-size="14" letter-spacing=".6" fill="${st.t}"${fitText}>${label}</text></g>`;
+  })() : '';
   const handle = escapeXml(String(u.handle || 'you').slice(0, 18));
   const initials = escapeXml(String(u.handle || '?').slice(0, 1).toUpperCase());
   const pct = level >= MAX_LEVEL ? 1 : Math.max(0, Math.min(1, (u.into || 0) / (u.need || 1)));
@@ -117,6 +125,7 @@ ${stars}${facets}${prism}
 <circle cx="${W / 2}" cy="126" r="56" fill="none" stroke="url(#${id}ring)" stroke-width="4"/>
 ${art}
 ${badgeChip}
+${stickerSvg}
 <text x="${W / 2}" y="229" text-anchor="middle" font-family="${FONT}" font-size="18" font-weight="800" fill="#FAFAFA">@${handle}</text>
 <text x="${W / 2}" y="244" text-anchor="middle" font-family="${FONT}" font-size="9.5" font-weight="600" letter-spacing=".6" fill="#E4E4EA">${escapeXml(title)}</text>
 <text x="${W / 2}" y="281" text-anchor="middle" font-family="${FONT}" font-size="30" font-weight="900" letter-spacing="-1" fill="url(#${id}num)">LV ${level}</text>

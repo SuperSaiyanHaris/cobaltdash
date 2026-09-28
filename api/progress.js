@@ -19,14 +19,17 @@ import { checkRateLimit } from './_ratelimit.js';
 import { isFromOurSite, ALLOWED_ORIGINS } from './_guard.js';
 import { todayNY, grantAction, grantRaw } from './_xp.js';
 import {
-  levelFromXp, xpToNext, streakBonus, rollPack, PACKS, PACK_BY_LEVEL, LEVEL_DROPS, STREAK_BADGES, MAX_LEVEL,
+  levelFromXp, xpToNext, streakBonus, rollPack, PACKS, PACK_BY_LEVEL, DROP_LEVELS, trackReward, STREAK_BADGES, MAX_LEVEL, BOOST_DAYS,
   seasonMaxBadge, seasonLastDay, seasonDaysLeft, seasonForDate,
 } from '../src/lib/shinyPass.js';
 import { PLATFORM_IDS } from '../src/lib/constants.js';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
-const COSMETIC = new Set(['frame', 'ring', 'title', 'banner']);
+const COSMETIC = new Set(['frame', 'ring', 'title', 'banner', 'sticker', 'name', 'back']);
+const EQUIP_SLOTS = ['frame', 'ring', 'title', 'banner', 'badge', 'sticker', 'name', 'back'];
 const BASE_SHOWCASE = 3;
+// XP for a track drop you already own (small, so later seasons stay paced).
+const DUPE_DROP_XP = 25;
 // Mirrors BASIC_PER_PLATFORM in src/pages/Promote.jsx.
 const BASIC_PER_PLATFORM = 98;
 const MIN_REDEEM_AGE_DAYS = 14;
@@ -67,26 +70,35 @@ const award = (supabase, userId, badge) =>
 // Atomic in SQL so a sync and a pack opening can't overwrite each other.
 const addFreezes = (supabase, userId, n) => supabase.rpc('add_streak_freezes', { p_user: userId, p_n: n });
 
-/** Grant the fixed drops for every level reached (idempotent via a 0-XP marker). */
+/**
+ * Grant the track reward for every level reached this season (idempotent via
+ * a 0-XP marker per season and level). Packs are opened by hand and card
+ * tiers follow the level, so only the other levels are granted here.
+ */
 async function grantLevelDrops(supabase, userId, level, season, gained) {
-  const due = Object.keys(LEVEL_DROPS).filter((lvl) => Number(lvl) <= level);
+  const due = DROP_LEVELS.filter((l) => l <= level);
   if (due.length) {
-    // One read for what's already granted, so a normal sync costs one query.
-    const { data: done } = await supabase.from('xp_events').select('ref').eq('user_id', userId).eq('action', 'drop');
+    // One read of this season's markers, so a normal sync costs one query.
+    const { data: done } = await supabase.from('xp_events').select('ref').eq('user_id', userId).eq('action', 'drop').like('ref', `${season}:%`);
     const have = new Set((done || []).map((d) => d.ref));
-    for (const lvl of due.filter((l) => !have.has(`${season}:${l}`))) {
-      await grantDrop(supabase, userId, lvl, season, LEVEL_DROPS[lvl], gained);
+    const todo = due.filter((l) => !have.has(`${season}:${l}`)).map((l) => {
+      const r = trackReward(l);
+      return { level: l, kind: r.kind, key: r.key };
+    });
+    if (todo.length) {
+      // Marker and reward commit together in SQL, so a failure can't eat a reward.
+      const { data, error } = await supabase.rpc('grant_track_drops', {
+        p_user: userId, p_season: season, p_day: todayNY(), p_drops: todo, p_dupe_xp: DUPE_DROP_XP, p_boost_days: BOOST_DAYS,
+      });
+      if (!error) {
+        for (const g of data || []) {
+          const r = trackReward(g.level);
+          gained.push({ kind: 'drop', level: g.level, item: g.result === 'dupe' ? { kind: 'dupe', key: 'dupe', amount: DUPE_DROP_XP, rarity: 'common' } : r });
+        }
+      }
     }
   }
   if (level >= MAX_LEVEL) await award(supabase, userId, seasonMaxBadge(season));
-}
-
-async function grantDrop(supabase, userId, lvl, season, drop, gained) {
-  const marker = await grantRaw(supabase, userId, 'drop', `${season}:${lvl}`, 0);
-  if (marker === null) return;
-  if (drop.kind === 'freeze') await addFreezes(supabase, userId, 1);
-  else await supabase.from('user_items').insert({ user_id: userId, kind: drop.kind, item_key: drop.key, source_level: Number(lvl) });
-  gained.push({ kind: 'drop', level: Number(lvl), item: drop });
 }
 
 async function state(supabase, user) {
@@ -232,7 +244,7 @@ async function openPack(supabase, user, { level }) {
 }
 
 async function equip(supabase, user, { slot, key }) {
-  if (!['frame', 'ring', 'title', 'banner', 'badge'].includes(slot)) return 'Unknown slot.';
+  if (!EQUIP_SLOTS.includes(slot)) return 'Unknown slot.';
   if (key) {
     const q = slot === 'badge'
       ? supabase.from('user_badges').select('badge').eq('user_id', user.id).eq('badge', key)

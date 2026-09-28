@@ -9,8 +9,9 @@ import { searchCreators } from '../../services/creatorService';
 import { getFollowedCreators } from '../../services/followService';
 import CreatorAvatar from '../CreatorAvatar';
 import { UserCardSvg } from './PassArt';
+import { StickerArt, NameEffectText, CardBackArt } from './RewardArt';
 import { BadgeIcon } from './BadgeChip';
-import { PACK_BY_KEY, RINGS, TITLES, BADGES, badgeMeta, seasonMaxBadge } from '../../lib/shinyPass';
+import { PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, BADGES, badgeMeta, seasonMaxBadge } from '../../lib/shinyPass';
 import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 
 const TABS = [
@@ -18,6 +19,9 @@ const TABS = [
   { id: 'ring', label: 'Rings' },
   { id: 'title', label: 'Titles' },
   { id: 'banner', label: 'Banners' },
+  { id: 'sticker', label: 'Stickers' },
+  { id: 'name', label: 'Names' },
+  { id: 'back', label: 'Card backs' },
   { id: 'badge', label: 'Badges' },
   { id: 'showcase', label: 'Showcase' },
   { id: 'vouchers', label: 'Vouchers' },
@@ -97,7 +101,7 @@ export default function Locker({ state, me }) {
   const p = state.progress;
   const eq = p.equipped || {};
   const owned = useMemo(() => {
-    const m = { frame: new Set(), ring: new Set(), title: new Set(), banner: new Set() };
+    const m = { frame: new Set(), ring: new Set(), title: new Set(), banner: new Set(), sticker: new Set(), name: new Set(), back: new Set() };
     for (const it of state.items) if (m[it.kind]) m[it.kind].add(it.item_key);
     return m;
   }, [state.items]);
@@ -206,6 +210,28 @@ export default function Locker({ state, me }) {
               );
             })}
             {owned.banner.size === 0 && <Empty>Banners come from packs and top your public page.</Empty>}
+          </div>
+        )}
+
+        {(tab === 'sticker' || tab === 'name' || tab === 'back') && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {Object.keys(tab === 'sticker' ? STICKERS : tab === 'name' ? NAME_EFFECTS : CARD_BACKS).filter((k) => owned[tab].has(k)).map((key) => {
+              const cat = tab === 'sticker' ? STICKERS : tab === 'name' ? NAME_EFFECTS : CARD_BACKS;
+              return (
+                <div key={key} className="rounded-2xl border border-neutral-200 bg-[#0a0a0f] p-3 flex flex-col">
+                  <div className="h-28 flex items-center justify-center overflow-hidden">
+                    {tab === 'sticker' && <StickerArt k={key} className="text-2xl" />}
+                    {tab === 'name' && <NameEffectText k={key} className="font-arena italic font-black text-3xl truncate max-w-full">@{me?.handle || 'you'}</NameEffectText>}
+                    {tab === 'back' && <CardBackArt k={key} className="h-full" />}
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-white text-center truncate">{cat[key].name}</p>
+                  <button onClick={() => equip(tab, key)} disabled={busy === `${tab}:${key}`} className={`mt-2 h-9 rounded-xl text-sm font-bold ${eq[tab] === key ? 'bg-white/15 text-white border border-white/25' : 'bg-white text-neutral-950 hover:bg-neutral-100'}`}>
+                    {eq[tab] === key ? 'Equipped' : 'Equip'}
+                  </button>
+                </div>
+              );
+            })}
+            {owned[tab].size === 0 && <Empty>{tab === 'sticker' ? 'Your first sticker unlocks at level 1.' : tab === 'name' ? 'Your first name effect unlocks at level 7.' : 'Your first card back unlocks at level 6.'}</Empty>}
           </div>
         )}
 

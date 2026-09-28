@@ -91,6 +91,15 @@ sessions never see it. Anything a cloud session must know goes here.
   guaranteed at 50 and 99). Redeeming creates a `featured_listings` row with
   `source = 'reward'` and no Stripe subscription, so it lapses by itself.
   Vouchers and totals: /admin > ShinyPass.
+- Arena design (owner pick, 2026-09-27): `/pass` is `ArenaTrack.jsx` (HUD,
+  featured stage, scroll-snap pages of 10, season packs) with styles in
+  `components/pass/arena.css` (lazy) and the Barlow Condensed face loaded
+  only on pass pages (`useArenaFont`). Every level has a reward (`TRACK` in
+  shinyPass.js): packs, card tiers, and drops from a rotation over stickers,
+  name effects, card backs, titles, rings, banners, freezes and XP boosts,
+  granted atomically by SQL `grant_track_drops()` (migrations `i`, `j`).
+  One cosmetic of each kind per user (unique index); an owned drop pays a
+  small fixed XP bonus.
 - "OG 2026" badge: every account created in 2026. Scout badge is awarded by
   pg_cron `award-scout-badges` (daily, `award_scout_badges()`).
 - Copy on X/blog about this feature follows the same copy rules.

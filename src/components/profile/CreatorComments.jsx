@@ -8,7 +8,7 @@ import {
 } from '../../services/commentsService';
 import { progressFor } from '../../services/progressService';
 import { LevelChip, BadgePill } from '../pass/BadgeChip';
-import { RINGS } from '../../lib/shinyPass';
+import { RINGS, NAME_EFFECTS } from '../../lib/shinyPass';
 
 // Comments on a creator's profile, with one level of replies. Loads only when
 // scrolled near, so the profile's first paint is untouched. Posting goes
@@ -242,6 +242,7 @@ export default function CreatorComments({ creatorId, name }) {
     const handle = c.commenter_profiles?.handle || 'someone';
     const info = passInfo[c.user_id];
     const ring = info?.equipped?.ring && RINGS[info.equipped.ring];
+    const nameFx = info?.equipped?.name && NAME_EFFECTS[info.equipped.name];
     const pill = (on, onCls) => `inline-flex items-center gap-1.5 ${isReply ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]'} rounded-full border tabular-nums transition-colors ${on ? onCls : 'border-neutral-200 text-neutral-700 hover:border-neutral-300'}`;
     return (
       <div id={`c-${c.id}`} className={`flex gap-3 ${c.status === 'held' ? 'opacity-80' : ''}`}>
@@ -253,7 +254,15 @@ export default function CreatorComments({ creatorId, name }) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {c.commenter_profiles?.handle
-              ? <Link to={`/u/${handle}`} className="text-sm font-semibold text-neutral-900 hover:underline">{mine ? 'You' : handle}</Link>
+              ? (nameFx
+                ? (
+                  // Name effect: foil text on a small dark nameplate so it
+                  // stays readable on the light comment background.
+                  <Link to={`/u/${handle}`} className="inline-flex rounded-md bg-[#0a0a0f] px-1.5 py-[1px] hover:opacity-90">
+                    <span className="sp-name-fx text-sm font-bold" style={{ backgroundImage: `linear-gradient(100deg, ${nameFx.stops[0]}, ${nameFx.stops[1]} 50%, ${nameFx.stops[2]})` }}>{mine ? 'You' : handle}</span>
+                  </Link>
+                )
+                : <Link to={`/u/${handle}`} className="text-sm font-semibold text-neutral-900 hover:underline">{mine ? 'You' : handle}</Link>)
               : <span className="text-sm font-semibold text-neutral-900">{mine ? 'You' : handle}</span>}
             {info && handle !== OFFICIAL && <LevelChip xp={info.xp} />}
             {info?.equipped?.badge && info.badges.includes(info.equipped.badge) && <BadgePill badge={info.equipped.badge} />}

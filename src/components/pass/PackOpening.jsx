@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion';
 import { X, Loader2, Share2, Check } from 'lucide-react';
 import { PackSvg, ItemFace, RARITY, CARD_RADIUS } from './PassArt';
+import { CardBackArt } from './RewardArt';
 import { tearClip } from '../../lib/packArt';
 import { RARITY_ORDER } from '../../lib/shinyPass';
 
@@ -175,12 +176,12 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
             >
               {/* Body, below the tear */}
               <div style={{ clipPath: tearClip('body') }} className="drop-shadow-[0_30px_40px_rgba(0,0,0,0.7)]">
-                <PackSvg pack={pack} />
+                <PackSvg pack={pack} season={me?.seasonNumber} />
               </div>
               {/* Strip, above the tear: drag it off */}
               <motion.div
                 className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
-                style={{ clipPath: tearClip('top'), x: dragX, rotate: stripRotate, transformOrigin: '0% 11%' }}
+                style={{ clipPath: tearClip('top'), x: dragX, rotate: stripRotate, transformOrigin: '0% 9.7%' }}
                 drag={stage === 'intro' && !reduce ? 'x' : false}
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={{ left: 0, right: 0.9 }}
@@ -189,7 +190,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
                 onDragEnd={onDragEnd}
                 aria-hidden="true"
               >
-                <PackSvg pack={pack} />
+                <PackSvg pack={pack} season={me?.seasonNumber} />
               </motion.div>
               {stage === 'intro' && !reduce && (
                 <motion.div style={{ opacity: hintOpacity }} className="pointer-events-none absolute left-0 right-0 top-[4%] flex justify-center">
@@ -242,7 +243,9 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
                 {/* Back: the card back, edge tinted by rarity for rare and up */}
                 <span className={`absolute inset-0 ${CARD_RADIUS} overflow-hidden [backface-visibility:hidden] shadow-[0_24px_40px_-16px_rgba(0,0,0,0.9)]`}
                   style={RARITY_ORDER.indexOf(item.rarity) >= 2 ? { boxShadow: `inset 0 0 0 3px ${r.a}, 0 24px 40px -16px rgba(0,0,0,0.9)` } : undefined}>
-                  <img src="/card-back.svg" alt="" draggable="false" className="w-full h-full object-cover" />
+                  {me?.equipped?.back
+                    ? <CardBackArt k={me.equipped.back} className="w-full h-full !rounded-none !border-0 !shadow-none" />
+                    : <img src="/card-back.svg" alt="" draggable="false" className="w-full h-full object-cover" />}
                 </span>
                 {/* Face */}
                 <span className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] shadow-[0_24px_40px_-16px_rgba(0,0,0,0.9)]">

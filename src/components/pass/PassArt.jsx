@@ -6,7 +6,7 @@ import { useReducedMotion } from 'framer-motion';
 import { Snowflake, LayoutGrid, Sparkles, Zap, Ticket, Copy } from 'lucide-react';
 import { renderUserCard } from '../../lib/userCard';
 import { renderPack } from '../../lib/packArt';
-import { PACK_BY_KEY, RINGS, TITLES, itemName, itemBlurb } from '../../lib/shinyPass';
+import { PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, itemName, itemBlurb } from '../../lib/shinyPass';
 import { markBarsInner } from '../../lib/brandMark';
 
 export const CARD_RADIUS = 'rounded-[6.4%/4.571%]';
@@ -41,10 +41,10 @@ export const UserCardSvg = memo(function UserCardSvg({ me, className = '', equip
   return <div className={`${CARD_RADIUS} overflow-hidden [&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
-export const PackSvg = memo(function PackSvg({ pack, locked = false, still = false, className = '' }) {
+export const PackSvg = memo(function PackSvg({ pack, locked = false, still = false, season, className = '' }) {
   const uid = uidOf(useId());
   const reduce = useReducedMotion();
-  const html = renderPack(pack, { uid: `${pack.key}${uid}`, locked, still: still || !!reduce });
+  const html = renderPack(pack, { uid: `${pack.key}${uid}`, locked, still: still || !!reduce, season });
   return <div className={`[&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
@@ -98,6 +98,23 @@ function Visual({ item, me }) {
           <p className="mt-[2cqw] text-[6cqw] font-black tracking-[0.3em] text-white/70">XP</p>
         </div>
       );
+    case 'sticker': {
+      const s = STICKERS[item.key];
+      return s ? <span className="sp-sticker text-[13cqw]" style={{ '--st-a': s.a, '--st-t': s.t }}>{s.name}</span> : null;
+    }
+    case 'name': {
+      const n = NAME_EFFECTS[item.key];
+      return n ? <span className="sp-name-fx font-arena italic font-black text-[20cqw] leading-none" style={{ backgroundImage: `linear-gradient(100deg, ${n.stops[0]}, ${n.stops[1]} 50%, ${n.stops[2]})` }}>Aa</span> : null;
+    }
+    case 'back': {
+      const b = CARD_BACKS[item.key] || CARD_BACKS.carbon;
+      return (
+        <div className="sp-cardback h-[88%] max-w-[62%]" style={{ '--cb-a': b.a, '--cb-b': b.b, '--cb-l': b.line }}>
+          <svg viewBox="0 0 100 100" className="w-[46%]" dangerouslySetInnerHTML={{ __html: markBarsInner('ib') }} />
+        </div>
+      );
+    }
+    case 'boost': return <Zap className="w-[34cqw] h-[34cqw] text-emerald-200" strokeWidth={1.5} />;
     case 'freeze': return <Snowflake className="w-[34cqw] h-[34cqw] text-sky-200" strokeWidth={1.5} />;
     case 'showcase': return <LayoutGrid className="w-[34cqw] h-[34cqw] text-emerald-200" strokeWidth={1.5} />;
     case 'shiny': return <Sparkles className="w-[34cqw] h-[34cqw] text-fuchsia-200" strokeWidth={1.5} />;

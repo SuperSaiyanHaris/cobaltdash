@@ -26,6 +26,7 @@ function query(table) {
     eq(k, v) { filters.push((r) => r[k] === v); return api; },
     is(k, v) { filters.push((r) => (r[k] ?? null) === v); return api; },
     in(k, vs) { filters.push((r) => vs.includes(r[k])); return api; },
+    like(k, v) { const pre = String(v).replace(/%$/, ''); filters.push((r) => String(r[k]).startsWith(pre)); return api; },
     ilike(k, v) { filters.push((r) => String(r[k]).toLowerCase() === String(v).replace(/\\/g, '').toLowerCase()); return api; },
     gte() { return api; }, gt() { return api; }, order() { return api; },
     limit(n) { limit = n; return api; },
@@ -86,6 +87,27 @@ function rpc(name, a) {
     }
     return Promise.resolve({ data: 1, error: null });
   }
+  if (name === 'grant_track_drops') {
+    const p = db.user_progress.find((r) => r.user_id === a.p_user);
+    const out = [];
+    for (const d of a.p_drops) {
+      const ref = `${a.p_season}:${d.level}`;
+      if (db.xp_events.some((e) => e.user_id === a.p_user && e.action === 'drop' && e.ref === ref)) continue;
+      db.xp_events.push({ user_id: a.p_user, action: 'drop', ref, day: a.p_day, xp: 0, revoked_at: null });
+      let result;
+      if (d.kind === 'freeze') { p.streak_freezes += 1; result = 'freeze'; }
+      else if (d.kind === 'boost') { p.boost_until = new Date(Date.now() + a.p_boost_days * 86400000).toISOString(); result = 'boost'; }
+      else if (db.user_items.some((i) => i.user_id === a.p_user && i.kind === d.kind && i.item_key === d.key)) { p.xp += a.p_dupe_xp; result = 'dupe'; }
+      else { db.user_items.push({ id: `id${++seq}`, user_id: a.p_user, kind: d.kind, item_key: d.key, source_level: d.level }); result = 'item'; }
+      out.push({ level: d.level, result });
+    }
+    return Promise.resolve({ data: out, error: null });
+  }
+  if (name === 'add_xp_boost') {
+    const p = db.user_progress.find((r) => r.user_id === a.p_user);
+    p.boost_until = new Date(Date.now() + a.p_days * 86400000).toISOString();
+    return Promise.resolve({ data: p.boost_until, error: null });
+  }
   if (name === 'add_streak_freezes') {
     const p = db.user_progress.find((r) => r.user_id === a.p_user);
     p.streak_freezes += a.p_n;
@@ -135,7 +157,9 @@ describe('api/progress', () => {
     expect(r.statusCode).toBe(200);
     expect(r.body.progress).toMatchObject({ level: 1, streak: 1, xp: 20 });
     expect(r.body.badges.map((b) => b.badge)).toContain('og2026');
-    expect(r.body.gained).toEqual([{ kind: 'xp', action: 'visit', xp: 20 }]);
+    expect(r.body.gained[0]).toEqual({ kind: 'xp', action: 'visit', xp: 20 });
+    // Level 1's reward (a sticker) arrives on the first visit.
+    expect(r.body.gained[1]).toMatchObject({ kind: 'drop', level: 1, item: { kind: 'sticker', key: 'gg' } });
     const again = await call({ action: 'sync' });
     expect(again.body.gained).toEqual([]);
     expect(progress().xp).toBe(20);
@@ -181,9 +205,11 @@ describe('api/progress', () => {
     db.xp_events = db.xp_events.filter((e) => e.action !== 'visit');
     const r = await call({ action: 'sync' });
     const drops = r.body.gained.filter((g) => g.kind === 'drop').map((g) => g.level);
-    expect(drops).toEqual([5, 15]);
-    expect(db.xp_events.filter((e) => e.action === 'drop').map((e) => e.ref)).toEqual(['1:5', '1:15']);
-    expect(db.user_items.map((i) => `${i.kind}:${i.item_key}`)).toEqual(['title:lurker', 'ring:mint']);
+    expect(drops).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]);
+    expect(db.xp_events.filter((e) => e.action === 'drop').map((e) => e.ref)).toContain('1:16');
+    expect(db.user_items.map((i) => `${i.kind}:${i.item_key}`)).toEqual(expect.arrayContaining(['sticker:gg', 'title:lurker', 'ring:silver', 'back:carbon', 'name:chrome']));
+    expect(progress().streak_freezes).toBeGreaterThanOrEqual(1);
+    expect(progress().boost_until).toBeTruthy();
     const again = await call({ action: 'sync' });
     expect(again.body.gained.filter((g) => g.kind === 'drop')).toEqual([]);
   });
