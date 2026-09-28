@@ -48,10 +48,16 @@ const rad = (id, list, attrs = '') => `<radialGradient id="${id}" ${attrs}>${sto
 
 const W = PACK_W, H = PACK_H, CX = W / 2, CY = 150;
 
+// Solid level-number color per pack, drawn with a thick black outline so it
+// reads at a glance on any material.
+const NUM_COLOR = {
+  cardstock: '#F5B942', chrome: '#FFFFFF', holo: '#FFFFFF', cosmic: '#C4B5FD', prism: '#FFFFFF',
+  crystal: '#7DD3FC', obsidian: '#FB923C', platinum: '#FFFFFF', mythic: '#F0ABFC', final: '#FFD76A',
+};
+
 /*
- * Materials. Each returns { defs, body, num, ink, seal } where
+ * Materials. Each returns { defs, body, ink, seal } where
  *   body: the printed face (drawn inside the pouch clip)
- *   num:  gradient stops for the embossed level number
  *   ink:  color of the small printed text (dark on light packs)
  *   seal: gradient stops for the crimped seals
  * `anim` is false for still renders.
@@ -72,7 +78,6 @@ const MATERIALS = {
 <circle cx="${CX}" cy="${CY}" r="70" fill="none" stroke="#B08D57" stroke-opacity=".55" stroke-width="1.2"/>
 <rect x="9" y="28" width="${W - 18}" height="${H - 56}" rx="3" fill="none" stroke="#B08D57" stroke-width="1.1" stroke-opacity=".8"/>
 <rect x="13" y="32" width="${W - 26}" height="${H - 64}" rx="2" fill="none" stroke="#B08D57" stroke-width=".5" stroke-opacity=".6"/>`,
-      num: [[0, '#FFFDF6'], [0.45, '#E7D8B6'], [0.55, '#C9B48A'], [1, '#8E7852']],
       ink: '#3B3222',
       seal: [[0, '#D9CCAE'], [0.5, '#F3EBDA'], [1, '#BFAE89']],
     };
@@ -86,7 +91,6 @@ const MATERIALS = {
       body: `<rect width="${W}" height="${H}" fill="url(#${id}m)"/><rect width="${W}" height="${H}" fill="url(#${id}br)"/>
 <path d="M-20 90 L240 20 L240 44 L-20 114Z M-20 300 L240 230 L240 238 L-20 308Z" fill="#fff" opacity=".22"/>
 <path d="M-20 150 L240 80 L240 120 L-20 190Z" fill="#1E242C" opacity=".18"/>`,
-      num: [[0, '#FFFFFF'], [0.48, '#D5DCE5'], [0.52, '#6F7B8B'], [1, '#B7C0CC']],
       ink: '#1B2129',
       seal: [[0, '#7D8896'], [0.5, '#F1F4F8'], [1, '#5E6977']],
     };
@@ -100,7 +104,6 @@ const MATERIALS = {
         + `<pattern id="${id}gr" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="1.4" height="5" fill="#fff" opacity=".22"/></pattern>`,
       body: `<rect width="${W}" height="${H}" fill="url(#${id}m)"/><rect width="${W}" height="${H}" fill="url(#${id}m2)"/><rect width="${W}" height="${H}" fill="url(#${id}gr)"/>
 <g fill="none" stroke="#fff" stroke-opacity=".35">${Array.from({ length: 7 }, (_, i) => `<circle cx="${CX}" cy="${CY}" r="${16 + i * 18}"/>`).join('')}</g>`,
-      num: [[0, '#FFFFFF'], [0.35, '#FFE9FB'], [0.6, '#C4B5FD'], [1, '#67E8F9']],
       ink: '#231A3D',
       seal: [[0, '#B69CFF'], [0.5, '#F5F3FF'], [1, '#7DD3FF']],
     };
@@ -124,7 +127,6 @@ const MATERIALS = {
 <g>${anim ? `<animateTransform attributeName="transform" type="rotate" values="0 ${CX} ${CY + 20};360 ${CX} ${CY + 20}" dur="90s" repeatCount="indefinite"/>` : ''}
 <g fill="none" stroke="#DDD6FE" stroke-opacity=".3" stroke-width="1.4">${arms}</g></g>
 <ellipse cx="${CX}" cy="${CY + 20}" rx="34" ry="16" fill="url(#${id}n3)"/>${stars}`,
-      num: [[0, '#FFFFFF'], [0.4, '#E9E3FF'], [0.7, '#A78BFA'], [1, '#5B3FD9']],
       ink: '#E9E3FF',
       seal: [[0, '#3B2A8F'], [0.5, '#8B7BFF'], [1, '#231660']],
     };
@@ -146,7 +148,6 @@ const MATERIALS = {
     return {
       defs: '',
       body: `<rect width="${W}" height="${H}" fill="#F5D0FE"/><g stroke="#fff" stroke-opacity=".55" stroke-width=".7">${tris.join('')}</g>`,
-      num: [[0, '#FFFFFF'], [0.4, '#FFF3C4'], [0.7, '#F9A8D4'], [1, '#A855F7']],
       ink: '#3B1747',
       seal: [[0, '#F0ABFC'], [0.5, '#FFFFFF'], [1, '#67E8F9']],
     };
@@ -168,7 +169,6 @@ const MATERIALS = {
 <g fill="#fff" opacity=".7">${frost}</g>
 <path d="M0 60L60 30L20 130Z M220 180L150 250L220 300Z M40 260L0 320L80 330Z" fill="#fff" opacity=".25"/>
 ${cluster(-8, 60, 4, 0.55, 0.9)}${cluster(228, 150, 4, 3.3, 0.9)}${cluster(-8, 330, 4, -0.45, 0.7)}${cluster(228, 332, 3, 3.6, 0.6)}`,
-      num: [[0, '#FFFFFF'], [0.45, '#E0F7FF'], [0.55, '#7DD3FC'], [1, '#1E6FA8']],
       ink: '#0C3550',
       seal: [[0, '#8FD0EE'], [0.5, '#F4FCFF'], [1, '#6FB8DD']],
     };
@@ -200,7 +200,6 @@ ${cluster(-8, 60, 4, 0.55, 0.9)}${cluster(228, 150, 4, 3.3, 0.9)}${cluster(-8, 3
       body: `<rect width="${W}" height="${H}" fill="url(#${id}m)"/>
 <path d="M-10 40 L230 -30 L230 10 L-10 80Z" fill="#fff" opacity=".07"/>
 <g fill="none" stroke-linecap="round" stroke-linejoin="round">${pulse}<g stroke="#EA580C">${outer}</g><g stroke="#FDE68A">${inner}</g></g>${embers}`,
-      num: [[0, '#FFE8B0'], [0.35, '#FB923C'], [0.65, '#C2410C'], [1, '#431407']],
       ink: '#FDBA74',
       seal: [[0, '#18181B'], [0.5, '#3F3F46'], [1, '#09090B']],
     };
@@ -221,7 +220,6 @@ ${cluster(-8, 60, 4, 0.55, 0.9)}${cluster(228, 150, 4, 3.3, 0.9)}${cluster(-8, 3
 <g stroke="#fff" stroke-opacity=".8">${rays}</g><g stroke="#8A93A2" stroke-opacity=".28" transform="rotate(5 ${CX} ${CY})">${rays}</g>
 <g fill="none" stroke="#9AA3B2" stroke-width="1"><path d="M${CX} ${CY - 92}L${CX + 70} ${CY}L${CX} ${CY + 92}L${CX - 70} ${CY}Z"/><path d="M${CX} ${CY - 76}L${CX + 56} ${CY}L${CX} ${CY + 76}L${CX - 56} ${CY}Z" stroke-opacity=".6"/></g>
 <g fill="#fff" stroke="#9AA3B2" stroke-width=".5">${gem}</g>`,
-      num: [[0, '#FFFFFF'], [0.45, '#F1F3F7'], [0.55, '#9AA3B2'], [1, '#D5DAE2']],
       ink: '#2A303A',
       seal: [[0, '#AEB5C0'], [0.5, '#FFFFFF'], [1, '#9AA3B2']],
     };
@@ -247,7 +245,6 @@ ${cluster(-8, 60, 4, 0.55, 0.9)}${cluster(228, 150, 4, 3.3, 0.9)}${cluster(-8, 3
 <g stroke-width="1.3">${spin(60, 1)}${ring(80, 24, 1)}</g>
 <g stroke-width="1">${spin(40, -1)}<path d="M${hex[0]}L${hex[2]}L${hex[4]}Z M${hex[1]}L${hex[3]}L${hex[5]}Z"/>${ring(62, 12, 0.8)}</g>
 </g>`,
-      num: [[0, '#FFFFFF'], [0.35, '#FBCFE8'], [0.7, '#C084FC'], [1, '#0E7490']],
       ink: '#E9D5FF',
       seal: [[0, '#3B0764'], [0.5, '#7E22CE'], [1, '#155E75']],
     };
@@ -272,7 +269,6 @@ ${cluster(-8, 60, 4, 0.55, 0.9)}${cluster(228, 150, 4, 3.3, 0.9)}${cluster(-8, 3
 <rect x="13" y="50" width="${W - 26}" height="${H - 83}" rx="3" fill="none" stroke="url(#${id}au)" stroke-width="1"/>
 ${scroll('translate(8 45)')}${scroll(`translate(${W - 8} 45) scale(-1 1)`)}
 ${ruby}`,
-      num: [[0, '#FFF7D6'], [0.35, '#FFD76A'], [0.6, '#C98A17'], [1, '#6B4508']],
       ink: '#FFE8A3',
       seal: [[0, '#8A5E0F'], [0.5, '#FFE9A3'], [1, '#7A520C']],
     };
@@ -311,8 +307,6 @@ export function renderPack(pack, o = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(pack.name)} pack, level ${pack.level}">
 <defs>
 ${m.defs}
-${lin(`${id}num`, m.num)}
-${lin(`${id}edge`, [[0, '#FFFFFF', 0.95], [0.5, '#FFFFFF', 0.25], [1, '#000000', 0.55]])}
 ${lin(`${id}seal`, m.seal, 'x1="0" y1="0" x2="1" y2="0"')}
 ${lin(`${id}name`, [[0, '#FFFFFF'], [0.55, '#FFFFFF'], [1, '#C9CED6']])}
 ${lin(`${id}shine`, [[0, '#fff', 0], [0.5, '#fff', 0.42], [1, '#fff', 0]], 'x1="0" y1="0" x2="1" y2="0"')}
@@ -323,8 +317,8 @@ ${lin(`${id}puffy`, [[0, '#000', 0.45], [0.1, '#000', 0], [0.88, '#000', 0], [1,
 </defs>
 <g clip-path="url(#${id}clip)"${o.locked ? ' opacity=".5"' : ''}>
 ${m.body}
-<text ${numAttrs} dx="3" dy="5" fill="#000" fill-opacity=".45">${lvl}</text>
-<text ${numAttrs} fill="url(#${id}num)" stroke="url(#${id}edge)" stroke-width="2.4" paint-order="stroke">${lvl}</text>
+<text ${numAttrs} dx="4" dy="6" fill="#000" fill-opacity=".5" stroke="#000" stroke-opacity=".5" stroke-width="9" stroke-linejoin="round">${lvl}</text>
+<text ${numAttrs} fill="${NUM_COLOR[pack.key] || '#FFFFFF'}" stroke="#0a0a0f" stroke-width="9" stroke-linejoin="round" paint-order="stroke">${lvl}</text>
 <text x="14" y="33" font-family="${DISPLAY}" font-weight="900" font-style="italic" font-size="12" letter-spacing="1.4" fill="${m.ink}">SHINYPULL</text>
 <text x="${W - 14}" y="33" text-anchor="end" font-family="${DISPLAY}" font-weight="800" font-style="italic" font-size="10.5" letter-spacing="1.6" fill="${m.ink}" fill-opacity=".8">TEAR HERE</text>
 <line x1="0" y1="${TEAR_Y}" x2="${W}" y2="${TEAR_Y}" stroke="${m.ink}" stroke-opacity=".45" stroke-width="1.2" stroke-dasharray="5 4"/>
