@@ -40,22 +40,30 @@
 .sp-art .sp-fit-pack > svg, .sp-art .sp-fit-card > svg { width: 100%; height: 100%; }
 .sp-chip { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; padding: 4px 10px 3px; border-radius: 4px; background: #0a0a0f; border: 1px solid rgba(255,255,255,.22); color: #fff; }
 .sp-chip.rar { background: var(--ra); color: #0a0a0f; border-color: transparent; }
+.sp-chip.got { display: inline-flex; align-items: center; gap: 4px; background: #22C55E; color: #052E16; border-color: transparent; }
 
 /* Tier pages: one page of 10 at a time, snapping. Native scroll, so it
    behaves like any other swipe on phones. */
 .sp-pages { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 12px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
 .sp-pages::-webkit-scrollbar { display: none; }
-.sp-page { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.sp-page { flex: 0 0 100%; box-sizing: border-box; padding: 6px; scroll-snap-align: start; scroll-snap-stop: always; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .sp-tile { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; padding: 0; border: 2px solid transparent; background: linear-gradient(170deg, var(--ra) -30%, var(--rb) 55%, #16121f 110%); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: filter .15s ease; }
 .sp-tile::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-55deg, rgba(255,255,255,.07) 0 10px, transparent 10px 24px); pointer-events: none; }
 .sp-tile .n { position: absolute; left: 5px; top: 5px; z-index: 2; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 16px; line-height: 1; padding: 3px 6px 2px; border-radius: 3px; background: #0a0a0f; color: #fff; transform: skewX(-8deg); }
 .sp-tile .g { position: relative; z-index: 1; width: 56%; height: 56%; margin-bottom: 24px; }
 .sp-tile .l { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; min-height: 32px; padding: 5px 4px; display: flex; align-items: center; justify-content: center; text-align: center; background: rgba(10,10,15,.84); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 1.15; }
-.sp-tile.locked { filter: saturate(.35) brightness(.7); }
+/* States: claimed = full color + green check, next = white frame + "Next"
+   tag + progress, locked = dark + lock. Selection is a separate outer ring. */
+.sp-tile.locked { filter: saturate(.15) brightness(.45); }
+.sp-tile.locked .g { opacity: .55; }
 .sp-tile.claimed .n { background: #fff; color: #0a0a0f; }
 .sp-tile .ok { position: absolute; right: 5px; top: 5px; z-index: 3; width: 22px; height: 22px; border-radius: 50%; background: #0a0a0f; color: #fff; display: flex; align-items: center; justify-content: center; }
+.sp-tile.claimed .ok { background: #22C55E; color: #052E16; box-shadow: 0 0 0 2px #0a0a0f; }
 .sp-tile.current { border-color: #fff; }
-.sp-tile[aria-pressed="true"] { border-color: #fff; outline: 3px solid #0a0a0f; outline-offset: -5px; }
+.sp-tile .nx { position: absolute; right: 5px; top: 5px; z-index: 3; padding: 3px 6px 2px; border-radius: 3px; background: #fff; color: #0a0a0f; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 12px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; transform: skewX(-8deg); }
+.sp-tile .pg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 4px; background: rgba(255,255,255,.18); }
+.sp-tile .pg i { display: block; height: 100%; background: #fff; }
+.sp-tile[aria-pressed="true"] { outline: 2px solid rgba(255,255,255,.7); outline-offset: 3px; }
 .sp-tile.ready { border-color: #fff; }
 .sp-tile.ready .l { background: #fff; color: #0a0a0f; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
 @media (hover: hover) { .sp-tile:hover { filter: brightness(1.08); } .sp-tile.locked:hover { filter: saturate(.45) brightness(.8); } }
@@ -64,7 +72,7 @@
 .sp-dots { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; }
 .sp-dots button { width: 26px; height: 24px; border: 0; padding: 0; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .sp-dots button::after { content: ""; width: 20px; height: 6px; border-radius: 2px; background: #2d2d3a; transform: skewX(-20deg); }
-.sp-dots button.done::after { background: #6b6b7b; }
+.sp-dots button.done::after { background: #22C55E; }
 .sp-dots button.on::after { background: #fff; }
 
 @media (prefers-reduced-motion: reduce) { .sp-tile { transition: none; } }

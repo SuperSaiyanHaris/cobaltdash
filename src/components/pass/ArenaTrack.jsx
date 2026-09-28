@@ -21,21 +21,24 @@ function statusOf(r, level, opened) {
   return 'claimed';
 }
 
-function Tile({ r, status, selected, onSelect }) {
+function Tile({ r, status, selected, onSelect, pct = 0 }) {
   const rc = RARITY_COLORS[r.rarity];
+  const said = { ready: ', ready to open', claimed: ', claimed', current: ', next up', locked: ', locked' }[status];
   return (
     <button
       type="button"
       onClick={() => onSelect(r.level)}
       aria-pressed={selected}
-      aria-label={`Level ${r.level}: ${itemName(r)}${status === 'ready' ? ', ready to open' : status === 'claimed' ? ', unlocked' : ''}`}
+      aria-label={`Level ${r.level}: ${itemName(r)}${said}`}
       className={`sp-tile sp-r-${r.rarity} ${status}`}
     >
       <span className="n">{r.level}</span>
-      {status === 'claimed' && <span className="ok"><Check className="w-3.5 h-3.5" strokeWidth={3} /></span>}
+      {status === 'claimed' && <span className="ok"><Check className="w-3.5 h-3.5" strokeWidth={3.5} /></span>}
       {status === 'locked' && <span className="ok"><Lock className="w-3 h-3" /></span>}
+      {status === 'current' && <span className="nx">Next</span>}
       <span className="g"><RewardGlyph kind={r.kind} color={rc.text} /></span>
       <span className="l">{status === 'ready' ? 'Open' : shortName(r)}</span>
+      {status === 'current' && <span className="pg" aria-hidden="true"><i style={{ width: `${Math.max(4, pct * 100)}%` }} /></span>}
     </button>
   );
 }
@@ -82,6 +85,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
   const sel = TRACK[selected];
   const selStatus = statusOf(sel, p.level, opened);
   const away = sel.level - p.level;
+  const next = p.level < MAX_LEVEL ? TRACK[p.level + 1] : null;
   const boosted = p.boost_until && new Date(p.boost_until).getTime() > now;
 
   return (
@@ -105,6 +109,11 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
               <span>+{fmt(state.today.xp)} today</span>
             </span>
           </div>
+          {next && (
+            <button type="button" onClick={() => select(next.level)} className="self-start text-left text-[13.5px] text-white/80 hover:text-white">
+              Next up: <b className="text-white">{itemName(next)}</b> at level {next.level} · <span className="tabular-nums">{fmt(p.need - p.into)} XP to go</span>
+            </button>
+          )}
           {state.badges.length > 0 && (
             <div className="hidden sm:flex flex-wrap gap-1.5">{state.badges.slice(0, 4).map((b) => <BadgePill key={b.badge} badge={b.badge} dark />)}</div>
           )}
@@ -124,7 +133,11 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="sp-chip rar">{sel.rarity}</span>
             {sel.alsoTier && <span className="sp-chip">+ {sel.alsoTier.toLowerCase()} card</span>}
-              <span className="sp-chip">{selStatus === 'ready' ? 'Unlocked' : selStatus === 'claimed' ? 'Unlocked' : `${away} level${away === 1 ? '' : 's'} away`}</span>
+              {selStatus === 'claimed'
+                ? <span className="sp-chip got"><Check className="w-3.5 h-3.5" strokeWidth={3} />Claimed</span>
+                : selStatus === 'ready'
+                  ? <span className="sp-chip got">Ready to open</span>
+                  : <span className="sp-chip">{selStatus === 'current' ? 'Next up' : `${away} levels away`}</span>}
             </div>
             {sel.kind === 'pack' && selStatus === 'ready' && (
               <button onClick={() => onOpenPack(sel.level)} className={`mt-4 self-start px-6 py-3 rounded-xl text-[15px] font-bold transition-colors ${demo ? 'bg-white hover:bg-neutral-100 text-neutral-950' : 'bg-brand hover:bg-brand-hover text-white'}`}>
@@ -154,7 +167,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
             {Array.from({ length: PAGES }, (_, i) => (
               <div key={i} className="sp-page" aria-label={`Levels ${i * 10 + 1} to ${i === PAGES - 1 ? 99 : i * 10 + 10}`}>
                 {TRACK.slice(i * 10 + 1, i === PAGES - 1 ? 100 : i * 10 + 11).map((r) => (
-                  <Tile key={r.level} r={r} status={statusOf(r, p.level, opened)} selected={r.level === selected} onSelect={select} />
+                  <Tile key={r.level} r={r} status={statusOf(r, p.level, opened)} selected={r.level === selected} onSelect={select} pct={p.pct} />
                 ))}
               </div>
             ))}
