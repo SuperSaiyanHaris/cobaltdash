@@ -1,6 +1,7 @@
 // ShinyPass: the Arena track (HUD, featured reward, pages of levels, packs),
 // ways to earn XP, and the locker. Rules in src/lib/shinyPass.js, server in
 // api/progress.js.
+import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -55,19 +56,26 @@ function PackContents({ pack, items, me, onClose }) {
     window.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
   }, [onClose]);
-  return (
+  // Portaled to <body>: inside the page, a transformed ancestor would make
+  // "fixed" relative to it, clipping the sheet (it cut off on iPhones).
+  return createPortal(
     <div className="fixed inset-0 z-[150] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={onClose}>
-      <div className="w-full sm:max-w-3xl sheet-90 overflow-y-auto bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full sm:w-auto sm:max-w-5xl sheet-90 overflow-y-auto bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
         <div className="relative flex items-center justify-between">
           <p className="font-arena italic font-black uppercase text-2xl">{pack.name} pack</p>
           <button onClick={onClose} aria-label="Close" className="p-2 rounded-xl hover:bg-white/10"><X className="w-5 h-5" /></button>
         </div>
-        <div className="relative mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {items.map((it, i) => <ItemFace key={i} item={it} me={me} />)}
+        <div className="relative mt-5 flex flex-wrap justify-center gap-3 sm:gap-4">
+          {items.map((it, i) => (
+            <div key={i} className={`w-[calc(50%-6px)] ${items.length > 3 ? 'sm:w-[180px] lg:w-[190px]' : 'sm:w-[220px] lg:w-[250px]'}`}>
+              <ItemFace item={it} me={me} />
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
