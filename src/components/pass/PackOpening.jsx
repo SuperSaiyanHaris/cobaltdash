@@ -120,8 +120,12 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
   // of the face-down stack) until you tap for the next one; earlier cards
   // collect in a small fan above. When everything is out, they fan across
   // the middle. Sizes follow the screen so the text stays readable.
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const [{ vw, vh }, setView] = useState(() => ({ vw: typeof window !== 'undefined' ? window.innerWidth : 1280, vh: typeof window !== 'undefined' ? window.innerHeight : 800 }));
+  useEffect(() => {
+    const onResize = () => setView({ vw: window.innerWidth, vh: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const isMobile = vw < 640;
   const cardW = Math.round(Math.max(140, Math.min(isMobile ? vw * 0.6 : 300, (vh - 150) / 2.97)));
   const packW = Math.round(Math.max(200, Math.min(isMobile ? vw - 100 : 360, (vh - 230) / 1.6)));
@@ -181,7 +185,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
               exit={{ opacity: 0 }}
             >
               {/* Body, below the tear */}
-              <div style={{ clipPath: tearClip('body') }} className="drop-shadow-[0_30px_40px_rgba(0,0,0,0.7)]">
+              <div style={{ clipPath: tearClip('body') }}>
                 <PackSvg pack={pack} season={me?.seasonNumber} />
               </div>
               {/* Strip, above the tear: drag it off */}
@@ -196,7 +200,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
                 onDragEnd={onDragEnd}
                 aria-hidden="true"
               >
-                <PackSvg pack={pack} season={me?.seasonNumber} />
+                <PackSvg pack={pack} still season={me?.seasonNumber} />
               </motion.div>
               {stage === 'intro' && !reduce && (
                 <motion.div style={{ opacity: hintOpacity }} className="pointer-events-none absolute left-0 right-0 top-[4%] flex justify-center">
@@ -250,14 +254,14 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
                 transition={{ duration: reduce ? 0 : 0.7, ease: [0.3, 1.4, 0.5, 1] }}
               >
                 {/* Back: the card back, edge tinted by rarity for rare and up */}
-                <span className={`absolute inset-0 ${CARD_RADIUS} overflow-hidden [backface-visibility:hidden] shadow-[0_24px_40px_-16px_rgba(0,0,0,0.9)]`}
+                <span className={`absolute inset-0 ${CARD_RADIUS} overflow-hidden [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(0deg)] shadow-[0_24px_40px_-16px_rgba(0,0,0,0.9)]`}
                   style={RARITY_ORDER.indexOf(item.rarity) >= 2 ? { boxShadow: `inset 0 0 0 3px ${r.a}, 0 24px 40px -16px rgba(0,0,0,0.9)` } : undefined}>
                   {me?.equipped?.back
                     ? <CardBackArt k={me.equipped.back} className="w-full h-full !rounded-none !border-0 !shadow-none" />
                     : <img src="/card-back.svg" alt="" draggable="false" className="w-full h-full object-cover" />}
                 </span>
                 {/* Face */}
-                <span className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] shadow-[0_24px_40px_-16px_rgba(0,0,0,0.9)]">
+                <span className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)] shadow-[0_24px_40px_-16px_rgba(0,0,0,0.9)]">
                   <ItemFace item={item} me={me} />
                   {RARITY_ORDER.indexOf(item.rarity) >= 3 && (isOut || final) && !reduce && (
                     <motion.span

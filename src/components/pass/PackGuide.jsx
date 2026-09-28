@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Snowflake, LayoutGrid, Sparkles, Zap, Ticket } from 'lucide-react';
-import { PackSvg, ItemFace } from './PassArt';
+import { PackSvg, ItemFace, UserCardSvg } from './PassArt';
 import Nameplate from './Nameplate';
 import {
   PACKS, FLAIRS, CARD_EFFECTS, SLOT_WEIGHTS, RARITY_ORDER, setPieces, flairCap, voucherChance, xpToNext,
@@ -71,7 +71,7 @@ export default function PackGuide({ me, season }) {
             {pieces.map((x) => <ItemFace key={`${x.kind}:${x.key}`} item={{ ...x, rarity: x.rarity || 'rare' }} me={viewer} />)}
           </div>
           <div className="mt-3 flex items-center gap-4 rounded-2xl bg-[#0a0a0f] p-3 text-white">
-            <div className="w-[92px] flex-shrink-0"><ItemFace item={{ kind: 'effect', key: pack.key, rarity: CARD_EFFECTS[pack.key].rarity }} me={viewer} /></div>
+            <div className="w-[96px] flex-shrink-0"><UserCardSvg me={viewer} equippedOverride={{ ...(viewer.equipped || {}), frame: pack.key, effect: pack.key }} /></div>
             <p className="text-sm text-white/80 leading-snug">
               <b className="text-white">Set bonus: {CARD_EFFECTS[pack.key].name}.</b> Collect all four pieces and your card gets this animated effect, plus the {pack.name} Set badge. Missing pieces can also turn up in later packs.
             </p>

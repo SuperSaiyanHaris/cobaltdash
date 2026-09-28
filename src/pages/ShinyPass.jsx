@@ -40,7 +40,7 @@ function HandleForm({ onDone }) {
       <span className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 font-semibold">@</span>
         <input value={h} onChange={(e) => setH(e.target.value.toLowerCase())} maxLength={20} placeholder="pick a public name" aria-label="Public name"
-          className="h-10 w-56 pl-7 pr-3 rounded-xl bg-white/[0.08] border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60" />
+          className="h-10 w-56 pl-7 pr-3 rounded-xl text-base bg-white/[0.08] border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60" />
       </span>
       <button disabled={busy || h.length < 3} className="h-10 px-4 rounded-xl bg-white text-neutral-950 text-sm font-bold disabled:opacity-50">{busy ? 'Saving' : 'Save'}</button>
       {err && <span className="w-full text-sm font-semibold text-red-300">{err}</span>}
@@ -59,8 +59,8 @@ function PackContents({ pack, items, me, onClose }) {
   // Portaled to <body>: inside the page, a transformed ancestor would make
   // "fixed" relative to it, clipping the sheet (it cut off on iPhones).
   return createPortal(
-    <div className="fixed inset-0 z-[150] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={onClose}>
-      <div className="w-full sm:w-auto sm:max-w-5xl sheet-90 overflow-y-auto bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[150] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${pack.name} pack`}>
+      <div className="w-full sm:w-auto sm:max-w-5xl sheet-90 overflow-y-auto overscroll-contain bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
         <div className="relative flex items-center justify-between">
           <p className="font-arena italic font-black uppercase text-2xl">{pack.name} pack</p>
@@ -213,7 +213,7 @@ export default function ShinyPass() {
             </div>
           </section>
 
-          <section>
+          <section id="locker" className="scroll-mt-20">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">Your locker</h2>

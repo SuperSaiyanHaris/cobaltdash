@@ -1,7 +1,7 @@
 // Inline renders of the ShinyPass SVG art (user card, pack) and the face of
 // each item you can pull. The SVG strings come from pure renderers in
 // src/lib; everything user-controlled in them is escaped there.
-import { memo, useId } from 'react';
+import { memo, useEffect, useId, useMemo, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Snowflake, LayoutGrid, Sparkles, Zap, Ticket, Copy } from 'lucide-react';
 import { renderUserCard } from '../../lib/userCard';
@@ -21,11 +21,33 @@ export const RARITY = {
 
 const uidOf = (s) => s.replace(/[^a-z0-9]/gi, '');
 
+/**
+ * Pause an animated inline SVG's SMIL clock while it's off screen, so a page
+ * of cards and packs only animates what you can see.
+ */
+function usePauseOffscreen(ref, animated) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !animated || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(([e]) => {
+      const svg = el.querySelector('svg');
+      if (!svg?.pauseAnimations) return;
+      if (e.isIntersecting) svg.unpauseAnimations(); else svg.pauseAnimations();
+    }, { rootMargin: '120px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, animated]);
+}
+
 export const UserCardSvg = memo(function UserCardSvg({ me, className = '', equippedOverride, still = false }) {
   const uid = uidOf(useId());
   const reduce = useReducedMotion();
-  if (!me) return null;
-  const html = renderUserCard({
+  const ref = useRef(null);
+  const quiet = still || !!reduce;
+  const eq = equippedOverride || me?.equipped;
+  const eqKey = JSON.stringify(eq || {});
+  // Built once per real change: hover previews and parent re-renders reuse it.
+  const html = useMemo(() => (me ? renderUserCard({
     uid,
     handle: me.handle || 'you',
     avatar: me.avatar,
@@ -35,25 +57,33 @@ export const UserCardSvg = memo(function UserCardSvg({ me, className = '', equip
     xp: me.xp,
     streak: me.streak,
     season: me.seasonNumber,
-    equipped: equippedOverride || me.equipped,
-    still: still || !!reduce,
-  });
-  return <div className={`${CARD_RADIUS} overflow-hidden [&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+    equipped: JSON.parse(eqKey),
+    still: quiet,
+  }) : ''), [uid, me?.handle, me?.avatar, me?.level, me?.into, me?.need, me?.xp, me?.streak, me?.seasonNumber, eqKey, quiet]); // eslint-disable-line react-hooks/exhaustive-deps
+  usePauseOffscreen(ref, !quiet);
+  if (!me) return null;
+  return <div ref={ref} className={`${CARD_RADIUS} overflow-hidden [&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
 export const PackSvg = memo(function PackSvg({ pack, locked = false, still = false, season, className = '' }) {
   const uid = uidOf(useId());
   const reduce = useReducedMotion();
-  const html = renderPack(pack, { uid: `${pack.key}${uid}`, locked, still: still || !!reduce, season });
-  return <div className={`[&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+  const ref = useRef(null);
+  const quiet = still || !!reduce;
+  const html = useMemo(() => renderPack(pack, { uid: `${pack.key}${uid}`, locked, still: quiet, season }), [pack, uid, locked, quiet, season]);
+  usePauseOffscreen(ref, !quiet);
+  return <div ref={ref} className={`[&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
 /** A pack-material banner (see renderBanner). Fills its box. */
 export const BannerSvg = memo(function BannerSvg({ pack, still = false, className = '' }) {
   const uid = uidOf(useId());
   const reduce = useReducedMotion();
-  const html = renderBanner(pack, { uid: `${pack.key}${uid}`, still: still || !!reduce });
-  return <div className={`[&>svg]:block [&>svg]:w-full [&>svg]:h-full ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+  const ref = useRef(null);
+  const quiet = still || !!reduce;
+  const html = useMemo(() => renderBanner(pack, { uid: `${pack.key}${uid}`, still: quiet }), [pack, uid, quiet]);
+  usePauseOffscreen(ref, !quiet);
+  return <div ref={ref} className={`[&>svg]:block [&>svg]:w-full [&>svg]:h-full ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
 const foil = (a, b, c, d) => `linear-gradient(135deg, ${a}, ${b} 30%, ${d || c} 55%, ${c} 75%, ${a})`;

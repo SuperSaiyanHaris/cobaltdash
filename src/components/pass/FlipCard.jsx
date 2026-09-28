@@ -20,14 +20,14 @@ export default function FlipCard({ me, equipped, className = '', hintClassName =
         className="relative block w-full [perspective:1200px]"
       >
         <span className="relative block [transform-style:preserve-3d] transition-transform duration-700 motion-reduce:transition-none" style={{ transform: flipped ? 'rotateY(180deg)' : 'none' }}>
-          <span className="block [backface-visibility:hidden] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.95)] rounded-[6.4%/4.571%]"><UserCardSvg me={me} equippedOverride={equipped} /></span>
-          <span className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]"><CardBackArt k={back} className="w-full h-full" /></span>
+          <span className="block [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(0deg)] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.95)] rounded-[6.4%/4.571%]"><UserCardSvg me={me} equippedOverride={equipped} still={flipped} /></span>
+          <span className="absolute inset-0 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]"><CardBackArt k={back} className="w-full h-full" /></span>
         </span>
       </button>
       <button
         type="button"
         onClick={toggle}
-        className={`mt-3 mx-auto flex items-center gap-1.5 text-xs font-semibold transition-colors ${hintClassName}`}
+        className={`sp-tap mt-1 mx-auto flex items-center gap-1.5 py-2.5 px-2 text-xs font-semibold transition-colors ${hintClassName}`}
       >
         <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
         {flipped ? 'Show front' : 'Flip card'}

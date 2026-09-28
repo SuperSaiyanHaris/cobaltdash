@@ -556,7 +556,7 @@ body[data-mobile-menu="open"] nav[aria-label="Primary"] { display: none; }
 
 /* ShinyPass cosmetics used across the site (comments, profiles, pass). */
 .sp-sticker { display: inline-block; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .02em; line-height: 1; padding: .22em .55em .18em; border-radius: .35em; background: var(--st-a); color: var(--st-t); box-shadow: 0 0 0 .14em #fff, 0 10px 18px -8px rgba(0,0,0,.8); transform: rotate(-6deg); white-space: nowrap; }
-.sp-name-fx { -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% 100%; }
+.sp-name-fx { -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% 100%; padding-right: .08em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .sp-name-fx.anim { animation: sp-name-shift 5s linear infinite; }
 @keyframes sp-name-shift { to { background-position: 200% 0; } }
 .sp-cardback { position: relative; aspect-ratio: 5 / 7; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--cb-l); background: repeating-linear-gradient(45deg, transparent 0 10px, rgba(255,255,255,.06) 10px 12px), linear-gradient(160deg, var(--cb-a), var(--cb-b)); box-shadow: 0 18px 30px -14px rgba(0,0,0,.9); }

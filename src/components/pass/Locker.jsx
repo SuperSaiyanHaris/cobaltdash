@@ -43,7 +43,34 @@ function EquipButton({ on, busy, onClick }) {
 const firstLevel = (kind) => TRACK.find((r) => r && r.kind === kind)?.level;
 
 /** Your card as it looks right now, with its back and a comment sample. */
-function Preview({ me, eq }) {
+function PeekBar({ peek, onReset, dark = true }) {
+  if (!peek) return null;
+  return (
+    <button type="button" onClick={onReset} className={`sp-tap hidden lg:flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold ${dark ? 'bg-white/10 text-white' : 'bg-neutral-900 text-white'}`}>
+      <span className="truncate">Previewing {peek.label}</span>
+      <span className="flex-shrink-0 underline">Show equipped</span>
+    </button>
+  );
+}
+
+/** Compact preview that stays in view while scrolling the items (phones). */
+function MiniPreview({ me, eq, peek, onReset }) {
+  return (
+    <div className="lg:hidden sticky top-16 z-10 -mx-4 px-4 py-2 bg-[#fafaf9]/95 backdrop-blur-sm border-b border-neutral-200">
+      <div className="flex items-center gap-3">
+        <div className="w-11 flex-shrink-0"><UserCardSvg me={me} equippedOverride={eq} still /></div>
+        <div className="min-w-0 flex-1 flex flex-col items-start gap-1">
+          <Nameplate name={me?.handle || 'you'} nameKey={eq.name} flairKey={eq.flair} />
+          {peek
+            ? <button type="button" onClick={onReset} className="sp-tap self-start text-[12px] font-semibold text-neutral-800 underline">Previewing {peek.label} · show equipped</button>
+            : <span className="text-[12px] text-neutral-600">Tap an item's picture to try it on</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Preview({ me, eq, peek, onReset }) {
   const banner = eq.banner && PACK_BY_KEY[eq.banner];
   return (
     <div className="rounded-3xl bg-[#0a0a0f] text-white relative overflow-hidden">
@@ -56,6 +83,7 @@ function Preview({ me, eq }) {
           <FlipCard me={me} equipped={eq} />
         </div>
         <div className="flex-1 min-w-0 w-full flex flex-col gap-3">
+          <PeekBar peek={peek} onReset={onReset} />
           {banner && <p className="text-[13px] text-white/75 leading-snug"><b className="text-white">{banner.name} banner</b> tops your public page.</p>}
           <div className="rounded-xl bg-white p-3 text-neutral-900">
             <div className="flex flex-wrap items-center gap-2">
@@ -96,7 +124,7 @@ export function CreatorPicker({ onPick, placeholder = 'Search any creator', excl
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={placeholder}
-          className="w-full h-11 pl-9 pr-9 rounded-xl border border-neutral-300 bg-white text-[15px] text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-900"
+          className="w-full h-11 pl-9 pr-9 rounded-xl border border-neutral-300 bg-white text-base text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-900"
         />
         {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 animate-spin" />}
       </label>
@@ -138,8 +166,15 @@ export default function Locker({ state, me }) {
     const el = e.target.closest?.('[data-peek]');
     if (!el) return;
     const [slot, key] = el.dataset.peek.split(':');
-    if (!peek || peek.slot !== slot || peek.key !== key) setPeek({ slot, key: key || undefined });
+    if (peek && peek.slot === slot && peek.key === (key || undefined)) return;
+    const label = slot === 'frame' && !key ? 'rarity foil' : itemName({ kind: slot, key });
+    setPeek({ slot, key: key || undefined, label });
   };
+  // Touch has no hover (and iOS never sends the leave), so previews there
+  // come from a tap on the item itself, never from the equip button.
+  const onTilePointer = (e) => { if (e.pointerType === 'mouse') onPeek(e); };
+  const onTileClick = (e) => { if (!e.target.closest('button, a, input')) onPeek(e); };
+  const resetPeek = () => setPeek(null);
   const owned = useMemo(() => {
     const m = { frame: new Set(), ring: new Set(), title: new Set(), banner: new Set(), sticker: new Set(), name: new Set(), back: new Set(), effect: new Set(), flair: new Set() };
     for (const it of state.items) if (m[it.kind]) m[it.kind].add(it.item_key);
@@ -153,6 +188,12 @@ export default function Locker({ state, me }) {
     vouchers: state.vouchers.filter((v) => v.status === 'unused').length,
   };
   const hasShiny = state.items.some((i) => i.kind === 'shiny');
+
+  useEffect(() => {
+    const open = (e) => { if (e.detail) setTab(e.detail); };
+    window.addEventListener('shinypass:locker', open);
+    return () => window.removeEventListener('shinypass:locker', open);
+  }, []);
 
   useEffect(() => {
     if (tab !== 'showcase' || follows) return;
@@ -176,9 +217,9 @@ export default function Locker({ state, me }) {
   };
 
   return (
-    <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
-      <div className="lg:sticky lg:top-24"><Preview me={me} eq={shown} /></div>
-    <div className="min-w-0" onMouseOver={onPeek} onFocus={onPeek} onMouseLeave={() => setPeek(null)}>
+    <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
+      <div className="min-w-0 lg:sticky lg:top-24"><Preview me={me} eq={shown} peek={peek} onReset={resetPeek} /></div>
+    <div className="min-w-0" onPointerOver={onTilePointer} onPointerLeave={(e) => { if (e.pointerType === 'mouse') resetPeek(); }} onClick={onTileClick}>
       <div className="flex flex-col gap-2.5 pb-5 border-b border-neutral-200" role="tablist" aria-label="Locker">
         {TAB_GROUPS.map((g) => (
           <div key={g.label} className="flex flex-wrap items-center gap-1.5">
@@ -192,7 +233,7 @@ export default function Locker({ state, me }) {
                   role="tab"
                   aria-selected={on}
                   onClick={() => setTab(t.id)}
-                  className={`h-8 px-3 rounded-full text-[13.5px] font-bold whitespace-nowrap border transition-colors ${on ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-white border-neutral-200 text-neutral-800 hover:border-neutral-400'}`}
+                  className={`sp-tap h-10 sm:h-8 px-3.5 sm:px-3 rounded-full text-[13.5px] font-bold whitespace-nowrap border transition-colors ${on ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-white border-neutral-200 text-neutral-800 hover:border-neutral-400'}`}
                 >
                   {t.label}{n > 0 && <span className={`ml-1.5 tabular-nums ${on ? 'text-white/70' : 'text-neutral-600'}`}>{n}</span>}
                 </button>
@@ -202,6 +243,7 @@ export default function Locker({ state, me }) {
         ))}
       </div>
 
+      <MiniPreview me={me} eq={shown} peek={peek} onReset={resetPeek} />
       {error && <p className="mt-4 text-sm font-semibold text-red-600">{error}</p>}
 
       <div className="mt-6">
@@ -259,7 +301,7 @@ export default function Locker({ state, me }) {
                   <div className="h-24 rounded-xl overflow-hidden border-2" style={{ borderColor: b.a }}><BannerSvg pack={b} still className="w-full h-full" /></div>
                   <div className="flex items-center justify-between mt-3">
                     <p className="font-bold text-neutral-900">{b.name} banner</p>
-                    <button onClick={() => equip('banner', key)} className={`h-9 px-4 rounded-xl text-sm font-bold ${eq.banner === key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>
+                    <button onClick={() => equip('banner', key)} disabled={busy === `banner:${key}`} className={`h-9 px-4 rounded-xl text-sm font-bold ${eq.banner === key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>
                       {eq.banner === key ? 'Equipped' : 'Equip'}
                     </button>
                   </div>
@@ -302,7 +344,7 @@ export default function Locker({ state, me }) {
                 <EquipButton on={eq.effect === key} busy={busy === `effect:${key}`} onClick={() => equip('effect', key)} />
               </div>
             ))}
-            {owned.effect.size === 0 && <Empty>Card effects animate your card. Complete a pack set (its frame, ring, name effect and card back) to unlock that set's effect. Hover one in the Sets tab to see it.</Empty>}
+            {owned.effect.size === 0 && <Empty>Card effects animate your card. Complete a pack set (its frame, ring, name effect and card back) to unlock that set's effect. Tap or hover a set in the Sets tab to try its effect on.</Empty>}
           </div>
         )}
 
@@ -348,7 +390,7 @@ export default function Locker({ state, me }) {
                     <p className="font-bold text-neutral-900">{CARD_EFFECTS[pk.key].name}</p>
                     {done
                       ? <button onClick={() => equip('effect', pk.key)} className={`mt-1.5 h-8 px-3 rounded-lg text-xs font-bold ${eq.effect === pk.key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>{eq.effect === pk.key ? 'Equipped' : 'Equip effect'}</button>
-                      : <p className="mt-0.5 text-neutral-600">Set bonus. Hover to preview.</p>}
+                      : <p className="mt-0.5 text-neutral-600">Set bonus. Tap or hover to try it on.</p>}
                   </div>
                 </div>
               );

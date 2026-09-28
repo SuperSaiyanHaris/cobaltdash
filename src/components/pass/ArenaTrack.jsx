@@ -2,7 +2,7 @@
 // stage, the 99 levels in swipeable pages of 10, and the season's packs.
 // Pages use native scroll-snap, one page per swipe, so it scrolls like any
 // other list on a phone.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Lock, Flame, Snowflake, Zap, ExternalLink } from 'lucide-react';
 import { TRACK, MAX_LEVEL, PACKS, PACK_BY_KEY, itemName, itemBlurb } from '../../lib/shinyPass';
@@ -21,7 +21,11 @@ function statusOf(r, level, opened) {
   return 'claimed';
 }
 
-function Tile({ r, status, selected, onSelect, pct = 0 }) {
+// Locker tab for each cosmetic kind the track hands out.
+const LOCKER_TAB = { sticker: 'sticker', title: 'title', ring: 'ring', name: 'name', back: 'back', banner: 'banner' };
+const smooth = () => (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+
+const Tile = memo(function Tile({ r, status, selected, onSelect, pct = 0 }) {
   const rc = RARITY_COLORS[r.rarity];
   const said = { ready: ', ready to open', claimed: ', claimed', current: ', next up', locked: ', locked' }[status];
   return (
@@ -37,12 +41,13 @@ function Tile({ r, status, selected, onSelect, pct = 0 }) {
       {status === 'locked' && <span className="ok"><Lock className="w-3 h-3" /></span>}
       {status === 'current' && <span className="nx">Next</span>}
       <span className="g"><RewardGlyph kind={r.kind} color={rc.text} /></span>
-      <span className="l">{status === 'ready' ? 'Open' : shortName(r)}</span>
+      <span className="l"><span>{status === 'ready' ? 'Open' : shortName(r)}</span></span>
       {status === 'current' && <span className="pg" aria-hidden="true"><i style={{ width: `${Math.max(4, pct * 100)}%` }} /></span>}
     </button>
   );
-}
+});
 
+// (Tile is memoized so choosing a level re-renders two tiles, not 99.)
 export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = false }) {
   const p = state.progress;
   const season = state.season || { number: 1, daysLeft: 0, lastDay: '' };
@@ -70,17 +75,18 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
   }
   const go = (i) => {
     const el = scroller.current;
-    if (el) el.scrollTo({ left: Math.max(0, Math.min(PAGES - 1, i)) * (el.clientWidth + 12), behavior: 'smooth' });
+    if (el) el.scrollTo({ left: Math.max(0, Math.min(PAGES - 1, i)) * (el.clientWidth + 12), behavior: smooth() });
   };
 
-  function select(level) {
+  const select = useCallback((level) => {
     setSelected(level);
-    // On phones the stage sits above the pages: bring it into view.
-    if (window.innerWidth < 860 && stage.current) {
-      const top = stage.current.getBoundingClientRect().top;
-      if (top < 60 || top > window.innerHeight * 0.4) stage.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // On phones the stage sits right under the tiles; only nudge it into
+    // view when it's mostly below the screen, never scroll back up.
+    if (window.innerWidth < 1024 && stage.current) {
+      const r = stage.current.getBoundingClientRect();
+      if (r.top > window.innerHeight - 160) stage.current.scrollIntoView({ behavior: smooth(), block: 'nearest' });
     }
-  }
+  }, []);
 
   const sel = TRACK[selected];
   const selStatus = statusOf(sel, p.level, opened);
@@ -134,14 +140,25 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
               <span className="sp-chip rar">{sel.rarity}</span>
             {sel.alsoTier && <span className="sp-chip">+ {sel.alsoTier.toLowerCase()} card</span>}
               {selStatus === 'claimed'
-                ? <span className="sp-chip got"><Check className="w-3.5 h-3.5" strokeWidth={3} />Claimed</span>
+                ? <span className="sp-chip got"><Check className="w-3.5 h-3.5" strokeWidth={3} />Unlocked</span>
                 : selStatus === 'ready'
-                  ? <span className="sp-chip got">Ready to open</span>
+                  ? <span className="sp-chip ready">Ready to open</span>
                   : <span className="sp-chip">{selStatus === 'current' ? 'Next up' : `${away} levels away`}</span>}
             </div>
             {sel.kind === 'pack' && selStatus === 'ready' && (
               <button onClick={() => onOpenPack(sel.level)} className={`mt-4 self-start px-6 py-3 rounded-xl text-[15px] font-bold transition-colors ${demo ? 'bg-white hover:bg-neutral-100 text-neutral-950' : 'bg-brand hover:bg-brand-hover text-white'}`}>
                 Open pack
+              </button>
+            )}
+            {!demo && selStatus === 'claimed' && LOCKER_TAB[sel.kind] && (
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('shinypass:locker', { detail: LOCKER_TAB[sel.kind] }));
+                  document.getElementById('locker')?.scrollIntoView({ behavior: smooth(), block: 'start' });
+                }}
+                className="sp-tap mt-4 self-start px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors"
+              >
+                Equip it in your locker
               </button>
             )}
             {sel.kind === 'pack' && selStatus === 'claimed' && (
@@ -152,8 +169,8 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
           </div>
         </div>
 
-        {/* Pages of 10 */}
-        <div className="min-w-0 flex flex-col gap-3">
+        {/* Pages of 10 (above the stage on phones, so a tap never scrolls) */}
+        <div className="min-w-0 flex flex-col gap-3 order-first lg:order-none">
           <div className="flex items-center justify-between gap-3">
             <p className="font-arena italic font-black uppercase text-white text-[22px] tracking-wide tabular-nums">
               Levels {page * 10 + 1}–{page === PAGES - 1 ? 99 : page * 10 + 10}
