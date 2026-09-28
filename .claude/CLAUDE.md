@@ -120,8 +120,8 @@ sessions never see it. Anything a cloud session must know goes here.
   `max-lg:hidden` per section); desktop shows everything. The season packs
   strip is desktop only; `PackGuide.jsx` covers packs on phones.
 - Promotion (2026-09-28): Home `HomePassPromo` (static
-  `public/pass/promo-packs.svg`, written by `scripts/generateOgImages.mjs`
-  so the home page loads no pack code), header More menu, footer, signup
+  `public/pass/promo-pass*.svg`, a picture of the /pass screen written by
+  `scripts/passPromo.mjs` at build so the home page loads no pass code), header More menu, footer, signup
   benefits, signed-out Dashboard line, follow and comment sign-in prompts,
   /card, public pages. /pass has a server-rendered FAQ with FAQPage JSON-LD
   in `middleware.js` (`getPassContent`); its strings duplicate
@@ -169,6 +169,13 @@ sessions never see it. Anything a cloud session must know goes here.
   `npm run build`.
 
 # Design
+
+- Mobile navigation (owner decision 2026-09-28): no bottom tab bar. The
+  64px header row carries Rankings, Search (command palette), a ShinyPass
+  level chip (signed in) or Sign in, and the menu; the full-screen menu
+  holds search, Rankings/Compare/Dashboard/Blog rows, the ShinyPass block,
+  rankings by platform, more links and the account. Keep the header 64px:
+  /pass sticky offsets depend on it.
 
 - Light content pages with dark hero bands: the dark Home hero, the dark
   Rankings header (podium), the dark sponsor band and the full-dark sign-in

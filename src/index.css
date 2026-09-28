@@ -530,8 +530,6 @@ h1, h2, h3, h4 {
 }
 
 
-/* Hide the floating mobile bottom nav while the header's mobile menu is open. */
-body[data-mobile-menu="open"] nav[aria-label="Primary"] { display: none; }
 
 /* ShinyPass shiny variant: a moving foil edge and holo stripes over a
    creator card. Background-position only, no glow. */

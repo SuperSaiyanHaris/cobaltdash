@@ -751,7 +751,7 @@ export default function Dashboard() {
 
               {/* Compare picker bar */}
               {compareMode && (
-                <div className="sticky bottom-20 md:bottom-6 z-40 mt-8">
+                <div className="sticky bottom-[calc(12px+env(safe-area-inset-bottom))] md:bottom-6 z-40 mt-8">
                   <div className="mx-auto max-w-xl flex items-center gap-3 rounded-2xl bg-neutral-950 text-white px-4 py-3 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.6)]">
                     <div className="flex -space-x-2">
                       {selectedForCompare.map(id => {

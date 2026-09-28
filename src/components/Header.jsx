@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck, MessageCircle, Gift } from 'lucide-react';
+import { BarChart3, Search, ChartNoAxesColumnIncreasing, Menu, X, Scale, BookOpen, User, LogOut, LayoutDashboard, Calculator, Heart, Settings, ChevronDown, ChevronRight, LayoutGrid, TrendingUp, Megaphone, Milestone, BadgeCheck, MessageCircle, Gift } from 'lucide-react';
+import { useProgress } from '../services/progressService';
 import { unreadReplies } from '../services/commentsService';
 import { useAuth } from '../contexts/AuthContext';
 import { isMac } from '../lib/platform';
@@ -59,6 +60,8 @@ export default function Header() {
   const [unread, setUnread] = useState(0);
   const unreadChecked = useRef(0);
   const showRankingsHint = useRankingsHint();
+  const pass = useProgress();
+  const initials = (pass?.handle || user?.user_metadata?.display_name || user?.email || '?').slice(0, 1).toUpperCase();
 
   // AuthPanel is rendered at the App level (see App.jsx) — Header's backdrop-blur
   // creates a containing block which would collapse the panel's position:fixed h-full.
@@ -106,15 +109,12 @@ export default function Header() {
     }
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
-    // The floating bottom nav would otherwise peek out under the open menu.
-    document.body.dataset.mobileMenu = 'open';
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
-      delete document.body.dataset.mobileMenu;
     };
   }, [mobileMenuOpen]);
 
@@ -345,71 +345,134 @@ export default function Header() {
             </div>
           </nav>
 
-          {/* Mobile action buttons — Rankings and Search dropped 2026-09-02, both
-              already reachable via the hamburger's Quick access grid below, and
-              Search also lives in the new bottom tab bar (MobileBottomNav.jsx). */}
+          {/* Mobile row (no bottom tab bar since 2026-09-28): the two most
+              used destinations one tap away, your ShinyPass level, and the
+              menu for everything else. */}
           <div className="md:hidden flex items-center gap-1">
+            <Link
+              to="/rankings"
+              aria-label="Rankings"
+              className={`relative max-[359px]:hidden w-10 h-10 grid place-items-center rounded-full transition-colors ${isActive('/rankings') ? 'bg-neutral-900 text-white' : 'text-neutral-900 hover:bg-neutral-100'}`}
+            >
+              <ChartNoAxesColumnIncreasing className="w-5 h-5" strokeWidth={2.25} />
+              {showRankingsHint && !isActive('/rankings') && <span aria-hidden="true" className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand" />}
+            </Link>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('openCommandPalette'))}
+              aria-label="Search"
+              className="w-10 h-10 grid place-items-center rounded-full text-neutral-900 hover:bg-neutral-100 transition-colors"
+            >
+              <Search className="w-5 h-5" strokeWidth={2.25} />
+            </button>
+            {isAuthenticated ? (
+              pass ? (
+                <Link to="/pass" aria-label={`ShinyPass level ${pass.progress.level}`} className="relative ml-0.5 h-8 pl-1 pr-2.5 rounded-full bg-neutral-900 text-white flex items-center gap-1.5 overflow-hidden">
+                  <span className="w-6 h-6 rounded-full grid place-items-center text-[10px] font-black bg-white text-neutral-900">{initials}</span>
+                  <span className="text-[12px] font-black tabular-nums tracking-tight">LV {pass.progress.level}</span>
+                  <span aria-hidden="true" className="absolute left-0 bottom-0 h-[2px]" style={{ width: `${Math.round((pass.progress.level >= 99 ? 1 : pass.progress.pct || 0) * 100)}%`, background: 'linear-gradient(90deg,#7DF9FF,#B69CFF,#FF7AD9)' }} />
+                </Link>
+              ) : <span aria-hidden="true" className="ml-0.5 w-[62px] h-8 rounded-full bg-neutral-200" />
+            ) : (
+              <button onClick={openAuth} className="ml-0.5 h-8 px-3 rounded-full bg-neutral-900 text-white text-[13px] font-bold">Sign in</button>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+              className="relative w-10 h-10 grid place-items-center rounded-full text-neutral-900 hover:bg-neutral-100 transition-colors"
               aria-label="Menu"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {!mobileMenuOpen && unread > 0 && <span aria-hidden="true" className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand ring-2 ring-white" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu: a dark full-screen sheet under the header. It only
-            holds what the floating bottom bar doesn't (Dashboard, Compare,
-            Rankings, Blog and Search live there), plus rankings by platform
-            and the account. The bottom bar hides while this is open. */}
-        {/* Portaled to <body>: the header's backdrop-blur makes it the
-            containing block for fixed children, which squashed this sheet
-            into the 64px header. Clicks inside still count as "inside the
-            menu" via mobileSheetRef. */}
+        {/* Mobile menu: a dark full-screen sheet under the header with search,
+            the main destinations, your ShinyPass, rankings by platform, more
+            links and the account. Portaled to <body>: the header's
+            backdrop-blur makes it the containing block for fixed children,
+            which squashed this sheet into the 64px header. Clicks inside
+            still count as "inside the menu" via mobileSheetRef. */}
         {mobileMenuOpen && createPortal(
-          <nav ref={mobileSheetRef} className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[60] overflow-y-auto bg-[#0a0a0f] text-white px-4 pt-5 pb-10" aria-label="Menu">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mb-3">Explore</p>
-            <div className="grid grid-cols-2 gap-2">
-              {moreLinks.map((link) => {
-                const Icon = link.icon;
-                const active = isActive(link.path);
+          <nav ref={mobileSheetRef} className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[60] overflow-y-auto overscroll-contain bg-[#0a0a0f] text-white px-4 pt-5 pb-[calc(40px+env(safe-area-inset-bottom))]" aria-label="Menu">
+            {/* Search */}
+            <button
+              onClick={() => { setMobileMenuOpen(false); window.dispatchEvent(new CustomEvent('openCommandPalette')); }}
+              className="w-full h-12 rounded-xl bg-white/[0.06] border border-white/10 px-4 flex items-center gap-3 text-white/70 text-[15px]"
+            >
+              <Search className="w-4 h-4" /> Search creators
+            </button>
+
+            {/* Main destinations */}
+            <div className="mt-4 divide-y divide-white/[0.06]">
+              {[['/rankings', 'Rankings', ChartNoAxesColumnIncreasing], ['/compare', 'Compare', Scale], ['/dashboard', 'Dashboard', LayoutDashboard], ['/blog', 'Blog', BookOpen]].map(([to, label, Icon]) => {
+                const active = isActive(to);
                 return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 p-3 rounded-2xl border transition-colors ${
-                      active ? 'bg-white text-neutral-950 border-white' : 'bg-white/[0.04] border-white/10 hover:border-white/30'
-                    }`}
-                  >
-                    <span className={`flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0 ${active ? 'bg-neutral-950 text-white' : 'bg-white/10'}`}>
-                      <Icon className="w-4 h-4" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold truncate">{link.label}</span>
-                      <span className={`block text-[11px] truncate ${active ? 'text-neutral-600' : 'text-white/60'}`}>{link.description}</span>
-                    </span>
+                  <Link key={to} to={to} onClick={() => setMobileMenuOpen(false)}
+                    className={`h-14 px-4 rounded-xl flex items-center gap-3.5 text-[17px] font-bold transition-colors ${active ? 'bg-white text-neutral-950' : 'hover:bg-white/[0.06]'}`}>
+                    <Icon className="w-5 h-5" />
+                    <span className="flex-1">{label}</span>
+                    <ChevronRight className={`w-4 h-4 ${active ? 'text-neutral-500' : 'text-white/40'}`} />
                   </Link>
                 );
               })}
             </div>
 
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mt-7 mb-3">Rankings</p>
-            <div className="flex flex-wrap gap-2">
-              {PLATFORM_CHIPS.map(([p, label, Icon]) => (
-                <Link
-                  key={p}
-                  to={`/rankings/${p}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-full border text-sm font-semibold transition-colors ${
-                    location.pathname === `/rankings/${p}` ? 'bg-white text-neutral-950 border-white' : 'border-white/15 hover:border-white/50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
+            {/* ShinyPass */}
+            <Link to="/pass" onClick={() => setMobileMenuOpen(false)} className="mt-5 block rounded-2xl bg-white/[0.04] border border-white/10 p-4">
+              {isAuthenticated && pass ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-black tabular-nums">LV {pass.progress.level}</span>
+                    <span className="text-white/60 font-semibold">ShinyPass</span>
+                    <ChevronRight className="w-4 h-4 text-white/40 ml-auto" />
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-10 gap-[3px] h-2" aria-hidden="true">
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const fill = Math.max(0, Math.min(1, (pass.progress.level >= 99 ? 1 : pass.progress.pct || 0) * 10 - i));
+                      return <span key={i} className="rounded-sm bg-white/[0.12] overflow-hidden"><span className="block h-full" style={{ width: `${fill * 100}%`, background: 'linear-gradient(90deg,#7DF9FF,#B69CFF,#FF7AD9)' }} /></span>;
+                    })}
+                  </div>
+                  <p className="mt-2 text-[13px] text-white/65">{pass.progress.level >= 99 ? 'Max level this season' : `${Math.max(0, (pass.progress.need || 0) - (pass.progress.into || 0))} XP to level ${pass.progress.level + 1}`}</p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Gift className="w-5 h-5" />
+                    <span className="font-bold text-[17px]">ShinyPass</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] px-2 py-0.5 rounded-full bg-white/10 text-white/80">Season 1 · Free</span>
+                    <ChevronRight className="w-4 h-4 text-white/40 ml-auto" />
+                  </div>
+                  <p className="mt-1.5 text-[14px] text-white/70">99 levels, a pack every 10. Level up your own card.</p>
+                </>
+              )}
+            </Link>
+
+            {/* Rankings by platform */}
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mt-7 mb-3">Rankings by platform</p>
+            <div className="grid grid-cols-4 gap-2">
+              {PLATFORM_CHIPS.map(([pl, label, Icon]) => (
+                <Link key={pl} to={`/rankings/${pl}`} onClick={() => setMobileMenuOpen(false)}
+                  className={`h-16 rounded-xl border flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors ${location.pathname === `/rankings/${pl}` ? 'bg-white text-neutral-950 border-white' : 'border-white/10 hover:border-white/40'}`}>
+                  <Icon className="w-5 h-5" />
                   {label}
                 </Link>
               ))}
+            </div>
+
+            {/* More */}
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mt-7 mb-1">More</p>
+            <div className="grid grid-cols-2 gap-x-4">
+              {moreLinks.filter((l) => l.path !== '/pass' && l.path !== '/blog').sort((a, b) => (a.path === '/promote') - (b.path === '/promote')).map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link key={link.path} to={link.path} onClick={() => setMobileMenuOpen(false)}
+                    className={`h-11 flex items-center gap-2.5 text-[14px] font-semibold ${isActive(link.path) ? 'text-white' : 'text-white/85 hover:text-white'}`}>
+                    <Icon className={`w-4 h-4 ${link.path === '/promote' ? 'text-amber-400' : 'text-white/60'}`} />
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="mt-8 pt-6 border-t border-white/10">
@@ -449,13 +512,12 @@ export default function Header() {
                   </div>
                 </>
               ) : (
-                <Link
-                  to="/auth/sign-in"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center h-12 rounded-xl bg-white text-neutral-950 text-sm font-bold"
+                <button
+                  onClick={() => { setMobileMenuOpen(false); openAuth(); }}
+                  className="w-full flex items-center justify-center h-12 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold"
                 >
-                  Sign in
-                </Link>
+                  Sign in or create account
+                </button>
               )}
             </div>
 

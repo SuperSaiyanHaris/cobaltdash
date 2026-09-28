@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 // True only until the visitor has ever actually landed on /rankings (by any
 // route — clicking the hinted link, a card elsewhere, a direct URL), then
 // permanently false. Read by both Header.jsx's desktop pill and
-// MobileBottomNav.jsx's icon; each call is independent but they converge on
+// the mobile header's Rankings icon; each call is independent but they converge on
 // the same localStorage flag, so visiting Rankings from either clears both.
 const STORAGE_KEY = 'sp_rankings_seen';
 

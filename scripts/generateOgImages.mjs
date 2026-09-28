@@ -19,6 +19,7 @@ import { rarityBands } from '../src/lib/badgeCard.js';
 import { renderPack } from '../src/lib/packArt.js';
 import { PACK_BY_KEY } from '../src/lib/shinyPass.js';
 import { renderPageShare } from '../api/_shareCard.js';
+import { writePassPromo } from './passPromo.mjs';
 
 const OUT = 'public/og';
 
@@ -108,16 +109,5 @@ for (const [key, spec] of Object.entries(PAGES)) {
 }
 console.log(`\nOG previews: ${made} generated (${Math.round(bytes / 1024)}KB), ${kept} kept -> ${OUT}/`);
 
-// Home page ShinyPass promo: a still fan of three packs as a static SVG, so
-// the home page shows it as a lazy <img> without loading any pack code.
-{
-  const W2 = 720, H2 = 520, w = 230, h = w * (352 / 220);
-  const fan = [['chrome', -10, 210, 280], ['obsidian', 10, 510, 280], ['final', 0, 360, 260]].map(([key, angle, cx, cy]) => {
-    const svg = renderPack(PACK_BY_KEY[key], { still: true, fit: true, uid: `promo${key}` })
-      .replace('<svg ', `<svg x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" `);
-    return `<g transform="rotate(${angle} ${cx} ${cy})">${svg}</g>`;
-  }).join('');
-  mkdirSync('public/pass', { recursive: true });
-  writeFileSync('public/pass/promo-packs.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W2} ${H2}" width="${W2}" height="${H2}">${fan}</svg>`);
-  console.log('  public/pass/promo-packs.svg');
-}
+// Home page ShinyPass promo art (static SVGs, see scripts/passPromo.mjs).
+writePassPromo();

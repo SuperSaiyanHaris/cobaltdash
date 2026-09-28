@@ -5,11 +5,9 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import BackToTop from './components/BackToTop';
-import MobileBottomNav from './components/MobileBottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import AuthPanel from './components/AuthPanel';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { MobileNavProvider } from './contexts/MobileNavContext';
 import { isMac } from './lib/platform';
 
 // Eagerly load the homepage (critical path)
@@ -245,12 +243,11 @@ function LayoutWrapper() {
   const isShareRoute = location.pathname.startsWith('/s/');
 
   return (
-    <MobileNavProvider>
-    <div className={`min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col ${!isShareRoute ? 'pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
+    <div className="min-h-screen bg-[#fafafa] text-neutral-900 flex flex-col">
       <RouteChangeTracker />
       <PassSyncWhenSignedIn />
       <ScrollToTop />
-      <BackToTop hasBottomNav={!isShareRoute} />
+      <BackToTop />
       {!isShareRoute && <Header />}
       <main className="flex-1">
         <ErrorBoundary>
@@ -301,9 +298,7 @@ function LayoutWrapper() {
         </ErrorBoundary>
       </main>
       {!isShareRoute && <Footer />}
-      {!isShareRoute && <MobileBottomNav />}
     </div>
-    </MobileNavProvider>
   );
 }
 

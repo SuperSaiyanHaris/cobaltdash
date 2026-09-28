@@ -1,66 +1,27 @@
 import { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { useMobileNav, PILL_HEIGHT, PILL_MARGIN_BOTTOM, ORB_SIZE } from '../contexts/MobileNavContext';
 
 /**
- * BackToTop - Floating button that appears when scrolling down
- * Scrolls smoothly to top of page when clicked
- *
- * When the mobile bottom nav is present, this has to react to its
- * collapsed/expanded state, not just a fixed height — the floating pill
- * and the collapsed orb have very different footprints (2026-09-11). Sits
- * clear above the pill's own top edge while expanded, and drops back down
- * near the actual bottom-right corner once the orb takes over, since a
- * tiny centered circle doesn't need anything cleared on the right side at
- * all.
+ * BackToTop - Floating button that appears when scrolling down.
+ * Scrolls smoothly to the top of the page when clicked.
  */
-export default function BackToTop({ hasBottomNav = false }) {
+export default function BackToTop() {
   const [isVisible, setIsVisible] = useState(false);
-  const { collapsed } = useMobileNav();
 
   useEffect(() => {
-    const toggleVisibility = () => {
-      // Show button when page is scrolled down 300px
-      if (window.scrollY > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
-    };
-
-    window.addEventListener('scroll', toggleVisibility);
-
-    return () => {
-      window.removeEventListener('scroll', toggleVisibility);
-    };
+    const toggleVisibility = () => setIsVisible(window.scrollY > 300);
+    window.addEventListener('scroll', toggleVisibility, { passive: true });
+    return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
-  };
-
-  const expandedBottom = PILL_MARGIN_BOTTOM + PILL_HEIGHT + 14; // 14px clearance above the pill's own top edge
-  const collapsedBottom = PILL_MARGIN_BOTTOM + ORB_SIZE / 2; // orb is small + centered, no need to clear the right side
-
+  if (!isVisible) return null;
   return (
-    <>
-      {isVisible && (
-        <button
-          onClick={scrollToTop}
-          className={`fixed right-4 md:bottom-8 md:right-8 z-50 p-2.5 md:p-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-full shadow-[0_8px_24px_-6px_rgba(0,0,0,0.35)] transition-[bottom,background-color] duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${!hasBottomNav ? 'bottom-4' : ''}`}
-          style={
-            hasBottomNav
-              ? { bottom: `calc(env(safe-area-inset-bottom) + ${collapsed ? collapsedBottom : expandedBottom}px)` }
-              : undefined
-          }
-          aria-label="Back to top"
-        >
-          <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
-      )}
-    </>
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className="fixed right-4 bottom-[calc(16px+env(safe-area-inset-bottom))] md:bottom-8 md:right-8 z-50 p-2.5 md:p-3.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 rounded-full shadow-[0_8px_24px_-6px_rgba(0,0,0,0.35)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+      aria-label="Back to top"
+    >
+      <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
+    </button>
   );
 }
