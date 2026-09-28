@@ -28,6 +28,7 @@ import { formatNumber } from '../lib/utils';
 import logger from '../lib/logger';
 import { useProgress, loadProgress } from '../services/progressService';
 import { UserCardSvg } from '../components/pass/PassArt';
+import FlipCard from '../components/pass/FlipCard';
 
 /**
  * Dashboard, redesigned 2026-09-25 as "your collection": a dark band with a
@@ -576,7 +577,7 @@ export default function Dashboard() {
               {/* ShinyPass strip */}
               {pass && (
                 <Link to="/pass" className="group mt-5 sm:mt-6 flex items-center gap-3 sm:gap-4 max-w-md rounded-2xl border border-white/10 bg-white/[0.05] hover:border-white/35 px-3.5 sm:px-4 py-3 transition-colors">
-                  {passMe && <span className="min-[400px]:hidden w-11 flex-shrink-0 -my-1 rotate-[-4deg]"><UserCardSvg me={passMe} /></span>}
+                  {passMe && <span className="min-[400px]:hidden w-11 flex-shrink-0 -my-1"><UserCardSvg me={passMe} /></span>}
                   <span className="flex-shrink-0 text-center">
                     <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/65">{passState?.season ? `S${passState.season.number} · Lv` : "Level"}</span>
                     <span className="block text-2xl font-black tabular-nums leading-none">{pass.level}</span>
@@ -638,11 +639,11 @@ export default function Dashboard() {
             </div>
 
             {/* Your card */}
-            <Link to="/pass" aria-label="Your ShinyPass card" className="hidden min-[400px]:block flex-shrink-0 w-[112px] sm:w-[200px] lg:w-[250px] self-start sm:self-center rotate-[3deg] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.95)]">
+            <div className="hidden min-[400px]:block flex-shrink-0 w-[112px] sm:w-[200px] lg:w-[250px] self-start sm:self-center">
               {passMe
-                ? <UserCardSvg me={passMe} />
+                ? <FlipCard me={passMe} />
                 : <div className="aspect-[5/7] rounded-[6.4%/4.571%] bg-white/[0.06] border border-white/10 animate-pulse" />}
-            </Link>
+            </div>
           </div>
         </section>
 

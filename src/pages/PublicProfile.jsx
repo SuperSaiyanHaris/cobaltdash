@@ -6,9 +6,10 @@ import { Link, useParams } from 'react-router-dom';
 import { Loader2, Lock, Flame, MessageCircle, Share2, Check, ArrowUp } from 'lucide-react';
 import SEO from '../components/SEO';
 import { getPublicProfile } from '../services/progressService';
-import { UserCardSvg, CARD_RADIUS } from '../components/pass/PassArt';
+import { CARD_RADIUS } from '../components/pass/PassArt';
+import FlipCard from '../components/pass/FlipCard';
 import { BadgePill } from '../components/pass/BadgeChip';
-import { StickerArt, NameEffectText, CardBackArt } from '../components/pass/RewardArt';
+import { StickerArt, NameEffectText } from '../components/pass/RewardArt';
 import useArenaFont from '../components/pass/useArenaFont';
 import { cardImageUrl } from '../lib/cardUrl';
 import { PACK_BY_KEY, TITLES } from '../lib/shinyPass';
@@ -46,7 +47,6 @@ export default function PublicProfile() {
   const { handle } = useParams();
   const [data, setData] = useState(undefined);
   const [copied, setCopied] = useState(false);
-  const [flipped, setFlipped] = useState(false);
   useArenaFont();
 
   useEffect(() => {
@@ -97,18 +97,7 @@ export default function PublicProfile() {
       <section className="relative isolate z-20 bg-[#0a0a0f] text-white overflow-hidden">
         <Banner banner={eq.banner} />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 grid sm:grid-cols-[220px,1fr] lg:grid-cols-[280px,1fr] gap-8 sm:gap-12 items-center">
-          {/* Tap the card to flip it to its back (the equipped card back). */}
-          <button
-            type="button"
-            onClick={() => setFlipped((f) => !f)}
-            aria-label={flipped ? 'Show the front of the card' : 'Flip the card'}
-            className="relative w-[210px] sm:w-full mx-auto [perspective:1200px]"
-          >
-            <span className="relative block [transform-style:preserve-3d] transition-transform duration-700" style={{ transform: flipped ? 'rotateY(180deg)' : 'none' }}>
-              <span className="block [backface-visibility:hidden] shadow-[0_34px_60px_-24px_rgba(0,0,0,0.95)] rounded-[6.4%/4.571%]"><UserCardSvg me={me} /></span>
-              <span className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]"><CardBackArt k={eq.back || 'carbon'} className="w-full h-full" /></span>
-            </span>
-          </button>
+          <FlipCard me={me} className="w-[210px] sm:w-full mx-auto" />
           <div className="min-w-0 text-center sm:text-left">
             <p className="font-arena italic font-extrabold uppercase tracking-[0.14em] text-[15px] text-amber-300">ShinyPass · Season {data.season || 1} · Level {p.level}</p>
             <h1 className="mt-2 font-arena italic font-black uppercase text-[clamp(44px,8vw,84px)] leading-[.9] break-words">

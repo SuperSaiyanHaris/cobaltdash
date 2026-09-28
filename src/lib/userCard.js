@@ -95,7 +95,9 @@ export function renderUserCard(u) {
 
   const barW = W - 44;
   const label = `${handle}: level ${level} on ShinyPull (${tier.name} card)`;
-  const tierLabel = frame ? `${frame.name.toUpperCase()}` : tier.name;
+  const tierLabel = (frame ? frame.name : tier.name).toUpperCase();
+  const tierText = tierLabel.length * 7.4;
+  const tierW = tierText + 32;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">
 <defs>
@@ -113,9 +115,9 @@ ${numGrad}${ringGrad}
 <g clip-path="url(#${id}clip)">
 <rect width="${W}" height="${H}" fill="url(#${id}foil)"/>
 <rect x="7" y="7" width="${W - 14}" height="${H - 14}" rx="11" fill="#0B0B12"/>
-<rect x="18" y="18" width="${tierLabel.length * 7.6 + 32}" height="20" rx="10" fill="${t.a}" fill-opacity=".14" stroke="${t.a}" stroke-opacity=".6"/>
+<rect x="18" y="18" width="${tierW}" height="20" rx="10" fill="${t.a}" fill-opacity=".14" stroke="${t.a}" stroke-opacity=".6"/>
 <path transform="translate(24 21.5) scale(.5)" d="M12 1.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.6 5.6 21.1 7 14l-5.3-5 7.2-.9z" fill="${t.a}"/>
-<text x="40" y="32.5" font-family="${FONT}" font-size="9.5" font-weight="800" letter-spacing="1.4" fill="${t.a}">${escapeXml(tierLabel)}</text>
+<text x="38" y="32" textLength="${tierText}" lengthAdjust="spacingAndGlyphs" font-family="${FONT}" font-size="9.5" font-weight="800" letter-spacing="1.2" fill="${t.a}">${escapeXml(tierLabel)}</text>
 <g transform="translate(${W - 44} 14) scale(.28)">${markBarsInner(`${id}mk`)}</g>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="#12121A"/>
 <rect x="18" y="48" width="${W - 36}" height="160" rx="10" fill="url(#${id}art)"/>
