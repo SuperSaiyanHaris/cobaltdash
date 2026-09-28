@@ -181,7 +181,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
               {/* Strip, above the tear: drag it off */}
               <motion.div
                 className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
-                style={{ clipPath: tearClip('top'), x: dragX, rotate: stripRotate, transformOrigin: '0% 9.7%' }}
+                style={{ clipPath: tearClip('top'), x: dragX, rotate: stripRotate, transformOrigin: '0% 10.8%' }}
                 drag={stage === 'intro' && !reduce ? 'x' : false}
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={{ left: 0, right: 0.9 }}
