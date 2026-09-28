@@ -11,7 +11,8 @@ import { equipItem, setShowcase, setShiny, redeemVoucher } from '../../services/
 import { searchCreators } from '../../services/creatorService';
 import { getFollowedCreators } from '../../services/followService';
 import CreatorAvatar from '../CreatorAvatar';
-import { UserCardSvg } from './PassArt';
+import { UserCardSvg, BannerSvg } from './PassArt';
+import FlipCard from './FlipCard';
 import { StickerArt, NameEffectText, CardBackArt, RewardGlyph, RARITY_COLORS } from './RewardArt';
 import Nameplate from './Nameplate';
 import { BadgeIcon } from './BadgeChip';
@@ -43,20 +44,19 @@ const firstLevel = (kind) => TRACK.find((r) => r && r.kind === kind)?.level;
 
 /** Your card as it looks right now, with its back and a comment sample. */
 function Preview({ me, eq }) {
-  const back = eq.back || 'carbon';
+  const banner = eq.banner && PACK_BY_KEY[eq.banner];
   return (
-    <div className="rounded-3xl bg-[#0a0a0f] p-4 sm:p-5 text-white relative overflow-hidden">
+    <div className="rounded-3xl bg-[#0a0a0f] text-white relative overflow-hidden">
       <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
-      <p className="relative font-arena italic font-extrabold uppercase tracking-[0.12em] text-[13px] text-white/70">Live preview</p>
-      <div className="relative mt-3 flex lg:flex-col items-start gap-4">
+      {banner && <BannerSvg pack={banner} className="absolute inset-x-0 top-0 h-[120px] pointer-events-none" />}
+      <div className="relative p-4 sm:p-5">
+      <p className="font-arena italic font-extrabold uppercase tracking-[0.12em] text-[13px] text-white/80">Live preview</p>
+      <div className="mt-3 flex lg:flex-col items-start gap-4">
         <div className="w-[128px] sm:w-[170px] lg:w-full flex-shrink-0">
-          <UserCardSvg me={me} equippedOverride={eq} />
+          <FlipCard me={me} equipped={eq} />
         </div>
         <div className="flex-1 min-w-0 w-full flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 flex-shrink-0"><CardBackArt k={back} className="w-full" /></div>
-            <p className="text-[13px] text-white/75 leading-snug"><b className="text-white">{CARD_BACKS[back]?.name}</b><br />shows when your card flips</p>
-          </div>
+          {banner && <p className="text-[13px] text-white/75 leading-snug"><b className="text-white">{banner.name} banner</b> tops your public page.</p>}
           <div className="rounded-xl bg-white p-3 text-neutral-900">
             <div className="flex flex-wrap items-center gap-2">
               <Nameplate name={me?.handle || 'you'} nameKey={eq.name} flairKey={eq.flair} />
@@ -65,6 +65,7 @@ function Preview({ me, eq }) {
             <p className="mt-1 text-sm text-neutral-800">How your name looks in comments.</p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
@@ -255,9 +256,7 @@ export default function Locker({ state, me }) {
               const b = PACK_BY_KEY[key];
               return (
                 <div key={key} className="rounded-2xl border border-neutral-200 bg-white p-3">
-                  <div className="h-20 rounded-xl p-[2px]" style={{ background: `linear-gradient(120deg, ${b.a}, ${b.b} 35%, ${b.d} 60%, ${b.c})` }}>
-                    <div className="w-full h-full rounded-[10px] hero-dot-grid" style={{ background: `linear-gradient(120deg, ${b.base}, #0b0b12)` }} />
-                  </div>
+                  <div className="h-24 rounded-xl overflow-hidden border-2" style={{ borderColor: b.a }}><BannerSvg pack={b} still className="w-full h-full" /></div>
                   <div className="flex items-center justify-between mt-3">
                     <p className="font-bold text-neutral-900">{b.name} banner</p>
                     <button onClick={() => equip('banner', key)} className={`h-9 px-4 rounded-xl text-sm font-bold ${eq.banner === key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>
@@ -267,7 +266,8 @@ export default function Locker({ state, me }) {
                 </div>
               );
             })}
-            {owned.banner.size === 0 && <Empty>Your first banner unlocks at level {firstLevel('banner')}. Banners top your public page.</Empty>}
+            {owned.banner.size === 0 && <Empty>Your first banner unlocks at level {firstLevel('banner')}. Banners run across the top of your public page.</Empty>}
+            {owned.banner.size > 0 && state.handle && <p className="col-span-full text-sm text-neutral-700">Banners run across the top of <Link to={`/u/${state.handle}`} className="font-semibold text-neutral-900 underline">your public page</Link>.</p>}
           </div>
         )}
 

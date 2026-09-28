@@ -292,7 +292,7 @@ export const SLOT_WEIGHTS = [
 
 export const KIND_RARITY = { frame: 'rare', xp: 'uncommon', freeze: 'uncommon', banner: 'uncommon', showcase: 'rare', shiny: 'epic', voucher: 'legendary' };
 // Highest flair rarity each pack can hold (index into RARITY_ORDER).
-const flairCap = (packLevel) => (packLevel >= 90 ? 4 : packLevel >= 70 ? 3 : packLevel >= 40 ? 2 : 1);
+export const flairCap = (packLevel) => (packLevel >= 90 ? 4 : packLevel >= 70 ? 3 : packLevel >= 40 ? 2 : 1);
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 const pick = (list, rnd) => list[Math.floor(rnd() * list.length) % list.length];

@@ -3,7 +3,7 @@
 // name effect, the card back, the pack, your card at its new rarity).
 import { PACK_BY_KEY, STICKERS, NAME_EFFECTS, CARD_BACKS, RINGS, TITLES } from '../../lib/shinyPass';
 import { markBarsInner } from '../../lib/brandMark';
-import { PackSvg, UserCardSvg } from './PassArt';
+import { PackSvg, UserCardSvg, BannerSvg } from './PassArt';
 
 export const RARITY_COLORS = {
   common:    { a: '#A1A1AA', b: '#52525B', text: '#E4E4E7' },
@@ -99,7 +99,7 @@ export function RewardVisual({ reward, me }) {
       return <span className="font-arena italic font-black uppercase text-white text-[clamp(30px,6vw,56px)] leading-[.95] text-center px-4 text-balance">“{TITLES[reward.key]?.name}”</span>;
     case 'banner': {
       const p = PACK_BY_KEY[reward.key];
-      return <span className="block w-[78%] aspect-[3/1] rounded-xl border-2 hero-dot-grid" style={{ borderColor: p.a, background: `linear-gradient(120deg, ${p.c}, #0b0b12 70%)` }} />;
+      return <span className="block w-[82%] aspect-[3/1] rounded-xl border-2 overflow-hidden" style={{ borderColor: p.a }}><BannerSvg pack={p} className="w-full h-full" /></span>;
     }
     default:
       return <RewardGlyph kind={reward.kind} color={rc.a} className="w-[46%] max-w-[180px]" />;

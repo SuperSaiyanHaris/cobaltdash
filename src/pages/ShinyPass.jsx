@@ -3,7 +3,6 @@
 // api/progress.js.
 import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Loader2, Eye, EyeOff, Check, X } from 'lucide-react';
 import '../components/pass/arena.css';
@@ -11,14 +10,15 @@ import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress, loadProgress, openPack, setPrivate } from '../services/progressService';
 import { setHandle } from '../services/commentsService';
-import { PackSvg, ItemFace } from '../components/pass/PassArt';
+import { ItemFace } from '../components/pass/PassArt';
 import ArenaTrack from '../components/pass/ArenaTrack';
 import PackOpening from '../components/pass/PackOpening';
 import Locker from '../components/pass/Locker';
+import PackGuide from '../components/pass/PackGuide';
 import { BadgePill } from '../components/pass/BadgeChip';
 import useArenaFont from '../components/pass/useArenaFont';
 import {
-  XP_RULES, PACKS, PACK_BY_LEVEL, TOTAL_XP, MAX_LEVEL, streakBonus, voucherChance, SLOT_WEIGHTS,
+  XP_RULES, PACK_BY_LEVEL, TOTAL_XP, streakBonus,
   seasonForDate, seasonLastDay, seasonDaysLeft, levelFromXp,
 } from '../lib/shinyPass';
 
@@ -231,7 +231,7 @@ export default function ShinyPass() {
             <div className="mt-6"><Locker state={state} me={me} /></div>
           </section>
 
-          <OddsAndRules light />
+          <OddsAndRules light me={me} />
         </div>
       </div>
 
@@ -251,44 +251,16 @@ export default function ShinyPass() {
   );
 }
 
-function OddsAndRules({ light = false }) {
-  const total = SLOT_WEIGHTS.reduce((s, e) => s + e.w, 0);
-  const names = { set: 'Set piece (ring, name effect or card back)', xp: 'XP bonus', flair: 'Comment flair', freeze: 'Streak Freeze', showcase: 'Showcase slot', shiny: 'Shiny variant' };
+function OddsAndRules({ light = false, me }) {
   const season = seasonForDate(todayNY());
   return (
     <section className={light ? '' : 'bg-[#fafaf9]'}>
       <div className={light ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12'}>
         <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">What's in a pack</h2>
         <p className="mt-2 text-[15px] text-neutral-700 max-w-2xl">
-          Packs are earned, never sold, and nothing inside one is on the level track. Each pack has its own set: its card frame (always the first item) plus a matching ring, name effect and card back. The first random slot is always a set piece you don't have yet; the rest follow the odds below, and the last slot is never plain XP. Complete a set to unlock its animated card effect and badge. Later packs can carry pieces of earlier sets you missed. Duplicates turn into XP.
+          Packs are earned, never sold, and nothing inside is on the level track. Pick a pack to see everything it can hold. Levels and packs reset every January 1; everything you collect stays yours.
         </p>
-        <div className="mt-6 grid lg:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
-            <table className="w-full text-sm">
-              <thead><tr className="bg-neutral-50 text-left text-neutral-700"><th className="px-4 py-2.5 font-bold">Item</th><th className="px-4 py-2.5 font-bold text-right">Chance per slot</th></tr></thead>
-              <tbody className="divide-y divide-neutral-100">
-                {SLOT_WEIGHTS.map((e) => (
-                  <tr key={e.kind}><td className="px-4 py-2.5 font-semibold text-neutral-900">{names[e.kind]}</td><td className="px-4 py-2.5 text-right tabular-nums text-neutral-800">{((e.w / total) * 100).toFixed(1)}%</td></tr>
-                ))}
-                <tr className="bg-amber-50/60"><td className="px-4 py-2.5 font-semibold text-neutral-900">Free month of a Featured Listing</td><td className="px-4 py-2.5 text-right tabular-nums text-neutral-800">{voucherChance(10) * 100}% per pack, {voucherChance(60) * 100}% from level 60</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="grid grid-cols-5 gap-2 content-start">
-            {PACKS.map((k) => (
-              <div key={k.key} className="text-center">
-                <PackSvg pack={k} still season={season} />
-                <p className="mt-1 text-[10.5px] font-bold text-neutral-800 leading-tight">Lv {k.level}</p>
-              </div>
-            ))}
-            <p className="col-span-5 mt-2 text-sm text-neutral-700">
-              The level 50 Prism pack and the level 99 Final Pull each have 5 items and always include a free month of a Featured Listing. Reaching level 99 takes about {Math.round(TOTAL_XP[MAX_LEVEL] / 150 / 30)} months of daily visits. Levels and packs reset every January 1; your badges, cosmetics, streak and vouchers stay. Season 1 is a short launch season, so its levels need less XP.
-            </p>
-          </div>
-        </div>
-        <p className="mt-4 text-sm text-neutral-700">
-          Featured Listing months are Basic placements for any creator you pick, and run 30 days. They end on their own unless someone starts a paid listing on <Link to="/promote" className="font-semibold text-neutral-900 underline">Promote</Link>.
-        </p>
+        <div className="mt-6"><PackGuide me={me} season={season} /></div>
       </div>
     </section>
   );

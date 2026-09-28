@@ -6,7 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Loader2, Lock, Flame, MessageCircle, Share2, Check, ArrowUp } from 'lucide-react';
 import SEO from '../components/SEO';
 import { getPublicProfile } from '../services/progressService';
-import { CARD_RADIUS } from '../components/pass/PassArt';
+import { CARD_RADIUS, BannerSvg } from '../components/pass/PassArt';
 import FlipCard from '../components/pass/FlipCard';
 import { BadgePill } from '../components/pass/BadgeChip';
 import { StickerArt, NameEffectText } from '../components/pass/RewardArt';
@@ -20,8 +20,8 @@ function Banner({ banner }) {
   if (!b) return <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />;
   return (
     <>
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${b.a}, ${b.b} 30%, ${b.d} 60%, ${b.c})` }} />
-      <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" style={{ background: `linear-gradient(160deg, ${b.base} 0%, #0a0a0f 55%)` }} />
+      <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
+      <BannerSvg pack={b} className="absolute inset-x-0 top-0 h-[150px] sm:h-[230px] pointer-events-none" />
     </>
   );
 }

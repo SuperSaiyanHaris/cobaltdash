@@ -339,3 +339,25 @@ ${sparkles}${sheen}
 <path d="${OUTLINE}" fill="none" stroke="#fff" stroke-opacity=".22"/>
 </svg>`;
 }
+
+/**
+ * A wide banner made from a pack's printed material (lava cracks, nebula,
+ * ice and so on), tiled and mirrored so the seams match. Tops the public
+ * page and the locker preview. Scale with preserveAspectRatio "slice".
+ * @param {object} pack  an entry of PACKS
+ * @param {object} [o]   { uid, still }
+ */
+export function renderBanner(pack, o = {}) {
+  const id = `bn${(o.uid || pack.key).replace(/[^a-z0-9]/gi, '')}`;
+  const m = (MATERIALS[pack.key] || MATERIALS.chrome)(id, !o.still);
+  const BW = W * 6, BH = 240, Y = 56;
+  const tiles = Array.from({ length: 6 }, (_, i) => (i % 2
+    ? `<use href="#${id}t" transform="translate(${(i + 1) * W} ${-Y}) scale(-1 1)"/>`
+    : `<use href="#${id}t" transform="translate(${i * W} ${-Y})"/>`)).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${BW} ${BH}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+<defs>${m.defs}<g id="${id}t">${m.body}</g>${lin(`${id}fade`, [[0, '#0a0a0f', 0], [0.55, '#0a0a0f', 0.35], [1, '#0a0a0f', 1]])}</defs>
+${tiles}
+<rect width="${BW}" height="${BH}" fill="url(#${id}fade)"/>
+</svg>`;
+  return o.still ? svg.replace(/<animate(?:Transform)?\b[^>]*\/>/g, '') : svg;
+}

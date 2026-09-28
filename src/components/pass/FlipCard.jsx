@@ -7,9 +7,9 @@ import { CardBackArt } from './RewardArt';
  * A user card that flips to its equipped card back on tap, with a visible
  * "Flip" control underneath so people know the back exists.
  */
-export default function FlipCard({ me, className = '', hintClassName = 'text-white/70 hover:text-white' }) {
+export default function FlipCard({ me, equipped, className = '', hintClassName = 'text-white/70 hover:text-white' }) {
   const [flipped, setFlipped] = useState(false);
-  const back = me?.equipped?.back || 'carbon';
+  const back = (equipped || me?.equipped || {}).back || 'carbon';
   const toggle = () => setFlipped((f) => !f);
   return (
     <div className={className}>
@@ -20,7 +20,7 @@ export default function FlipCard({ me, className = '', hintClassName = 'text-whi
         className="relative block w-full [perspective:1200px]"
       >
         <span className="relative block [transform-style:preserve-3d] transition-transform duration-700 motion-reduce:transition-none" style={{ transform: flipped ? 'rotateY(180deg)' : 'none' }}>
-          <span className="block [backface-visibility:hidden] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.95)] rounded-[6.4%/4.571%]"><UserCardSvg me={me} /></span>
+          <span className="block [backface-visibility:hidden] shadow-[0_30px_50px_-20px_rgba(0,0,0,0.95)] rounded-[6.4%/4.571%]"><UserCardSvg me={me} equippedOverride={equipped} /></span>
           <span className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]"><CardBackArt k={back} className="w-full h-full" /></span>
         </span>
       </button>
