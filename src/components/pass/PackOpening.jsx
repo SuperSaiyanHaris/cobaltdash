@@ -102,7 +102,9 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
     const n = revealed + 1;
     setRevealed(n);
     if (rank >= 4) buzz(80);
-    if (n >= total) setTimeout(() => setStage('done'), reduce ? 0 : 1100);
+    // The last card stays in the spotlight long enough to read before the
+    // whole pull fans out.
+    if (n >= total) setTimeout(() => setStage('done'), reduce ? 0 : 1900);
   }
 
   async function share() {
@@ -114,20 +116,24 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
     } catch { /* dismissed */ }
   }
 
-  // Geometry: revealed cards collect in a fan above, the face-down stack
-  // waits below. When everything is out, they fan across the middle.
+  // Geometry: the card you just flipped stays big in the spotlight (on top
+  // of the face-down stack) until you tap for the next one; earlier cards
+  // collect in a small fan above. When everything is out, they fan across
+  // the middle. Sizes follow the screen so the text stays readable.
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   const isMobile = vw < 640;
-  const cardW = isMobile ? 132 : 178;
-  // Short screens (landscape phones) shrink the whole stage to fit.
+  const cardW = Math.round(Math.max(140, Math.min(isMobile ? vw * 0.6 : 300, (vh - 150) / 2.97)));
+  const packW = Math.round(Math.max(200, Math.min(isMobile ? vw - 100 : 360, (vh - 230) / 1.6)));
+  const stackY = cardW * 0.35;
+  // Short screens (landscape phones) shrink the pack stage to fit.
   const squeeze = Math.min(1, Math.max(0.55, (vh - 200) / 540));
   const fanPos = (i, n, final) => {
     const mid = (n - 1) / 2, off = i - mid;
     if (final && isMobile) {
       // Phones: a tidy two-column grid so every item is readable.
-      const sc = n > 3 ? 0.78 : 0.86;
       const rows = Math.ceil(n / 2), row = Math.floor(i / 2), col = i % 2;
+      const sc = Math.min(1, (vw - 44) / 2 / cardW, (vh - 190) / (rows * (cardW * 1.4 + 12)));
       const lone = n % 2 === 1 && i === n - 1;
       return { x: lone ? 0 : (col - 0.5) * (cardW * sc + 12), y: (row - (rows - 1) / 2) * (cardW * 1.4 * sc + 12), rotate: 0, scale: sc };
     }
@@ -136,7 +142,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
       const fit = Math.min(1, (vw - 48) / (n * (cardW + 18)));
       return { x: off * (cardW + 18) * fit, y: (Math.abs(off) * 16 - 10) * fit, rotate: off * 3, scale: fit };
     }
-    return { x: off * (isMobile ? 46 : 90), y: isMobile ? -150 : -170, rotate: off * 5, scale: 0.58 };
+    return { x: off * cardW * (isMobile ? 0.34 : 0.5), y: -cardW * 1.05, rotate: off * 5, scale: 0.6 };
   };
 
   const body = (
@@ -158,14 +164,14 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
         )}
       </div>
 
-      <div className="relative flex-1 flex items-center justify-center" style={{ perspective: 1200, transform: squeeze < 1 ? `scale(${squeeze})` : undefined }}>
+      <div className="relative flex-1 flex items-center justify-center" style={{ perspective: 1200, transform: squeeze < 1 && (stage === 'intro' || stage === 'torn') ? `scale(${squeeze})` : undefined }}>
         {/* The pack */}
         <AnimatePresence>
           {(stage === 'intro' || stage === 'torn') && (
             <motion.div
               key="pack"
               className="relative"
-              style={{ width: isMobile ? 220 : 300 }}
+              style={{ width: packW }}
               initial={{ y: 40, opacity: 0, rotateY: -18 }}
               animate={stage === 'intro' && reduce
                 ? { y: 0, opacity: 1, rotateY: 0 }
@@ -212,9 +218,12 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
           const isOut = i < revealed;
           const final = stage === 'done';
           const r = RARITY[item.rarity] || RARITY.common;
-          const pos = isOut || final ? fanPos(i, total, final) : { x: 0, y: isMobile ? 70 : 60, rotate: (total - i) % 2 ? -2 : 2, scale: 1 };
+          const spot = !final && i === revealed - 1;
+          const pos = spot ? { x: 0, y: stackY, rotate: 0, scale: 1 }
+            : isOut || final ? fanPos(i, total, final)
+              : { x: cardW * 0.05, y: stackY + 8, rotate: (total - i) % 2 ? -2 : 2, scale: 0.97 };
           const isNext = i === revealed && !final;
-          const depth = isOut ? i : total + (total - i);
+          const depth = spot ? 3 * total : isOut ? i : total + (total - i);
           return (
             <motion.div
               key={i}
@@ -233,9 +242,9 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
             >
               <motion.button
                 type="button"
-                onClick={isNext ? flipNext : undefined}
-                disabled={!isNext}
-                aria-label={isOut || final ? undefined : 'Flip the next card'}
+                onClick={isNext || (spot && revealed < total) ? flipNext : undefined}
+                disabled={!isNext && !(spot && revealed < total)}
+                aria-label={isNext || spot ? 'Flip the next card' : undefined}
                 className="relative block w-full aspect-[5/7] [transform-style:preserve-3d]"
                 animate={{ rotateY: isOut || final ? 180 : 0 }}
                 transition={{ duration: reduce ? 0 : 0.7, ease: [0.3, 1.4, 0.5, 1] }}
@@ -289,7 +298,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
           </>
         ) : stage === 'stack' ? (
           <p className="text-sm font-semibold text-white/80 text-center tabular-nums">
-            Tap the card to flip it · {Math.min(revealed + 1, total)} of {total}
+            {revealed === 0 ? 'Tap the card to flip it' : revealed < total ? 'Tap for the next card' : 'That\'s the pull'} · {Math.max(1, revealed)} of {total}
           </p>
         ) : stage === 'done' ? (
           <div className="flex items-center gap-3">
