@@ -102,7 +102,7 @@ export const PACKS = [
   { level: 70, key: 'obsidian', face: .08,  name: 'Obsidian',  items: 3, a: '#71717A', b: '#E4E4E7', c: '#27272A', d: '#A1A1AA', base: '#050506', fx: ['sheen', 'foil', 'stripes', 'facets'] },
   { level: 80, key: 'platinum', face: .66,  name: 'Platinum',  items: 4, a: '#E5E4E2', b: '#FFFFFF', c: '#9CA3AF', d: '#CBD5E1', base: '#0e1014', fx: ['sheen', 'double', 'foil', 'stripes', 'facets'] },
   { level: 90, key: 'mythic', face: .46,    name: 'Mythic',    items: 4, a: '#F472B6', b: '#FDE68A', c: '#8B5CF6', d: '#22D3EE', base: '#0b0614', fx: ['sheen', 'double', 'foil', 'stripes', 'prism', 'sparkles'] },
-  { level: 99, key: 'final', face: .52,     name: 'The Final Pull', items: 5, a: '#FFD76A', b: '#FFF3C4', c: '#C084FC', d: '#5EC8FF', base: '#0a0a0f', fx: ['sheen', 'double', 'foil', 'stripes', 'prism', 'facets', 'stars', 'sparkles'] },
+  { level: 99, key: 'final', face: .52,     name: 'The Final Pull', items: 5, a: '#A78BFA', b: '#F5F3FF', c: '#7C3AED', d: '#C4B5FD', base: '#0a0a0f', fx: ['sheen', 'double', 'foil', 'stripes', 'prism', 'facets', 'stars', 'sparkles'] },
 ];
 export const PACK_BY_LEVEL = Object.fromEntries(PACKS.map((p) => [p.level, p]));
 export const PACK_BY_KEY = Object.fromEntries(PACKS.map((p) => [p.key, p]));
@@ -140,7 +140,7 @@ export const RINGS = {
   magma:     { name: 'Magma ring',     rarity: 'epic',      set: 'obsidian',  a: '#FDBA74', b: '#7C2D12' },
   pearl:     { name: 'Pearl ring',     rarity: 'epic',      set: 'platinum',  a: '#FFFFFF', b: '#F9A8D4' },
   arcane:    { name: 'Arcane ring',    rarity: 'legendary', set: 'mythic',    a: '#E879F9', b: '#0891B2' },
-  royal:     { name: 'Royal ring',     rarity: 'legendary', set: 'final',     a: '#FFE8A3', b: '#B91C1C' },
+  royal:     { name: 'Royal ring',     rarity: 'legendary', set: 'final',     a: '#F5F3FF', b: '#6D28D9' },
 };
 
 export const TITLES = {
@@ -207,7 +207,7 @@ export const NAME_EFFECTS = {
   lava:       { name: 'Lava name',       rarity: 'epic',      set: 'obsidian',  stops: ['#FDE68A', '#F97316', '#DC2626'] },
   diamond:    { name: 'Diamond name',    rarity: 'epic',      set: 'platinum',  stops: ['#FFFFFF', '#E0E7FF', '#FBCFE8'] },
   spellbound: { name: 'Spellbound name', rarity: 'legendary', set: 'mythic',    stops: ['#F0ABFC', '#A78BFA', '#2DD4BF'] },
-  crown:      { name: 'Crown name',      rarity: 'legendary', set: 'final',     stops: ['#FFF3C4', '#F5C451', '#FCA5A5'] },
+  crown:      { name: 'Crown name',      rarity: 'legendary', set: 'final',     stops: ['#F5F3FF', '#A78BFA', '#7C3AED'] },
 };
 
 // Card backs show when your card flips (public page, pack openings).
@@ -231,7 +231,7 @@ export const CARD_BACKS = {
   volcanic:   { name: 'Volcanic back',   rarity: 'epic',      set: 'obsidian',  a: '#EA580C', b: '#0B0B0E', line: '#FDE68A' },
   deco:       { name: 'Deco back',       rarity: 'epic',      set: 'platinum',  a: '#E4E6EB', b: '#6B7280', line: '#FFFFFF' },
   runes:      { name: 'Runes back',      rarity: 'legendary', set: 'mythic',    a: '#7E22CE', b: '#083344', line: '#F0ABFC' },
-  regal:      { name: 'Regal back',      rarity: 'legendary', set: 'final',     a: '#F5C451', b: '#1A1406', line: '#DC2626' },
+  regal:      { name: 'Regal back',      rarity: 'legendary', set: 'final',     a: '#7C3AED', b: '#0A0A0F', line: '#C4B5FD' },
 };
 
 // ── Pack sets ────────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ export const CARD_EFFECTS = {
   obsidian:  { name: 'Embers',       rarity: 'legendary' },
   platinum:  { name: 'Diamond dust', rarity: 'legendary' },
   mythic:    { name: 'Rune circle',  rarity: 'legendary' },
-  final:     { name: 'Golden rays',  rarity: 'legendary' },
+  final:     { name: 'Ultraviolet',  rarity: 'legendary' },
 };
 
 // Comment flair: the plate behind your name in comments. Pack only.

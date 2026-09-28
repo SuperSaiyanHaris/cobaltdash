@@ -52,7 +52,7 @@ const W = PACK_W, H = PACK_H, CX = W / 2, CY = 150;
 // reads at a glance on any material.
 const NUM_COLOR = {
   cardstock: '#F5B942', chrome: '#FFFFFF', holo: '#FFFFFF', cosmic: '#C4B5FD', prism: '#FFFFFF',
-  crystal: '#7DD3FC', obsidian: '#FB923C', platinum: '#FFFFFF', mythic: '#F0ABFC', final: '#FFD76A',
+  crystal: '#7DD3FC', obsidian: '#FB923C', platinum: '#FFFFFF', mythic: '#F0ABFC', final: '#FFFFFF',
 };
 
 /*
@@ -250,27 +250,32 @@ ${cluster(-8, 60, 4, 0.55, 0.9)}${cluster(228, 150, 4, 3.3, 0.9)}${cluster(-8, 3
     };
   },
 
+  // The Final Pull: the brand pack. Black with brand-purple foil, the
+  // ShinyPull bars huge behind the number, a double foil frame and violet
+  // studs.
   final(id, anim) {
-    const rays = Array.from({ length: 24 }, (_, i) => {
-      const a0 = (i / 24) * Math.PI * 2, a1 = a0 + Math.PI / 48;
+    const rays = Array.from({ length: 18 }, (_, i) => {
+      const a0 = (i / 18) * Math.PI * 2, a1 = a0 + Math.PI / 30;
       return `<path d="M${CX} ${CY}L${f1(CX + Math.cos(a0) * 300)} ${f1(CY + Math.sin(a0) * 300)}L${f1(CX + Math.cos(a1) * 300)} ${f1(CY + Math.sin(a1) * 300)}Z"/>`;
     }).join('');
-    const scroll = (t) => `<g transform="${t}"><path d="M4 4 C 30 4, 30 30, 12 26 C 2 24, 6 12, 14 16 M4 4 C 4 30, 30 30, 26 12" fill="none" stroke="url(#${id}au)" stroke-width="2"/><circle cx="14" cy="14" r="3.4" fill="#B91C1C" stroke="url(#${id}au)" stroke-width="1"/><circle cx="13" cy="13" r="1" fill="#FECACA"/></g>`;
-    const rubies = [];
-    for (let x = 124; x <= W - 30; x += 24) rubies.push([x, H - 27]);
-    for (let y = 84; y <= H - 60; y += 34) rubies.push([11, y], [W - 11, y]);
-    const ruby = rubies.map(([x, y]) => `<path d="M${x} ${y - 4}L${x + 4} ${y}L${x} ${y + 4}L${x - 4} ${y}Z" fill="#DC2626" stroke="#FDE68A" stroke-width=".8"/><path d="M${x} ${y - 4}L${x + 4} ${y}L${x} ${y}Z" fill="#FCA5A5" opacity=".8"/>`).join('');
+    const studs = [];
+    for (let y = 70; y <= H - 70; y += 30) studs.push([12, y], [W - 12, y]);
+    const stud = studs.map(([x, y]) => `<path d="M${x} ${y - 3.5}L${x + 3.5} ${y}L${x} ${y + 3.5}L${x - 3.5} ${y}Z" fill="#C4B5FD"/>`).join('');
+    // Brand bars, scaled up behind the number.
+    const bar = (x, y, h) => `<rect x="${x}" y="${y}" width="42" height="${h}" rx="12" fill="url(#${id}pf)"/>`;
     return {
-      defs: lin(`${id}m`, [[0, '#1A1406'], [0.5, '#0B0904'], [1, '#221807']], 'x1="0" y1="0" x2=".5" y2="1"')
-        + lin(`${id}au`, [[0, '#FFF3C4'], [0.3, '#F5C451'], [0.55, '#9A6B12'], [0.8, '#FFD76A'], [1, '#B7861F']], 'x1="0" y1="0" x2="1" y2="1"'),
+      defs: lin(`${id}m`, [[0, '#15102A'], [0.45, '#0A0A0F'], [1, '#1B1033']], 'x1="0" y1="0" x2=".5" y2="1"')
+        + lin(`${id}pf`, [[0, '#F5F3FF'], [0.35, '#C4B5FD'], [0.7, '#7C3AED'], [1, '#4C1D95']], 'x1="0" y1="0" x2="1" y2="1"', anim ? '<animateTransform attributeName="gradientTransform" type="translate" values="0 0;.25 .25;0 0" dur="6s" repeatCount="indefinite"/>' : '')
+        + `<pattern id="${id}dg" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r=".8" fill="#A78BFA" opacity=".35"/></pattern>`,
       body: `<rect width="${W}" height="${H}" fill="url(#${id}m)"/>
-<g fill="#F5C451" opacity=".26">${anim ? `<animateTransform attributeName="transform" type="rotate" values="0 ${CX} ${CY};15 ${CX} ${CY};0 ${CX} ${CY}" dur="12s" repeatCount="indefinite"/>` : ''}${rays}</g>
-<rect x="7" y="44" width="${W - 14}" height="${H - 71}" rx="4" fill="none" stroke="url(#${id}au)" stroke-width="3"/>
-<rect x="13" y="50" width="${W - 26}" height="${H - 83}" rx="3" fill="none" stroke="url(#${id}au)" stroke-width="1"/>
-${scroll('translate(8 45)')}${scroll(`translate(${W - 8} 45) scale(-1 1)`)}
-${ruby}`,
-      ink: '#FFE8A3',
-      seal: [[0, '#8A5E0F'], [0.5, '#FFE9A3'], [1, '#7A520C']],
+<rect width="${W}" height="${H}" fill="url(#${id}dg)"/>
+<g fill="#7C3AED" opacity=".22">${anim ? `<animateTransform attributeName="transform" type="rotate" values="0 ${CX} ${CY};360 ${CX} ${CY}" dur="40s" repeatCount="indefinite"/>` : ''}${rays}</g>
+<g opacity=".55">${bar(22, 120, 80)}${bar(89, 80, 120)}${bar(156, 40, 160)}</g>
+<rect x="7" y="44" width="${W - 14}" height="${H - 71}" rx="6" fill="none" stroke="url(#${id}pf)" stroke-width="3"/>
+<rect x="14" y="51" width="${W - 28}" height="${H - 85}" rx="4" fill="none" stroke="#A78BFA" stroke-opacity=".45" stroke-width="1"/>
+${stud}`,
+      ink: '#DDD6FE',
+      seal: [[0, '#2E1065'], [0.5, '#A78BFA'], [1, '#1E0B4A']],
     };
   },
 };

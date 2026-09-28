@@ -52,7 +52,7 @@ function cardEffect(key, id, W, H) {
       };
     }
     case 'final': return {
-      under: `<g fill="#F5C451" opacity=".3"><animateTransform attributeName="transform" type="rotate" values="0 ${cx} ${cy};360 ${cx} ${cy}" dur="30s" repeatCount="indefinite"/>${seq(16, (i) => { const a0 = (i / 16) * Math.PI * 2, a1 = a0 + Math.PI / 32; return `<path d="M${cx} ${cy}L${(cx + Math.cos(a0) * 170).toFixed(1)} ${(cy + Math.sin(a0) * 170).toFixed(1)}L${(cx + Math.cos(a1) * 170).toFixed(1)} ${(cy + Math.sin(a1) * 170).toFixed(1)}Z"/>`; })}</g>`,
+      under: `<g fill="#8B5CF6" opacity=".35"><animateTransform attributeName="transform" type="rotate" values="0 ${cx} ${cy};360 ${cx} ${cy}" dur="30s" repeatCount="indefinite"/>${seq(16, (i) => { const a0 = (i / 16) * Math.PI * 2, a1 = a0 + Math.PI / 32; return `<path d="M${cx} ${cy}L${(cx + Math.cos(a0) * 170).toFixed(1)} ${(cy + Math.sin(a0) * 170).toFixed(1)}L${(cx + Math.cos(a1) * 170).toFixed(1)} ${(cy + Math.sin(a1) * 170).toFixed(1)}Z"/>`; })}</g>`,
     };
     default: return {};
   }

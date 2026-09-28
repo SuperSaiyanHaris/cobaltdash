@@ -76,7 +76,7 @@ const PAGES = {
                 cards: () => Promise.all([byRank('twitch', 5), byRank('youtube', 5), byRank('tiktok', 4)]) },
   badge:      { eyebrow: 'Holographic creator cards', headline: ['Pull your', 'creator card.'], sub: 'Legendary to Common. Always free.',
                 cards: () => rarityFan('twitch') },
-  pass:       { eyebrow: 'ShinyPass · Season 1 · Free', accent: '#fcd34d', headline: ['99 levels.', 'A pack every 10.'], sub: 'Level up your own card. Free to join.',
+  pass:       { eyebrow: 'ShinyPass · Season 1 · Free', accent: '#c4b5fd', headline: ['99 levels.', 'A pack every 10.'], sub: 'Level up your own card. Free to join.',
                 art: passPacks },
 };
 
