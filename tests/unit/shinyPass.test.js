@@ -116,11 +116,13 @@ describe('packs', () => {
     }
   });
 
-  it('guarantees a listing voucher at 50 and 99', () => {
+  it('guarantees a listing voucher only at 99', () => {
+    let at50 = 0;
     for (let seed = 1; seed <= 50; seed++) {
-      expect(rollPack(50, mulberry(seed)).some((i) => i.kind === 'voucher')).toBe(true);
       expect(rollPack(99, mulberry(seed)).some((i) => i.kind === 'voucher')).toBe(true);
+      if (rollPack(50, mulberry(seed)).some((i) => i.kind === 'voucher')) at50++;
     }
+    expect(at50).toBeLessThan(5);
   });
 
   it('never puts a track reward in a pack', () => {
@@ -167,17 +169,18 @@ describe('packs', () => {
     }
   });
 
-  it('hits the voucher odds the owner set (5%, 10% from 60)', () => {
-    expect(voucherChance(10)).toBe(0.05);
-    expect(voucherChance(40)).toBe(0.05);
-    expect(voucherChance(60)).toBe(0.10);
-    expect(voucherChance(90)).toBe(0.10);
+  it('hits the voucher odds the owner set (1%, 2% from 60, only 99 guaranteed)', () => {
+    expect(voucherChance(10)).toBe(0.01);
+    expect(voucherChance(50)).toBe(0.01);
+    expect(voucherChance(60)).toBe(0.02);
+    expect(voucherChance(90)).toBe(0.02);
+    expect(voucherChance(99)).toBe(1);
     const rnd = mulberry(7);
     let hits = 0;
     const n = 20000;
     for (let i = 0; i < n; i++) if (rollPack(20, rnd).some((x) => x.kind === 'voucher')) hits++;
-    expect(hits / n).toBeGreaterThan(0.04);
-    expect(hits / n).toBeLessThan(0.06);
+    expect(hits / n).toBeGreaterThan(0.006);
+    expect(hits / n).toBeLessThan(0.014);
   });
 });
 

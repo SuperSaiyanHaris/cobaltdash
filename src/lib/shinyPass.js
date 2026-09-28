@@ -107,10 +107,14 @@ export const PACKS = [
 export const PACK_BY_LEVEL = Object.fromEntries(PACKS.map((p) => [p.level, p]));
 export const PACK_BY_KEY = Object.fromEntries(PACKS.map((p) => [p.key, p]));
 
-/** Chance a pack contains a free month of a Basic featured listing. */
+/**
+ * Chance a pack contains a free month of a Basic featured listing. Kept rare
+ * (owner decision 2026-09-28) so free listings don't crowd the rankings:
+ * 1% per pack, 2% from level 60, and only the level 99 pack always has one.
+ */
 export function voucherChance(packLevel) {
-  if (packLevel === 50 || packLevel === 99) return 1;
-  return packLevel >= 60 ? 0.10 : 0.05;
+  if (packLevel === 99) return 1;
+  return packLevel >= 60 ? 0.02 : 0.01;
 }
 
 // ── Cosmetics ─────────────────────────────────────────────────────────────
@@ -411,7 +415,8 @@ export function itemBlurb(item) {
     case 'pack': {
       const p = PACK_BY_KEY[item.key];
       if (!p) return '';
-      return p.items === 5 ? `5 items: its card frame, a ${p.name} set piece, and always a free month of a Featured Listing.` : `${p.items} items: its card frame and a ${p.name} set piece, plus more.`;
+      if (p.level === 99) return `5 items: its card frame, a ${p.name} set piece, and always a free month of a Featured Listing.`;
+      return `${p.items} items: its card frame and a ${p.name} set piece, plus more.`;
     }
     default: return '';
   }

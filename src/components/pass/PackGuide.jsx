@@ -139,7 +139,7 @@ export default function PackGuide({ me, season, state, onOpenPack }) {
               paid
               icon={Ticket}
               title="Free month: Featured Listing"
-              note={voucher >= 1 ? 'Always in this pack. A Basic spot for any creator you pick, 30 days.' : `${Math.round(voucher * 100)}% chance in this pack. Always in the level 50 and 99 packs.`}
+              note={voucher >= 1 ? 'Always in this pack. A Basic spot for any creator you pick, 30 days.' : `${Math.round(voucher * 100)}% chance in this pack. Always in the level 99 pack.`}
             />
           </div>
           {/* Phones: the rest folds away */}

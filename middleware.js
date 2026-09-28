@@ -657,7 +657,7 @@ const PASS_FAQ = [
   ['What is ShinyPass?', 'A free season pass on ShinyPull. Your own card levels from 1 to 99, every level unlocks a reward, and every 10 levels you open a pack.'],
   ['Is it free?', 'Yes. ShinyPass comes with every ShinyPull account. Packs are earned by leveling up and are never sold.'],
   ['How do I earn XP?', 'Visit daily and keep your streak, follow creators, comment on creator profiles, collect upvotes on your comments, save matchups and open creator profiles.'],
-  ['Can I win a free Featured Listing?', 'Every pack has a chance at a free month of a Basic Featured Listing for any creator you pick: 5% per pack, 10% from level 60. The level 50 and level 99 packs always include one.'],
+  ['Can I win a free Featured Listing?', 'Every pack has a small chance at a free month of a Basic Featured Listing for any creator you pick: 1% per pack, 2% from level 60. The level 99 pack always includes one.'],
   ['When does the season end?', 'Season 1 ends December 31, 2026. Season 2 starts January 1 and runs all of 2027.'],
   ['Do I keep my rewards?', 'Levels and packs reset each season. Everything you unlock, from card frames to badges, stays yours.'],
   ['What is the OG 2026 badge?', 'Every account created in 2026 gets the OG 2026 badge for good. It is only available this year.'],
@@ -673,7 +673,7 @@ function getPassContent() {
   html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">How to earn XP</h2><ul>`;
   for (const w of ['Visit ShinyPull once a day and keep your streak going', 'Follow creators', 'Comment on creator profiles and collect upvotes', 'Save creator matchups', 'Open creator profiles']) html += `<li>${w}</li>`;
   html += `</ul><h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">The packs</h2>`;
-  html += `<p>There are 10 packs this season: ${packs.join(', ')}. Each pack has its own set of a card frame, an avatar ring, a name effect and a card back; complete a set to unlock its animated card effect. Every pack has a chance at a free month of a Featured Listing for any creator you pick, and the level 50 and 99 packs always include one.</p>`;
+  html += `<p>There are 10 packs this season: ${packs.join(', ')}. Each pack has its own set of a card frame, an avatar ring, a name effect and a card back; complete a set to unlock its animated card effect. Every pack has a small chance at a free month of a Featured Listing for any creator you pick, and the level 99 pack always includes one.</p>`;
   html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">ShinyPass questions</h2>`;
   for (const [q, a] of PASS_FAQ) html += `<h3 style="font-size:1rem;font-weight:600;margin-top:1rem">${esc(q)}</h3><p>${esc(a)}</p>`;
   html += `<p style="margin-top:1.5rem"><a href="/rankings" style="color:#171717">Creator rankings</a> · <a href="/card" style="color:#171717">Creator cards</a> · <a href="/" style="color:#171717">ShinyPull</a></p></div>`;

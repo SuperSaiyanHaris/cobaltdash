@@ -518,7 +518,7 @@ export default function Locker({ state, me }) {
 
         {tab === 'vouchers' && (
           <div className="space-y-4">
-            {state.vouchers.length === 0 && <Empty>Every pack has a chance at a free month of a Featured Listing (5%, 10% from level 60), and the level 50 and 99 packs always have one.</Empty>}
+            {state.vouchers.length === 0 && <Empty>Every pack has a small chance at a free month of a Featured Listing (1%, 2% from level 60), and the level 99 pack always has one.</Empty>}
             {state.vouchers.map((raw) => ({ ...raw, status: raw.status === 'unused' && new Date(raw.expires_at).getTime() < now ? 'expired' : raw.status })).map((v) => (
               <div key={v.id} className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
                 <div className="flex items-start gap-4">

@@ -90,8 +90,8 @@ sessions never see it. Anything a cloud session must know goes here.
 - Packs every 10 levels and at 99 (`PACKS`), art in `src/lib/packArt.js`,
   opening animation in `src/components/pass/PackOpening.jsx`. Packs are
   earned only, never sold. Contents are cosmetic, XP, streak freezes, and
-  a free 1-month Basic Featured Listing voucher (5%, 10% from level 60,
-  guaranteed at 50 and 99). Redeeming creates a `featured_listings` row with
+  a free 1-month Basic Featured Listing voucher (1%, 2% from level 60,
+  guaranteed only at 99; lowered 2026-09-28 so free listings stay rare). Redeeming creates a `featured_listings` row with
   `source = 'reward'` and no Stripe subscription, so it lapses by itself.
   Vouchers and totals: /admin > ShinyPass.
 - Arena design (owner pick, 2026-09-27): `/pass` is `ArenaTrack.jsx` (HUD,
