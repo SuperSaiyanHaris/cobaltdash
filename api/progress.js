@@ -422,7 +422,13 @@ export default async function handler(req, res) {
       return res.status(200).json(await adminOverview(supabase));
     }
     if (req.method === 'GET') {
-      return res.status(200).json(await state(supabase, user));
+      // Levels gained since the daily sync (comments, follows, pack XP) pay
+      // their track drops on the next load, not the next day.
+      const season = await ensureSeason(supabase, user.id);
+      const { data: p } = await supabase.from('user_progress').select('xp').eq('user_id', user.id).maybeSingle();
+      const gained = [];
+      if (p) await grantLevelDrops(supabase, user.id, levelFromXp(p.xp, season).level, season, gained);
+      return res.status(200).json({ ...(await state(supabase, user)), ...(gained.length ? { gained } : {}) });
     }
     const body = req.body || {};
     switch (body.action) {

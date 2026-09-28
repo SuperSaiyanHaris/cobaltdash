@@ -216,6 +216,16 @@ describe('api/progress', () => {
     expect(again.body.gained.filter((g) => g.kind === 'drop')).toEqual([]);
   });
 
+  it('pays drops for levels gained since the daily sync on the next load', async () => {
+    await call({ action: 'sync' });
+    progress().xp = TOTAL_XP[16];
+    const r = await call({}, 'GET');
+    const drops = r.body.gained.filter((g) => g.kind === 'drop').map((g) => g.level);
+    expect(drops).toEqual(DROP_LEVELS.filter((l) => l > AFTER_VISIT && l <= 16));
+    const again = await call({}, 'GET');
+    expect(again.body.gained).toBeUndefined();
+  });
+
   it('refuses a pack below its level, opens it once at the level, and re-returns the same pull', async () => {
     await call({ action: 'sync' });
     let r = await call({ action: 'open', level: 10 });
