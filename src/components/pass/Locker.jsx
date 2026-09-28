@@ -18,20 +18,12 @@ import { BadgeIcon } from './BadgeChip';
 import { PACKS, PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, CARD_EFFECTS, FLAIRS, BADGES, TRACK, badgeMeta, seasonMaxBadge, setPieces, itemName } from '../../lib/shinyPass';
 import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 
-const TABS = [
-  { id: 'frame', label: 'Frames' },
-  { id: 'ring', label: 'Rings' },
-  { id: 'title', label: 'Titles' },
-  { id: 'banner', label: 'Banners' },
-  { id: 'sticker', label: 'Stickers' },
-  { id: 'name', label: 'Names' },
-  { id: 'back', label: 'Card backs' },
-  { id: 'effect', label: 'Effects' },
-  { id: 'flair', label: 'Flair' },
-  { id: 'sets', label: 'Sets' },
-  { id: 'badge', label: 'Badges' },
-  { id: 'showcase', label: 'Showcase' },
-  { id: 'vouchers', label: 'Vouchers' },
+// Grouped by what they change, and wrapped (never a sideways scroll).
+const TAB_GROUPS = [
+  { label: 'Card', tabs: [{ id: 'frame', label: 'Frames' }, { id: 'effect', label: 'Effects' }, { id: 'sticker', label: 'Stickers' }, { id: 'back', label: 'Card backs' }] },
+  { label: 'Name', tabs: [{ id: 'name', label: 'Names' }, { id: 'flair', label: 'Flair' }, { id: 'title', label: 'Titles' }, { id: 'ring', label: 'Rings' }] },
+  { label: 'Page', tabs: [{ id: 'banner', label: 'Banners' }, { id: 'badge', label: 'Badges' }, { id: 'showcase', label: 'Showcase' }] },
+  { label: 'Collection', tabs: [{ id: 'sets', label: 'Sets' }, { id: 'vouchers', label: 'Vouchers' }] },
 ];
 
 function EquipButton({ on, busy, onClick }) {
@@ -153,6 +145,12 @@ export default function Locker({ state, me }) {
     return m;
   }, [state.items]);
   const earned = new Set(state.badges.map((b) => b.badge));
+  const counts = {
+    ...Object.fromEntries(Object.entries(owned).map(([k, v]) => [k, v.size])),
+    badge: earned.size,
+    sets: owned.effect.size,
+    vouchers: state.vouchers.filter((v) => v.status === 'unused').length,
+  };
   const hasShiny = state.items.some((i) => i.kind === 'shiny');
 
   useEffect(() => {
@@ -180,15 +178,26 @@ export default function Locker({ state, me }) {
     <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
       <div className="lg:sticky lg:top-24"><Preview me={me} eq={shown} /></div>
     <div className="min-w-0" onMouseOver={onPeek} onFocus={onPeek} onMouseLeave={() => setPeek(null)}>
-      <div className="flex gap-6 overflow-x-auto border-b border-neutral-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`relative -mb-px pb-3 pt-1 text-[15px] font-bold whitespace-nowrap transition-colors ${tab === t.id ? 'text-neutral-950 border-b-2 border-neutral-950' : 'text-neutral-600 hover:text-neutral-900 border-b-2 border-transparent'}`}
-          >
-            {t.label}
-          </button>
+      <div className="flex flex-col gap-2.5 pb-5 border-b border-neutral-200" role="tablist" aria-label="Locker">
+        {TAB_GROUPS.map((g) => (
+          <div key={g.label} className="flex flex-wrap items-center gap-1.5">
+            <span className="w-full sm:w-[92px] flex-shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-600">{g.label}</span>
+            {g.tabs.map((t) => {
+              const n = counts[t.id] || 0;
+              const on = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setTab(t.id)}
+                  className={`h-8 px-3 rounded-full text-[13.5px] font-bold whitespace-nowrap border transition-colors ${on ? 'bg-neutral-900 border-neutral-900 text-white' : 'bg-white border-neutral-200 text-neutral-800 hover:border-neutral-400'}`}
+                >
+                  {t.label}{n > 0 && <span className={`ml-1.5 tabular-nums ${on ? 'text-white/70' : 'text-neutral-600'}`}>{n}</span>}
+                </button>
+              );
+            })}
+          </div>
         ))}
       </div>
 
