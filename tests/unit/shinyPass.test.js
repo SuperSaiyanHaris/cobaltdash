@@ -3,6 +3,7 @@ import {
   xpToNext, TOTAL_XP, totalXp, levelFromXp, tierForLevel, rollPack, PACKS, PACK_BY_LEVEL, voucherChance,
   RARITY_ORDER, streakBonus, TRACK, DROP_LEVELS, MAX_LEVEL,
   seasonForDate, seasonLastDay, seasonDaysLeft, badgeMeta, seasonMaxBadge,
+  setPieces, RINGS, NAME_EFFECTS, CARD_BACKS, FLAIRS, CARD_EFFECTS,
 } from '../../src/lib/shinyPass.js';
 import { renderUserCard } from '../../src/lib/userCard.js';
 import { renderPack, tearClip } from '../../src/lib/packArt.js';
@@ -119,6 +120,50 @@ describe('packs', () => {
     for (let seed = 1; seed <= 50; seed++) {
       expect(rollPack(50, mulberry(seed)).some((i) => i.kind === 'voucher')).toBe(true);
       expect(rollPack(99, mulberry(seed)).some((i) => i.kind === 'voucher')).toBe(true);
+    }
+  });
+
+  it('never puts a track reward in a pack', () => {
+    const CAT = { ring: RINGS, name: NAME_EFFECTS, back: CARD_BACKS };
+    const allowed = new Set(['frame', 'voucher', 'xp', 'freeze', 'showcase', 'shiny', 'flair', 'ring', 'name', 'back']);
+    for (const pack of PACKS) {
+      for (let seed = 1; seed <= 60; seed++) {
+        for (const it of rollPack(pack.level, mulberry(seed * 13 + pack.level))) {
+          expect(allowed.has(it.kind)).toBe(true);
+          if (CAT[it.kind]) expect(CAT[it.kind][it.key].set).toBeTruthy();
+          if (it.kind === 'flair') expect(FLAIRS[it.key]).toBeTruthy();
+        }
+      }
+    }
+    // And the track never hands out a set piece.
+    for (const r of TRACK.filter(Boolean)) {
+      const cat = { ring: RINGS, name: NAME_EFFECTS, back: CARD_BACKS }[r.kind];
+      if (cat) expect(cat[r.key].set).toBeUndefined();
+    }
+  });
+
+  it('gives a missing piece of its own set first, then earlier sets', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const items = rollPack(40, mulberry(seed));
+      const own = setPieces('cosmic').filter((x) => x.kind !== 'frame').map((x) => `${x.kind}:${x.key}`);
+      expect(items.some((i) => own.includes(`${i.kind}:${i.key}`))).toBe(true);
+    }
+    // Own set complete: pieces come from earlier sets, never from later ones.
+    const have = new Set(setPieces('cosmic').map((x) => `${x.kind}:${x.key}`));
+    const later = new Set(PACKS.filter((p) => p.level > 40).flatMap((p) => setPieces(p.key).map((x) => `${x.kind}:${x.key}`)));
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const it of rollPack(40, mulberry(seed), have)) {
+        expect(have.has(`${it.kind}:${it.key}`) && it.kind !== 'frame').toBe(false);
+        expect(later.has(`${it.kind}:${it.key}`)).toBe(false);
+      }
+    }
+  });
+
+  it('has a four-piece set and an effect for every pack', () => {
+    for (const p of PACKS) {
+      expect(setPieces(p.key)).toHaveLength(4);
+      expect(CARD_EFFECTS[p.key]).toBeTruthy();
+      expect(badgeMeta(`set_${p.key}`).name).toBe(`${p.name} Set`);
     }
   });
 

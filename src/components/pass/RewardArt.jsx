@@ -30,6 +30,8 @@ const G = {
   voucher: (c) => <><path d="M6 18h52v8a6 6 0 000 12v8H6v-8a6 6 0 000-12z" fill={c} /><path d="M40 18v28" stroke="#0a0a0f" strokeWidth="3" strokeDasharray="3 3" /><path d="M18 32l4 4 8-9" stroke="#0a0a0f" strokeWidth="4" fill="none" strokeLinecap="round" /></>,
   showcase: (c) => <><rect x="8" y="10" width="20" height="20" rx="3" fill={c} /><rect x="36" y="10" width="20" height="20" rx="3" fill={c} /><rect x="8" y="36" width="20" height="20" rx="3" fill={c} /><rect x="36" y="36" width="20" height="20" rx="3" fill={c} opacity=".5" /></>,
   shiny: (c) => <><path d="M32 4l6 20 20 8-20 8-6 20-6-20-20-8 20-8z" fill={c} /></>,
+  effect: (c) => <><rect x="14" y="6" width="36" height="52" rx="5" fill={c} /><rect x="19" y="11" width="26" height="42" rx="3" fill="#0a0a0f" /><path d="M32 18l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill={c} /><circle cx="24" cy="46" r="2" fill={c} /><circle cx="40" cy="44" r="1.5" fill={c} /></>,
+  flair: (c) => <><rect x="6" y="20" width="52" height="24" rx="6" fill={c} /><text x="32" y="38" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontWeight="900" fontSize="14" fill="#0a0a0f">you</text></>,
 };
 
 /** Small bold glyph for a reward kind. */

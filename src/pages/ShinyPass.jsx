@@ -245,14 +245,14 @@ export default function ShinyPass() {
 
 function OddsAndRules({ light = false }) {
   const total = SLOT_WEIGHTS.reduce((s, e) => s + e.w, 0);
-  const names = { xp: 'XP bonus', ring: 'Avatar ring', title: 'Title', sticker: 'Sticker', name: 'Name effect', back: 'Card back', freeze: 'Streak Freeze', banner: 'Banner', showcase: 'Showcase slot', shiny: 'Shiny variant' };
+  const names = { set: 'Set piece (ring, name effect or card back)', xp: 'XP bonus', flair: 'Comment flair', freeze: 'Streak Freeze', showcase: 'Showcase slot', shiny: 'Shiny variant' };
   const season = seasonForDate(todayNY());
   return (
     <section className={light ? '' : 'bg-[#fafaf9]'}>
       <div className={light ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12'}>
         <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">What's in a pack</h2>
         <p className="mt-2 text-[15px] text-neutral-700 max-w-2xl">
-          Packs are earned, never sold. Each one has its own card frame, then random items at the odds below. The last slot is always an uncommon or better item. Duplicates turn into XP.
+          Packs are earned, never sold, and nothing inside one is on the level track. Each pack has its own set: its card frame (always the first item) plus a matching ring, name effect and card back. The first random slot is always a set piece you don't have yet; the rest follow the odds below, and the last slot is never plain XP. Complete a set to unlock its animated card effect and badge. Later packs can carry pieces of earlier sets you missed. Duplicates turn into XP.
         </p>
         <div className="mt-6 grid lg:grid-cols-2 gap-6">
           <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">

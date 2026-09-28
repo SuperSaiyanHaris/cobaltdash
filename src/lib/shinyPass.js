@@ -130,6 +130,17 @@ export const RINGS = {
   cosmic:  { name: 'Cosmic ring',  rarity: 'epic',     a: '#A5B4FC', b: '#312E81' },
   prism:   { name: 'Prism ring',   rarity: 'epic',     a: '#FF7AD9', b: '#67E8F9' },
   mythic:  { name: 'Mythic ring',  rarity: 'legendary', a: '#F472B6', b: '#22D3EE' },
+  // Pack sets (only inside that pack, never on the track).
+  parchment: { name: 'Parchment ring', rarity: 'common',    set: 'cardstock', a: '#F5E9D0', b: '#B08D57' },
+  mirror:    { name: 'Mirror ring',    rarity: 'common',    set: 'chrome',    a: '#FFFFFF', b: '#6B7684' },
+  rainbow:   { name: 'Rainbow ring',   rarity: 'uncommon',  set: 'holo',      a: '#7DF9FF', b: '#FF7AD9' },
+  orbit:     { name: 'Orbit ring',     rarity: 'uncommon',  set: 'cosmic',    a: '#C4B5FD', b: '#3B82F6' },
+  facet:     { name: 'Facet ring',     rarity: 'rare',      set: 'prism',     a: '#FFE9A8', b: '#F472B6' },
+  frost:     { name: 'Frost ring',     rarity: 'rare',      set: 'crystal',   a: '#E0F7FF', b: '#0EA5E9' },
+  magma:     { name: 'Magma ring',     rarity: 'epic',      set: 'obsidian',  a: '#FDBA74', b: '#7C2D12' },
+  pearl:     { name: 'Pearl ring',     rarity: 'epic',      set: 'platinum',  a: '#FFFFFF', b: '#F9A8D4' },
+  arcane:    { name: 'Arcane ring',    rarity: 'legendary', set: 'mythic',    a: '#E879F9', b: '#0891B2' },
+  royal:     { name: 'Royal ring',     rarity: 'legendary', set: 'final',     a: '#FFE8A3', b: '#B91C1C' },
 };
 
 export const TITLES = {
@@ -187,6 +198,16 @@ export const NAME_EFFECTS = {
   cosmic:  { name: 'Cosmic name',  rarity: 'epic',      stops: ['#A5B4FC', '#6366F1', '#F0ABFC'] },
   prism:   { name: 'Prism name',   rarity: 'legendary', stops: ['#FF7AD9', '#FDE68A', '#67E8F9'] },
   mythic:  { name: 'Mythic name',  rarity: 'legendary', stops: ['#F472B6', '#8B5CF6', '#22D3EE'] },
+  ink:        { name: 'Ink name',        rarity: 'common',    set: 'cardstock', stops: ['#F5E9D0', '#C8A46A', '#FFF7E6'] },
+  liquid:     { name: 'Liquid chrome',   rarity: 'common',    set: 'chrome',    stops: ['#FFFFFF', '#7B8794', '#E5E9EE'] },
+  oilslick:   { name: 'Oil slick name',  rarity: 'uncommon',  set: 'holo',      stops: ['#7DF9FF', '#FFE27A', '#FF7AD9'] },
+  nebula:     { name: 'Nebula name',     rarity: 'uncommon',  set: 'cosmic',    stops: ['#F0ABFC', '#818CF8', '#67E8F9'] },
+  refraction: { name: 'Refraction name', rarity: 'rare',      set: 'prism',     stops: ['#FFE9A8', '#F9A8D4', '#A5F3FC'] },
+  glacier:    { name: 'Glacier name',    rarity: 'rare',      set: 'crystal',   stops: ['#FFFFFF', '#7DD3FC', '#BAE6FD'] },
+  lava:       { name: 'Lava name',       rarity: 'epic',      set: 'obsidian',  stops: ['#FDE68A', '#F97316', '#DC2626'] },
+  diamond:    { name: 'Diamond name',    rarity: 'epic',      set: 'platinum',  stops: ['#FFFFFF', '#E0E7FF', '#FBCFE8'] },
+  spellbound: { name: 'Spellbound name', rarity: 'legendary', set: 'mythic',    stops: ['#F0ABFC', '#A78BFA', '#2DD4BF'] },
+  crown:      { name: 'Crown name',      rarity: 'legendary', set: 'final',     stops: ['#FFF3C4', '#F5C451', '#FCA5A5'] },
 };
 
 // Card backs show when your card flips (public page, pack openings).
@@ -201,25 +222,77 @@ export const CARD_BACKS = {
   obsidian: { name: 'Obsidian back', rarity: 'epic',      a: '#3F3F46', b: '#000000', line: '#A1A1AA' },
   prism:    { name: 'Prism back',    rarity: 'legendary', a: '#FF7AD9', b: '#4C1D95', line: '#FDE68A' },
   mythic:   { name: 'Mythic back',   rarity: 'legendary', a: '#F472B6', b: '#312E81', line: '#22D3EE' },
+  ledger:     { name: 'Ledger back',     rarity: 'common',    set: 'cardstock', a: '#E9DDC3', b: '#8E7852', line: '#FFF7E6' },
+  brushed:    { name: 'Brushed back',    rarity: 'common',    set: 'chrome',    a: '#DCE2E9', b: '#3F4854', line: '#FFFFFF' },
+  diffraction:{ name: 'Diffraction back', rarity: 'uncommon', set: 'holo',      a: '#FF7AD9', b: '#0E7490', line: '#FFE27A' },
+  starfield:  { name: 'Starfield back',  rarity: 'uncommon',  set: 'cosmic',    a: '#4338CA', b: '#07051A', line: '#C4B5FD' },
+  kaleido:    { name: 'Kaleido back',    rarity: 'rare',      set: 'prism',     a: '#F9A8D4', b: '#6D28D9', line: '#A5F3FC' },
+  geode:      { name: 'Geode back',      rarity: 'rare',      set: 'crystal',   a: '#7DD3FC', b: '#0C4A6E', line: '#FFFFFF' },
+  volcanic:   { name: 'Volcanic back',   rarity: 'epic',      set: 'obsidian',  a: '#EA580C', b: '#0B0B0E', line: '#FDE68A' },
+  deco:       { name: 'Deco back',       rarity: 'epic',      set: 'platinum',  a: '#E4E6EB', b: '#6B7280', line: '#FFFFFF' },
+  runes:      { name: 'Runes back',      rarity: 'legendary', set: 'mythic',    a: '#7E22CE', b: '#083344', line: '#F0ABFC' },
+  regal:      { name: 'Regal back',      rarity: 'legendary', set: 'final',     a: '#F5C451', b: '#1A1406', line: '#DC2626' },
+};
+
+// ── Pack sets ────────────────────────────────────────────────────────────
+// Each pack has its own set: its card frame plus a matching ring, name
+// effect and card back. Set pieces only come from packs (the track never
+// gives them). Collect all four and you get that set's animated card effect
+// and a set badge. Later packs can also carry missing pieces of earlier sets.
+export const SET_KINDS = ['ring', 'name', 'back'];
+export function setPieces(packKey) {
+  const out = [{ kind: 'frame', key: packKey }];
+  for (const kind of SET_KINDS) {
+    const cat = kind === 'ring' ? RINGS : kind === 'name' ? NAME_EFFECTS : CARD_BACKS;
+    for (const [key, v] of Object.entries(cat)) if (v.set === packKey) out.push({ kind, key, rarity: v.rarity });
+  }
+  return out;
+}
+
+// Animated card effects: the set bonus, one per pack set. Drawn on your card
+// by src/lib/userCard.js.
+export const CARD_EFFECTS = {
+  cardstock: { name: 'Paper dust',   rarity: 'rare' },
+  chrome:    { name: 'Chrome glint', rarity: 'rare' },
+  holo:      { name: 'Rainbow edge', rarity: 'epic' },
+  cosmic:    { name: 'Starfall',     rarity: 'epic' },
+  prism:     { name: 'Prism shards', rarity: 'epic' },
+  crystal:   { name: 'Snowfall',     rarity: 'epic' },
+  obsidian:  { name: 'Embers',       rarity: 'legendary' },
+  platinum:  { name: 'Diamond dust', rarity: 'legendary' },
+  mythic:    { name: 'Rune circle',  rarity: 'legendary' },
+  final:     { name: 'Golden rays',  rarity: 'legendary' },
+};
+
+// Comment flair: the plate behind your name in comments. Pack only.
+// bg/fg for the plate, edge for its border. `anim` flairs shift color.
+export const FLAIRS = {
+  slate:    { name: 'Slate flair',    rarity: 'common',    bg: '#E2E8F0', fg: '#0F172A', edge: '#94A3B8' },
+  mint:     { name: 'Mint flair',     rarity: 'common',    bg: '#D1FAE5', fg: '#065F46', edge: '#34D399' },
+  sky:      { name: 'Sky flair',      rarity: 'uncommon',  bg: '#E0F2FE', fg: '#075985', edge: '#38BDF8' },
+  grape:    { name: 'Grape flair',    rarity: 'uncommon',  bg: '#EDE9FE', fg: '#5B21B6', edge: '#A78BFA' },
+  coral:    { name: 'Coral flair',    rarity: 'rare',      bg: '#FFE4E6', fg: '#9F1239', edge: '#FB7185' },
+  midnight: { name: 'Midnight flair', rarity: 'rare',      bg: '#0F172A', fg: '#E2E8F0', edge: '#475569' },
+  aurora:   { name: 'Aurora flair',   rarity: 'epic',      bg: 'linear-gradient(100deg,#A7F3D0,#C4B5FD 50%,#FBCFE8)', fg: '#1E1B4B', edge: '#A78BFA' },
+  holo:     { name: 'Holo flair',     rarity: 'legendary', bg: 'linear-gradient(100deg,#7DF9FF,#FF7AD9,#FFE27A,#7DF9FF)', fg: '#0A0A0F', edge: '#FF7AD9', anim: true },
 };
 
 // What a random slot can be. Weights are relative. `xp` is a share of the
 // XP for the pack's own level (25-60% of a level), so packs add a few levels
 // over the whole track and never shortcut it.
+// Packs never contain track rewards: set pieces, flair and pack extras only.
 export const SLOT_WEIGHTS = [
-  { kind: 'xp',       w: 24 },
-  { kind: 'ring',     w: 12 },
-  { kind: 'title',    w: 12 },
-  { kind: 'sticker',  w: 12 },
+  { kind: 'set',      w: 40 },
+  { kind: 'xp',       w: 22 },
+  { kind: 'flair',    w: 16 },
   { kind: 'freeze',   w: 10 },
-  { kind: 'name',     w: 8 },
-  { kind: 'back',     w: 8 },
-  { kind: 'banner',   w: 7 },
-  { kind: 'showcase', w: 4 },
-  { kind: 'shiny',    w: 3 },
+  { kind: 'showcase', w: 7 },
+  { kind: 'shiny',    w: 5 },
 ];
 
 export const KIND_RARITY = { frame: 'rare', xp: 'uncommon', freeze: 'uncommon', banner: 'uncommon', showcase: 'rare', shiny: 'epic', voucher: 'legendary' };
+// Highest flair rarity each pack can hold (index into RARITY_ORDER).
+const flairCap = (packLevel) => (packLevel >= 90 ? 4 : packLevel >= 70 ? 3 : packLevel >= 40 ? 2 : 1);
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 const pick = (list, rnd) => list[Math.floor(rnd() * list.length) % list.length];
@@ -232,27 +305,55 @@ function weighted(entries, rnd) {
 
 /**
  * The contents of a pack, before the server resolves duplicates and applies
- * XP/freezes. `rnd` returns [0, 1). Rarest item is sorted last so the reveal
- * builds up to it.
+ * XP/freezes. `rnd` returns [0, 1). `owned` is a Set of "kind:key" the user
+ * already has, so set pieces go to what's missing. Rarest item is sorted
+ * last so the reveal builds up to it.
  */
-export function rollPack(packLevel, rnd) {
+export function rollPack(packLevel, rnd, owned = new Set()) {
   const pack = PACK_BY_LEVEL[packLevel];
   if (!pack) throw new Error(`No pack at level ${packLevel}`);
   const items = [{ kind: 'frame', key: pack.key, rarity: KIND_RARITY.frame }];
+  const have = new Set(owned);
   if (rnd() < voucherChance(packLevel)) items.push({ kind: 'voucher', key: 'basic-month', rarity: 'legendary' });
-  // The last random slot is a "better" slot: no plain XP, no common rings/titles.
+  // A missing set piece. ownOnly: from this pack's set (the guaranteed
+  // first slot). Otherwise this set at 3x weight or an earlier pack's set.
+  // null when nothing is missing.
+  const setPiece = (ownOnly) => {
+    const cands = [];
+    for (const p of PACKS) {
+      if (p.level > packLevel) break;
+      if (ownOnly && p.key !== pack.key) continue;
+      for (const piece of setPieces(p.key)) {
+        if (piece.kind === 'frame' || have.has(`${piece.kind}:${piece.key}`)) continue;
+        cands.push({ ...piece, w: p.key === pack.key ? 3 : 1 });
+      }
+    }
+    if (!cands.length) return null;
+    const { w: _w, ...piece } = weighted(cands, rnd);
+    have.add(`${piece.kind}:${piece.key}`);
+    return piece;
+  };
+  const flair = (better) => {
+    const keys = Object.keys(FLAIRS).filter((k) => {
+      const r = RARITY_ORDER.indexOf(FLAIRS[k].rarity);
+      return r <= flairCap(packLevel) && (!better || r > 0);
+    });
+    const key = pick(keys, rnd);
+    return { kind: 'flair', key, rarity: FLAIRS[key].rarity };
+  };
+  // The first random slot is always a set piece if one is missing; the last
+  // slot is a "better" slot (no plain XP, no common flair).
+  let first = true;
   while (items.length < pack.items) {
     const better = items.length === pack.items - 1;
     const pool = better ? SLOT_WEIGHTS.filter((e) => e.kind !== 'xp') : SLOT_WEIGHTS;
-    const { kind } = weighted(pool, rnd);
-    if (kind === 'ring' || kind === 'title' || kind === 'sticker' || kind === 'name' || kind === 'back') {
-      const cat = CATALOG[kind];
-      const keys = Object.keys(cat).filter((k) => !better || cat[k].rarity !== 'common');
-      const key = pick(keys, rnd);
-      items.push({ kind, key, rarity: cat[key].rarity });
-    } else if (kind === 'banner') {
-      const unlocked = PACKS.filter((p) => p.level <= packLevel);
-      items.push({ kind, key: pick(unlocked, rnd).key, rarity: KIND_RARITY.banner });
+    const isFirst = first;
+    const kind = first ? 'set' : weighted(pool, rnd).kind;
+    first = false;
+    if (kind === 'set') {
+      items.push((isFirst && setPiece(true)) || setPiece(false) || flair(better));
+    } else if (kind === 'flair') {
+      items.push(flair(better));
     } else if (kind === 'xp') {
       const amount = Math.round(xpToNext(packLevel) * (0.25 + rnd() * 0.35));
       items.push({ kind, key: 'xp', amount, rarity: KIND_RARITY.xp });
@@ -279,6 +380,8 @@ export function itemName(item) {
     case 'sticker': return `Sticker: ${STICKERS[item.key]?.name || item.key}`;
     case 'name': return NAME_EFFECTS[item.key]?.name || 'Name effect';
     case 'back': return CARD_BACKS[item.key]?.name || 'Card back';
+    case 'effect': return `Card effect: ${CARD_EFFECTS[item.key]?.name || item.key}`;
+    case 'flair': return FLAIRS[item.key]?.name || 'Comment flair';
     case 'boost': return 'XP Boost';
     case 'tier': return `${item.key.charAt(0)}${item.key.slice(1).toLowerCase()} card`;
     case 'pack': return `${PACK_BY_KEY[item.key]?.name || ''} pack`;
@@ -301,11 +404,14 @@ export function itemBlurb(item) {
     case 'sticker': return 'Sits on the corner of your card and on your page.';
     case 'name': return 'Colors your name in comments and on your page.';
     case 'back': return 'The back of your card when it flips.';
+    case 'effect': return `Set bonus: animates your card. You completed the ${PACK_BY_KEY[item.key]?.name || ''} set.`;
+    case 'flair': return 'The plate behind your name in comments.';
     case 'boost': return `+25% XP on everything you earn for ${BOOST_DAYS} days.`;
     case 'tier': return item.key === 'RARE' ? 'Your card turns Rare, with drifting foil.' : item.key === 'EPIC' ? 'Your card turns Epic: holo stripes and a spinning ring.' : 'Your card turns Legendary: double glint, prism sweep and sparkles.';
     case 'pack': {
       const p = PACK_BY_KEY[item.key];
-      return p && p.items === 5 ? '5 items, always with a free month of a Featured Listing.' : '3 items plus its own card frame.';
+      if (!p) return '';
+      return p.items === 5 ? `5 items: its card frame, a ${p.name} set piece, and always a free month of a Featured Listing.` : `${p.items} items: its card frame and a ${p.name} set piece, plus more.`;
     }
     default: return '';
   }
@@ -333,6 +439,11 @@ export function badgeMeta(key) {
   if (BADGES[key]) return BADGES[key];
   const m = /^season(\d+)_99$/.exec(String(key));
   if (m) return { name: `Season ${m[1]} Max`, desc: `Reached level 99 in Season ${m[1]}.`, icon: 'Crown', a: '#FFD76A', b: '#E0A526' };
+  const s = /^set_([a-z]+)$/.exec(String(key));
+  if (s && PACK_BY_KEY[s[1]]) {
+    const p = PACK_BY_KEY[s[1]];
+    return { name: `${p.name} Set`, desc: `Collected every piece of the ${p.name} set.`, icon: 'Layers', a: p.a, b: p.c };
+  }
   return null;
 }
 
@@ -348,7 +459,7 @@ const CATALOG = {
   banner: Object.fromEntries(PACKS.map((p, i) => [p.key, { name: `${p.name} banner`, rarity: RARITY_BY_INDEX(i) }])),
 };
 function RARITY_BY_INDEX(i) { return ['common', 'common', 'uncommon', 'uncommon', 'rare', 'rare', 'epic', 'epic', 'legendary', 'legendary'][i]; }
-const byRarity = (cat) => Object.keys(cat).sort((a, b) => RARITY_ORDER.indexOf(cat[a].rarity) - RARITY_ORDER.indexOf(cat[b].rarity));
+const byRarity = (cat) => Object.keys(cat).filter((k) => !cat[k].set).sort((a, b) => RARITY_ORDER.indexOf(cat[a].rarity) - RARITY_ORDER.indexOf(cat[b].rarity));
 const bandRarity = (l) => (l >= 80 ? 'epic' : l >= 50 ? 'rare' : l >= 20 ? 'uncommon' : 'common');
 
 /** Every level's reward, index = level. Built once. */

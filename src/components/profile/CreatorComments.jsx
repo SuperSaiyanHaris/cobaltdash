@@ -8,6 +8,7 @@ import {
 } from '../../services/commentsService';
 import { progressFor } from '../../services/progressService';
 import { LevelChip, BadgePill } from '../pass/BadgeChip';
+import Nameplate from '../pass/Nameplate';
 import { RINGS, NAME_EFFECTS } from '../../lib/shinyPass';
 
 // Comments on a creator's profile, with one level of replies. Loads only when
@@ -253,17 +254,12 @@ export default function CreatorComments({ creatorId, name }) {
         ) : <Avatar handle={handle} url={c.commenter_profiles?.avatar_url} small={isReply} />}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {c.commenter_profiles?.handle
-              ? (nameFx
-                ? (
-                  // Name effect: foil text on a small dark nameplate so it
-                  // stays readable on the light comment background.
-                  <Link to={`/u/${handle}`} className="inline-flex rounded-md bg-[#0a0a0f] px-1.5 py-[1px] hover:opacity-90">
-                    <span className="sp-name-fx text-sm font-bold" style={{ backgroundImage: `linear-gradient(100deg, ${nameFx.stops[0]}, ${nameFx.stops[1]} 50%, ${nameFx.stops[2]})` }}>{mine ? 'You' : handle}</span>
-                  </Link>
-                )
-                : <Link to={`/u/${handle}`} className="text-sm font-semibold text-neutral-900 hover:underline">{mine ? 'You' : handle}</Link>)
-              : <span className="text-sm font-semibold text-neutral-900">{mine ? 'You' : handle}</span>}
+            <Nameplate
+              name={mine ? 'You' : handle}
+              to={c.commenter_profiles?.handle ? `/u/${handle}` : undefined}
+              nameKey={nameFx ? info.equipped.name : undefined}
+              flairKey={info?.equipped?.flair}
+            />
             {info && handle !== OFFICIAL && <LevelChip xp={info.xp} />}
             {info?.equipped?.badge && info.badges.includes(info.equipped.badge) && <BadgePill badge={info.equipped.badge} />}
             {handle === OFFICIAL && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-neutral-900 text-white">Official</span>}

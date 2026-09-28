@@ -103,6 +103,18 @@ sessions never see it. Anything a cloud session must know goes here.
   granted atomically by SQL `grant_track_drops()` (migrations `i`, `j`).
   One cosmetic of each kind per user (unique index); an owned drop pays a
   small fixed XP bonus.
+- Packs and the track never share items (owner decision, 2026-09-28).
+  Each pack has a set: its frame plus a ring, name effect and card back
+  marked `set: '<pack key>'` in the catalogs (the track skips `set` items;
+  `TRACK` must not change when catalogs grow). `rollPack(level, rnd, owned)`
+  guarantees a missing piece of the pack's own set in the first slot; other
+  slots follow `SLOT_WEIGHTS` (set pieces incl. earlier sets you missed,
+  XP, comment flair, freezes, showcase, shiny). Completing a set grants the
+  animated card effect (`CARD_EFFECTS`, kind `effect`, drawn in
+  `userCard.js`) and badge `set_<key>`, shown as a bonus card in the pull.
+  Comment flair (`FLAIRS`, kind `flair`) renders via `pass/Nameplate.jsx`.
+  The locker on /pass has a live preview (card, back, comment) that also
+  previews on hover (`data-peek="slot:key"`).
 - "OG 2026" badge: every account created in 2026. Scout badge is awarded by
   pg_cron `award-scout-badges` (daily, `award_scout_badges()`).
 - Copy on X/blog about this feature follows the same copy rules.

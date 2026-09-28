@@ -1,6 +1,9 @@
 // Everything a user has unlocked in ShinyPass, and where they equip it:
-// card frames, avatar rings, titles, banners, the pinned badge, the public
-// page showcase, the shiny variant, and Featured Listing vouchers.
+// card frames, avatar rings, titles, banners, stickers, name effects, card
+// backs, card effects, comment flair, pack sets, the pinned badge, the
+// public page showcase, the shiny variant, and Featured Listing vouchers.
+// A live preview (your card, its back and a comment) follows what you equip,
+// and on hover shows an item before you equip it.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Loader2, Search, X, Ticket, Sparkles, Plus } from 'lucide-react';
@@ -9,9 +12,10 @@ import { searchCreators } from '../../services/creatorService';
 import { getFollowedCreators } from '../../services/followService';
 import CreatorAvatar from '../CreatorAvatar';
 import { UserCardSvg } from './PassArt';
-import { StickerArt, NameEffectText, CardBackArt } from './RewardArt';
+import { StickerArt, NameEffectText, CardBackArt, RewardGlyph, RARITY_COLORS } from './RewardArt';
+import Nameplate from './Nameplate';
 import { BadgeIcon } from './BadgeChip';
-import { PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, BADGES, badgeMeta, seasonMaxBadge } from '../../lib/shinyPass';
+import { PACKS, PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, CARD_EFFECTS, FLAIRS, BADGES, TRACK, badgeMeta, seasonMaxBadge, setPieces, itemName } from '../../lib/shinyPass';
 import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 
 const TABS = [
@@ -22,6 +26,9 @@ const TABS = [
   { id: 'sticker', label: 'Stickers' },
   { id: 'name', label: 'Names' },
   { id: 'back', label: 'Card backs' },
+  { id: 'effect', label: 'Effects' },
+  { id: 'flair', label: 'Flair' },
+  { id: 'sets', label: 'Sets' },
   { id: 'badge', label: 'Badges' },
   { id: 'showcase', label: 'Showcase' },
   { id: 'vouchers', label: 'Vouchers' },
@@ -37,6 +44,37 @@ function EquipButton({ on, busy, onClick }) {
     >
       {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : on ? <><Check className="w-4 h-4" /> Equipped</> : 'Equip'}
     </button>
+  );
+}
+
+const firstLevel = (kind) => TRACK.find((r) => r && r.kind === kind)?.level;
+
+/** Your card as it looks right now, with its back and a comment sample. */
+function Preview({ me, eq }) {
+  const back = eq.back || 'carbon';
+  return (
+    <div className="rounded-3xl bg-[#0a0a0f] p-4 sm:p-5 text-white relative overflow-hidden">
+      <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
+      <p className="relative font-arena italic font-extrabold uppercase tracking-[0.12em] text-[13px] text-white/70">Live preview</p>
+      <div className="relative mt-3 flex lg:flex-col items-start gap-4">
+        <div className="w-[128px] sm:w-[170px] lg:w-full flex-shrink-0">
+          <UserCardSvg me={me} equippedOverride={eq} />
+        </div>
+        <div className="flex-1 min-w-0 w-full flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 flex-shrink-0"><CardBackArt k={back} className="w-full" /></div>
+            <p className="text-[13px] text-white/75 leading-snug"><b className="text-white">{CARD_BACKS[back]?.name}</b><br />shows when your card flips</p>
+          </div>
+          <div className="rounded-xl bg-white p-3 text-neutral-900">
+            <div className="flex flex-wrap items-center gap-2">
+              <Nameplate name={me?.handle || 'you'} nameKey={eq.name} flairKey={eq.flair} />
+              <span className="text-xs text-neutral-600">2m</span>
+            </div>
+            <p className="mt-1 text-sm text-neutral-800">How your name looks in comments.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -97,11 +135,20 @@ export default function Locker({ state, me }) {
   const [redeeming, setRedeeming] = useState(null);
   const [redeemTarget, setRedeemTarget] = useState(null);
   const [now] = useState(() => Date.now());
+  const [peek, setPeek] = useState(null);
 
   const p = state.progress;
   const eq = p.equipped || {};
+  // Hovering a tile (data-peek="slot:key") previews it on the card.
+  const shown = peek ? { ...eq, [peek.slot]: peek.key } : eq;
+  const onPeek = (e) => {
+    const el = e.target.closest?.('[data-peek]');
+    if (!el) return;
+    const [slot, key] = el.dataset.peek.split(':');
+    if (!peek || peek.slot !== slot || peek.key !== key) setPeek({ slot, key: key || undefined });
+  };
   const owned = useMemo(() => {
-    const m = { frame: new Set(), ring: new Set(), title: new Set(), banner: new Set(), sticker: new Set(), name: new Set(), back: new Set() };
+    const m = { frame: new Set(), ring: new Set(), title: new Set(), banner: new Set(), sticker: new Set(), name: new Set(), back: new Set(), effect: new Set(), flair: new Set() };
     for (const it of state.items) if (m[it.kind]) m[it.kind].add(it.item_key);
     return m;
   }, [state.items]);
@@ -130,7 +177,9 @@ export default function Locker({ state, me }) {
   };
 
   return (
-    <div>
+    <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
+      <div className="lg:sticky lg:top-24"><Preview me={me} eq={shown} /></div>
+    <div className="min-w-0" onMouseOver={onPeek} onFocus={onPeek} onMouseLeave={() => setPeek(null)}>
       <div className="flex gap-6 overflow-x-auto border-b border-neutral-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => (
           <button
@@ -149,7 +198,7 @@ export default function Locker({ state, me }) {
         {tab === 'frame' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {[null, ...packsOwned(owned.frame)].map((key) => (
-              <div key={key || 'default'}>
+              <div key={key || 'default'} data-peek={`frame:${key || ''}`}>
                 <UserCardSvg me={me} equippedOverride={{ ...eq, frame: key || undefined }} still className="shadow-[0_14px_28px_-14px_rgba(0,0,0,0.55)]" />
                 <p className="mt-2.5 text-sm font-bold text-neutral-900 text-center">{key ? PACK_BY_KEY[key].name : 'Rarity foil'}</p>
                 <EquipButton on={(eq.frame || null) === key} busy={busy === `frame:${key}`} onClick={() => (key ? equip('frame', key) : run('frame:null', () => equipItem('frame', null)))} />
@@ -164,7 +213,7 @@ export default function Locker({ state, me }) {
             {[...owned.ring].map((key) => {
               const r = RINGS[key];
               return (
-                <div key={key} className="rounded-2xl border border-neutral-200 bg-white p-4 text-center">
+                <div key={key} data-peek={`ring:${key}`} className="rounded-2xl border border-neutral-200 bg-white p-4 text-center">
                   <span className="mx-auto block w-16 h-16 rounded-full p-[5px]" style={{ background: `conic-gradient(from 20deg, ${r.a}, ${r.b}, ${r.a})` }}>
                     <span className="block w-full h-full rounded-full bg-neutral-900 text-white text-xl font-black leading-[54px]">{(me?.handle || 'S')[0].toUpperCase()}</span>
                   </span>
@@ -173,21 +222,21 @@ export default function Locker({ state, me }) {
                 </div>
               );
             })}
-            {owned.ring.size === 0 && <Empty>Rings come from packs and from level 15.</Empty>}
+            {owned.ring.size === 0 && <Empty>Your first ring unlocks at level {firstLevel('ring')}. Packs have their own.</Empty>}
           </div>
         )}
 
         {tab === 'title' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[...owned.title].map((key) => (
-              <div key={key} className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4">
+              <div key={key} data-peek={`title:${key}`} className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4">
                 <p className="flex-1 font-extrabold text-neutral-900">“{TITLES[key]?.name}”</p>
                 <button onClick={() => equip('title', key)} disabled={busy === `title:${key}`} className={`h-9 px-4 rounded-xl text-sm font-bold ${eq.title === key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>
                   {eq.title === key ? 'Equipped' : 'Equip'}
                 </button>
               </div>
             ))}
-            {owned.title.size === 0 && <Empty>Your first title unlocks at level 5.</Empty>}
+            {owned.title.size === 0 && <Empty>Your first title unlocks at level {firstLevel('title')}.</Empty>}
           </div>
         )}
 
@@ -209,7 +258,7 @@ export default function Locker({ state, me }) {
                 </div>
               );
             })}
-            {owned.banner.size === 0 && <Empty>Banners come from packs and top your public page.</Empty>}
+            {owned.banner.size === 0 && <Empty>Your first banner unlocks at level {firstLevel('banner')}. Banners top your public page.</Empty>}
           </div>
         )}
 
@@ -218,7 +267,7 @@ export default function Locker({ state, me }) {
             {Object.keys(tab === 'sticker' ? STICKERS : tab === 'name' ? NAME_EFFECTS : CARD_BACKS).filter((k) => owned[tab].has(k)).map((key) => {
               const cat = tab === 'sticker' ? STICKERS : tab === 'name' ? NAME_EFFECTS : CARD_BACKS;
               return (
-                <div key={key} className="rounded-2xl border border-neutral-200 bg-[#0a0a0f] p-3 flex flex-col">
+                <div key={key} data-peek={`${tab}:${key}`} className="rounded-2xl border border-neutral-200 bg-[#0a0a0f] p-3 flex flex-col">
                   <div className="h-28 flex items-center justify-center overflow-hidden">
                     {tab === 'sticker' && <StickerArt k={key} className="text-2xl" />}
                     {tab === 'name' && <NameEffectText k={key} className="font-arena italic font-black text-3xl truncate max-w-full">@{me?.handle || 'you'}</NameEffectText>}
@@ -231,7 +280,70 @@ export default function Locker({ state, me }) {
                 </div>
               );
             })}
-            {owned[tab].size === 0 && <Empty>{tab === 'sticker' ? 'Your first sticker unlocks at level 1.' : tab === 'name' ? 'Your first name effect unlocks at level 7.' : 'Your first card back unlocks at level 6.'}</Empty>}
+            {owned[tab].size === 0 && <Empty>{tab === 'sticker' ? `Your first sticker unlocks at level ${firstLevel('sticker')}.` : tab === 'name' ? `Your first name effect unlocks at level ${firstLevel('name')}.` : `Your first card back unlocks at level ${firstLevel('back')}.`}</Empty>}
+          </div>
+        )}
+
+        {tab === 'effect' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Object.keys(CARD_EFFECTS).filter((k) => owned.effect.has(k)).map((key) => (
+              <div key={key} data-peek={`effect:${key}`}>
+                <UserCardSvg me={me} equippedOverride={{ ...eq, effect: key }} still className="shadow-[0_14px_28px_-14px_rgba(0,0,0,0.55)]" />
+                <p className="mt-2.5 text-sm font-bold text-neutral-900 text-center">{CARD_EFFECTS[key].name}</p>
+                <EquipButton on={eq.effect === key} busy={busy === `effect:${key}`} onClick={() => equip('effect', key)} />
+              </div>
+            ))}
+            {owned.effect.size === 0 && <Empty>Card effects animate your card. Complete a pack set (its frame, ring, name effect and card back) to unlock that set's effect. Hover one in the Sets tab to see it.</Empty>}
+          </div>
+        )}
+
+        {tab === 'flair' && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {Object.keys(FLAIRS).filter((k) => owned.flair.has(k)).map((key) => (
+              <div key={key} data-peek={`flair:${key}`} className="rounded-2xl border border-neutral-200 bg-white p-4 flex flex-col items-center">
+                <div className="h-12 flex items-center"><Nameplate name={me?.handle || 'you'} flairKey={key} /></div>
+                <p className="mt-2 text-sm font-bold text-neutral-900">{FLAIRS[key].name}</p>
+                <EquipButton on={eq.flair === key} busy={busy === `flair:${key}`} onClick={() => equip('flair', key)} />
+              </div>
+            ))}
+            {owned.flair.size === 0 && <Empty>Flair is the plate behind your name in comments. It only comes from packs.</Empty>}
+          </div>
+        )}
+
+        {tab === 'sets' && (
+          <div className="space-y-3">
+            <p className="text-[15px] text-neutral-700">Every pack has its own set. Collect its card frame, ring, name effect and card back to unlock the set's animated card effect and badge. Pieces only come from packs, and later packs can carry pieces you missed.</p>
+            {PACKS.map((pk) => {
+              const pieces = setPieces(pk.key);
+              const got = pieces.filter((x) => owned[x.kind]?.has(x.key)).length;
+              const done = owned.effect.has(pk.key);
+              return (
+                <div key={pk.key} data-peek={`effect:${pk.key}`} className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-4 ${done ? 'border-emerald-300 bg-emerald-50/60' : 'border-neutral-200 bg-white'}`}>
+                  <div className="sm:w-44 flex-shrink-0">
+                    <p className="font-arena italic font-black uppercase text-[20px] leading-none text-neutral-950">{pk.name} set</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-700 tabular-nums">{got}/{pieces.length} pieces · Lv {pk.level} pack</p>
+                  </div>
+                  <div className="flex-1 grid grid-cols-4 gap-2">
+                    {pieces.map((x) => {
+                      const has = owned[x.kind]?.has(x.key);
+                      const rc = RARITY_COLORS[x.rarity || 'rare'];
+                      return (
+                        <div key={`${x.kind}:${x.key}`} title={itemName(x)} className={`rounded-xl p-2 flex flex-col items-center gap-1 ${has ? 'bg-neutral-900' : 'bg-neutral-100 border border-dashed border-neutral-300'}`}>
+                          <RewardGlyph kind={x.kind} color={has ? rc.text : '#A3A3A3'} className="w-7 h-7" />
+                          <span className={`text-[11px] font-semibold text-center leading-tight line-clamp-2 ${has ? 'text-white' : 'text-neutral-600'}`}>{itemName(x).replace(/ card frame$/, ' frame')}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="sm:w-40 flex-shrink-0 text-sm">
+                    <p className="font-bold text-neutral-900">{CARD_EFFECTS[pk.key].name}</p>
+                    {done
+                      ? <button onClick={() => equip('effect', pk.key)} className={`mt-1.5 h-8 px-3 rounded-lg text-xs font-bold ${eq.effect === pk.key ? 'bg-neutral-100 border border-neutral-300 text-neutral-900' : 'bg-neutral-900 text-white hover:bg-neutral-700'}`}>{eq.effect === pk.key ? 'Equipped' : 'Equip effect'}</button>
+                      : <p className="mt-0.5 text-neutral-600">Set bonus. Hover to preview.</p>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -351,6 +463,7 @@ export default function Locker({ state, me }) {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

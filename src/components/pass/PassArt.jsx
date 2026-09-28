@@ -6,7 +6,7 @@ import { useReducedMotion } from 'framer-motion';
 import { Snowflake, LayoutGrid, Sparkles, Zap, Ticket, Copy } from 'lucide-react';
 import { renderUserCard } from '../../lib/userCard';
 import { renderPack } from '../../lib/packArt';
-import { PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, itemName, itemBlurb } from '../../lib/shinyPass';
+import { PACK_BY_KEY, RINGS, TITLES, STICKERS, NAME_EFFECTS, CARD_BACKS, FLAIRS, itemName, itemBlurb } from '../../lib/shinyPass';
 import { markBarsInner } from '../../lib/brandMark';
 
 export const CARD_RADIUS = 'rounded-[6.4%/4.571%]';
@@ -113,6 +113,18 @@ function Visual({ item, me }) {
           <svg viewBox="0 0 100 100" className="w-[46%]" dangerouslySetInnerHTML={{ __html: markBarsInner('ib') }} />
         </div>
       );
+    }
+    case 'effect':
+      return me
+        ? <div className="h-full max-w-[62%] aspect-[5/7]"><UserCardSvg me={me} equippedOverride={{ ...(me.equipped || {}), effect: item.key }} className="shadow-[0_10px_24px_-10px_rgba(0,0,0,0.9)]" /></div>
+        : <Sparkles className="w-[34cqw] h-[34cqw] text-fuchsia-200" strokeWidth={1.5} />;
+    case 'flair': {
+      const f = FLAIRS[item.key];
+      return f ? (
+        <span className={`inline-flex rounded-[2cqw] px-[4cqw] py-[1.5cqw] text-[11cqw] font-bold ${f.anim ? 'sp-flair-anim' : ''}`} style={{ background: f.bg, color: f.fg, border: `2px solid ${f.edge}` }}>
+          {me?.handle || 'you'}
+        </span>
+      ) : null;
     }
     case 'boost': return <Zap className="w-[34cqw] h-[34cqw] text-emerald-200" strokeWidth={1.5} />;
     case 'freeze': return <Snowflake className="w-[34cqw] h-[34cqw] text-sky-200" strokeWidth={1.5} />;

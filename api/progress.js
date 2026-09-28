@@ -20,13 +20,13 @@ import { isFromOurSite, ALLOWED_ORIGINS } from './_guard.js';
 import { todayNY, grantAction, grantRaw } from './_xp.js';
 import {
   levelFromXp, xpToNext, streakBonus, rollPack, PACKS, PACK_BY_LEVEL, DROP_LEVELS, trackReward, STREAK_BADGES, MAX_LEVEL, BOOST_DAYS,
-  seasonMaxBadge, seasonLastDay, seasonDaysLeft, seasonForDate,
+  seasonMaxBadge, seasonLastDay, seasonDaysLeft, seasonForDate, setPieces, CARD_EFFECTS,
 } from '../src/lib/shinyPass.js';
 import { PLATFORM_IDS } from '../src/lib/constants.js';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
-const COSMETIC = new Set(['frame', 'ring', 'title', 'banner', 'sticker', 'name', 'back']);
-const EQUIP_SLOTS = ['frame', 'ring', 'title', 'banner', 'badge', 'sticker', 'name', 'back'];
+const COSMETIC = new Set(['frame', 'ring', 'title', 'banner', 'sticker', 'name', 'back', 'effect', 'flair']);
+const EQUIP_SLOTS = ['frame', 'ring', 'title', 'banner', 'badge', 'sticker', 'name', 'back', 'effect', 'flair'];
 const BASE_SHOWCASE = 3;
 // XP for a track drop you already own (small, so later seasons stay paced).
 const DUPE_DROP_XP = 25;
@@ -219,15 +219,16 @@ async function openPack(supabase, user, { level }) {
   const { data: p } = await supabase.from('user_progress').select('xp, equipped').eq('user_id', user.id).single();
   if (!p || levelFromXp(p.xp, season).level < packLevel) return { status: 403, error: `Reach level ${packLevel} to open this pack.` };
 
-  const raw = rollPack(packLevel, rnd);
+  // What you own steers set pieces toward the ones you're missing.
+  const { data: owned } = await supabase.from('user_items').select('kind, item_key').eq('user_id', user.id);
+  const have = new Set((owned || []).map((o) => `${o.kind}:${o.item_key}`));
+  const raw = rollPack(packLevel, rnd, have);
   const { error: claimErr } = await supabase.from('pack_openings').insert({ user_id: user.id, season, pack_level: packLevel, items: raw });
   if (claimErr) {
     const { data: prev } = await supabase.from('pack_openings').select('items').eq('user_id', user.id).eq('season', season).eq('pack_level', packLevel).maybeSingle();
     return prev ? { items: prev.items, already: true } : { status: 500, error: "Couldn't open that pack. Try again." };
   }
 
-  const { data: owned } = await supabase.from('user_items').select('kind, item_key').eq('user_id', user.id);
-  const have = new Set((owned || []).map((o) => `${o.kind}:${o.item_key}`));
   const resolved = [];
   for (const [i, item] of raw.entries()) {
     const ref = `${season}:${packLevel}:${i}`;
@@ -250,6 +251,19 @@ async function openPack(supabase, user, { level }) {
       continue;
     }
     resolved.push(item);
+  }
+  // Set bonus: every piece of a pack's set (frame, ring, name, back) earns
+  // its animated card effect and the set badge. Shown as a bonus card.
+  for (const p of PACKS) {
+    const effectKey = `effect:${p.key}`;
+    if (have.has(effectKey) || !CARD_EFFECTS[p.key]) continue;
+    if (!setPieces(p.key).every((x) => have.has(`${x.kind}:${x.key}`))) continue;
+    const { error } = await supabase.from('user_items').insert({ user_id: user.id, kind: 'effect', item_key: p.key, source_level: packLevel });
+    if (!error) {
+      have.add(effectKey);
+      await award(supabase, user.id, `set_${p.key}`);
+      resolved.push({ kind: 'effect', key: p.key, rarity: CARD_EFFECTS[p.key].rarity, bonus: true });
+    }
   }
   await supabase.from('pack_openings').update({ items: resolved }).eq('user_id', user.id).eq('season', season).eq('pack_level', packLevel);
   if (!p.equipped?.frame) {

@@ -254,6 +254,20 @@ describe('api/progress', () => {
     expect(again.body.pulled).toEqual(r.body.pulled);
   });
 
+  it('completes a set: the effect and badge arrive as a bonus card', async () => {
+    await call({ action: 'sync' });
+    for (const [kind, item_key] of [['ring', 'parchment'], ['name', 'ink'], ['back', 'ledger']]) {
+      db.user_items.push({ id: `i-${kind}`, user_id: USER.id, kind, item_key, source_level: 10 });
+    }
+    progress().xp = TOTAL_XP[10];
+    const r = await call({ action: 'open', level: 10 });
+    expect(r.body.pulled.some((i) => i.kind === 'effect' && i.key === 'cardstock' && i.bonus)).toBe(true);
+    expect(db.user_items.some((i) => i.kind === 'effect' && i.item_key === 'cardstock')).toBe(true);
+    expect(db.user_badges.some((b) => b.badge === 'set_cardstock')).toBe(true);
+    const eq = await call({ action: 'equip', slot: 'effect', key: 'cardstock' });
+    expect(eq.body.progress.equipped.effect).toBe('cardstock');
+  });
+
   it('equips only what you own', async () => {
     await call({ action: 'sync' });
     let r = await call({ action: 'equip', slot: 'ring', key: 'prism' });
