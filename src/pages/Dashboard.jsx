@@ -163,7 +163,7 @@ function FilterPanel({ onClose, selectedPlatform, setSelectedPlatform, sortBy, s
         ref={ref}
         role="dialog"
         aria-label="Filter and sort"
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.35)]
+        className="fixed inset-x-0 bottom-0 z-50 sheet-85 overflow-y-auto rounded-t-3xl bg-white p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.35)]
           sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-12 sm:w-80 sm:rounded-2xl sm:border sm:border-neutral-200 sm:p-3 sm:shadow-[0_20px_40px_-16px_rgba(0,0,0,0.3)]"
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-neutral-300 sm:hidden" />

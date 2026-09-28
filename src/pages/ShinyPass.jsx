@@ -57,7 +57,7 @@ function PackContents({ pack, items, me, onClose }) {
   }, [onClose]);
   return (
     <div className="fixed inset-0 z-[150] bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={onClose}>
-      <div className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full sm:max-w-3xl sheet-90 overflow-y-auto bg-[#0a0a0f] text-white rounded-t-3xl sm:rounded-3xl p-5 pb-[max(20px,env(safe-area-inset-bottom))] sm:p-8 relative" onClick={(e) => e.stopPropagation()}>
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
         <div className="relative flex items-center justify-between">
           <p className="font-arena italic font-black uppercase text-2xl">{pack.name} pack</p>

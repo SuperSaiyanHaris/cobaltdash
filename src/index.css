@@ -561,3 +561,8 @@ body[data-mobile-menu="open"] nav[aria-label="Primary"] { display: none; }
 @keyframes sp-name-shift { to { background-position: 200% 0; } }
 .sp-cardback { position: relative; aspect-ratio: 5 / 7; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--cb-l); background: repeating-linear-gradient(45deg, transparent 0 10px, rgba(255,255,255,.06) 10px 12px), linear-gradient(160deg, var(--cb-a), var(--cb-b)); box-shadow: 0 18px 30px -14px rgba(0,0,0,.9); }
 @media (prefers-reduced-motion: reduce) { .sp-name-fx { animation: none; } }
+
+/* Bottom sheets: iPhone Safari measures vh with the toolbar hidden, so a
+   vh cap runs under the toolbar. dvh follows the visible viewport. */
+.sheet-90 { max-height: 90vh; max-height: 90dvh; }
+.sheet-85 { max-height: 85vh; max-height: 85dvh; }

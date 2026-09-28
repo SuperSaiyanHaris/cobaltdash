@@ -44,7 +44,7 @@ function RaritySheet({ tier, rank, total, platformName, creatorName, onClose }) 
       aria-modal="true"
       aria-label={`${LABEL[tier.name]} card rarity`}
     >
-      <div className="relative w-full sm:max-w-md bg-[#101016] text-white border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 sm:p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full sm:max-w-md bg-[#101016] text-white border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 sm:p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] sheet-90 overflow-y-auto">
         <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors">
           <X className="w-5 h-5" />
         </button>
