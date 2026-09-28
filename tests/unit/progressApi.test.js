@@ -2,7 +2,9 @@
 // Supabase (just the query-builder calls the handler uses), so the streak,
 // pack, equip and voucher flows run without touching a real database.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TOTAL_XP } from '../../src/lib/shinyPass.js';
+import { TOTAL_XP, levelFromXp, DROP_LEVELS } from '../../src/lib/shinyPass.js';
+// Level after one 20 XP visit on the current season's curve.
+const AFTER_VISIT = levelFromXp(20).level;
 
 let db;
 const USER = { id: '11111111-1111-1111-1111-111111111111', created_at: '2026-03-01T00:00:00Z', email_confirmed_at: '2026-03-01T00:00:00Z' };
@@ -155,7 +157,7 @@ describe('api/progress', () => {
   it('first sync: creates progress, OG badge, daily visit, streak 1; second sync pays nothing', async () => {
     const r = await call({ action: 'sync' });
     expect(r.statusCode).toBe(200);
-    expect(r.body.progress).toMatchObject({ level: 1, streak: 1, xp: 20 });
+    expect(r.body.progress).toMatchObject({ level: AFTER_VISIT, streak: 1, xp: 20 });
     expect(r.body.badges.map((b) => b.badge)).toContain('og2026');
     expect(r.body.gained[0]).toEqual({ kind: 'xp', action: 'visit', xp: 20 });
     // Level 1's reward (a sticker) arrives on the first visit.
@@ -205,7 +207,7 @@ describe('api/progress', () => {
     db.xp_events = db.xp_events.filter((e) => e.action !== 'visit');
     const r = await call({ action: 'sync' });
     const drops = r.body.gained.filter((g) => g.kind === 'drop').map((g) => g.level);
-    expect(drops).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]);
+    expect(drops).toEqual(DROP_LEVELS.filter((l) => l > AFTER_VISIT && l <= 16));
     expect(db.xp_events.filter((e) => e.action === 'drop').map((e) => e.ref)).toContain('1:16');
     expect(db.user_items.map((i) => `${i.kind}:${i.item_key}`)).toEqual(expect.arrayContaining(['sticker:gg', 'title:lurker', 'ring:silver', 'back:carbon', 'name:chrome']));
     expect(progress().streak_freezes).toBeGreaterThanOrEqual(1);
@@ -226,7 +228,7 @@ describe('api/progress', () => {
     expect(r.body.progress.equipped.frame).toBe('cardstock');
     expect(r.body.packs.opened).toEqual([10]);
     expect(db.pack_openings[0].season).toBe(1);
-    expect(r.body.season).toMatchObject({ number: 1, lastDay: '2027-09-30' });
+    expect(r.body.season).toMatchObject({ number: 1, lastDay: '2026-12-31' });
     expect(r.body.items.some((i) => i.kind === 'frame')).toBe(true); // inventory, not the pull
     const again = await call({ action: 'open', level: 10 });
     expect(again.body.already).toBe(true);
@@ -290,7 +292,7 @@ describe('api/progress', () => {
   it('serves a public page without auth and hides private ones', async () => {
     await call({ action: 'sync' });
     let r = await call(null, 'GET', { handle: 'tester' });
-    expect(r.body).toMatchObject({ handle: 'tester', progress: { level: 1 } });
+    expect(r.body).toMatchObject({ handle: 'tester', progress: { level: AFTER_VISIT } });
     progress().is_private = true;
     r = await call(null, 'GET', { handle: 'TESTER' });
     expect(r.body).toEqual({ handle: 'tester', private: true });

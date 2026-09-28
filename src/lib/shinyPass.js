@@ -4,48 +4,63 @@
 // no randomness of its own: rollPack() takes the random source as an argument
 // (the server passes crypto), which keeps it unit-testable.
 //
-// Seasons last a year and turn over on Oct 1 (Season 1: launch to Sep 30,
-// 2027). Level, XP and packs reset each season; badges, cosmetics, streaks
-// and vouchers are kept. XP to go from level L to L+1 is 40 + 0.6 * L^1.5,
-// about 27,000 XP to reach 99: roughly six months for someone active every
-// day (~150 XP/day with the daily caps below), so finishing a season is a
-// real achievement but doable. Packs arrive every 10 levels and at 99.
+// Seasons are calendar years (owner decision, 2026-09-27): Season 1 is the
+// launch season, Sep 27 to Dec 31, 2026; Season 2 is 2027; and so on. Level,
+// XP and packs reset each Jan 1; badges, cosmetics, streaks and vouchers are
+// kept. XP to go from level L to L+1 is 40 + 0.6 * L^1.5, about 27,000 XP to
+// reach 99: roughly six months for someone active every day (~150 XP/day
+// with the daily caps below). The short launch season runs at 45% of that
+// (about 12,200 XP, under three months) so 99 is still reachable by New Year.
 
 export const MAX_LEVEL = 99;
 
-export const xpToNext = (level) => Math.round(40 + 0.6 * Math.pow(level, 1.5));
-
 // ── Seasons ───────────────────────────────────────────────────────────────
-// Mirrors current_season() in supabase/migrations/20260927h_shinypass_seasons.sql.
+// Mirrors current_season() in supabase/migrations/20260927k_shinypass_calendar_seasons.sql.
 /** Season for a YYYY-MM-DD day in New York. */
 export function seasonForDate(day) {
-  const [y, m] = String(day).split('-').map(Number);
-  return Math.max(1, (m >= 10 ? y : y - 1) - 2025);
+  const [y] = String(day).split('-').map(Number);
+  return Math.max(1, y - 2025);
 }
 /** Last day of a season, YYYY-MM-DD. */
-export const seasonLastDay = (season) => `${2026 + season}-09-30`;
+export const seasonLastDay = (season) => `${2025 + season}-12-31`;
 /** Whole days left in a season, counting today. */
 export function seasonDaysLeft(season, today) {
   const end = Date.UTC(...seasonLastDay(season).split('-').map((n, i) => (i === 1 ? Number(n) - 1 : Number(n))));
   const now = Date.UTC(...String(today).split('-').map((n, i) => (i === 1 ? Number(n) - 1 : Number(n))));
   return Math.max(0, Math.round((end - now) / 86400000) + 1);
 }
+/** The season it is right now in New York. */
+export function currentSeason() {
+  return seasonForDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
+}
 
-// Cumulative XP needed to *reach* each level. TOTAL_XP[1] = 0.
-export const TOTAL_XP = (() => {
-  const t = [0, 0];
-  for (let l = 1; l < MAX_LEVEL; l++) t[l + 1] = t[l] + xpToNext(l);
-  return t;
-})();
+/** Share of the normal XP curve a season uses (the launch season is short). */
+export const seasonScale = (season) => (season === 1 ? 0.45 : 1);
 
-/** { level, into, need, pct } for a lifetime XP total. At 99, need is 0. */
-export function levelFromXp(xp) {
+export const xpToNext = (level, season = currentSeason()) => Math.round((40 + 0.6 * Math.pow(level, 1.5)) * seasonScale(season));
+
+// Cumulative XP needed to *reach* each level, per season. [1] = 0.
+const totals = new Map();
+export function totalXp(season = currentSeason()) {
+  if (!totals.has(season)) {
+    const t = [0, 0];
+    for (let l = 1; l < MAX_LEVEL; l++) t[l + 1] = t[l] + xpToNext(l, season);
+    totals.set(season, t);
+  }
+  return totals.get(season);
+}
+/** Cumulative XP table for the current season (see totalXp for others). */
+export const TOTAL_XP = totalXp();
+
+/** { level, into, need, pct } for a season's XP total. At 99, need is 0. */
+export function levelFromXp(xp, season = currentSeason()) {
+  const T = totalXp(season);
   const x = Math.max(0, Math.floor(Number(xp) || 0));
   let level = 1;
-  while (level < MAX_LEVEL && x >= TOTAL_XP[level + 1]) level++;
+  while (level < MAX_LEVEL && x >= T[level + 1]) level++;
   if (level >= MAX_LEVEL) return { level: MAX_LEVEL, into: 0, need: 0, pct: 1 };
-  const into = x - TOTAL_XP[level];
-  const need = xpToNext(level);
+  const into = x - T[level];
+  const need = xpToNext(level, season);
   return { level, into, need, pct: into / need };
 }
 

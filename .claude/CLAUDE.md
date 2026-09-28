@@ -69,9 +69,12 @@ sessions never see it. Anything a cloud session must know goes here.
   (XP to next level = 40 + 0.6*L^1.5, about 27K XP total, ~6 months of
   daily use). Card rarity by level: Common 1-24, Rare 25+, Epic 50+,
   Legendary 75+.
-- Seasons (owner decision 2026-09-27): a season is a year and turns over on
-  Oct 1 America/New_York (Season 1: launch to 2027-09-30). SQL
-  `current_season()` and JS `seasonForDate()` must agree. `ensure_season()`
+- Seasons (owner decision 2026-09-27): a season is a calendar year in
+  America/New_York. Season 1 is the short launch season (to 2026-12-31) and
+  runs at 45% of the XP curve (`seasonScale`) so 99 is reachable by New
+  Year; Season 2 is 2027 at the full curve. Always pass the season to
+  `levelFromXp`/`xpToNext` for a past season's XP. SQL `current_season()`
+  and JS `seasonForDate()` must agree. `ensure_season()`
   banks the old season's XP in `season_results` and resets XP to 0; level,
   XP, packs (`pack_openings` keyed by season) and level drops reset.
   Badges, cosmetics, streaks and vouchers are kept. Reaching 99 awards

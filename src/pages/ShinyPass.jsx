@@ -97,7 +97,7 @@ function SignedOut() {
         <p className="font-arena italic font-extrabold uppercase tracking-[0.14em] text-[15px] text-amber-300">ShinyPass · Season {demo.season.number}</p>
         <h1 className="mt-2 font-arena italic font-black uppercase text-[clamp(44px,8vw,88px)] leading-[.86] text-balance max-w-[16ch]">99 levels. A reward at every one.</h1>
         <p className="mt-4 text-base sm:text-lg text-white/80 max-w-2xl text-pretty">
-          Show up, follow creators, comment and save matchups. Your card levels up from Common to Legendary, every level unlocks something, and every 10 levels you rip open a pack. A new season starts every October 1, and everything you unlock stays yours.
+          Show up, follow creators, comment and save matchups. Your card levels up from Common to Legendary, every level unlocks something, and every 10 levels you rip open a pack. A new season starts every January 1, and everything you unlock stays yours.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button onClick={openAuth} className="px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-[15px] font-bold transition-colors">Start your ShinyPass</button>
@@ -274,7 +274,7 @@ function OddsAndRules({ light = false }) {
               </div>
             ))}
             <p className="col-span-5 mt-2 text-sm text-neutral-700">
-              The level 50 Prism pack and the level 99 Final Pull each have 5 items and always include a free month of a Featured Listing. Reaching level 99 takes about {Math.round(TOTAL_XP[MAX_LEVEL] / 150 / 30)} months of daily visits. Levels and packs reset every October 1; your badges, cosmetics, streak and vouchers stay.
+              The level 50 Prism pack and the level 99 Final Pull each have 5 items and always include a free month of a Featured Listing. Reaching level 99 takes about {Math.round(TOTAL_XP[MAX_LEVEL] / 150 / 30)} months of daily visits. Levels and packs reset every January 1; your badges, cosmetics, streak and vouchers stay. Season 1 is a short launch season, so its levels need less XP.
             </p>
           </div>
         </div>

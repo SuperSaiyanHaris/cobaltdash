@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  xpToNext, TOTAL_XP, levelFromXp, tierForLevel, rollPack, PACKS, PACK_BY_LEVEL, voucherChance,
+  xpToNext, TOTAL_XP, totalXp, levelFromXp, tierForLevel, rollPack, PACKS, PACK_BY_LEVEL, voucherChance,
   RARITY_ORDER, streakBonus, TRACK, DROP_LEVELS, MAX_LEVEL,
   seasonForDate, seasonLastDay, seasonDaysLeft, badgeMeta, seasonMaxBadge,
 } from '../../src/lib/shinyPass.js';
@@ -20,13 +20,21 @@ function mulberry(seed) {
 }
 
 describe('level curve', () => {
-  it('is increasing and puts 99 about six months out at 150 XP a day', () => {
-    for (let l = 1; l < MAX_LEVEL - 1; l++) expect(xpToNext(l + 1)).toBeGreaterThan(xpToNext(l));
-    const days = TOTAL_XP[MAX_LEVEL] / 150;
+  it('is increasing and puts 99 about six months out at 150 XP a day (full seasons)', () => {
+    for (let l = 1; l < MAX_LEVEL - 1; l++) expect(xpToNext(l + 1, 2)).toBeGreaterThan(xpToNext(l, 2));
+    const days = totalXp(2)[MAX_LEVEL] / 150;
     expect(days).toBeGreaterThan(150);
     expect(days).toBeLessThan(210);
     // The first pack comes within about a week of daily use.
-    expect(TOTAL_XP[10] / 150).toBeLessThan(10);
+    expect(totalXp(2)[10] / 150).toBeLessThan(10);
+  });
+
+  it('makes the short launch season finishable before New Year', () => {
+    // Season 1 runs Sep 27 to Dec 31, 2026 (96 days).
+    const days = totalXp(1)[MAX_LEVEL] / 150;
+    expect(days).toBeLessThan(90);
+    expect(days).toBeGreaterThan(60);
+    expect(xpToNext(40, 1)).toBeLessThan(xpToNext(40, 2));
   });
 
   it('maps XP to levels at the boundaries', () => {
@@ -70,15 +78,17 @@ describe('level curve', () => {
 });
 
 describe('seasons', () => {
-  it('turns over on Oct 1, with launch week in Season 1', () => {
+  it('follows the calendar year, with launch week in Season 1', () => {
     expect(seasonForDate('2026-09-27')).toBe(1);
     expect(seasonForDate('2026-12-31')).toBe(1);
-    expect(seasonForDate('2027-09-30')).toBe(1);
-    expect(seasonForDate('2027-10-01')).toBe(2);
-    expect(seasonForDate('2029-03-15')).toBe(3);
-    expect(seasonLastDay(1)).toBe('2027-09-30');
-    expect(seasonDaysLeft(1, '2027-09-30')).toBe(1);
-    expect(seasonDaysLeft(1, '2027-09-01')).toBe(30);
+    expect(seasonForDate('2027-01-01')).toBe(2);
+    expect(seasonForDate('2027-12-31')).toBe(2);
+    expect(seasonForDate('2029-03-15')).toBe(4);
+    expect(seasonLastDay(1)).toBe('2026-12-31');
+    expect(seasonLastDay(2)).toBe('2027-12-31');
+    expect(seasonDaysLeft(1, '2026-09-27')).toBe(96);
+    expect(seasonDaysLeft(1, '2026-12-31')).toBe(1);
+    expect(seasonDaysLeft(2, '2027-01-01')).toBe(365);
   });
 
   it('names a max badge for every season', () => {
