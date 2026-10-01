@@ -135,6 +135,12 @@
       gtag('config', 'G-1KWMEM41YG', {
         page_path: location.pathname.replace(/@/g, '-at-') + location.search,
       });
+      gtag('config', 'AW-17993808123');
+
+      // Google Ads conversion: page view conversion action.
+      gtag('event', 'conversion', {
+        send_to: 'AW-17993808123/bFrHCJS0qowdEPvxjoRD',
+      });
       window.addEventListener('load', function() {
         var s = document.createElement('script');
         s.src = 'https://www.googletagmanager.com/gtag/js?id=G-1KWMEM41YG';

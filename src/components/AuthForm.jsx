@@ -52,6 +52,11 @@ export default function AuthForm({ mode, setMode, onSuccess, contextMessage, sho
           setMessage('An account with this email already exists. Sign in below.');
           setPassword('');
         } else {
+          if (typeof window !== 'undefined' && window.gtag) {
+            window.gtag('event', 'conversion', {
+              send_to: 'AW-17993808123/Oc_QCJe0qowdEPvxjoRD',
+            });
+          }
           setMessage('Check your email for the confirmation link.');
         }
       } else {

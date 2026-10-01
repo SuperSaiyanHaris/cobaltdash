@@ -188,6 +188,9 @@ function RouteChangeTracker() {
       window.gtag('config', 'G-1KWMEM41YG', {
         page_path: path,
       });
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-17993808123/bFrHCJS0qowdEPvxjoRD',
+      });
     }
   }, [location]);
 
