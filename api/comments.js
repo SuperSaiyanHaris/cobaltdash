@@ -13,6 +13,9 @@ import { grantAction, revokeAction } from './_xp.js';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
 const DAILY_LIMIT = 20;
+const RL_GET_LIMIT = 30;
+const RL_POST_LIMIT = 12;
+const RL_WINDOW_MS = 60000;
 
 function db() {
   return createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
@@ -173,11 +176,19 @@ export default async function handler(req, res) {
   const supabase = db();
   const user = await userFrom(req, supabase);
   if (!user) return fail(res, 401, 'Sign in to comment.');
-
-  const burst = checkRateLimit(`comments:${user.id}`, 6, 60000);
-  if (!burst.allowed) return fail(res, 429, "You're going fast. Try again in a minute.");
-
   const isAdmin = ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+
+  // Admin moderation can trigger rapid POST+GET bursts (action + queue refresh),
+  // so admins bypass this limiter entirely.
+  if (!isAdmin) {
+    const burst = checkRateLimit(
+      `comments:${user.id}:${req.method}`,
+      req.method === 'GET' ? RL_GET_LIMIT : RL_POST_LIMIT,
+      RL_WINDOW_MS
+    );
+    if (!burst.allowed) return fail(res, 429, "You're going fast. Try again in a minute.");
+  }
+
   if (req.method === 'GET') {
     if (req.query?.admin === 'queue' && isAdmin) return adminQueue(res, supabase);
     if (req.query?.replies) return repliesFor(res, supabase, user, req.query.replies === 'count');
