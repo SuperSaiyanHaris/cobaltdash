@@ -54,6 +54,19 @@ const CATEGORIES = [
 // still meaningfully short of ~90% after this, that's real signal the fix
 // needs to go further, not proof the theory was wrong.
 const PAGES_PER_CATEGORY = 12;
+
+// Substack rate-limits this API: roughly 18 requests in a short burst (~4 a
+// second), then HTTP 429 until it has been quiet for a few seconds
+// (measured 2026-10-01). The old sweep paced at ~3/s and treated any failed
+// page as "end of this category", so after the first 429 every remaining
+// request failed instantly and was skipped: only ~1,130 of 2,454 tracked
+// pubs got a reading each day, and later categories (us-politics, news,
+// health) were starved. Now: pace under the limit, wait and retry a page on
+// 429/5xx, and say so when a category could not be finished.
+const PACE_MS = 600;                 // ~1.7 requests/second, well under the burst limit
+const MAX_ATTEMPTS = 4;              // per page
+const RETRY_WAIT_MS = 7000;          // x attempt number; Substack recovers within ~5s
+const SWEEP_DEADLINE_MS = 280_000;   // leave room for the writes inside the 400s function budget
 const MAX_NEW_PER_RUN = 60; // same cap as the old Node discovery script
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const cleanText = (s: unknown) => (s ? String(s).replace(/\s+/g, " ").trim().slice(0, 500) || null : null);
@@ -75,25 +88,63 @@ function todayNY(): string {
 
 type RankEntry = { pub: any; bestPosition: number; subs: number; globalRank: number };
 
-async function buildRanking() {
-  const byId = new Map<string, { pub: any; bestPosition: number }>();
-  for (const cat of CATEGORIES) {
-    for (let page = 0; page < PAGES_PER_CATEGORY; page++) {
-      try {
-        const res = await fetch(`https://substack.com/api/v1/category/public/${cat.id}/paid?page=${page}`, { headers: HEADERS });
-        if (!res.ok) break;
-        const data = await res.json();
-        const pubs = data.publications || [];
-        pubs.forEach((pub: any, i: number) => {
-          if (!pub.id || !pub.subdomain) return;
-          const position = page * 25 + i;
-          const ex = byId.get(String(pub.id));
-          if (!ex || position < ex.bestPosition) byId.set(String(pub.id), { pub, bestPosition: ex ? Math.min(ex.bestPosition, position) : position });
-        });
-        await sleep(300);
-        if (!data.more || pubs.length === 0) break;
-      } catch { break; }
+type SweepStats = { requests: number; retries: number; complete: string[]; incomplete: string[] };
+
+// One leaderboard page, retried on rate limits and server errors. null = gave up.
+async function fetchPage(catId: number, page: number, stats: SweepStats): Promise<{ publications?: any[]; more?: boolean } | null> {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    stats.requests++;
+    try {
+      const res = await fetch(`https://substack.com/api/v1/category/public/${catId}/paid?page=${page}`, { headers: HEADERS });
+      if (res.ok) return await res.json();
+      // Past the last page Substack answers 400/404: the end of the list, not a failure
+      // (but a 400 on page 0 means something is wrong).
+      if ((res.status === 400 || res.status === 404) && page > 0) return { publications: [], more: false };
+      if (res.status === 429 || res.status >= 500) {
+        stats.retries++;
+        const retryAfter = Number(res.headers.get("retry-after"));
+        await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 30) * 1000 : RETRY_WAIT_MS * attempt);
+        continue;
+      }
+      console.error(`category ${catId} page ${page}: HTTP ${res.status}`);
+      return null;
+    } catch (e) {
+      stats.retries++;
+      console.error(`category ${catId} page ${page}: ${(e as Error).message}`);
+      await sleep(RETRY_WAIT_MS);
     }
+  }
+  return null;
+}
+
+async function buildRanking() {
+  const stats: SweepStats = { requests: 0, retries: 0, complete: [], incomplete: [] };
+  const started = Date.now();
+  const byId = new Map<string, { pub: any; bestPosition: number }>();
+  // Start the sweep at a different category each day, so if the time budget
+  // ever runs out it is not always the same categories that get left out.
+  const offset = Math.floor(Date.now() / 86_400_000) % CATEGORIES.length;
+  const order = [...CATEGORIES.slice(offset), ...CATEGORIES.slice(0, offset)];
+  for (const cat of order) {
+    let pagesRead = 0;
+    let reachedEnd = false;
+    for (let page = 0; page < PAGES_PER_CATEGORY; page++) {
+      if (Date.now() - started > SWEEP_DEADLINE_MS) break;
+      const data = await fetchPage(cat.id, page, stats);
+      if (!data) break;
+      const pubs = data.publications || [];
+      pagesRead++;
+      pubs.forEach((pub: any, i: number) => {
+        if (!pub.id || !pub.subdomain) return;
+        const position = page * 25 + i;
+        const ex = byId.get(String(pub.id));
+        if (!ex || position < ex.bestPosition) byId.set(String(pub.id), { pub, bestPosition: ex ? Math.min(ex.bestPosition, position) : position });
+      });
+      if (!data.more || pubs.length === 0) { reachedEnd = true; break; }
+      await sleep(PACE_MS);
+    }
+    // Complete = read as deep as we aim to, or the list ended first.
+    (reachedEnd || pagesRead >= PAGES_PER_CATEGORY ? stats.complete : stats.incomplete).push(cat.slug);
   }
   const ranked = [...byId.values()].map((e) => ({ ...e, subs: subsFor(e.pub) }))
     .sort((a, b) => (b.subs - a.subs) || (a.bestPosition - b.bestPosition));
@@ -105,7 +156,7 @@ async function buildRanking() {
     byPlatformId.set(String(r.pub.id), entry);
     bySubdomain.set(String(r.pub.subdomain).toLowerCase(), entry);
   });
-  return { byPlatformId, bySubdomain };
+  return { byPlatformId, bySubdomain, stats, seconds: Math.round((Date.now() - started) / 1000) };
 }
 
 async function fetchAllSubstackCreators(supabase: any): Promise<{ id: string; platform_id: string }[]> {
@@ -122,16 +173,22 @@ async function fetchAllSubstackCreators(supabase: any): Promise<{ id: string; pl
   return creators;
 }
 
-Deno.serve(async (req) => {
-  if (CRON_KEY && req.headers.get("x-cron-key") !== CRON_KEY) {
-    return new Response("Forbidden", { status: 403 });
-  }
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
+
+// The whole job: the leaderboard sweep (about 3 minutes at a polite pace) and
+// then the writes. Returns a summary (it also goes to the function logs).
+async function run(): Promise<Record<string, unknown>> {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
-  const { byPlatformId, bySubdomain } = await buildRanking();
+  const { byPlatformId, bySubdomain, stats: sweep, seconds: sweepSeconds } = await buildRanking();
   if (byPlatformId.size === 0) {
-    return new Response(JSON.stringify({ ok: false, error: "leaderboard returned 0" }), { status: 502 });
+    return { ok: false, error: "leaderboard returned 0", sweep };
   }
+  // A sweep that couldn't finish every category has holes: a pub missing from
+  // it may simply be in a category we didn't read, so don't treat "not seen"
+  // as "not on Substack".
+  const sweepComplete = sweep.incomplete.length === 0;
+  if (!sweepComplete) console.error(`incomplete sweep, categories not finished: ${sweep.incomplete.join(", ")}`);
   const today = todayNY();
 
   // ---- 1. Stats + rank for already-tracked creators (existing behavior) ----
@@ -184,6 +241,7 @@ Deno.serve(async (req) => {
   for (const reqRow of pendingRequests || []) {
     const slug = String(reqRow.username || "").toLowerCase();
     const entry = bySubdomain.get(slug);
+    if (!entry && !sweepComplete) continue; // leave it pending; tomorrow's sweep may find it
     if (!entry) {
       await supabase.from("creator_requests")
         .update({ status: "failed", error_message: "Substack not found on any public category leaderboard" })
@@ -218,8 +276,28 @@ Deno.serve(async (req) => {
     requestsResolved++;
   }
 
-  return new Response(JSON.stringify({
+  return {
     ok: true, date: today, ranked: byPlatformId.size, tracked: tracked.length, written,
     discovered, requestsResolved, requestsFailed,
-  }), { headers: { "Content-Type": "application/json" } });
+    sweep: { seconds: sweepSeconds, requests: sweep.requests, retries: sweep.retries, complete: sweep.complete.length, incomplete: sweep.incomplete },
+  };
+}
+
+const JSON_HEADERS = { "Content-Type": "application/json" };
+
+Deno.serve((req) => {
+  if (CRON_KEY && req.headers.get("x-cron-key") !== CRON_KEY) {
+    return new Response("Forbidden", { status: 403 });
+  }
+  // Supabase answers 504 when a function hasn't responded within 150s, and the
+  // paced sweep takes longer than that. So the job runs as a background task
+  // (allowed up to the 400s wall clock) and this replies at once; the summary
+  // goes to the function logs. ?wait=1 runs it inline instead, for a manual
+  // check with the response in hand (only useful if it finishes inside 150s).
+  const task = run().then((r) => { console.log("collect-substack finished", JSON.stringify(r)); return r; });
+  if (new URL(req.url).searchParams.get("wait") === "1") {
+    return task.then((r) => new Response(JSON.stringify(r), { headers: JSON_HEADERS }));
+  }
+  EdgeRuntime.waitUntil(task.catch((e) => console.error("collect-substack failed:", (e as Error).message)));
+  return new Response(JSON.stringify({ ok: true, started: true }), { status: 202, headers: JSON_HEADERS });
 });
