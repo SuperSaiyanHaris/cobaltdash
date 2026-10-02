@@ -574,3 +574,51 @@ h1, h2, h3, h4 {
   .sp-face span { font-size: 10px; }
   .sp-face [class*="cqw"] { max-width: 70%; }
 }
+
+/* Card shine (src/components/CardShine.jsx): a band of light that sweeps
+   across a still card image. Transform and opacity only, so it never repaints
+   the card, and it idles (opacity 0) between sweeps. */
+.card-shine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 6.4% / 4.571%;
+  pointer-events: none;
+  --glint-cycle: 11s;
+  --glint-alpha: 0.30;
+}
+.card-shine[data-tier='rare']      { --glint-cycle: 8s;   --glint-alpha: 0.34; }
+.card-shine[data-tier='epic']      { --glint-cycle: 6s;   --glint-alpha: 0.40; }
+.card-shine[data-tier='legendary'] { --glint-cycle: 4.5s; --glint-alpha: 0.48; }
+.card-shine::before {
+  content: '';
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  left: 0;
+  width: 34%;
+  opacity: 0;
+  transform: translate3d(-170%, 0, 0) skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, var(--glint-alpha)), transparent);
+}
+.card-shine.is-live::before {
+  animation: card-glint var(--glint-cycle) cubic-bezier(0.45, 0, 0.25, 1) var(--glint-delay, 0s) infinite;
+  will-change: transform, opacity;
+}
+@keyframes card-glint {
+  0%   { transform: translate3d(-170%, 0, 0) skewX(-20deg); opacity: 1; }
+  18%  { transform: translate3d(450%, 0, 0) skewX(-20deg); opacity: 1; }
+  18.1%, 100% { transform: translate3d(450%, 0, 0) skewX(-20deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-shine.is-live::before { animation: none; }
+}
+
+/* Phones and touch screens: skip the effects that force the GPU to composite
+   extra layers for little visible gain. */
+@media (hover: none) {
+  .hero-glare { display: none; }
+}
+@media (max-width: 1023px) {
+  .grain-dark::after { display: none; }
+}

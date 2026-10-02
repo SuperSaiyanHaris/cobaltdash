@@ -921,7 +921,7 @@ async function handleBadge(platform, username) {
 // change, rank, total, inlined avatar) in src/lib/cardData.js, which the
 // share-image function (api/share-card.js) uses too.
 
-async function handleCard(platform, username, { showMark = true } = {}) {
+async function handleCard(platform, username, { showMark = true, animated = true } = {}) {
   const data = await loadCardData(platform, username);
   if (!data) {
     return new Response(
@@ -929,7 +929,7 @@ async function handleCard(platform, username, { showMark = true } = {}) {
       { status: 404, headers: { 'content-type': 'image/svg+xml', 'cache-control': 'public, s-maxage=300' } }
     );
   }
-  const svg = renderCard({ ...data, showMark });
+  const svg = renderCard({ ...data, showMark, animated });
 
   return new Response(svg, {
     headers: {
@@ -1183,7 +1183,11 @@ export default async function middleware(request) {
   if (cardMatch && PLATFORM_NAMES[cardMatch[1]]) {
     // ?mark=0 drops the platform logo (the home page fans cards out rotated
     // and faded, which YouTube's brand rules don't allow on their logo).
-    return handleCard(cardMatch[1], decodeURIComponent(cardMatch[2]), { showMark: url.searchParams.get('mark') !== '0' });
+    return handleCard(cardMatch[1], decodeURIComponent(cardMatch[2]), {
+      showMark: url.searchParams.get('mark') !== '0',
+      // ?anim=0 is a still card for our own pages, which add a CSS shine.
+      animated: url.searchParams.get('anim') !== '0',
+    });
   }
 
   const badgeMatch = url.pathname.match(/^\/badge\/(\w+)\/([^/]+)$/);

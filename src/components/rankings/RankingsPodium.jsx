@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
-import { cardImageUrl } from '../../lib/cardUrl';
+import CardImage from '../CardImage';
 
-// Top 3 of a rankings page as upright holographic cards on a podium:
-// #2 left, #1 raised in the middle with a glow, #3 right. The cards stand
+// Top 3 of a rankings page as upright holographic cards. The cards stand
 // upright and unfaded, so they carry their platform logo (brand rules only
 // forbid rotated or faded logos).
+//
+// From `sm` up: a podium, #2 left, #1 raised in the middle, #3 right, each on
+// a plinth. On phones three cards across would be ~100px wide, with the name
+// and count too small to read, so #1 gets the whole top row at a readable size
+// and #2 and #3 share the row below.
 const ORDER = [1, 0, 2]; // render #2, #1, #3
 const PLINTH = ['h-14 sm:h-20', 'h-9 sm:h-12', 'h-6 sm:h-8'];
 
@@ -13,7 +17,7 @@ export default function RankingsPodium({ creators }) {
   if (top.length < 3) return null;
 
   return (
-    <div className="mt-6 sm:mt-10 grid grid-cols-3 items-end gap-3 sm:gap-6 max-w-3xl mx-auto">
+    <div className="mt-6 sm:mt-10 grid grid-cols-2 sm:grid-cols-3 items-end gap-x-3 gap-y-5 sm:gap-6 max-w-3xl mx-auto">
       {ORDER.map((i) => {
         const c = top[i];
         const first = i === 0;
@@ -21,20 +25,19 @@ export default function RankingsPodium({ creators }) {
           <Link
             key={c.id || c.username}
             to={`/${c.platform}/${c.username}`}
-            className="group flex flex-col items-center"
+            className={`group flex flex-col items-center ${first ? 'col-span-2 sm:col-span-1 order-first sm:order-none' : ''}`}
             aria-label={`#${i + 1} ${c.display_name}`}
           >
-            <div className="relative">
-              <img
-                src={cardImageUrl(c.platform, c.username)}
-                alt=""
-                width="250"
-                height="350"
-                draggable="false"
-                className={`relative h-auto select-none rounded-[6.4%/4.571%] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] ${first ? 'w-[118px] sm:w-[230px]' : 'w-[96px] sm:w-[190px]'}`}
-              />
-            </div>
-            <div className={`mt-3 sm:mt-4 w-full ${PLINTH[i]} rounded-t-xl bg-gradient-to-b from-white/[0.09] to-transparent border-t border-x border-white/10 flex items-start justify-center pt-1.5 sm:pt-2 text-xs sm:text-sm font-black tabular-nums ${first ? 'text-amber-300' : 'text-white/55'}`}>
+            <span className={`sm:hidden mb-2 text-sm font-black tabular-nums ${first ? 'text-amber-300' : 'text-white/60'}`}>#{i + 1}</span>
+            <CardImage
+              platform={c.platform}
+              username={c.username}
+              tier="legendary"
+              loading="eager"
+              fetchPriority={first ? 'high' : undefined}
+              className={`shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] ${first ? 'w-[210px] sm:w-[230px]' : 'w-full max-w-[168px] sm:w-[190px] sm:max-w-none'}`}
+            />
+            <div className={`hidden sm:flex mt-4 w-full ${PLINTH[i]} rounded-t-xl bg-gradient-to-b from-white/[0.09] to-transparent border-t border-x border-white/10 items-start justify-center pt-2 text-sm font-black tabular-nums ${first ? 'text-amber-300' : 'text-white/55'}`}>
               #{i + 1}
             </div>
           </Link>

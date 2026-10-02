@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { cardImageUrl } from '../../lib/cardUrl';
+import CardImage from '../CardImage';
 import { formatNumber } from '../../lib/utils';
 
 // "Cards" view of a rankings page: every ranked creator's live holographic
@@ -57,14 +57,13 @@ export default function RankingsCardGrid({ items, growthUnit }) {
                 </span>
               )}
             </div>
-            <img
-              src={cardImageUrl(c.platform, c.username)}
+            <CardImage
+              platform={c.platform}
+              username={c.username}
+              tier={!sponsored && c.originalRank <= 10 ? 'legendary' : 'common'}
               alt={`${c.display_name} creator card`}
-              width="250"
-              height="350"
-              loading={i < 10 ? 'eager' : 'lazy'}
-              draggable="false"
-              className={`w-full h-auto select-none rounded-[6.4%/4.571%] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:-translate-y-1 ${sponsored ? 'ring-2 ring-amber-400/70 ring-offset-4 ring-offset-[#0a0a0f]' : ''}`}
+              loading={i < 6 ? 'eager' : 'lazy'}
+              className={`shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)] ${sponsored ? 'ring-2 ring-amber-400/70 ring-offset-4 ring-offset-[#0a0a0f]' : ''}`}
             />
           </Link>
         );

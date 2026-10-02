@@ -4,7 +4,7 @@ import { ArrowRight, TrendingUp } from 'lucide-react';
 import CreatorAvatar from './CreatorAvatar';
 import { getRankedCreators, excludeCatalogRestores } from '../services/creatorService';
 import { getRecentlyViewed } from '../lib/recentlyViewed';
-import { cardImageUrl } from '../lib/cardUrl';
+import CardImage from './CardImage';
 import { isActivePlatform, PLATFORM_DISPLAY_NAMES } from '../lib/constants';
 import { formatNumber } from '../lib/utils';
 
@@ -70,13 +70,13 @@ export default function SearchDiscover({ platform }) {
           {(top || Array.from({ length: 6 }, () => null)).map((c, i) => (
             c ? (
               <Link key={c.creator_id || c.username} to={`/${platform}/${c.username}`} className="block" title={c.display_name}>
-                <img
-                  src={cardImageUrl(platform, c.username)}
-                  width="250"
-                  height="350"
+                <CardImage
+                  platform={platform}
+                  username={c.username}
+                  tier={c.rank_position <= 10 ? 'legendary' : 'common'}
                   loading="lazy"
                   alt={`${c.display_name}, #${c.rank_position} on ${name}`}
-                  className="w-full h-auto rounded-[6.4%/4.571%] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)]"
+                  className="shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)]"
                 />
               </Link>
             ) : (

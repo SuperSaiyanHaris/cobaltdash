@@ -170,6 +170,11 @@ export function renderMarkOverlay(platform) {
  * @param {string|null} c.avatar data: URI or null
  * @param {boolean} [c.showMark=true] draw the platform logo (off where the
  *   card is shown rotated/faded, which platform brand rules don't allow)
+ * @param {boolean} [c.animated=true] include the SMIL motion. Our own pages ask
+ *   for a still card (?anim=0) and lay a GPU-only CSS shine over it instead:
+ *   SMIL inside an <img> repaints the whole card every frame, which stutters on
+ *   phones, especially when the image is also being transformed or filtered.
+ *   Embeds on creators' sites keep the animated default.
  */
 export function renderCard(c) {
   const p = CARD_PLATFORMS[c.platform] || CARD_PLATFORMS.youtube;
@@ -189,16 +194,17 @@ export function renderCard(c) {
   const rankChip = c.rank ? `<g transform="translate(${W / 2 + 44} 178)"><rect x="-4" y="-2" width="${String(c.rank).length * 5.5 + 16}" height="15" rx="7.5" fill="#0B0B12" stroke="${t.a}" stroke-opacity=".7"/><text x="${(String(c.rank).length * 5.5 + 16) / 2 - 4}" y="9" text-anchor="middle" font-family="${FONT}" font-size="8" font-weight="800" fill="${t.a}">#${c.rank}</text></g>` : '';
   const label = `${escapeXml(c.name || c.username)}: ${count !== null ? compactCount(count) : 'no data'} ${p.unit} on ${p.name}`;
   const m = MOTION[t.name] || MOTION.COMMON;
-  const foilAnim = m.foil ? `<animateTransform attributeName="gradientTransform" type="translate" values="-0.5 -0.5;0.5 0.5;-0.5 -0.5" dur="${m.foil}s" repeatCount="indefinite"/>` : '';
+  const animated = c.animated !== false;
+  const foilAnim = animated && m.foil ? `<animateTransform attributeName="gradientTransform" type="translate" values="-0.5 -0.5;0.5 0.5;-0.5 -0.5" dur="${m.foil}s" repeatCount="indefinite"/>` : '';
   const glint = `<animate id="${id}g" attributeName="x" from="-220" to="420" dur="${m.sweep}s" begin="1s;${id}g.end+${m.gap}s"/>`;
-  const shine = `<rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)">${glint}</rect>`
+  const shine = !animated ? '' : `<rect x="-220" y="-60" width="90" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)">${glint}</rect>`
     + (m.legendary ? `<rect x="-220" y="-60" width="22" height="${H + 120}" fill="url(#${id}shine)" transform="rotate(20)"><animate attributeName="x" from="-220" to="420" dur="${m.sweep}s" begin="${id}g.begin+0.22s"/></rect>` : '');
   const numGrad = m.legendary
-    ? `<linearGradient id="${id}num" x1="0" y1="0" x2="1" y2="0" spreadMethod="reflect"><stop offset="0" stop-color="${t.a}"/><stop offset=".5" stop-color="${t.b}"/><stop offset="1" stop-color="${t.a}"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0" dur="3s" repeatCount="indefinite"/></linearGradient>`
+    ? `<linearGradient id="${id}num" x1="0" y1="0" x2="1" y2="0" spreadMethod="reflect"><stop offset="0" stop-color="${t.a}"/><stop offset=".5" stop-color="${t.b}"/><stop offset="1" stop-color="${t.a}"/>${animated ? '<animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0" dur="3s" repeatCount="indefinite"/>' : ''}</linearGradient>`
     : `<linearGradient id="${id}num" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.b}"/><stop offset="1" stop-color="${t.a}"/></linearGradient>`;
-  const ringGrad = m.ring ? `<linearGradient id="${id}ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.b}"/><stop offset=".35" stop-color="${t.a}"/><stop offset=".65" stop-color="${t.c}"/><stop offset="1" stop-color="${t.d}"/><animateTransform attributeName="gradientTransform" type="rotate" values="0 .5 .5;360 .5 .5" dur="${m.ring}s" repeatCount="indefinite"/></linearGradient>` : '';
-  const prism = m.legendary ? `<g clip-path="url(#${id}win)"><rect x="-200" y="-40" width="130" height="300" fill="url(#${id}prism)" transform="rotate(20)"><animate attributeName="x" values="-200;380" dur="3.6s" repeatCount="indefinite"/></rect></g>` : '';
-  const sparkles = m.legendary ? SPARKLES.map(([x, y, s, d]) => `<path d="${SPARKLE}" fill="${t.b}" transform="translate(${x} ${y})"><animateTransform attributeName="transform" type="scale" additive="sum" values="0;0;${s};0" keyTimes="0;.55;.75;1" dur="2.8s" begin="-${d}s" repeatCount="indefinite"/></path>`).join('') : '';
+  const ringGrad = m.ring ? `<linearGradient id="${id}ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.b}"/><stop offset=".35" stop-color="${t.a}"/><stop offset=".65" stop-color="${t.c}"/><stop offset="1" stop-color="${t.d}"/>${animated ? `<animateTransform attributeName="gradientTransform" type="rotate" values="0 .5 .5;360 .5 .5" dur="${m.ring}s" repeatCount="indefinite"/>` : ''}</linearGradient>` : '';
+  const prism = animated && m.legendary ? `<g clip-path="url(#${id}win)"><rect x="-200" y="-40" width="130" height="300" fill="url(#${id}prism)" transform="rotate(20)"><animate attributeName="x" values="-200;380" dur="3.6s" repeatCount="indefinite"/></rect></g>` : '';
+  const sparkles = animated && m.legendary ? SPARKLES.map(([x, y, s, d]) => `<path d="${SPARKLE}" fill="${t.b}" transform="translate(${x} ${y})"><animateTransform attributeName="transform" type="scale" additive="sum" values="0;0;${s};0" keyTimes="0;.55;.75;1" dur="2.8s" begin="-${d}s" repeatCount="indefinite"/></path>`).join('') : '';
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} (${t.name} card)">
 <title>${label} · ${t.name} · ShinyPull</title>
@@ -206,7 +212,7 @@ export function renderCard(c) {
 <linearGradient id="${id}foil" x1="0" y1="0" x2="1" y2="1" spreadMethod="reflect"><stop offset="0" stop-color="${t.a}"/><stop offset=".2" stop-color="${t.b}"/><stop offset=".38" stop-color="${t.d}"/><stop offset=".55" stop-color="${t.c}"/><stop offset=".72" stop-color="${t.b}"/><stop offset=".86" stop-color="${p.color}"/><stop offset="1" stop-color="${t.a}"/>${foilAnim}</linearGradient>
 ${numGrad}${ringGrad}
 <radialGradient id="${id}art" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="${p.color}" stop-opacity=".55"/><stop offset=".6" stop-color="${t.c}" stop-opacity=".18"/><stop offset="1" stop-color="#0B0B12" stop-opacity="0"/></radialGradient>
-<pattern id="${id}holo" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="4" height="10" fill="#fff" opacity="${m.stripes ? .08 : .05}"/>${m.stripes ? `<animateTransform attributeName="patternTransform" type="translate" additive="sum" values="0 0;10 0" dur="${m.stripes}s" repeatCount="indefinite"/>` : ''}</pattern>
+<pattern id="${id}holo" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="4" height="10" fill="#fff" opacity="${m.stripes ? .08 : .05}"/>${animated && m.stripes ? `<animateTransform attributeName="patternTransform" type="translate" additive="sum" values="0 0;10 0" dur="${m.stripes}s" repeatCount="indefinite"/>` : ''}</pattern>
 <linearGradient id="${id}shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="${m.shine}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
 <clipPath id="${id}clip"><rect width="${W}" height="${H}" rx="16"/></clipPath>
 ${m.legendary ? `<linearGradient id="${id}prism" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F472B6" stop-opacity="0"/><stop offset=".3" stop-color="#F472B6" stop-opacity=".22"/><stop offset=".5" stop-color="#FDE68A" stop-opacity=".26"/><stop offset=".7" stop-color="#67E8F9" stop-opacity=".22"/><stop offset="1" stop-color="#67E8F9" stop-opacity="0"/></linearGradient><clipPath id="${id}win"><rect x="18" y="48" width="${W - 36}" height="160" rx="10"/></clipPath>` : ''}

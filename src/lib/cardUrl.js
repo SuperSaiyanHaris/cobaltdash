@@ -5,8 +5,13 @@
 // creators use the plain URL, which refreshes on the normal cache cycle.
 export const CARD_DESIGN_VERSION = 5;
 
-export function cardImageUrl(platform, username, { mark = true, absolute = false } = {}) {
+// Our own pages ask for a still card (anim=0) and put a CSS shine over it
+// (components/CardShine.jsx): the card's built-in SVG motion repaints the whole
+// image every frame, which stutters on phones. Pass animated: true for the
+// self-animating version.
+export function cardImageUrl(platform, username, { mark = true, absolute = false, animated = false } = {}) {
   const params = new URLSearchParams({ v: String(CARD_DESIGN_VERSION) });
   if (!mark) params.set('mark', '0');
+  if (!animated) params.set('anim', '0');
   return `${absolute ? 'https://shinypull.com' : ''}/card/${platform}/${encodeURIComponent(username)}?${params}`;
 }

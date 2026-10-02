@@ -21,6 +21,16 @@ describe('cardTier (rarity from real rank)', () => {
 });
 
 describe('renderCard', () => {
+  it('animates by default and is completely still with animated: false', () => {
+    for (const rank of [1, 100, 3000, 20000]) {
+      const card = { ...base, rank };
+      expect(renderCard(card)).toContain('<animate');
+      const still = renderCard({ ...card, animated: false });
+      expect(still).not.toContain('<animate');
+      expect(still).not.toContain('animateTransform');
+      expect(still).toContain('>21.77M<');
+    }
+  });
   it('shows the count, rarity, card number and 30-day change', () => {
     const svg = renderCard(base);
     expect(svg).toContain('>21.77M<');

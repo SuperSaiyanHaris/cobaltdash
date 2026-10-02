@@ -18,6 +18,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { formatNumber } from '../lib/utils';
 import { cardImageUrl } from '../lib/cardUrl';
+import CardShine from '../components/CardShine';
 import HomeSponsorBand from '../components/HomeSponsorBand';
 import HomePassPromo from '../components/HomePassPromo';
 import HeroCardStage from '../components/HeroCardStage';
@@ -216,12 +217,14 @@ function ChampionsGrid({ tops }) {
           // full size, full opacity) the logo version fades in over it, after
           // the fan's spring has settled. draggable=false so the browser's
           // native image drag doesn't fight the swipe gesture.
-          const cardClassName = `block w-full rounded-[6.4%/4.571%] transition-[filter] cursor-pointer ${
-            isActive ? 'drop-shadow-[0_18px_30px_rgba(0,0,0,0.28)] hover:brightness-110' : 'drop-shadow-[0_10px_18px_rgba(0,0,0,0.18)]'
+          // A box-shadow, not a drop-shadow filter: a filter re-rasterizes the
+          // card whenever it moves, and these cards are always moving.
+          const cardClassName = `block w-full rounded-[6.4%/4.571%] cursor-pointer ${
+            isActive ? 'shadow-[0_18px_30px_-10px_rgba(0,0,0,0.35)]' : 'shadow-[0_10px_18px_-8px_rgba(0,0,0,0.22)]'
           }`;
 
           const cardInner = (
-            <span className="relative block">
+            <span className="relative block overflow-hidden rounded-[6.4%/4.571%]">
               <img
                 src={cardImageUrl(top.platform, top.username, { mark: false })}
                 width="250"
@@ -242,6 +245,7 @@ function ChampionsGrid({ tops }) {
                   className={`absolute inset-0 w-full h-auto select-none transition-opacity ${isActive ? 'opacity-100 duration-300 delay-500' : 'opacity-0 duration-0'}`}
                 />
               )}
+              {isActive && <CardShine tier="legendary" />}
             </span>
           );
 

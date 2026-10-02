@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useReducedMotion } from 'framer-motion';
 import { cardImageUrl } from '../lib/cardUrl';
+import CardShine from './CardShine';
 import { CARD_PLATFORMS, renderMarkOverlay } from '../lib/badgeCard';
 
 // Home hero centerpiece: a real holographic creator card (/card/...,
@@ -166,6 +167,7 @@ export default function HeroCardStage({ creators }) {
                     className="w-full h-full select-none"
                   />
                 )}
+                <CardShine tier="legendary" live={faceUp && settled} />
               </span>
             </span>
             <span aria-hidden="true" className="hero-glare" />
