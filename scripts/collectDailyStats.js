@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import { splitByTwitchId, matchById, matchByLogin } from './twitchLookup.js';
+import { hasNumericId, splitBy, matchKickChannels, matchBlueskyProfiles, blueskyActor } from './lookupById.js';
 config();
 import { createClient } from '@supabase/supabase-js';
 
@@ -205,8 +206,10 @@ async function fetchTwitchFollowers(broadcasterId) {
  * Fetch Bluesky stats for multiple handles in one request (up to 25)
  * Uses the fully public AT Protocol API — no auth required
  */
-async function fetchBlueskyBatch(handles) {
-  const params = handles.map(h => `actors=${encodeURIComponent(h)}`).join('&');
+async function fetchBlueskyBatch(creators) {
+  // Ask by DID (permanent) rather than handle, so renamed accounts keep
+  // getting readings; see scripts/lookupById.js.
+  const params = creators.map((c) => `actors=${encodeURIComponent(blueskyActor(c))}`).join('&');
   const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params}`;
   const response = await fetch(url);
 
@@ -215,16 +218,7 @@ async function fetchBlueskyBatch(handles) {
   }
 
   const data = await response.json();
-
-  // Map handle -> stats
-  const statsMap = new Map();
-  (data.profiles || []).forEach(profile => {
-    statsMap.set(profile.handle.toLowerCase(), {
-      followers: profile.followersCount ?? 0,
-      totalPosts: profile.postsCount ?? 0,
-    });
-  });
-  return statsMap;
+  return matchBlueskyProfiles(creators, data.profiles || []);
 }
 
 // ========== MASTODON API HELPERS ==========
@@ -369,35 +363,41 @@ async function getKickAccessToken() {
 /**
  * Fetch Kick channel info for multiple slugs (up to 50)
  */
-async function fetchKickChannelsBatch(slugs) {
+async function fetchKickChannelsBatch(creators) {
   const token = await getKickAccessToken();
-  const slugParams = slugs.map(s => `slug=${encodeURIComponent(s)}`).join('&');
+  // Ask by numeric channel ID (permanent) rather than slug, so renamed
+  // channels keep getting readings; see scripts/lookupById.js. Creators
+  // without an ID fall back to the slug.
+  const { byId, byName } = splitBy(creators, hasNumericId);
 
-  const response = await fetch(`https://api.kick.com/public/v1/channels?${slugParams}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-
-  // Never silently treat a failed request as "0 channels found" — that
-  // misclassifies every real channel in the batch as not-found instead of
-  // letting the caller's try/catch retry it next run. Throwing here is what
-  // makes that retry path actually fire.
-  if (!response.ok) {
-    throw new Error(`Kick channels request failed: ${response.status} ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  const channelMap = new Map();
-  (data.data || []).forEach(channel => {
-    // active_subscribers_count is a real, common, legitimate 0 for the vast
-    // majority of small Kick streamers (paid subs, not followers) — it is
-    // NOT the same "0 means the API call failed" signal that applies to
-    // YouTube/Twitch subscriber counts. Only `|| 0` to cover a genuinely
-    // missing field, never to paper over a failed request (handled above).
-    channelMap.set(channel.slug.toLowerCase(), {
-      subscribers: channel.active_subscribers_count || 0,
+  const lookup = async (params) => {
+    const response = await fetch(`https://api.kick.com/public/v1/channels?${params}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
     });
-  });
-  return channelMap;
+    // Never silently treat a failed request as "0 channels found" — that
+    // misclassifies every real channel in the batch as not-found instead of
+    // letting the caller's try/catch retry it next run. Throwing here is what
+    // makes that retry path actually fire.
+    if (!response.ok) {
+      throw new Error(`Kick channels request failed: ${response.status} ${response.statusText}`);
+    }
+    return (await response.json()).data || [];
+  };
+
+  // active_subscribers_count is a real, common, legitimate 0 for the vast
+  // majority of small Kick streamers (paid subs, not followers) — it is
+  // NOT the same "0 means the API call failed" signal that applies to
+  // YouTube/Twitch subscriber counts (matchKickChannels keeps the 0).
+  const found = new Map();
+  if (byId.length) {
+    const channels = await lookup(byId.map((c) => `broadcaster_user_id=${c.platform_id}`).join('&'));
+    for (const [k, v] of matchKickChannels(byId, channels)) found.set(k, v);
+  }
+  if (byName.length) {
+    const channels = await lookup(byName.map((c) => `slug=${encodeURIComponent(c.username.toLowerCase())}`).join('&'));
+    for (const [k, v] of matchKickChannels(byName, channels)) found.set(k, v);
+  }
+  return found;
 }
 
 /**
@@ -656,13 +656,12 @@ async function collectDailyStats() {
 
     for (let i = 0; i < kickBatches.length; i++) {
       const batch = kickBatches[i];
-      const slugs = batch.map((c) => c.username.toLowerCase());
 
       try {
-        const channelMap = await fetchKickChannelsBatch(slugs);
+        const channelMap = await fetchKickChannelsBatch(batch);
 
         for (const creator of batch) {
-          const channelData = channelMap.get(creator.username.toLowerCase());
+          const channelData = channelMap.get(creator.id);
           // channelData is undefined only when Kick's API genuinely did not
           // return this slug (deleted/banned/renamed) — that's the real
           // failure case to skip. A present channelData with subscribers=0
@@ -708,13 +707,12 @@ async function collectDailyStats() {
 
     for (let i = 0; i < blueskyBatches.length; i++) {
       const batch = blueskyBatches[i];
-      const handles = batch.map((c) => c.username.toLowerCase());
 
       try {
-        const statsMap = await fetchBlueskyBatch(handles);
+        const statsMap = await fetchBlueskyBatch(batch);
 
         for (const creator of batch) {
-          const stats = statsMap.get(creator.username.toLowerCase());
+          const stats = statsMap.get(creator.id);
           if (stats && stats.followers > 0) {
             statsToUpsert.push({
               creator_id: creator.id,
