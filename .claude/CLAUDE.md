@@ -204,6 +204,16 @@ sessions never see it. Anything a cloud session must know goes here.
   spinning ring, Legendary adds a double glint, prism sweep, sparkles and a
   moving gold number. Keep it cheap: SMIL only, no filters/blur, glints on
   chained begins so nothing repaints between sweeps.
+- Cards on our own pages are a still render plus a CSS shine (2026-10-02,
+  owner reported Home glint stutter). `cardImageUrl()` adds `anim=0`
+  (still card, no SMIL); `components/CardImage.jsx` / `CardShine.jsx` lay a
+  transform-only sweep over it that runs only while on screen. SMIL inside an
+  <img> repaints the whole card every frame and janks phones, worst under
+  transforms or filters, so never put `filter: drop-shadow` on moving
+  cards (use box-shadow) and don't pass `animated: true` on-site. Embeds on
+  creators' sites still use the animated default. Rankings podium on phones
+  stacks #1 over #2 and #3 (three across was ~100px, unreadable). Speed
+  Insights (`src/main.jsx`) records real-user vitals.
 - Rankings: podium header, Table/Cards toggle, foil sponsored rows (Premium
   at ranks 4-5 and 9-10, Basic at 15, 20, 25...), rarity chips on the
   subscribers tab.
