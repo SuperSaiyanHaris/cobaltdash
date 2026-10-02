@@ -627,7 +627,7 @@ const growthTone = (pct) => (!pct || isNaN(pct)) ? 'text-white/50' : (pct > 0 ? 
 
 function VsChip({ big = false }) {
   return (
-    <span className={`flex items-center justify-center rounded-full bg-white text-neutral-950 font-black tracking-wide flex-shrink-0 ${big ? 'w-12 h-12 sm:w-16 sm:h-16 text-sm sm:text-lg' : 'w-10 h-10 sm:w-12 sm:h-12 text-xs sm:text-sm'}`}>
+    <span className={`flex items-center justify-center rounded-full bg-white text-neutral-950 font-black tracking-wide flex-shrink-0 ${big ? 'w-10 h-10 sm:w-16 sm:h-16 text-xs sm:text-lg' : 'w-10 h-10 sm:w-12 sm:h-12 text-xs sm:text-sm'}`}>
       VS
     </span>
   );
@@ -637,7 +637,7 @@ function DotGrid() {
   return <div aria-hidden="true" className="absolute inset-0 pointer-events-none hero-dot-grid" />;
 }
 
-const SLOT_CARD = 'w-[100px] h-[140px] sm:w-[200px] sm:h-[280px]';
+const SLOT_CARD = 'w-[116px] h-[162px] min-[360px]:w-[132px] min-[360px]:h-[185px] sm:w-[200px] sm:h-[280px]';
 
 /**
  * Landing: two face-down slots with a VS between them. Picking a creator
@@ -673,7 +673,7 @@ function LandingStage({ creators, query, setQuery, results, searching, onAdd, on
         <div className={`transition-opacity duration-300 ${c ? 'opacity-100' : 'opacity-50'}`}>
           <FlipCard creator={c || null} delay={dealt && i === 1 ? 300 : 0} className={SLOT_CARD} />
         </div>
-        <div className="mt-3 sm:mt-4 h-10 sm:h-12 flex flex-col items-center justify-start text-center max-w-[180px]">
+        <div className="mt-3 sm:mt-4 h-10 sm:h-12 flex flex-col items-center justify-start text-center max-w-[116px] min-[360px]:max-w-[132px] sm:max-w-[180px]">
           {picked ? (
             <>
               <p className="text-sm sm:text-base font-bold truncate max-w-full">{filled[i].displayName}</p>
@@ -703,7 +703,7 @@ function LandingStage({ creators, query, setQuery, results, searching, onAdd, on
           </p>
         </div>
 
-        <div className="mt-6 sm:mt-10 flex items-start justify-center gap-4 sm:gap-10">
+        <div className="mt-6 sm:mt-10 flex items-start justify-center gap-2 sm:gap-10">
           {slot(0)}
           <div className="self-center -mt-10 sm:-mt-12"><VsChip big /></div>
           {slot(1)}
@@ -797,23 +797,27 @@ function FaceOffBand(props) {
     return `, with ${formatNumber(Math.abs(wTotal - oTotal))} more ${metricLabel(winner.platform).toLowerCase()} at ${(wTotal / oTotal).toFixed(1)}× the size.`;
   })();
 
+  // Phones: every card fills its column (two per row), so the name and count
+  // on the card stay readable. From sm up they have fixed sizes.
   const cardSize = isPair
-    ? 'w-[124px] h-[174px] sm:w-[220px] sm:h-[308px]'
+    ? 'w-full max-w-[176px] aspect-[250/350] sm:max-w-none sm:aspect-auto sm:w-[220px] sm:h-[308px]'
     : filledCreators.length === 3
-      ? 'w-[96px] h-[134px] sm:w-[180px] sm:h-[252px]'
-      : 'w-[88px] h-[123px] sm:w-[150px] sm:h-[210px]';
+      ? 'w-full max-w-[176px] aspect-[250/350] sm:max-w-none sm:aspect-auto sm:w-[180px] sm:h-[252px]'
+      : 'w-full max-w-[176px] aspect-[250/350] sm:max-w-none sm:aspect-auto sm:w-[150px] sm:h-[210px]';
 
   const fighter = (c, i) => {
     const g = growthData[c.platformId];
     const isWinner = hasWinner && i === topIdx;
     return (
       <Link key={`${c.platform}:${c.username}`} to={`/${c.platform}/${c.username}`} className="group flex flex-col items-center min-w-0">
-        <div className="relative">
+        <div className="h-7 flex items-center justify-center">
           {isWinner && (
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-950 whitespace-nowrap">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-950 whitespace-nowrap">
               <Crown className="w-3 h-3" /> Leader
             </span>
           )}
+        </div>
+        <div className="w-full flex justify-center">
           <FlipCard creator={cardOf(c)} delay={i * 220} className={cardSize} />
         </div>
         <div className={`mt-4 w-full rounded-t-xl border-t border-x px-2 pt-3 pb-5 text-center ${isWinner ? 'border-amber-400/50 bg-amber-400/[0.08]' : 'border-white/10 bg-white/[0.04]'}`}>
@@ -887,9 +891,21 @@ function FaceOffBand(props) {
 
         {/* Cards */}
         {isPair ? (
-          <div className="mt-10 grid grid-cols-[1fr,auto,1fr] items-end gap-3 sm:gap-8 max-w-3xl mx-auto">
+          <div className="mt-8 sm:mt-10 max-w-3xl mx-auto">
+            <div className="sm:hidden mb-3 flex items-center justify-center gap-3">
+              <VsChip />
+              {total > 0 && (
+                <p className="text-2xl font-black tabular-nums leading-none">
+                  <span style={{ color: accentOnDark(0) }}>{wins[0]}</span>
+                  <span className="text-white/30 mx-1.5">–</span>
+                  <span style={{ color: accentOnDark(1) }}>{wins[1]}</span>
+                  <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50 align-middle">Rounds</span>
+                </p>
+              )}
+            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-[1fr,auto,1fr] items-end gap-3 sm:gap-8">
             {fighter(filledCreators[0], 0)}
-            <div className="self-center flex flex-col items-center pb-16 sm:pb-24">
+            <div className="hidden sm:flex self-center flex-col items-center pb-16 sm:pb-24">
               <VsChip big />
               {total > 0 && (
                 <>
@@ -904,10 +920,11 @@ function FaceOffBand(props) {
             </div>
             {fighter(filledCreators[1], 1)}
           </div>
+          </div>
         ) : (
-          <div className="mt-10 flex flex-wrap items-end justify-center gap-3 sm:gap-6">
+          <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-x-3 gap-y-8 sm:flex sm:flex-wrap sm:items-end sm:justify-center sm:gap-6">
             {filledCreators.map((c, i) => (
-              <div key={`${c.platform}:${c.username}`} className="w-[calc(33%-0.75rem)] sm:w-auto sm:min-w-[170px]">{fighter(c, i)}</div>
+              <div key={`${c.platform}:${c.username}`} className="w-full justify-self-center sm:w-auto sm:min-w-[170px] [&:nth-child(odd):last-child]:col-span-2 [&:nth-child(odd):last-child]:max-w-[176px] sm:[&:nth-child(odd):last-child]:max-w-none">{fighter(c, i)}</div>
             ))}
           </div>
         )}
@@ -966,19 +983,19 @@ function MatchupGrid({ matchupStats }) {
           const lead = aTotal >= bTotal ? a : b;
           return (
             <Link key={url} to={`/compare?creators=${url}`} className={`group block ${CARD} overflow-hidden hover:border-neutral-300 transition-colors`}>
-              <div className="relative h-[150px] bg-[#0a0a0f] overflow-hidden">
+              <div className="relative h-[236px] bg-[#0a0a0f] overflow-hidden">
                 <DotGrid />
                 <img
                   src={cardImageUrl(m.aPlatform, m.aUsername, { mark: false })}
                   alt="" width="250" height="350" loading="lazy" draggable="false"
                   onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
-                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[96%] -rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none opacity-0 transition-opacity duration-500"
+                  className="absolute left-1/2 top-5 w-[132px] h-auto -translate-x-[96%] -rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none opacity-0 transition-opacity duration-500"
                 />
                 <img
                   src={cardImageUrl(m.bPlatform, m.bUsername, { mark: false })}
                   alt="" width="250" height="350" loading="lazy" draggable="false"
                   onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
-                  className="absolute left-1/2 top-4 w-[86px] h-auto -translate-x-[4%] rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none opacity-0 transition-opacity duration-500"
+                  className="absolute left-1/2 top-5 w-[132px] h-auto -translate-x-[4%] rotate-[8deg] rounded-[6.4%/4.571%] shadow-[0_16px_30px_-10px_rgba(0,0,0,0.8)] select-none opacity-0 transition-opacity duration-500"
                 />
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"><VsChip /></span>
               </div>

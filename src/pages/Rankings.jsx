@@ -992,7 +992,7 @@ function PlatformRankings({ urlPlatform }) {
             intro moved below the table (still on the page for SEO). */}
         <div className="relative isolate overflow-hidden bg-[#0a0a0f] text-white">
           <div aria-hidden="true" className="absolute inset-0 hero-dot-grid pointer-events-none" />
-          <div className="relative w-full px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+          <div className="relative w-full px-4 sm:px-6 lg:px-8 pt-8 pb-6 sm:pb-0 sm:pt-10">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
               Rankings{updatedAgo ? <> · Updated {updatedAgo}</> : null}
             </p>
@@ -1002,7 +1002,7 @@ function PlatformRankings({ urlPlatform }) {
             <PlatformNav current={selectedPlatform} onSelect={handlePlatformChange} dark />
 
             {loading && rankings.length === 0 ? (
-              <div className="mt-10 h-[190px] sm:h-[400px]" />
+              <div className="hidden sm:block mt-10 sm:h-[400px]" />
             ) : (
               <RankingsPodium creators={rankings} />
             )}
