@@ -114,35 +114,54 @@ async function fetchYouTubeBatch(channelIds) {
 /**
  * Fetch Twitch user info for multiple users in one request (up to 100)
  */
-async function fetchTwitchUsersBatch(usernames) {
+/**
+ * Look a batch of creators up on Twitch. Uses the stable numeric Twitch ID
+ * (platform_id) whenever there is one, so a streamer who renames their channel
+ * keeps getting readings: a login lookup never finds a renamed channel again,
+ * and 970 tracked channels had gone stale that way by 2026-10-01 (the #28
+ * channel among them). Falls back to the login when there is no numeric ID.
+ * Returns Map(creator.id -> { id, login }) for the ones Twitch returned.
+ */
+async function fetchTwitchUsersBatch(creators) {
   const token = await getTwitchAccessToken();
+  const hasId = (c) => /^d+$/.test(String(c.platform_id || ''));
+  const byIdList = creators.filter(hasId);
+  const byLoginList = creators.filter((c) => !hasId(c));
 
-  const params = usernames.map((u) => `login=${encodeURIComponent(u)}`).join('&');
-  await twitchSlot();
-  const response = await fetch(`https://api.twitch.tv/helix/users?${params}`, {
-    headers: {
-      'Client-ID': TWITCH_CLIENT_ID,
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    // A 429/5xx here used to parse as an empty list, silently marking all 100
-    // users "not found". Throw so the batch is counted as failed instead.
-    throw new Error(`Twitch users API ${response.status}`);
-  }
-  const data = await response.json();
-
-  // Create a map of username -> user data
-  const userMap = new Map();
-  (data.data || []).forEach((user) => {
-    userMap.set(user.login.toLowerCase(), {
-      id: user.id,
-      view_count: parseInt(user.view_count) || 0,
+  const lookup = async (params) => {
+    await twitchSlot();
+    const response = await fetch(`https://api.twitch.tv/helix/users?${params}`, {
+      headers: {
+        'Client-ID': TWITCH_CLIENT_ID,
+        'Authorization': `Bearer ${token}`,
+      },
     });
-  });
+    if (!response.ok) {
+      // A 429/5xx here used to parse as an empty list, silently marking all 100
+      // users "not found". Throw so the batch is counted as failed instead.
+      throw new Error(`Twitch users API ${response.status}`);
+    }
+    return (await response.json()).data || [];
+  };
 
-  return userMap;
+  const found = new Map();
+  if (byIdList.length) {
+    const users = await lookup(byIdList.map((c) => `id=${encodeURIComponent(c.platform_id)}`).join('&'));
+    const byId = new Map(users.map((u) => [String(u.id), u]));
+    for (const c of byIdList) {
+      const u = byId.get(String(c.platform_id));
+      if (u) found.set(c.id, { id: u.id, login: u.login });
+    }
+  }
+  if (byLoginList.length) {
+    const users = await lookup(byLoginList.map((c) => `login=${encodeURIComponent(c.username.toLowerCase())}`).join('&'));
+    const byLogin = new Map(users.map((u) => [u.login.toLowerCase(), u]));
+    for (const c of byLoginList) {
+      const u = byLogin.get(c.username.toLowerCase());
+      if (u) found.set(c.id, { id: u.id, login: u.login });
+    }
+  }
+  return found;
 }
 
 /**
@@ -583,18 +602,17 @@ async function collectDailyStats() {
 
     for (let i = 0; i < twitchBatches.length; i++) {
       const batch = twitchBatches[i];
-      const usernames = batch.map((c) => c.username.toLowerCase());
 
       try {
-        // Get all user info in one request
-        const userMap = await fetchTwitchUsersBatch(usernames);
+        // Get all user info in one request (by Twitch ID, see fetchTwitchUsersBatch)
+        const userMap = await fetchTwitchUsersBatch(batch);
 
         // Followers only (one call per creator). The VOD-views call was
         // dropped 2026-09-25: it fed only the Twitch "Most Views" tab, which
         // was replaced by hours watched (Twitch retired public view counts).
         const results = new Array(batch.length);
         await pooled(batch, TWITCH_CONCURRENCY, async (creator, idx) => {
-          const userData = userMap.get(creator.username.toLowerCase());
+          const userData = userMap.get(creator.id);
           if (!userData) {
             results[idx] = { creator, error: 'User not found' };
             return;
