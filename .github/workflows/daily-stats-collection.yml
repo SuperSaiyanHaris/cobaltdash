@@ -63,12 +63,16 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: Aggregate hours watched (Twitch + Kick)
+        # Normally 2-5 minutes. A cap makes a hang fail fast (the steps below
+        # still run) instead of dying with the runner an hour later.
+        timeout-minutes: 15
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/aggregateHoursWatched.js
       - name: Refresh rankings cache
         if: always()
+        timeout-minutes: 10
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -77,6 +81,7 @@ jobs:
       # or the hours-watched rollup didn't land. See scripts/checkDataHealth.js.
       - name: Data health check
         if: always()
+        timeout-minutes: 10
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

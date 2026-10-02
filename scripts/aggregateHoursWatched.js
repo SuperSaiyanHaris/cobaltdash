@@ -62,6 +62,17 @@ export function zonedMidnight(dateStr, tz) {
   return new Date(guess.getTime() - (shownAsUtc - guess.getTime()));
 }
 
+/**
+ * Every request gets a deadline. A single hung connection used to stall the
+ * whole rollup until GitHub declared the runner lost (a 45 minute failure on
+ * 2026-10-01); now it surfaces as an error that withRetry retries.
+ */
+const REQUEST_TIMEOUT_MS = 60_000;
+function fetchWithTimeout(url, opts = {}) {
+  const deadline = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  return fetch(url, { ...opts, signal: opts.signal ? AbortSignal.any([opts.signal, deadline]) : deadline });
+}
+
 /** Run a PostgREST query, retrying transient failures (statement timeouts on a slow page). */
 async function withRetry(label, makeQuery, attempts = 4) {
   for (let i = 1; ; i++) {
@@ -137,7 +148,7 @@ export function planWrites(rows, byCreator) {
 async function aggregateHoursWatched() {
   const t0 = Date.now();
   if (!SUPABASE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set. Refusing to run without it.');
-  supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false }, global: { fetch: fetchWithTimeout } });
   const todayStr = getTodayLocal();
   const todayStart = zonedMidnight(todayStr, TZ);
   const now = new Date();

@@ -18,7 +18,10 @@ test('sign in, follow a creator, see it on the dashboard, unfollow', async ({ pa
 
   // This can be a real account, so leave its follows exactly as found:
   // only follow (and later unfollow) xQc if it wasn't followed already.
-  await page.goto('/kick/xqc', { waitUntil: 'networkidle' });
+  // Not 'networkidle': a profile keeps making background requests (live
+  // status, analytics), so it may never go quiet. The visibility check below
+  // is the real "page is ready" signal.
+  await page.goto('/kick/xqc', { waitUntil: 'domcontentloaded' });
   const follow = page.getByRole('button', { name: /^(Follow|Following)$/ });
   await expect(follow).toBeVisible();
   // The button renders "Follow" first and flips once the follow check
