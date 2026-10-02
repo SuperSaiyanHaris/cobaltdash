@@ -29,14 +29,20 @@ const supabase = createClient(url, key, { auth: { persistSession: false } });
 // `days`: how many recent ET dates may count (1 = today only). TikTok and
 // Substack are collected by other schedules, so yesterday's run also counts.
 const COVERAGE = {
-  youtube:  { min: 0.85, days: 1 },
-  twitch:   { min: 0.85, days: 1 },
-  kick:     { min: 0.85, days: 1 },
-  bluesky:  { min: 0.85, days: 1 },
-  music:    { min: 0.85, days: 1 },
-  mastodon: { min: 0.70, days: 1 },
-  tiktok:   { min: 0.75, days: 2 },
-  substack: { min: 0.30, days: 2 },
+  // Set a few points under where each platform actually sits (measured
+  // 2026-10-02: youtube 95%, twitch 99%, kick 100%, bluesky 100%, music 100%,
+  // mastodon 87%, tiktok 90%, substack 91%) so a slide like the ones found
+  // that day (Substack 46%, renamed Twitch/Kick channels) fails the run
+  // instead of hiding under a loose floor. The gap that remains is accounts
+  // that no longer exist and brand-new empty ones, which are never recorded.
+  youtube:  { min: 0.92, days: 1 },
+  twitch:   { min: 0.95, days: 1 },
+  kick:     { min: 0.95, days: 1 },
+  bluesky:  { min: 0.95, days: 1 },
+  music:    { min: 0.95, days: 1 },
+  mastodon: { min: 0.80, days: 1 },
+  tiktok:   { min: 0.82, days: 2 },
+  substack: { min: 0.80, days: 2 },
 };
 
 // --strict: right after a collection run, today's readings must exist. Without
