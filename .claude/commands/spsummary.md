@@ -48,7 +48,7 @@ Any rows here mean sessions are closing without going through `finalize_stream_s
 **4. Data quality spot checks**
 ```sql
 SELECT c.platform, count(*) FROM creator_stats cs JOIN creators c ON c.id = cs.creator_id
-WHERE cs.recorded_at = CURRENT_DATE AND (cs.subscribers = 0 OR cs.subscribers IS NULL)
+WHERE cs.recorded_at = (now() AT TIME ZONE 'America/New_York')::date AND (cs.subscribers = 0 OR cs.subscribers IS NULL)
 GROUP BY c.platform;
 ```
 Kick showing up here is expected (0 paid subs is a real value for Kick, see CLAUDE.md). Any OTHER platform showing up here is a real data-integrity problem worth flagging loudly (CLAUDE.md's hard rule: never write 0/null subscribers except Kick's documented case).
@@ -65,8 +65,10 @@ SELECT c.platform,
   max(latest.recorded_at) AS most_recent_any
 FROM creators c
 LEFT JOIN LATERAL (SELECT recorded_at FROM creator_stats WHERE creator_id=c.id ORDER BY recorded_at DESC LIMIT 1) latest ON true
-GROUP BY c.platform ORDER BY fresh_last_2d::float / NULLIF(total,0) ASC;
+GROUP BY c.platform ORDER BY count(*) FILTER (WHERE latest.recorded_at >= CURRENT_DATE - INTERVAL '2 days')::float / NULLIF(count(*),0) ASC;
 ```
+Stats are stored under the **Eastern** date, so use that date instead of CURRENT_DATE in the zero/null check above (the server date is already tomorrow after 8pm Eastern, which makes the check return nothing). Then look at *why* a stale creator is stale before calling it an outage: most are renamed, deleted or zero-subscriber accounts. Platforms are looked up by permanent ID (Twitch, Kick, Bluesky) so renames should not cause staleness; if one does, that is a bug. Substack is a rate-limited leaderboard sweep and should sit around 90% fresh; a drop to ~50% means the sweep is being cut short again.
+
 A platform sitting at or near 0% fresh (not just a few percent of stale outliers, which is normal churn) is a real collection outage, not noise — flag it loudly, and note `most_recent_any` so the report says how long it's been broken.
 
 **5. Deploy status**
