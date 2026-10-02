@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+import { splitByTwitchId, matchById, matchByLogin } from './twitchLookup.js';
 config();
 import { createClient } from '@supabase/supabase-js';
 
@@ -124,9 +125,7 @@ async function fetchYouTubeBatch(channelIds) {
  */
 async function fetchTwitchUsersBatch(creators) {
   const token = await getTwitchAccessToken();
-  const hasId = (c) => /^d+$/.test(String(c.platform_id || ''));
-  const byIdList = creators.filter(hasId);
-  const byLoginList = creators.filter((c) => !hasId(c));
+  const { byId: byIdList, byLogin: byLoginList } = splitByTwitchId(creators);
 
   const lookup = async (params) => {
     await twitchSlot();
@@ -147,19 +146,11 @@ async function fetchTwitchUsersBatch(creators) {
   const found = new Map();
   if (byIdList.length) {
     const users = await lookup(byIdList.map((c) => `id=${encodeURIComponent(c.platform_id)}`).join('&'));
-    const byId = new Map(users.map((u) => [String(u.id), u]));
-    for (const c of byIdList) {
-      const u = byId.get(String(c.platform_id));
-      if (u) found.set(c.id, { id: u.id, login: u.login });
-    }
+    for (const [k, v] of matchById(byIdList, users)) found.set(k, v);
   }
   if (byLoginList.length) {
     const users = await lookup(byLoginList.map((c) => `login=${encodeURIComponent(c.username.toLowerCase())}`).join('&'));
-    const byLogin = new Map(users.map((u) => [u.login.toLowerCase(), u]));
-    for (const c of byLoginList) {
-      const u = byLogin.get(c.username.toLowerCase());
-      if (u) found.set(c.id, { id: u.id, login: u.login });
-    }
+    for (const [k, v] of matchByLogin(byLoginList, users)) found.set(k, v);
   }
   return found;
 }
