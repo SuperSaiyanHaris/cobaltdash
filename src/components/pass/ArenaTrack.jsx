@@ -134,13 +134,24 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
   const [page, setPage] = useState(pageOf(selected));
   const scroller = useRef(null);
   const [now] = useState(() => Date.now());
-  // The ten 3D packs are the heaviest part and sit below the fold, so they
-  // mount a beat after the HUD and the track have painted.
-  const [packsOn, setPacksOn] = useState(false);
+  // The ten 3D packs are the heaviest part (about 200 SVG nodes each) and sit
+  // below the fold: they start mounting when the strip nears the screen, one
+  // pack every 70ms, so no single render blocks a tap or a scroll.
+  const packsRef = useRef(null);
+  const [packCount, setPackCount] = useState(0);
+  const [packsNear, setPacksNear] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setPacksOn(true), 120);
-    return () => clearTimeout(id);
-  }, []);
+    const el = packsRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setTimeout(() => setPacksNear(true), 300); return undefined; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setPacksNear(true); io.disconnect(); } }, { rootMargin: '700px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [showBody]);
+  useEffect(() => {
+    if (!packsNear) return undefined;
+    const id = setInterval(() => setPackCount((c) => (c >= PACKS.length ? c : c + 1)), 70);
+    return () => clearInterval(id);
+  }, [packsNear]);
 
   // Start on the page holding the next reward.
   useEffect(() => {
@@ -263,13 +274,13 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
       </div>}
 
       {/* The season's packs */}
-      {showBody && <div className="flex flex-col gap-3">
+      {showBody && <div ref={packsRef} className="flex flex-col gap-3">
         <div className="flex items-end justify-between gap-3">
           <h2 className="font-arena italic font-black uppercase text-white text-[26px] tracking-wide">Season packs</h2>
           <p className="text-[13.5px] text-white/75">{opened.size} of {PACKS.length} opened</p>
         </div>
-        <div className="sp-packs" style={packsOn ? undefined : { minHeight: 250 }}>
-          {packsOn && PACKS.map((k) => {
+        <div className="sp-packs" style={packCount < PACKS.length ? { minHeight: 250 } : undefined}>
+          {PACKS.slice(0, packCount).map((k) => {
             const ready = state.packs.available.includes(k.level);
             const done = opened.has(k.level);
             return (
