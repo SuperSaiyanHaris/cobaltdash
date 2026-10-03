@@ -125,8 +125,14 @@
 
     <!-- Google Analytics (deferred - non-blocking) -->
     <script>
+      // Skip automated browsers. Most of the traffic GA showed in late
+      // September came from cloud data centers (Des Moines, Boydton, San Jose)
+      // running headless browsers that GA's own bot list does not catch, and
+      // the Ads conversion below counts every page view.
+      var isBot = navigator.webdriver === true || /HeadlessChrome|Lighthouse|PhantomJS|bot|spider|crawl/i.test(navigator.userAgent);
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      if (!isBot) {
       gtag('js', new Date());
       // GA4 auto-redacts any page_path containing '@' as likely PII (looks like
       // an email), which silently collapses Mastodon profile views
@@ -147,6 +153,7 @@
         s.async = true;
         document.head.appendChild(s);
       });
+      }
     </script>
   </head>
   <body>

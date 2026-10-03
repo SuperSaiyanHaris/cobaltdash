@@ -25,8 +25,22 @@ export function collapseSpaced(text) {
   return text.replace(/\b(?:[a-z0-9@$!][\s.\-_*]+){2,}[a-z0-9@$!]\b/gi, (run) => run.replace(/[\s.\-_*]+/g, ''));
 }
 
+// Spellings the word list does not know. Each token is lower-cased, de-leeted
+// and has repeated letters squeezed ("f@akn" -> "fakn") before the lookup.
+const EXTRA_BLOCKED = new Set(['fkn', 'fkin', 'fking', 'fakn', 'fukn', 'fuking', 'fcking', 'fckn', 'fcken', 'fuk', 'fuq', 'phuck', 'sht', 'shyt', 'btch', 'biatch']);
+const LEET = { '@': 'a', '$': 's', '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '!': 'i' };
+export function extraBlocked(text) {
+  const found = [];
+  for (const raw of String(text).toLowerCase().split(/[^a-z0-9@$!]+/)) {
+    if (!raw) continue;
+    const squeezed = raw.replace(/[@$01345!]/g, (c) => LEET[c]).replace(/(.)\1+/g, (m, c) => c);
+    if (EXTRA_BLOCKED.has(squeezed)) found.push(raw);
+  }
+  return found;
+}
+
 export function profanityIn(text) {
-  const words = new Set();
+  const words = new Set(extraBlocked(text));
   for (const t of [text, collapseSpaced(text)]) {
     for (const m of matcher.getAllMatches(t)) {
       const word = englishDataset.getPayloadWithPhraseMetadata(m).phraseMetadata?.originalWord;

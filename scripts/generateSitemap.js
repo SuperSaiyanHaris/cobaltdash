@@ -90,7 +90,6 @@ const staticPages = [
   { url: '/kick/earnings', lastmod: TODAY, changefreq: 'daily', priority: 0.8 },
   { url: '/card', lastmod: TODAY, changefreq: 'monthly', priority: 0.6 },
   { url: '/pass', lastmod: TODAY, changefreq: 'weekly', priority: 0.7 },
-  { url: '/search', lastmod: TODAY, changefreq: 'weekly', priority: 0.7 },
   { url: '/about', lastmod: TODAY, changefreq: 'monthly', priority: 0.6 },
   { url: '/contact', lastmod: TODAY, changefreq: 'monthly', priority: 0.5 },
   { url: '/support', lastmod: TODAY, changefreq: 'monthly', priority: 0.5 },

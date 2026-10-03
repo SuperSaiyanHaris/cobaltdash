@@ -568,13 +568,24 @@ async function getRankingsContent(platform) {
   const platformName = PLATFORM_NAMES[platform];
   const metric = METRIC_LABELS[platform] || 'followers';
   const top = rows[0];
+  const RANKINGS_LEAD = {
+    youtube: { name: 'YouTube Rankings', sub: 'Top YouTubers by Subscribers' },
+    twitch: { name: 'Twitch Rankings', sub: 'Top Streamers by Followers' },
+    substack: { name: 'Substack Leaderboard', sub: 'Top Newsletters' },
+  };
 
-  const title = `Top ${platformName} Creators (${new Date().getFullYear()}) - ShinyPull`;
+  // Lead with the phrase people search for ("substack leaderboard", "twitch
+  // rankings", "youtube rankings"); keep in step with getSeoData in Rankings.jsx.
+  const lead = RANKINGS_LEAD[platform];
+  const year = new Date().getFullYear();
+  const title = lead
+    ? `${lead.name} (${year}): ${lead.sub} - ShinyPull`
+    : `Top ${platformName} Creators (${year}) - ShinyPull`;
   const description = `The top ${platformName} creators ranked by ${metric}, updated daily. ` +
     `#1 is ${top.display_name || top.username} with ${formatNumber(top.subscribers)} ${metric}.`;
 
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
-  html += `<h1 style="font-size:1.5rem;font-weight:600">Top ${platformName} Creators</h1>`;
+  html += `<h1 style="font-size:1.5rem;font-weight:600">${lead ? `${lead.name}: ${lead.sub}` : `Top ${platformName} Creators`}</h1>`;
   html += `<p>The most-${metric.includes('subscriber') ? 'subscribed' : 'followed'} ${platformName} creators, ranked by ${metric} and updated daily.</p>`;
   if (PLATFORM_INTROS[platform]) html += `<p>${esc(PLATFORM_INTROS[platform])}</p>`;
   html += `<ol>`;
@@ -1077,6 +1088,9 @@ function getMeta(pathname, searchParams) {
     return {
       title: 'Search Creators - ShinyPull',
       description: `Search for any creator across ${ALL_PLATFORM_LIST}. Live profile lookup and instant stats.`,
+      // Result pages (/search?q=...) have no content of their own: Google
+      // filed one as a Soft 404, which failed the whole validation run.
+      noindex: true,
     };
   }
 

@@ -24,6 +24,11 @@ describe('localCheck', () => {
     expect(localCheck('this is shit').message).toContain('"shit"');
   });
 
+  it('catches spellings the word list misses, without flagging ordinary words', () => {
+    for (const t of ['this guy f@akn sucks', 'what a fkn legend', 'fuking hell', 'fcking great']) expect(reason(t), t).toBe('swearing');
+    for (const t of ['faking it till he makes it', 'what a fan', 'fine work', 'he is shtick free', 'a funky video']) expect(reason(t), t).toBe(null);
+  });
+
   it('blocks links, emails and phone numbers', () => {
     expect(reason('sub to me youtube.com/@spam')).toBe('links');
     expect(reason('https://example.org')).toBe('links');

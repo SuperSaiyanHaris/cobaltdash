@@ -69,7 +69,10 @@ async function postComment(res, supabase, user, { creatorId, body, parentId }) {
   }).select('id, creator_id, user_id, parent_id, body, status, follows_creator, up_count, down_count, created_at').single();
   if (error) return fail(res, 500, "Couldn't post that. Try again.");
   // ShinyPass: 15 XP, up to 5 comments a day, taken back if it's removed.
-  const xp = await grantAction(supabase, user.id, 'comment', row.id);
+  // A real comment is a few words: a bare name or one word posted to farm
+  // XP (we saw "arif", "Tayyab") still posts but earns nothing.
+  const earnsXp = text.length >= 15 && text.split(/\s+/).filter((w) => w.length > 1).length >= 3;
+  const xp = earnsXp ? await grantAction(supabase, user.id, 'comment', row.id) : null;
   return res.status(201).json({ comment: { ...row, commenter_profiles: { handle: profile.handle } }, xpGranted: xp !== null, xp });
 }
 

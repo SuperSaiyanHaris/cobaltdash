@@ -281,7 +281,12 @@ function getSeoData(platform, rankType, topCount) {
     mastodon: 'Mastodon Accounts',
     substack: 'Substack Newsletters',
   }[pid] || `${p} Creators`;
-  const title = `${countLabel} ${rankType === 'growth' ? 'Fastest Growing ' : rankType === 'views' ? 'Most Viewed ' : rankType === 'watched' ? 'Most Watched ' : ''}${platformNoun} (2026) - Live Rankings`;
+  const keywordLead = !['growth', 'views', 'watched'].includes(rankType) && {
+    youtube: `YouTube Rankings (2026): ${countLabel} YouTubers by Subscribers`,
+    twitch: `Twitch Rankings (2026): ${countLabel} Streamers by Followers`,
+    substack: `Substack Leaderboard (2026): ${countLabel} Newsletters`,
+  }[pid];
+  const title = keywordLead || `${countLabel} ${rankType === 'growth' ? 'Fastest Growing ' : rankType === 'views' ? 'Most Viewed ' : rankType === 'watched' ? 'Most Watched ' : ''}${platformNoun} (2026) - Live Rankings`;
 
   const descriptions = {
     youtube: `The ${countLabel.toLowerCase()} most subscribed YouTubers ranked by subscribers, views, and growth. Updated daily with live stats. See who has the most YouTube subscribers in 2026.`,
