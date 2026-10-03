@@ -89,6 +89,10 @@
       "destination": "/api/:path*"
     },
     {
+      "source": "/llms-full.txt",
+      "destination": "/api/llms-full"
+    },
+    {
       "source": "/og/card/:platform/:file",
       "destination": "/api/share-card?platform=:platform&file=:file"
     },

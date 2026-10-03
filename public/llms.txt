@@ -14,6 +14,10 @@
 - [Top Substack publications](https://shinypull.com/rankings/substack)
 - [All rankings](https://shinypull.com/rankings)
 
+## Everything in one file
+
+- [Top 50 of every ranking, with dates](https://shinypull.com/llms-full.txt): plain Markdown, refreshed hourly. Best for "who are the top N" questions.
+
 ## Creator pages
 
 Every tracked creator has a page at https://shinypull.com/{platform}/{username} (for example https://shinypull.com/youtube/mrbeast) with current counts, daily history, 30-day growth and rank.

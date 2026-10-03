@@ -560,10 +560,18 @@ async function getProfileContent(platform, username) {
 async function getRankingsContent(platform) {
   const rows = await supabaseGet(
     `rankings_cache?platform=eq.${platform}&rank_type=eq.subscribers` +
-    `&select=rank_position,username,display_name,subscribers` +
+    `&select=creator_id,rank_position,username,display_name,subscribers` +
     `&order=rank_position.asc&limit=50`
   );
   if (!rows || !rows.length) return { status: 'error' };
+
+  // The date the numbers were collected (the top creator's newest reading), so
+  // the page can say exactly how fresh it is. rankings_cache.computed_at is
+  // restamped on every refresh even when the data is old, so it isn't used.
+  const latest = await supabaseGet(
+    `creator_stats?creator_id=eq.${rows[0].creator_id}&select=recorded_at&order=recorded_at.desc&limit=1`
+  );
+  const asOf = latest && latest[0] ? String(latest[0].recorded_at).slice(0, 10) : null;
 
   const platformName = PLATFORM_NAMES[platform];
   const metric = METRIC_LABELS[platform] || 'followers';
@@ -584,30 +592,52 @@ async function getRankingsContent(platform) {
   const description = `The top ${platformName} creators ranked by ${metric}, updated daily. ` +
     `#1 is ${top.display_name || top.username} with ${formatNumber(top.subscribers)} ${metric}.`;
 
+  const name = (r) => r.display_name || r.username;
+  const heading = lead ? `${lead.name}: ${lead.sub}` : `Top ${platformName} Creators`;
+  const asOfText = asOf ? formatDate(asOf) : null;
+  const [first, second, third] = rows;
+  // One plain, quotable answer at the top: who is #1 and by how much, with the date.
+  const answer = `${asOfText ? `As of ${asOfText}, ` : ''}${name(first)} is the ${metric.includes('subscriber') ? 'most-subscribed' : 'most-followed'} ${platformName} creator with ${formatNumber(first.subscribers)} ${metric}` +
+    (second ? `, followed by ${name(second)} (${formatNumber(second.subscribers)})` : '') +
+    (third ? ` and ${name(third)} (${formatNumber(third.subscribers)})` : '') + '.';
+
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
-  html += `<h1 style="font-size:1.5rem;font-weight:600">${lead ? `${lead.name}: ${lead.sub}` : `Top ${platformName} Creators`}</h1>`;
-  html += `<p>The most-${metric.includes('subscriber') ? 'subscribed' : 'followed'} ${platformName} creators, ranked by ${metric} and updated daily.</p>`;
+  html += `<h1 style="font-size:1.5rem;font-weight:600">${esc(heading)}</h1>`;
+  html += `<p>${esc(answer)}</p>`;
+  html += `<p>The most-${metric.includes('subscriber') ? 'subscribed' : 'followed'} ${platformName} creators, ranked by ${metric}${asOf ? `. Updated <time datetime="${asOf}">${esc(asOfText)}</time>` : ' and updated daily'}.</p>`;
   if (PLATFORM_INTROS[platform]) html += `<p>${esc(PLATFORM_INTROS[platform])}</p>`;
-  html += `<ol>`;
+  html += `<table style="border-collapse:collapse;width:100%"><caption style="text-align:left;font-weight:600;padding-bottom:6px">Top ${rows.length} ${esc(platformName)} creators by ${esc(metric)}</caption><thead><tr><th style="text-align:left;padding:6px 12px 6px 0">Rank</th><th style="text-align:left;padding:6px 12px">Creator</th><th style="text-align:right;padding:6px 0 6px 12px">${esc(metric.charAt(0).toUpperCase() + metric.slice(1))}</th></tr></thead><tbody>`;
   for (const r of rows) {
-    const nm = r.display_name || r.username;
-    html += `<li><a href="/${platform}/${encodeURIComponent(r.username)}" style="color:#171717">${esc(nm)}</a>` +
-      (r.subscribers !== null && r.subscribers !== undefined ? `, ${formatNumber(r.subscribers)} ${metric}` : '') + `</li>`;
+    html += `<tr><td style="padding:4px 12px 4px 0;border-top:1px solid #e5e5e5">${r.rank_position}</td>` +
+      `<td style="padding:4px 12px;border-top:1px solid #e5e5e5"><a href="/${platform}/${encodeURIComponent(r.username)}" style="color:#171717">${esc(name(r))}</a></td>` +
+      `<td style="text-align:right;padding:4px 0 4px 12px;border-top:1px solid #e5e5e5">${r.subscribers !== null && r.subscribers !== undefined ? r.subscribers.toLocaleString('en-US') : '-'}</td></tr>`;
   }
-  html += `</ol>`;
+  html += `</tbody></table>`;
+  html += `<p style="margin-top:1.5rem">Source: ShinyPull, shinypull.com/rankings/${platform}</p>`;
   html += `<p><a href="/rankings" style="color:#171717">All rankings</a> · <a href="/trending" style="color:#171717">Trending creators</a></p>`;
   html += `</div>`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: `Top ${platformName} Creators`,
-    itemListElement: rows.slice(0, 25).map(r => ({
-      '@type': 'ListItem',
-      position: r.rank_position,
-      name: r.display_name || r.username,
-      url: `${SITE_URL}/${platform}/${encodeURIComponent(r.username)}`,
-    })),
+    '@type': 'CollectionPage',
+    name: heading,
+    description,
+    url: `${SITE_URL}/rankings/${platform}`,
+    ...(asOf ? { dateModified: asOf } : {}),
+    isPartOf: { '@type': 'WebSite', name: 'ShinyPull', url: SITE_URL },
+    publisher: { '@type': 'Organization', name: 'ShinyPull', url: SITE_URL },
+    mainEntity: {
+      '@type': 'ItemList',
+      name: `Top ${platformName} Creators by ${metric}`,
+      numberOfItems: rows.length,
+      itemListOrder: 'https://schema.org/ItemListOrderDescending',
+      itemListElement: rows.map(r => ({
+        '@type': 'ListItem',
+        position: r.rank_position,
+        name: name(r),
+        url: `${SITE_URL}/${platform}/${encodeURIComponent(r.username)}`,
+      })),
+    },
   };
 
   return { status: 'ok', title, description, html, jsonLd };
