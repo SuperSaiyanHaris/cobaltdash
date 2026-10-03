@@ -4,7 +4,7 @@
 // the toast library are imported only when a gain actually happens.
 import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { loadProgress, refreshProgress, clearProgress } from '../../services/progressService';
+import { loadProgress, refreshProgress, clearProgress, hydrateProgress } from '../../services/progressService';
 
 // While the tab is open, check for XP that arrives without an action here
 // (upvotes on your comments) and pay any level reached.
@@ -48,7 +48,8 @@ export default function PassSync() {
 
   useEffect(() => {
     if (!userId) { clearProgress(); return undefined; }
-    const t = setTimeout(() => { loadProgress().catch(() => {}); }, 2500);
+    hydrateProgress(userId);
+    const t = setTimeout(() => { loadProgress().catch(() => {}); }, 400);
     const check = () => { if (document.visibilityState === 'visible') refreshProgress().catch(() => {}); };
     const every = setInterval(check, CHECK_EVERY);
     document.addEventListener('visibilitychange', check);

@@ -50,6 +50,26 @@ let inflight = null;
 let loadedAt = 0;
 
 let currentSig = '';
+const CACHE_KEY = 'sp-pass-state';
+
+/**
+ * Show the last state this browser saw for this user right away (the header
+ * level chip otherwise waits for a network round trip), then let the normal
+ * load replace it. Only used while nothing newer is in memory.
+ */
+export function hydrateProgress(id) {
+  if (!id || current) return;
+  try {
+    const raw = localStorage.getItem(`${CACHE_KEY}:${id}`);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved?.progress) { currentSig = raw; set(saved); }
+  } catch { /* private mode or bad JSON: just wait for the load */ }
+}
+
+function remember(id, sig) {
+  try { if (id) localStorage.setItem(`${CACHE_KEY}:${id}`, sig); } catch { /* full or private */ }
+}
 
 function keepState(json) {
   if (json?.progress) {
@@ -58,6 +78,7 @@ function keepState(json) {
     // whole pass page for nothing is what made it stall.
     const sig = JSON.stringify(next);
     if (sig !== currentSig) { currentSig = sig; set(next); }
+    remember(userId, sig);
     loadedAt = Date.now();
   }
   return json;
@@ -187,6 +208,7 @@ export function useProgress() {
 }
 
 export function clearProgress() {
+  try { if (userId) localStorage.removeItem(`${CACHE_KEY}:${userId}`); } catch { /* ignore */ }
   currentSig = '';
   set(null);
 }
