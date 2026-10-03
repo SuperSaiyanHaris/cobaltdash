@@ -29,6 +29,21 @@ async function get(path, headers = {}) {
   return { status: res.status, type: res.headers.get('content-type') || '', text };
 }
 
+// Pages whose content comes from the database. The edge gives the database 2.5s
+// and otherwise serves the meta-only version on purpose (never an error), so a
+// slow moment, such as the minutes after the 06:00 UTC collection starts, can
+// briefly return the fallback. That is not an outage: look again a few seconds
+// later (up to 3 looks) before calling it a failure. A page that stays on the
+// fallback still fails.
+async function getUntil(path, ready, tries = 3, waitMs = 5000) {
+  let r = await get(path);
+  for (let i = 1; i < tries && !(r.status === 200 && ready(r.text)); i++) {
+    await new Promise((res) => setTimeout(res, waitMs));
+    r = await get(path);
+  }
+  return r;
+}
+
 const robotsOf = (html) => (html.match(/<meta name="robots" content="([^"]+)"/) || [])[1] || 'index';
 const titleOf = (html) => (html.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
 const rowsOf = (html) => (html.match(/<tr>/g) || []).length;
@@ -44,14 +59,14 @@ const checks = [
     expect(bundle.status === 200 && bundle.text.length > 1000, `entry bundle ${js[1]} -> ${bundle.status}`);
   }],
   ['big-name profile is server-rendered and indexable (MrBeast)', async () => {
-    const r = await get('/youtube/mrbeast');
+    const r = await getUntil('/youtube/mrbeast', (t) => /MrBeast YouTube Stats: [\d.]+[MB] Subscribers/.test(titleOf(t)));
     expect(r.status === 200, `status ${r.status}`);
     expect(/MrBeast YouTube Stats: [\d.]+[MB] Subscribers/.test(titleOf(r.text)), `title "${titleOf(r.text)}"`);
     expect(robotsOf(r.text) === 'index', `robots ${robotsOf(r.text)}`);
     expect(r.text.includes('How much does MrBeast make?'), 'earnings section missing');
   }],
   ['Kick profile is indexable with earnings', async () => {
-    const r = await get('/kick/xqc');
+    const r = await getUntil('/kick/xqc', (t) => /Paid subscribers/i.test(titleOf(t)));
     expect(robotsOf(r.text) === 'index', `robots ${robotsOf(r.text)}`);
     expect(/Paid subscribers/i.test(titleOf(r.text)), `title "${titleOf(r.text)}"`);
     expect(/up to about \$[\d,]+ per month/.test(r.text), 'Kick earnings ceiling missing');
