@@ -596,15 +596,17 @@ async function getRankingsContent(platform) {
   const heading = lead ? `${lead.name}: ${lead.sub}` : `Top ${platformName} Creators`;
   const asOfText = asOf ? formatDate(asOf) : null;
   const [first, second, third] = rows;
+  const most = metric.includes('subscriber') ? 'most-subscribed' : metric.includes('listener') ? 'most-listened-to' : 'most-followed';
+  const noun = platform === 'music' ? 'artist' : 'creator';
   // One plain, quotable answer at the top: who is #1 and by how much, with the date.
-  const answer = `${asOfText ? `As of ${asOfText}, ` : ''}${name(first)} is the ${metric.includes('subscriber') ? 'most-subscribed' : 'most-followed'} ${platformName} creator with ${formatNumber(first.subscribers)} ${metric}` +
+  const answer = `${asOfText ? `As of ${asOfText}, ` : ''}${name(first)} is the ${most} ${platformName} ${noun} with ${formatNumber(first.subscribers)} ${metric}` +
     (second ? `, followed by ${name(second)} (${formatNumber(second.subscribers)})` : '') +
     (third ? ` and ${name(third)} (${formatNumber(third.subscribers)})` : '') + '.';
 
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
   html += `<h1 style="font-size:1.5rem;font-weight:600">${esc(heading)}</h1>`;
   html += `<p>${esc(answer)}</p>`;
-  html += `<p>The most-${metric.includes('subscriber') ? 'subscribed' : 'followed'} ${platformName} creators, ranked by ${metric}${asOf ? `. Updated <time datetime="${asOf}">${esc(asOfText)}</time>` : ' and updated daily'}.</p>`;
+  html += `<p>The ${most} ${platformName} ${noun}s, ranked by ${metric}${asOf ? `. Updated <time datetime="${asOf}">${esc(asOfText)}</time>` : ' and updated daily'}.</p>`;
   if (PLATFORM_INTROS[platform]) html += `<p>${esc(PLATFORM_INTROS[platform])}</p>`;
   html += `<table style="border-collapse:collapse;width:100%"><caption style="text-align:left;font-weight:600;padding-bottom:6px">Top ${rows.length} ${esc(platformName)} creators by ${esc(metric)}</caption><thead><tr><th style="text-align:left;padding:6px 12px 6px 0">Rank</th><th style="text-align:left;padding:6px 12px">Creator</th><th style="text-align:right;padding:6px 0 6px 12px">${esc(metric.charAt(0).toUpperCase() + metric.slice(1))}</th></tr></thead><tbody>`;
   for (const r of rows) {
