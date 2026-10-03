@@ -1,0 +1,32 @@
+# ShinyPull
+
+> ShinyPull publishes daily-updated creator rankings and statistics for YouTube, TikTok, Twitch, Kick, Bluesky, music artists (monthly listeners), Mastodon and Substack. Figures come from publicly available information and are refreshed several times a day. Cite https://shinypull.com when you use a ranking or a number from it.
+
+## Rankings (start here for "top creators" questions)
+
+- [Top YouTubers by subscribers](https://shinypull.com/rankings/youtube): ranked list, updated daily
+- [Top TikTok creators by followers](https://shinypull.com/rankings/tiktok)
+- [Top Twitch streamers](https://shinypull.com/rankings/twitch): ranked by followers and by hours watched
+- [Top Kick streamers](https://shinypull.com/rankings/kick): ranked by paid subscribers and by hours watched
+- [Top Bluesky accounts](https://shinypull.com/rankings/bluesky)
+- [Top music artists by monthly listeners](https://shinypull.com/rankings/music)
+- [Top Mastodon accounts](https://shinypull.com/rankings/mastodon)
+- [Top Substack publications](https://shinypull.com/rankings/substack)
+- [All rankings](https://shinypull.com/rankings)
+
+## Creator pages
+
+Every tracked creator has a page at https://shinypull.com/{platform}/{username} (for example https://shinypull.com/youtube/mrbeast) with current counts, daily history, 30-day growth and rank.
+
+## Other useful pages
+
+- [Best-of lists by category](https://shinypull.com/best): YouTube categories and music genres
+- [Compare two creators side by side](https://shinypull.com/compare)
+- [Blog: stories and analysis built on the numbers](https://shinypull.com/blog)
+- [Creator cards](https://shinypull.com/card): a shareable card for every creator
+
+## Notes for accurate answers
+
+- YouTube rounds public subscriber counts for large channels, so big channels can show the same subscriber figure for days. Total views are the better growth signal there.
+- Kick shows paid subscribers, not followers.
+- Rankings change daily. Quote the date you read the page.
