@@ -9,7 +9,7 @@ import { CARD_PLATFORMS, renderMarkOverlay } from '../lib/badgeCard';
 // Home hero centerpiece: a real holographic creator card (/card/...,
 // rendered by middleware.js) in front of a face-down deck (two card backs).
 // The front card tilts toward the pointer with a moving glare, and every few
-// seconds (or on "Pull a card") the top card of the deck slides in while the
+// seconds (or on "Deal me another") the top card of the deck slides in while the
 // front card flips to its back and turns over on the next creator.
 //
 // Brand rules: the 3D-moving cards are all the markless render (mark=0).
@@ -193,7 +193,7 @@ export default function HeroCardStage({ creators }) {
           onClick={() => { clearTimeout(timerRef.current); pull(); }}
           className="hero-pull-btn inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white"
         >
-          <span aria-hidden="true">✦</span> Pull a card
+          Deal me another
         </button>
         <Link to="/card" className="group inline-flex items-center gap-1 text-[13px] text-white/80 hover:text-white transition-colors">
           Every creator has one. Get yours
