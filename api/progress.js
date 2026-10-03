@@ -49,10 +49,18 @@ const fail = (res, status, message) => res.status(status).json({ error: message 
 const likeEscape = (s) => s.replace(/[_%\\]/g, (c) => `\\${c}`);
 const rnd = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 
+// The client is made per request, so a request pays for ensure_season once
+// (a GET used to run it twice, back to back).
+const seasonOnce = new WeakMap();
+
 /** Creates the row if needed and rolls a new season over. Returns the season. */
-async function ensureSeason(supabase, userId) {
-  const { data } = await supabase.rpc('ensure_season', { p_user: userId });
-  return Number(data) || 1;
+function ensureSeason(supabase, userId) {
+  let byUser = seasonOnce.get(supabase);
+  if (!byUser) seasonOnce.set(supabase, (byUser = new Map()));
+  if (!byUser.has(userId)) {
+    byUser.set(userId, supabase.rpc('ensure_season', { p_user: userId }).then(({ data }) => Number(data) || 1));
+  }
+  return byUser.get(userId);
 }
 
 async function ensureProgress(supabase, user) {

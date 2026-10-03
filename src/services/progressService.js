@@ -49,9 +49,15 @@ let userId = null;
 let inflight = null;
 let loadedAt = 0;
 
+let currentSig = '';
+
 function keepState(json) {
   if (json?.progress) {
-    set(Object.fromEntries(STATE_KEYS.map((k) => [k, json[k]])));
+    const next = Object.fromEntries(STATE_KEYS.map((k) => [k, json[k]]));
+    // The periodic check usually brings back the same state; re-rendering the
+    // whole pass page for nothing is what made it stall.
+    const sig = JSON.stringify(next);
+    if (sig !== currentSig) { currentSig = sig; set(next); }
     loadedAt = Date.now();
   }
   return json;
@@ -60,8 +66,8 @@ function keepState(json) {
 async function doLoad(force, fresh) {
   const { data: { session } } = await supabase.auth.getSession();
   const t = session?.access_token;
-  if (!t) { set(null); userId = null; return null; }
-  if (userId && userId !== session.user.id) set(null);
+  if (!t) { currentSig = ''; set(null); userId = null; return null; }
+  if (userId && userId !== session.user.id) { currentSig = ''; set(null); }
   userId = session.user.id;
   // Per user, so a second account on this browser still gets its visit.
   const key = `${SYNC_KEY}:${userId}`;
@@ -181,5 +187,6 @@ export function useProgress() {
 }
 
 export function clearProgress() {
+  currentSig = '';
   set(null);
 }

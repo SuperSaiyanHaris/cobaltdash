@@ -11,6 +11,7 @@ import { TRACK, MAX_LEVEL, PACKS, PACK_BY_KEY, itemName, itemBlurb } from '../..
 import { RewardGlyph, RewardVisual, RARITY_COLORS } from './RewardArt';
 import { Pack3D, UserCardSvg } from './PassArt';
 import { BadgePill } from './BadgeChip';
+import useDesktop from './useDesktop';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 const PAGES = 10;
@@ -26,18 +27,6 @@ function statusOf(r, level, opened) {
 // Locker tab for each cosmetic kind the track hands out.
 const LOCKER_TAB = { sticker: 'sticker', title: 'title', ring: 'ring', name: 'name', back: 'back', banner: 'banner' };
 const smooth = () => (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
-
-function useDesktop() {
-  const q = '(min-width: 1024px)';
-  const [on, setOn] = useState(() => (typeof window === 'undefined' ? true : window.matchMedia(q).matches));
-  useEffect(() => {
-    const m = window.matchMedia(q);
-    const fn = () => setOn(m.matches);
-    m.addEventListener?.('change', fn);
-    return () => m.removeEventListener?.('change', fn);
-  }, []);
-  return on;
-}
 
 const Tile = memo(function Tile({ r, status, selected, onSelect, pct = 0 }) {
   const rc = RARITY_COLORS[r.rarity];
@@ -138,6 +127,8 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
   const firstReady = state.packs.available[0];
   const nextReward = firstReady ? TRACK[firstReady] : TRACK[Math.min(MAX_LEVEL, p.level + 1)];
   const desktop = useDesktop();
+  // On phones the other tabs are not mounted, so a hidden body costs nothing.
+  const showBody = desktop || !bodyHidden;
   const [selected, setSelected] = useState(nextReward.level);
   const [sheet, setSheet] = useState(null);
   const [page, setPage] = useState(pageOf(selected));
@@ -219,7 +210,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
         </div>
       </div>
 
-      <div className={`grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-4 ${bodyHidden ? 'max-lg:hidden' : ''}`}>
+      {showBody && <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-4">
         <Feature
           reward={shown}
           me={me}
@@ -262,10 +253,10 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
             </p>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* The season's packs */}
-      <div className={`flex flex-col gap-3 ${bodyHidden ? 'max-lg:hidden' : ''}`}>
+      {showBody && <div className="flex flex-col gap-3">
         <div className="flex items-end justify-between gap-3">
           <h2 className="font-arena italic font-black uppercase text-white text-[26px] tracking-wide">Season packs</h2>
           <p className="text-[13.5px] text-white/75">{opened.size} of {PACKS.length} opened</p>
@@ -296,7 +287,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {sheetReward && !desktop && (
         <RewardSheet onClose={() => setSheet(null)}>

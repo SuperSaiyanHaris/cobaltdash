@@ -19,6 +19,7 @@ import Locker from '../components/pass/Locker';
 import PackGuide from '../components/pass/PackGuide';
 import { BadgePill } from '../components/pass/BadgeChip';
 import useArenaFont from '../components/pass/useArenaFont';
+import useDesktop from '../components/pass/useDesktop';
 import {
   XP_RULES, PACK_BY_LEVEL, TOTAL_XP, streakBonus,
   seasonForDate, seasonLastDay, seasonDaysLeft, levelFromXp,
@@ -231,6 +232,14 @@ export default function ShinyPass() {
   useArenaFont();
   const { user, loading: authLoading } = useAuth();
   const state = useProgress();
+  const desktop = useDesktop();
+  // Everything below the hero waits one frame on desktop, so the HUD and the
+  // track paint first instead of after all four sections have rendered.
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setLate(true), 60);
+    return () => clearTimeout(id);
+  }, []);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(null);
   const [viewing, setViewing] = useState(null);
@@ -315,6 +324,8 @@ export default function ShinyPass() {
   }
 
   const p = state.progress;
+  // Phones mount only the open tab; desktop mounts all once the hero has painted.
+  const on = (id) => (desktop ? late : section === id);
   function viewPack(level) {
     const h = state.packs.history.find((x) => x.pack_level === level);
     if (h) setViewing({ pack: PACK_BY_LEVEL[level], items: h.items });
@@ -362,18 +373,18 @@ export default function ShinyPass() {
         </div>
       </section>
 
-      <div className={`bg-[#fafaf9] ${section === 'track' ? 'max-lg:hidden' : ''}`}>
+      {(desktop || section !== 'track') && <div className="bg-[#fafaf9]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-14 max-lg:space-y-0">
-          <section id="earn" className={`scroll-mt-24 ${section !== 'earn' ? 'max-lg:hidden' : ''}`}>
+          {on('earn') && <section id="earn" className="scroll-mt-24">
             <div className="flex items-end justify-between gap-3">
               <h2 className="font-arena italic font-black uppercase text-[30px] sm:text-[34px] leading-none text-neutral-950">Ways to earn XP</h2>
               <span className="text-sm font-bold text-neutral-800 tabular-nums">+{fmt(state.today.xp)} today</span>
             </div>
             <div className="mt-5"><EarnList state={state} /></div>
             <p className="mt-3 text-xs text-neutral-600">Daily caps reset at midnight Eastern. An XP Boost adds 25% to everything here.</p>
-          </section>
+          </section>}
 
-          <section id="locker" className={`scroll-mt-20 ${section !== 'locker' ? 'max-lg:hidden' : ''}`}>
+          {on('locker') && <section id="locker" className="scroll-mt-20">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="font-arena italic font-black uppercase text-[30px] sm:text-[34px] leading-none text-neutral-950">Your locker</h2>
@@ -389,13 +400,13 @@ export default function ShinyPass() {
               )}
             </div>
             <div className="mt-6"><Locker state={state} me={me} /></div>
-          </section>
+          </section>}
 
-          <div className={section !== 'packs' ? 'max-lg:hidden' : ''}>
+          {on('packs') && <div>
             <OddsAndRules light me={me} state={state} onOpenPack={(l) => setOpening(PACK_BY_LEVEL[l])} />
-          </div>
+          </div>}
         </div>
-      </div>
+      </div>}
 
       <AnimatePresence>
         {opening && (
