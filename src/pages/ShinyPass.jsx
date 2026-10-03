@@ -233,13 +233,14 @@ export default function ShinyPass() {
   const { user, loading: authLoading } = useAuth();
   const state = useProgress();
   const desktop = useDesktop();
-  // Everything below the hero waits one frame on desktop, so the HUD and the
-  // track paint first instead of after all four sections have rendered.
-  const [late, setLate] = useState(false);
+  // Desktop paints the HUD and the track first, then adds the sections below
+  // one at a time (earn, locker, pack guide) so no single render blocks input.
+  const [stage, setStage] = useState(0);
   useEffect(() => {
-    const id = setTimeout(() => setLate(true), 60);
+    if (stage >= 3) return undefined;
+    const id = setTimeout(() => setStage((s) => s + 1), stage === 0 ? 60 : 150);
     return () => clearTimeout(id);
-  }, []);
+  }, [stage]);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(null);
   const [viewing, setViewing] = useState(null);
@@ -325,7 +326,7 @@ export default function ShinyPass() {
 
   const p = state.progress;
   // Phones mount only the open tab; desktop mounts all once the hero has painted.
-  const on = (id) => (desktop ? late : section === id);
+  const on = (id) => (desktop ? stage >= { earn: 1, locker: 2, packs: 3 }[id] : section === id);
   function viewPack(level) {
     const h = state.packs.history.find((x) => x.pack_level === level);
     if (h) setViewing({ pack: PACK_BY_LEVEL[level], items: h.items });
