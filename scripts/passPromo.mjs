@@ -41,16 +41,9 @@ ${text(x + 80, y + 46, 22, 800, '#ffffff', 'Legendary card')}
 ${text(x + 80, y + 64, 12, 600, '#ffffff', '23-day streak', ' fill-opacity=".6"')}`;
 }
 
-// Ten-segment XP bar, 6.1 of 10 filled.
+// Solid XP bar (brand purple on a quiet track), 61% filled.
 function xpBar(id, x, y, w) {
-  const gap = 3, seg = (w - gap * 9) / 10;
-  let out = `<defs><linearGradient id="${id}xp" gradientUnits="userSpaceOnUse" x1="${x}" y1="0" x2="${x + w}" y2="0"><stop offset="0" stop-color="${FOIL[0]}"/><stop offset=".5" stop-color="${FOIL[1]}"/><stop offset="1" stop-color="${FOIL[2]}"/></linearGradient></defs>`;
-  for (let i = 0; i < 10; i++) {
-    const sx = x + i * (seg + gap);
-    out += `<rect x="${sx.toFixed(1)}" y="${y}" width="${seg.toFixed(1)}" height="10" rx="2" fill="#fff" fill-opacity=".12"/>`;
-    const fill = i < 6 ? 1 : i === 6 ? 0.1 : 0;
-    if (fill) out += `<rect x="${sx.toFixed(1)}" y="${y}" width="${(seg * fill).toFixed(1)}" height="10" rx="2" fill="url(#${id}xp)"/>`;
-  }
+  let out = `<rect x="${x}" y="${y}" width="${w}" height="12" rx="6" fill="#262633"/><rect x="${x}" y="${y}" width="${(w * 0.61).toFixed(1)}" height="12" rx="6" fill="#7C3AED"/>`;
   out += text(x, y + 28, 12, 600, '#ffffff', '120 / 197 XP', ' fill-opacity=".7"');
   out += text(x + w, y + 28, 12, 600, '#ffffff', 'Level 77', ' fill-opacity=".5" text-anchor="end"');
   return out;
@@ -59,11 +52,11 @@ function xpBar(id, x, y, w) {
 function tiles(id, x, y) {
   const check = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="8" fill="#22C55E"/><path d="M${cx - 3.5} ${cy}l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
   const glyphs = [
-    (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="url(#${id}xp)" stroke-width="5"/>`,
+    (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="#7C3AED" stroke-width="5"/>`,
     (cx, cy) => `<rect x="${cx - 16}" y="${cy - 9}" width="32" height="18" rx="6" fill="#E4E4E7"/>${text(cx, cy + 5, 11, 900, '#18181B', 'GG', ' text-anchor="middle"')}`,
     (cx, cy) => text(cx, cy + 8, 22, 900, '#ffffff', 'Aa', ' text-anchor="middle" font-style="italic"'),
     (cx, cy) => `<rect x="${cx - 11}" y="${cy - 15}" width="22" height="30" rx="3" fill="#FFD76A"/><rect x="${cx - 7}" y="${cy - 11}" width="14" height="22" rx="2" fill="#0a0a0f"/>`,
-    (cx, cy) => `<rect x="${cx - 11}" y="${cy - 15}" width="22" height="30" rx="3" fill="url(#${id}xp)"/>`,
+    (cx, cy) => `<rect x="${cx - 11}" y="${cy - 15}" width="22" height="30" rx="3" fill="#7C3AED"/>`,
   ];
   let out = '';
   [72, 73, 74, 75, 76].forEach((lv, i) => {
@@ -90,7 +83,7 @@ ${text(x + 100, y + 110, 12, 700, '#B69CFF', '14 levels to go')}`;
 function toast(id, x, y, w, h) {
   const r = h / 2, cy = y + r;
   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="#fff"/>
-<circle cx="${x + r}" cy="${cy}" r="${r - 8}" fill="url(#${id}xp)"/>
+<circle cx="${x + r}" cy="${cy}" r="${r - 8}" fill="#7C3AED"/>
 <path d="M${x + r - 5} ${cy + 2}l5-5 5 5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
 ${text(x + h + 4, cy + 5, 14, 800, '#0a0a0f', 'Level 75! Your card turned Legendary')}`;
 }

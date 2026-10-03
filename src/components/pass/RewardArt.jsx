@@ -3,7 +3,7 @@
 // name effect, the card back, the pack, your card at its new rarity).
 import { PACK_BY_KEY, STICKERS, NAME_EFFECTS, CARD_BACKS, RINGS, TITLES } from '../../lib/shinyPass';
 import { markBarsInner } from '../../lib/brandMark';
-import { PackSvg, UserCardSvg, BannerSvg } from './PassArt';
+import { Pack3D, UserCardSvg, BannerSvg } from './PassArt';
 
 export const RARITY_COLORS = {
   common:    { a: '#A1A1AA', b: '#52525B', text: '#E4E4E7' },
@@ -75,7 +75,7 @@ export function RewardVisual({ reward, me }) {
   switch (reward.kind) {
     case 'pack': {
       const p = PACK_BY_KEY[reward.key];
-      return p ? <PackSvg pack={p} season={me?.seasonNumber} className="sp-fit-pack drop-shadow-[0_22px_28px_rgba(0,0,0,0.75)]" /> : null;
+      return p ? <div className="sp-fit-pack"><Pack3D pack={p} season={me?.seasonNumber} size="lg" /></div> : null;
     }
     case 'tier':
       return me ? <UserCardSvg me={{ ...me, level: reward.level, into: 0, need: 1 }} className="sp-fit-card shadow-[0_22px_40px_-14px_rgba(0,0,0,0.9)]" /> : <RewardGlyph kind="tier" color={rc.a} className="w-1/2" />;

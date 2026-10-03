@@ -1,8 +1,9 @@
 /* ShinyPass "Arena" styles. Imported only by the ShinyPass pages, so it ships
-   in their lazy chunk. Design rules still apply: flat dark bases, foil and
-   rarity color as fills and edges, neutral shadows only, no glow. */
+   in their lazy chunk. Design rules still apply: flat dark bases, solid fills
+   (the XP bar is solid brand purple, never a gradient), rarity color as
+   edges and glyphs, neutral shadows only, no glow. */
 
-.sp-arena { --sp-ink: #0a0a0f; --sp-line: #2a2a38; font-family: 'Inter', system-ui, sans-serif; }
+.sp-arena { --sp-ink: #0a0a0f; --sp-line: #2a2a38; --sp-card: #12121a; --sp-purple: #7C3AED; font-family: 'Inter', system-ui, sans-serif; }
 .font-arena { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; }
 
 .sp-r-common    { --ra: #A1A1AA; --rb: #52525B; }
@@ -11,31 +12,47 @@
 .sp-r-epic      { --ra: #C084FC; --rb: #6D28D9; }
 .sp-r-legendary { --ra: #FFD76A; --rb: #B45309; }
 
-/* HUD */
-.sp-hud { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--sp-line); background: #0a0a0f; position: relative; overflow: hidden; }
-.sp-hud::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 22px 22px; pointer-events: none; }
-.sp-lvl { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: var(--sp-ink); padding: 10px 18px 12px; transform: skewX(-8deg); border-radius: 6px; line-height: .8; }
-.sp-lvl small { font-size: 13px; letter-spacing: 1.5px; font-weight: 800; }
-.sp-lvl b { font-size: 62px; font-weight: 900; }
-.sp-bar { position: relative; height: 16px; border-radius: 4px; overflow: hidden; background: #23232f; transform: skewX(-12deg); }
-.sp-bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #5EC8FF, #C084FC 70%, #FFD76A); transition: width .6s cubic-bezier(.2,.8,.2,1); }
-.sp-bar > u { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 9.6%, rgba(10,10,15,.85) 9.6% 10%); }
-@media (max-width: 480px) { .sp-hud { gap: 12px; padding: 14px; } .sp-lvl b { font-size: 48px; } .sp-lvl { padding: 8px 13px 10px; } }
+/* Header */
+.sp-hud { display: flex; flex-direction: column; gap: 16px; padding: 16px; border-radius: 20px; border: 1px solid var(--sp-line); background: #0f0f16; }
+.sp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sp-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sp-av { flex: none; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #262633; border: 2px solid #fff; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 20px; }
+.sp-handle { font-weight: 800; font-size: 18px; line-height: 1.15; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-season { margin-top: 2px; font-size: 13.5px; color: rgba(255,255,255,.72); }
+.sp-profile-btn { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; background: #fff; color: #0a0a0f; font-size: 14.5px; font-weight: 700; white-space: nowrap; transition: background-color .15s; }
+.sp-profile-btn:hover { background: #e5e5e5; }
+.sp-level-row { display: flex; align-items: center; gap: 16px; }
+.sp-lvl { flex: none; width: 84px; height: 84px; border-radius: 16px; background: #fff; color: var(--sp-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: .85; }
+.sp-lvl small { font-size: 12px; letter-spacing: .16em; font-weight: 800; }
+.sp-lvl b { margin-top: 2px; font-size: 52px; font-weight: 900; }
+.sp-xp { flex: 1; min-width: 0; }
+.sp-xpline { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 14px; color: rgba(255,255,255,.75); font-variant-numeric: tabular-nums; }
+.sp-xpline b { color: #fff; font-size: 18px; }
+.sp-bar { height: 14px; border-radius: 7px; background: #262633; overflow: hidden; }
+.sp-bar > i { display: block; height: 100%; border-radius: 7px; background: var(--sp-purple); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.sp-togo { margin-top: 8px; font-size: 14px; line-height: 1.3; color: rgba(255,255,255,.82); }
+.sp-togo b { color: #fff; }
+.sp-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.sp-stat { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: #fff; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+@media (max-width: 480px) {
+  .sp-hud { padding: 14px; gap: 14px; }
+  .sp-lvl { width: 72px; height: 72px; border-radius: 14px; }
+  .sp-lvl b { font-size: 44px; }
+  .sp-profile-btn { padding: 0 14px; }
+}
+@media (max-width: 360px) { .sp-profile-btn { padding: 0 11px; font-size: 13.5px; } .sp-av { width: 42px; height: 42px; } }
 
-/* Featured stage */
-.sp-feature { position: relative; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; padding: 18px 20px 20px; border: 2px solid var(--ra); background: linear-gradient(160deg, var(--rb) 0%, #120e1e 58%); isolation: isolate; }
-.sp-feature::before { content: ""; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(-55deg, rgba(255,255,255,.05) 0 26px, transparent 26px 60px); }
-/* Phones: art on top, words below. From 860px: two columns, words left and
-   art right, so a long reward name can never run over the art. */
-.sp-feature .sp-art { position: relative; height: 230px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
-.sp-feature .sp-copy { position: relative; min-width: 0; }
+/* Reward card: flat, one accent edge in the reward's rarity color */
+.sp-feature { position: relative; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; background: var(--sp-card); border: 1px solid var(--sp-line); }
+.sp-feature .sp-art { position: relative; height: 240px; display: flex; align-items: center; justify-content: center; padding: 14px 0; background: color-mix(in srgb, var(--ra) 13%, #12121a); border-bottom: 3px solid var(--ra); }
+.sp-feature .sp-copy { position: relative; min-width: 0; padding: 18px 18px 20px; }
 @media (min-width: 860px) {
-  .sp-feature { display: grid; grid-template-columns: minmax(0, 1fr) 40%; align-items: end; column-gap: 12px; min-height: 380px; }
-  .sp-feature .sp-art { grid-column: 2; grid-row: 1; height: 320px; margin: 0; align-self: center; }
-  .sp-feature .sp-copy { grid-column: 1; grid-row: 1; }
+  .sp-feature { display: grid; grid-template-columns: minmax(0, 1fr) 42%; min-height: 380px; }
+  .sp-feature .sp-art { order: 2; height: auto; padding: 22px 0; border-bottom: 0; border-left: 3px solid var(--ra); }
+  .sp-feature .sp-copy { order: 1; align-self: center; padding: 28px; }
 }
 /* Packs and cards size to the art box height so they always fit. */
-.sp-art .sp-fit-pack { height: 100%; width: auto !important; max-width: 100%; aspect-ratio: 220 / 352; }
+.sp-art .sp-fit-pack { height: 88%; width: auto !important; max-width: 70%; aspect-ratio: 220 / 352; }
 .sp-art .sp-fit-card { height: 92%; width: auto !important; max-width: 100%; aspect-ratio: 250 / 350; }
 .sp-art .sp-fit-pack > svg, .sp-art .sp-fit-card > svg { width: 100%; height: 100%; }
 .sp-chip { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; padding: 4px 10px 3px; border-radius: 4px; background: #0a0a0f; border: 1px solid rgba(255,255,255,.22); color: #fff; }
@@ -43,46 +60,102 @@
 .sp-chip.ready { background: #fff; color: #0a0a0f; border-color: transparent; }
 .sp-arena button, .sp-tap { -webkit-tap-highlight-color: transparent; }
 .sp-chip.got { display: inline-flex; align-items: center; gap: 4px; background: #22C55E; color: #052E16; border-color: transparent; }
+.sp-cta { display: inline-flex; align-items: center; justify-content: center; margin-top: 16px; min-height: 48px; padding: 0 24px; border-radius: 12px; font-size: 15px; font-weight: 700; transition: background-color .15s; }
+.sp-cta.brand { background: var(--sp-purple); color: #fff; }
+.sp-cta.brand:hover { background: #6D28D9; }
+.sp-cta.light { background: #fff; color: #0a0a0f; }
+.sp-cta.light:hover { background: #e5e5e5; }
+@media (max-width: 640px) { .sp-cta { width: 100%; } }
 
-/* Tier pages: one page of 10 at a time, snapping. Native scroll, so it
-   behaves like any other swipe on phones. */
+/* Level pages: one page of 10 at a time, snapping. Native scroll. */
 .sp-pages { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 12px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
 .sp-pages::-webkit-scrollbar { display: none; }
-.sp-page { flex: 0 0 100%; box-sizing: border-box; padding: 6px; scroll-snap-align: start; scroll-snap-stop: always; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.sp-tile { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; padding: 0; border: 2px solid transparent; background: linear-gradient(170deg, var(--ra) -30%, var(--rb) 55%, #16121f 110%); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: filter .15s ease; }
-.sp-tile::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-55deg, rgba(255,255,255,.07) 0 10px, transparent 10px 24px); pointer-events: none; }
-.sp-tile .n { position: absolute; left: 5px; top: 5px; z-index: 2; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 16px; line-height: 1; padding: 3px 6px 2px; border-radius: 3px; background: #0a0a0f; color: #fff; transform: skewX(-8deg); }
-.sp-tile .g { position: relative; z-index: 1; width: 56%; height: 56%; margin-bottom: 24px; }
-.sp-tile .l { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; min-height: 32px; padding: 5px 4px; display: flex; align-items: center; justify-content: center; text-align: center; background: rgba(10,10,15,.84); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 1.15; overflow: hidden; }
+.sp-page { flex: 0 0 100%; box-sizing: border-box; padding: 4px; scroll-snap-align: start; scroll-snap-stop: always; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+/* Tiles: flat dark cards. The colored strip along the bottom is the rarity. */
+.sp-tile { position: relative; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; padding: 0; border: 1px solid var(--sp-line); background: #171721; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color .15s; }
+.sp-tile .rb { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--ra); }
+.sp-tile .n { position: absolute; left: 6px; top: 6px; z-index: 2; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 16px; line-height: 1; color: rgba(255,255,255,.85); }
+.sp-tile .g { position: relative; z-index: 1; width: 52%; height: 52%; margin-bottom: 24px; }
+.sp-tile .l { position: absolute; left: 0; right: 0; bottom: 4px; z-index: 2; min-height: 30px; padding: 4px; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 1.15; overflow: hidden; }
 .sp-tile .l > * { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-/* States: claimed = full color + green check, next = white frame + "Next"
-   tag + progress, locked = dark + lock. Selection is a separate outer ring. */
-.sp-tile.locked { filter: saturate(.15) brightness(.45); }
-.sp-tile.locked .g { opacity: .55; }
-.sp-tile.claimed .n { background: #fff; color: #0a0a0f; }
-.sp-tile .ok { position: absolute; right: 5px; top: 5px; z-index: 3; width: 22px; height: 22px; border-radius: 50%; background: #0a0a0f; color: #fff; display: flex; align-items: center; justify-content: center; }
-.sp-tile.claimed .ok { background: #22C55E; color: #052E16; box-shadow: 0 0 0 2px #0a0a0f; }
-.sp-tile.current { border-color: #fff; }
-.sp-tile .nx { position: absolute; right: 5px; top: 5px; z-index: 3; padding: 3px 6px 2px; border-radius: 3px; background: #fff; color: #0a0a0f; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 12px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; transform: skewX(-8deg); }
-.sp-tile .pg { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 4px; background: rgba(255,255,255,.18); }
+/* States: claimed = green check, next = white frame and tag, ready = purple
+   frame, locked = dim with a lock. */
+.sp-tile.locked { background: #101016; }
+.sp-tile.locked .g, .sp-tile.locked .l, .sp-tile.locked .n { opacity: .45; }
+.sp-tile.locked .rb { opacity: .35; }
+.sp-tile .ok { position: absolute; right: 6px; top: 6px; z-index: 3; width: 20px; height: 20px; border-radius: 50%; background: #262633; color: #fff; display: flex; align-items: center; justify-content: center; }
+.sp-tile.claimed .ok { background: #22C55E; color: #052E16; }
+.sp-tile.current { border: 2px solid #fff; background: #1d1d29; }
+.sp-tile .nx { position: absolute; right: 5px; top: 5px; z-index: 3; padding: 3px 6px 2px; border-radius: 4px; background: #fff; color: #0a0a0f; font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 12px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; }
+.sp-tile .pg { position: absolute; left: 0; right: 0; bottom: 4px; z-index: 3; height: 4px; background: rgba(255,255,255,.18); }
 .sp-tile .pg i { display: block; height: 100%; background: #fff; }
-.sp-tile[aria-pressed="true"] { outline: 3px solid var(--ra); outline-offset: 2px; }
-.sp-tile.ready { border-color: #fff; }
-.sp-tile.ready .l { background: #fff; color: #0a0a0f; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
-@media (hover: hover) { .sp-tile:hover { filter: brightness(1.08); } .sp-tile.locked:hover { filter: saturate(.45) brightness(.8); } }
-@media (max-width: 520px) { .sp-page { gap: 6px; } .sp-tile .l { font-size: 10px; min-height: 28px; padding: 4px 3px; } .sp-tile .n { font-size: 13px; } .sp-tile .g { margin-bottom: 20px; } }
-/* Each dot is a 26x24 tap target around a small slanted bar. */
+.sp-tile[aria-pressed="true"] { outline: 3px solid #fff; outline-offset: 2px; }
+.sp-tile.ready { border: 2px solid var(--sp-purple); background: #1d1530; }
+.sp-tile.ready .l { background: var(--sp-purple); color: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; bottom: 4px; }
+@media (hover: hover) { .sp-tile:hover { background: #1f1f2c; } .sp-tile.locked:hover { background: #151520; } }
+@media (max-width: 520px) { .sp-page { gap: 6px; } .sp-tile .l { font-size: 10px; min-height: 28px; padding: 4px 3px; } .sp-tile .n { font-size: 14px; } .sp-tile .g { margin-bottom: 20px; } }
+/* Each dot is a 26x24 tap target around a small bar. */
 .sp-dots { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; }
 .sp-dots button { width: 26px; height: 24px; border: 0; padding: 0; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.sp-dots button::after { content: ""; width: 20px; height: 6px; border-radius: 2px; background: #2d2d3a; transform: skewX(-20deg); }
+.sp-dots button::after { content: ""; width: 18px; height: 6px; border-radius: 3px; background: #2d2d3a; }
 .sp-dots button.done::after { background: #22C55E; }
 .sp-dots button.on::after { background: #fff; }
 
 @media (prefers-reduced-motion: reduce) { .sp-tile { transition: none; } }
-/* Narrow phones: tapping a tile names it on the stage, so tiles show just
-   their icon (labels stay on Open and the next level). */
+/* Narrow phones: a tap opens the level in the sheet, so tiles show just their
+   icon (labels stay on Open and the next level). */
 @media (max-width: 420px) {
   .sp-tile:not(.ready):not(.current) .l { display: none; }
-  .sp-tile:not(.ready):not(.current) .g { width: 62%; height: 62%; margin-bottom: 0; }
-  .sp-feature .sp-art { height: 170px; }
+  .sp-tile:not(.ready):not(.current) .g { width: 60%; height: 60%; margin-bottom: 4px; }
+  .sp-feature .sp-art { height: 200px; }
+}
+
+/* Season packs: a row you swipe on phones, ten across on desktop */
+.sp-packs { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 6px 6px; margin: 0 -6px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.sp-packs::-webkit-scrollbar { display: none; }
+.sp-pack { flex: 0 0 44%; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 4px 6px 2px; background: none; border: 0; cursor: pointer; }
+@media (min-width: 560px) { .sp-pack { flex-basis: 30%; } }
+@media (min-width: 900px) { .sp-packs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: visible; } .sp-pack { flex-basis: auto; } }
+@media (min-width: 1100px) { .sp-packs { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
+.sp-pack-tag { display: inline-flex; align-items: center; justify-content: center; min-height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); color: rgba(255,255,255,.8); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.sp-pack-tag.ready { background: var(--sp-purple); border-color: transparent; color: #fff; }
+.sp-pack-tag.done { color: rgba(255,255,255,.6); }
+
+/* 3D pack: front, back and edges are real faces, so it has thickness when it
+   turns. Transform and opacity only. */
+.pk3d { --d: 14px; position: relative; width: 100%; aspect-ratio: 220 / 352; perspective: 900px; }
+.pk3d-sm { --d: 8px; }
+.pk3d-lg { --d: 22px; }
+.pk3d-body { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY(-24deg) rotateX(4deg); }
+.pk3d.is-live .pk3d-body { animation: pk3d-turn 7s ease-in-out infinite; will-change: transform; }
+.pk3d-front, .pk3d-back, .pk3d-side { position: absolute; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.pk3d-front { inset: 0; overflow: hidden; border-radius: 3px; transform: translateZ(calc(var(--d) / 2)); }
+.pk3d-front > div { height: 100%; }
+.pk3d-back { inset: 0; border-radius: 3px; background: #14141c; transform: translateZ(calc(var(--d) / -2)) rotateY(180deg); }
+.pk3d-side { top: 0; bottom: 0; width: var(--d); background: var(--pk-c); }
+.pk3d-side::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.55) 0, rgba(255,255,255,0) 7%, rgba(0,0,0,0) 93%, rgba(255,255,255,.4) 100%); }
+.pk3d-side::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(0,0,0,.28) 0 2px, rgba(0,0,0,0) 2px 6px); mix-blend-mode: normal; opacity: .5; clip-path: polygon(0 0, 100% 0, 100% 7%, 0 7%, 0 93%, 100% 93%, 100% 100%, 0 100%); }
+.pk3d-side-r { right: calc(var(--d) / -2); transform: rotateY(90deg); }
+.pk3d-side-l { left: calc(var(--d) / -2); transform: rotateY(-90deg); filter: brightness(.6); }
+.pk3d-gloss { position: absolute; top: 5px; bottom: 5px; left: 0; width: 36%; opacity: 0; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.3), rgba(255,255,255,0)); transform: translate3d(-170%, 0, 0) skewX(-18deg); }
+.pk3d.is-live .pk3d-gloss { animation: pk3d-gloss 6s ease-in-out infinite; }
+.pk3d-floor { position: absolute; left: 12%; right: 4%; bottom: -5%; height: 8%; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(0,0,0,.6) 0, rgba(0,0,0,.35) 45%, rgba(0,0,0,0) 72%); }
+.pk3d.is-live .pk3d-floor { animation: pk3d-shadow 7s ease-in-out infinite; }
+.pk3d.is-locked .pk3d-front, .pk3d.is-locked .pk3d-side { filter: saturate(.55) brightness(.72); }
+@keyframes pk3d-turn {
+  0%, 100% { transform: translate3d(0, 0, 0) rotateY(-28deg) rotateX(5deg); }
+  50% { transform: translate3d(0, -7px, 0) rotateY(-12deg) rotateX(2deg); }
+}
+@keyframes pk3d-gloss {
+  0%, 55% { opacity: 0; transform: translate3d(-170%, 0, 0) skewX(-18deg); }
+  58% { opacity: 1; }
+  85% { opacity: 1; transform: translate3d(420%, 0, 0) skewX(-18deg); }
+  86%, 100% { opacity: 0; transform: translate3d(420%, 0, 0) skewX(-18deg); }
+}
+@keyframes pk3d-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 1; }
+  50% { transform: scaleX(.88); opacity: .75; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pk3d.is-live .pk3d-body, .pk3d.is-live .pk3d-gloss, .pk3d.is-live .pk3d-floor { animation: none; }
 }

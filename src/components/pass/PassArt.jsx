@@ -1,7 +1,7 @@
 // Inline renders of the ShinyPass SVG art (user card, pack) and the face of
 // each item you can pull. The SVG strings come from pure renderers in
 // src/lib; everything user-controlled in them is escaped there.
-import { memo, useEffect, useId, useMemo, useRef } from 'react';
+import { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Snowflake, LayoutGrid, Sparkles, Zap, Ticket, Copy } from 'lucide-react';
 import { renderUserCard } from '../../lib/userCard';
@@ -73,6 +73,45 @@ export const PackSvg = memo(function PackSvg({ pack, locked = false, still = fal
   const html = useMemo(() => renderPack(pack, { uid: `${pack.key}${uid}`, locked, still: quiet, season }), [pack, uid, locked, quiet, season]);
   usePauseOffscreen(ref, !quiet);
   return <div ref={ref} className={`[&>svg]:block [&>svg]:w-full [&>svg]:h-auto ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
+/**
+ * A pack as a solid object: the printed front, a dark back and a foil edge
+ * give it real thickness, it floats and turns slowly, and a neutral shadow
+ * sits under it. Only transform and opacity animate, so it stays smooth, and
+ * it only moves while on screen. `size` sets the thickness (sm/md/lg).
+ * Styles: arena.css (.pk3d).
+ */
+export const Pack3D = memo(function Pack3D({ pack, locked = false, still = false, season, size = 'md', ready = false, className = '' }) {
+  const reduce = useReducedMotion();
+  const ref = useRef(null);
+  const [live, setLive] = useState(false);
+  const quiet = still || !!reduce;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || quiet || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(([e]) => setLive(e.isIntersecting), { rootMargin: '60px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [quiet]);
+  return (
+    <div
+      ref={ref}
+      className={`pk3d pk3d-${size}${locked ? ' is-locked' : ''}${ready ? ' is-ready' : ''}${live && !quiet ? ' is-live' : ''} ${className}`}
+      style={{ '--pk-a': pack.a, '--pk-c': pack.c }}
+    >
+      <span className="pk3d-floor" aria-hidden="true" />
+      <div className="pk3d-body">
+        <span className="pk3d-back" aria-hidden="true" />
+        <span className="pk3d-side pk3d-side-r" aria-hidden="true" />
+        <span className="pk3d-side pk3d-side-l" aria-hidden="true" />
+        <span className="pk3d-front">
+          <PackSvg pack={pack} still season={season} />
+          <span className="pk3d-gloss" aria-hidden="true" />
+        </span>
+      </div>
+    </div>
+  );
 });
 
 /** A pack-material banner (see renderBanner). Fills its box. */

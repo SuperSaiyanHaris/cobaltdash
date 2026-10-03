@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Snowflake, LayoutGrid, Sparkles, Zap, Ticket, Check } from 'lucide-react';
-import { PackSvg, ItemFace, UserCardSvg } from './PassArt';
+import { Pack3D, ItemFace, UserCardSvg } from './PassArt';
 import Nameplate from './Nameplate';
 import {
   PACKS, FLAIRS, CARD_EFFECTS, SLOT_WEIGHTS, RARITY_ORDER, setPieces, flairCap, voucherChance, xpToNext,
@@ -91,7 +91,7 @@ export default function PackGuide({ me, season, state, onOpenPack }) {
               onClick={() => setSel(p.key)}
               className={`sp-tap rounded-xl p-1 sm:p-1.5 border-2 transition-colors ${p.key === sel ? 'border-neutral-900 bg-white' : 'border-transparent hover:border-neutral-300'}`}
             >
-              <PackSvg pack={p} still season={season} />
+              <Pack3D pack={p} still season={season} size="sm" />
               <span className={`mt-1 inline-flex items-center gap-0.5 rounded px-1.5 text-[11px] font-bold ${st === 'ready' ? 'bg-neutral-900 text-white' : 'text-neutral-800'}`}>
                 {st === 'ready' ? 'Open' : st === 'opened' ? <><Check className="w-3 h-3" />Opened</> : `Lv ${p.level}`}
               </span>
@@ -103,8 +103,8 @@ export default function PackGuide({ me, season, state, onOpenPack }) {
       <div className="mt-6 grid md:grid-cols-[minmax(0,260px)_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)] gap-6 lg:gap-10 items-start">
         {/* The pack: big on larger screens, beside its name on phones */}
         <div className="flex md:block items-center gap-4 md:sticky md:top-24">
-          <div className="w-[112px] sm:w-[160px] md:w-full flex-shrink-0">
-            <PackSvg key={pack.key} pack={pack} season={season} />
+          <div className="w-[124px] sm:w-[170px] md:w-full md:max-w-[230px] flex-shrink-0 px-2 md:mx-auto">
+            <Pack3D key={pack.key} pack={pack} season={season} size="lg" />
           </div>
           <div className="md:hidden min-w-0">
             <p className="font-arena italic font-black uppercase text-[26px] leading-none text-neutral-950">{pack.name} pack</p>

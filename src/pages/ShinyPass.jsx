@@ -345,13 +345,20 @@ export default function ShinyPass() {
       <section className="relative isolate z-20 bg-[#0a0a0f] text-white overflow-hidden">
         <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-10 sm:pb-14">
-          {!state.handle && (
-            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-              <span className="text-[14px] font-semibold text-white/85">Pick a public name to get your own page:</span>
-              <HandleForm />
-            </div>
-          )}
-          <ArenaTrack me={me} state={state} onOpenPack={(l) => setOpening(PACK_BY_LEVEL[l])} onViewPack={viewPack} bodyHidden={section !== 'track'} />
+          <ArenaTrack
+            me={me}
+            state={state}
+            onOpenPack={(l) => setOpening(PACK_BY_LEVEL[l])}
+            onViewPack={viewPack}
+            bodyHidden={section !== 'track'}
+            handleForm={!state.handle && (
+              <div className="rounded-2xl border border-white/15 bg-white/[0.05] p-4">
+                <p className="text-[15px] font-bold text-white">Get your own public page</p>
+                <p className="mt-0.5 mb-3 text-[13.5px] text-white/75">Pick a public name. Your card, level and unlocks show up at shinypull.com/u/yourname.</p>
+                <HandleForm />
+              </div>
+            )}
+          />
         </div>
       </section>
 

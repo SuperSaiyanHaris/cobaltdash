@@ -144,7 +144,6 @@ ${numGrad}${ringGrad}
 <radialGradient id="${id}art" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="${t.c}" stop-opacity=".5"/><stop offset=".6" stop-color="${t.d}" stop-opacity=".14"/><stop offset="1" stop-color="#0B0B12" stop-opacity="0"/></radialGradient>
 <pattern id="${id}holo" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="4" height="10" fill="#fff" opacity="${stripes ? .08 : .05}"/>${stripes ? `<animateTransform attributeName="patternTransform" type="translate" additive="sum" values="0 0;10 0" dur="${stripes}s" repeatCount="indefinite"/>` : ''}</pattern>
 <linearGradient id="${id}shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="${m.shine}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-<linearGradient id="${id}bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${t.c}"/><stop offset=".6" stop-color="${t.a}"/><stop offset="1" stop-color="${t.b}"/></linearGradient>
 <clipPath id="${id}clip"><rect width="${W}" height="${H}" rx="16"/></clipPath>
 <linearGradient id="${id}prism" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F472B6" stop-opacity="0"/><stop offset=".3" stop-color="#F472B6" stop-opacity=".22"/><stop offset=".5" stop-color="#FDE68A" stop-opacity=".26"/><stop offset=".7" stop-color="#67E8F9" stop-opacity=".22"/><stop offset="1" stop-color="#67E8F9" stop-opacity="0"/></linearGradient>
 <clipPath id="${id}win"><rect x="18" y="48" width="${W - 36}" height="160" rx="10"/></clipPath>
@@ -172,7 +171,7 @@ ${nameFx ? `<linearGradient id="${id}nm" x1="0" y1="0" x2="1" y2="0"><stop offse
 <text x="${W / 2}" y="244" text-anchor="middle" font-family="${FONT}" font-size="9.5" font-weight="600" letter-spacing=".6" fill="#E4E4EA">${escapeXml(title)}</text>
 <text x="${W / 2}" y="281" text-anchor="middle" font-family="${FONT}" font-size="30" font-weight="900" letter-spacing="-1" fill="url(#${id}num)">LV ${level}</text>
 <rect x="22" y="291" width="${barW}" height="6" rx="3" fill="#fff" fill-opacity=".1"/>
-<rect x="22" y="291" width="${Math.max(6, barW * pct).toFixed(1)}" height="6" rx="3" fill="url(#${id}bar)"/>
+<rect x="22" y="291" width="${Math.max(6, barW * pct).toFixed(1)}" height="6" rx="3" fill="#7C3AED"/>
 <text x="22" y="309" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing=".6" fill="#C4C4CE">${level >= MAX_LEVEL ? 'MAX LEVEL' : `${compactCount(u.into || 0)} / ${compactCount(u.need || 0)} XP`}</text>
 <text x="${W - 22}" y="309" text-anchor="end" font-family="${FONT}" font-size="8" font-weight="700" letter-spacing=".6" fill="#C4C4CE">${compactCount(u.xp || 0)} XP TOTAL</text>
 <line x1="22" y1="317" x2="${W - 22}" y2="317" stroke="#fff" stroke-opacity=".08"/>

@@ -8,6 +8,7 @@
 
 import { escapeXml } from './badgeCard.js';
 import { markBarsInner } from './brandMark.js';
+import { POSTERS } from './packPosters.js';
 
 const DISPLAY = "'Barlow Condensed','Arial Narrow',Impact,sans-serif";
 const SPARKLE = 'M0-1C.12-.28.28-.12 1 0C.28.12.12.28 0 1C-.12.28-.28.12-1 0C-.28-.12-.12-.28 0-1Z';
@@ -47,6 +48,19 @@ const lin = (id, list, attrs = 'x1="0" y1="0" x2="0" y2="1"', extra = '') => `<l
 const rad = (id, list, attrs = '') => `<radialGradient id="${id}" ${attrs}>${stops(list)}</radialGradient>`;
 
 const W = PACK_W, H = PACK_H, CX = W / 2, CY = 150;
+const EXTRUDE = 8; // depth of the extruded level number, in steps
+
+// Foil wrinkles fanning out of the crimped seals, so the pouch reads as a
+// pinched, puffed bag instead of a flat label. Light and dark pairs.
+const WRINKLES = (() => {
+  const out = [];
+  for (let i = 0; i < 11; i++) {
+    const x = 12 + i * 19.6, lean = (i % 2 ? 1 : -1) * (4 + (i % 3) * 2);
+    out.push(`<path d="M${x.toFixed(1)} ${SEAL} q ${lean} 12 ${(lean * 1.6).toFixed(1)} ${10 + (i % 4) * 2}" stroke="#fff" stroke-opacity=".22" stroke-width=".9"/><path d="M${(x + 1.6).toFixed(1)} ${SEAL} q ${lean} 12 ${(lean * 1.6).toFixed(1)} ${9 + (i % 4) * 2}" stroke="#000" stroke-opacity=".16" stroke-width=".8"/>`);
+    out.push(`<path d="M${x.toFixed(1)} ${H - SEAL} q ${-lean} -12 ${(-lean * 1.6).toFixed(1)} ${-(10 + (i % 3) * 2)}" stroke="#fff" stroke-opacity=".2" stroke-width=".9"/><path d="M${(x + 1.6).toFixed(1)} ${H - SEAL} q ${-lean} -12 ${(-lean * 1.6).toFixed(1)} ${-(9 + (i % 3) * 2)}" stroke="#000" stroke-opacity=".15" stroke-width=".8"/>`);
+  }
+  return out.join('');
+})();
 
 // Solid level-number color per pack, drawn with a thick black outline so it
 // reads at a glance on any material.
@@ -291,7 +305,7 @@ ${stud}`,
 export function renderPack(pack, o = {}) {
   const id = `pk${(o.uid || pack.key).replace(/[^a-z0-9]/gi, '')}`;
   const anim = !o.still;
-  const m = (MATERIALS[pack.key] || MATERIALS.chrome)(id, anim);
+  const m = (POSTERS[pack.key] || POSTERS.chrome)(id, anim);
   const { a } = pack;
   const name = escapeXml(pack.name.toUpperCase());
   const nameSize = name.length > 12 ? 30 : name.length > 8 ? 36 : 44;
@@ -305,13 +319,18 @@ export function renderPack(pack, o = {}) {
   const sparkles = anim && pack.fx.includes('sparkles') ? [[30, 70, 7, 0], [190, 110, 6, .8], [40, 300, 6, 1.5], [186, 296, 7, 2.2], [150, 60, 5, 1.1]].map(([x, y, s, dl]) =>
     `<path d="${SPARKLE}" fill="#fff" transform="translate(${x} ${y})"><animateTransform attributeName="transform" type="scale" additive="sum" values="0;0;${s};0" keyTimes="0;.55;.75;1" dur="2.6s" begin="-${dl}s" repeatCount="indefinite"/></path>`).join('') : '';
 
-  const numSize = 150;
-  const numY = 190;
+  const numSize = 88;
+  const numY = 203;
   // o.fit: squeeze text to the pack width (for renderers without the
   // condensed display face, like the share image).
-  const numFit = o.fit ? ` textLength="${lvl.length * 62}" lengthAdjust="spacingAndGlyphs"` : '';
+  const numFit = o.fit ? ` textLength="${lvl.length * 42}" lengthAdjust="spacingAndGlyphs"` : '';
   const nameFit = o.fit ? ` textLength="${Math.min(W - 26, name.length * nameSize * 0.46)}" lengthAdjust="spacingAndGlyphs"` : '';
-  const numAttrs = `x="${CX}" y="${numY}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${numSize}" letter-spacing="-5"${numFit}`;
+  const numAttrs = `x="${CX}" y="${numY}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${numSize}" letter-spacing="-3"${numFit}`;
+
+  const extrusion = Array.from({ length: EXTRUDE }, (_, i) => {
+    const d = EXTRUDE - i;
+    return `<text ${numAttrs} dx="${(d * 0.85).toFixed(1)}" dy="${(d * 1.05).toFixed(1)}" fill="${m.ext}" stroke="${m.ext}" stroke-width="8" stroke-linejoin="round">${lvl}</text>`;
+  }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeXml(pack.name)} pack, level ${pack.level}">
 <defs>
@@ -319,20 +338,25 @@ ${m.defs}
 ${lin(`${id}seal`, m.seal, 'x1="0" y1="0" x2="1" y2="0"')}
 ${lin(`${id}name`, [[0, '#FFFFFF'], [0.55, '#FFFFFF'], [1, '#C9CED6']])}
 ${lin(`${id}shine`, [[0, '#fff', 0], [0.5, '#fff', 0.42], [1, '#fff', 0]], 'x1="0" y1="0" x2="1" y2="0"')}
-${lin(`${id}puffx`, [[0, '#000', 0.5], [0.1, '#000', 0.12], [0.3, '#fff', 0.1], [0.45, '#fff', 0.02], [0.8, '#000', 0.05], [0.93, '#000', 0.22], [1, '#000', 0.55]], 'x1="0" y1="0" x2="1" y2="0"')}
+${lin(`${id}puffx`, [[0, '#000', 0.62], [0.08, '#000', 0.2], [0.26, '#fff', 0.16], [0.4, '#fff', 0.03], [0.74, '#000', 0.1], [0.92, '#000', 0.34], [1, '#000', 0.68]], 'x1="0" y1="0" x2="1" y2="0"')}
+${lin(`${id}spec`, [[0, '#fff', 0], [0.2, '#fff', 0.34], [0.55, '#fff', 0.18], [1, '#fff', 0]])}
+${lin(`${id}foldt`, [[0, '#000', 0.5], [1, '#000', 0]])}
+${lin(`${id}foldb`, [[0, '#000', 0], [1, '#000', 0.5]])}
 ${lin(`${id}puffy`, [[0, '#000', 0.45], [0.1, '#000', 0], [0.88, '#000', 0], [1, '#000', 0.5]])}
 <pattern id="${id}rib" width="3" height="${SEAL}" patternUnits="userSpaceOnUse"><rect width="1.2" height="${SEAL}" fill="#000" opacity=".22"/><rect x="1.6" width=".6" height="${SEAL}" fill="#fff" opacity=".35"/></pattern>
 <clipPath id="${id}clip"><path d="${OUTLINE}"/></clipPath>
 </defs>
 <g clip-path="url(#${id}clip)"${o.locked ? ' opacity=".5"' : ''}>
 ${m.body}
-<text ${numAttrs} dx="4" dy="6" fill="#000" fill-opacity=".5" stroke="#000" stroke-opacity=".5" stroke-width="9" stroke-linejoin="round">${lvl}</text>
-<text ${numAttrs} fill="${NUM_COLOR[pack.key] || '#FFFFFF'}" stroke="#0a0a0f" stroke-width="9" stroke-linejoin="round" paint-order="stroke">${lvl}</text>
+<text ${numAttrs} dx="${(EXTRUDE * 0.85).toFixed(1)}" dy="${(EXTRUDE * 1.05).toFixed(1)}" fill="#0a0a0f" stroke="#0a0a0f" stroke-width="13" stroke-linejoin="round">${lvl}</text>
+${extrusion}
+<text ${numAttrs} fill="${m.num}" stroke="#0a0a0f" stroke-width="7" stroke-linejoin="round" paint-order="stroke">${lvl}</text>
 <text x="14" y="33" font-family="${DISPLAY}" font-weight="900" font-style="italic" font-size="12" letter-spacing="1.4" fill="${m.ink}">SHINYPULL</text>
 <text x="${W - 14}" y="33" text-anchor="end" font-family="${DISPLAY}" font-weight="800" font-style="italic" font-size="10.5" letter-spacing="1.6" fill="${m.ink}" fill-opacity=".8">TEAR HERE</text>
 <line x1="0" y1="${TEAR_Y}" x2="${W}" y2="${TEAR_Y}" stroke="${m.ink}" stroke-opacity=".45" stroke-width="1.2" stroke-dasharray="5 4"/>
-<rect x="0" y="206" width="${W}" height="64" fill="#0a0a0f" fill-opacity=".92"/>
-<rect x="0" y="206" width="${W}" height="2" fill="${a}"/><rect x="0" y="268" width="${W}" height="2" fill="${a}"/>
+<path d="M16 206L${W + 14} 206L${W - 16} 268L-14 268Z" fill="#0a0a0f" fill-opacity=".95"/>
+<path d="M16 206L${W + 14} 206" stroke="${a}" stroke-width="2.4"/><path d="M-14 268L${W - 16} 268" stroke="${a}" stroke-width="2.4"/>
+<path d="M20 211L${W + 14} 211M-10 263L${W - 20} 263" stroke="${a}" stroke-opacity=".35" stroke-width=".8"/>
 <text x="${CX}" y="${238 + nameSize * 0.2}" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="${nameSize}" letter-spacing=".5" fill="url(#${id}name)"${nameFit}>${name}</text>
 <text x="${CX}" y="262" text-anchor="middle" font-family="${DISPLAY}" font-style="italic" font-weight="800" font-size="11.5" letter-spacing="2.4" fill="#fff" fill-opacity=".8">${pack.items} ITEMS · SEASON ${season}</text>
 <text x="16" y="${H - 34}" font-family="${DISPLAY}" font-style="italic" font-weight="900" font-size="15" letter-spacing="1.2" fill="${m.ink}">LV ${lvl} PACK</text>
@@ -342,7 +366,13 @@ ${m.body}
 <rect y="${SEAL}" width="${W}" height="1" fill="#000" opacity=".3"/><rect y="${H - SEAL - 1}" width="${W}" height="1" fill="#000" opacity=".3"/>
 <rect width="${W}" height="${H}" fill="url(#${id}puffx)"/>
 <rect width="${W}" height="${H}" fill="url(#${id}puffy)"/>
-<rect x="5" y="${SEAL}" width="1.2" height="${H - SEAL * 2}" fill="#fff" opacity=".35"/>
+<rect y="${SEAL}" width="${W}" height="16" fill="url(#${id}foldt)"/><rect y="${H - SEAL - 16}" width="${W}" height="16" fill="url(#${id}foldb)"/>
+<g fill="none" stroke-linecap="round">${WRINKLES}</g>
+<path d="M30 ${SEAL + 4} C 42 100, 40 250, 32 ${H - SEAL - 4} L 52 ${H - SEAL - 4} C 62 250, 64 100, 52 ${SEAL + 4} Z" fill="url(#${id}spec)" opacity=".8"/>
+<path d="M160 ${SEAL + 8} C 166 120, 166 240, 160 ${H - SEAL - 8} L 168 ${H - SEAL - 8} C 172 240, 172 120, 168 ${SEAL + 8} Z" fill="#fff" opacity=".07"/>
+<rect x="4" y="${SEAL}" width="1.6" height="${H - SEAL * 2}" fill="#fff" opacity=".5"/><rect x="${W - 6}" y="${SEAL}" width="2" height="${H - SEAL * 2}" fill="#000" opacity=".4"/>
+<rect y="${SEAL - 2}" width="${W}" height="2" fill="#fff" opacity=".5"/><rect y="${H - SEAL}" width="${W}" height="2" fill="#fff" opacity=".35"/>
+<rect y="${SEAL}" width="${W}" height="1.5" fill="#000" opacity=".35"/><rect y="${H - SEAL - 2}" width="${W}" height="2" fill="#000" opacity=".35"/>
 ${sparkles}${sheen}
 </g>
 <path d="${OUTLINE}" fill="none" stroke="#fff" stroke-opacity=".22"/>

@@ -591,7 +591,7 @@ export default function Dashboard() {
                       <span className="inline-flex items-center gap-1 whitespace-nowrap"><Flame className="w-3.5 h-3.5 text-orange-300" />{pass.streak || 0}-day streak</span>
                     </span>
                     <span className="mt-1.5 block h-2 rounded-full bg-white/10 overflow-hidden">
-                      <span className="block h-full rounded-full" style={{ width: `${Math.max(3, pass.pct * 100)}%`, background: 'linear-gradient(90deg, #5EC8FF, #C084FC 60%, #FFD76A)' }} />
+                      <span className="block h-full rounded-full" style={{ width: `${Math.max(3, pass.pct * 100)}%`, background: '#7C3AED' }} />
                     </span>
                   </span>
                   <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white flex-shrink-0" />

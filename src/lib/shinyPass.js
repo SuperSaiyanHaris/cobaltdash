@@ -415,8 +415,10 @@ export function itemBlurb(item) {
     case 'pack': {
       const p = PACK_BY_KEY[item.key];
       if (!p) return '';
-      if (p.level === 99) return `5 items: its card frame, a ${p.name} set piece, and always a free month of a Featured Listing.`;
-      return `${p.items} items: its card frame and a ${p.name} set piece, plus more.`;
+      // "a The Final Pull set piece" reads wrong, so that one stays generic.
+      const piece = /^the /i.test(p.name) ? 'set piece' : `${p.name} set piece`;
+      if (p.level === 99) return `5 items: its card frame, a ${piece}, and always a free month of a Featured Listing.`;
+      return `${p.items} items: its card frame and a ${piece}, plus more.`;
     }
     default: return '';
   }
