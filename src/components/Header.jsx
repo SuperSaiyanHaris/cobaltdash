@@ -369,7 +369,7 @@ export default function Header() {
                 <Link to="/pass" aria-label={`ShinyPass level ${pass.progress.level}`} className="relative ml-0.5 h-8 pl-1 pr-2.5 rounded-full bg-neutral-900 text-white flex items-center gap-1.5 overflow-hidden">
                   <span className="w-6 h-6 rounded-full grid place-items-center text-[10px] font-black bg-white text-neutral-900">{initials}</span>
                   <span className="text-[12px] font-black tabular-nums tracking-tight">LV {pass.progress.level}</span>
-                  <span aria-hidden="true" className="absolute left-0 bottom-0 h-[2px]" style={{ width: `${Math.round((pass.progress.level >= 99 ? 1 : pass.progress.pct || 0) * 100)}%`, background: 'linear-gradient(90deg,#7DF9FF,#B69CFF,#FF7AD9)' }} />
+                  <span aria-hidden="true" className="absolute left-0 bottom-0 h-[2px]" style={{ width: `${Math.round((pass.progress.level >= 99 ? 1 : pass.progress.pct || 0) * 100)}%`, background: '#7C3AED' }} />
                 </Link>
               ) : <span aria-hidden="true" className="ml-0.5 w-[62px] h-8 rounded-full bg-neutral-200" />
             ) : (
@@ -427,11 +427,8 @@ export default function Header() {
                     <span className="text-white/60 font-semibold">ShinyPass</span>
                     <ChevronRight className="w-4 h-4 text-white/40 ml-auto" />
                   </div>
-                  <div className="mt-2.5 grid grid-cols-10 gap-[3px] h-2" aria-hidden="true">
-                    {Array.from({ length: 10 }, (_, i) => {
-                      const fill = Math.max(0, Math.min(1, (pass.progress.level >= 99 ? 1 : pass.progress.pct || 0) * 10 - i));
-                      return <span key={i} className="rounded-sm bg-white/[0.12] overflow-hidden"><span className="block h-full" style={{ width: `${fill * 100}%`, background: 'linear-gradient(90deg,#7DF9FF,#B69CFF,#FF7AD9)' }} /></span>;
-                    })}
+                  <div className="mt-2.5 h-2 rounded-full bg-white/[0.12] overflow-hidden" aria-hidden="true">
+                    <span className="block h-full rounded-full" style={{ width: `${Math.max(2, Math.round((pass.progress.level >= 99 ? 1 : pass.progress.pct || 0) * 100))}%`, background: '#7C3AED' }} />
                   </div>
                   <p className="mt-2 text-[13px] text-white/65">{pass.progress.level >= 99 ? 'Max level this season' : `${Math.max(0, (pass.progress.need || 0) - (pass.progress.into || 0))} XP to level ${pass.progress.level + 1}`}</p>
                 </>
