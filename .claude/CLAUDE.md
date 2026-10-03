@@ -212,8 +212,8 @@ sessions never see it. Anything a cloud session must know goes here.
   transforms or filters, so never put `filter: drop-shadow` on moving
   cards (use box-shadow) and don't pass `animated: true` on-site. Embeds on
   creators' sites still use the animated default. Rankings podium on phones
-  stacks #1 over #2 and #3 (three across was ~100px, unreadable). Speed
-  Insights (`src/main.jsx`) records real-user vitals.
+  is desktop only (three across was ~100px, unreadable); phones go
+  straight to the list. No Vercel Speed Insights: the useful tier is paid.
 - Rankings: podium header, Table/Cards toggle, foil sponsored rows (Premium
   at ranks 4-5 and 9-10, Basic at 15, 20, 25...), rarity chips on the
   subscribers tab.

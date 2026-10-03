@@ -45,9 +45,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 );
-
-// Real-user speed data (Core Web Vitals by device) for the Vercel dashboard.
-// Loaded after the page is idle so it never competes with first paint.
-const startSpeedInsights = () => import('@vercel/speed-insights').then((m) => m.injectSpeedInsights()).catch(() => {});
-if (document.readyState === 'complete') setTimeout(startSpeedInsights, 2000);
-else window.addEventListener('load', () => setTimeout(startSpeedInsights, 2000), { once: true });
