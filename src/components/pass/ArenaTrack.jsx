@@ -119,6 +119,64 @@ function RewardSheet({ children, onClose }) {
   );
 }
 
+/**
+ * The season's ten 3D packs. They are the heaviest part of the page (about 200
+ * SVG nodes each) and sit below the fold, so they start mounting when the strip
+ * nears the screen, one every 70ms, and start over each time the Track tab is
+ * shown again, so no single render blocks a tap or a scroll.
+ */
+function SeasonPacks({ opened, available, season, onOpenPack, onViewPack }) {
+  const ref = useRef(null);
+  const [count, setCount] = useState(0);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { const id = setTimeout(() => setNear(true), 300); return () => clearTimeout(id); }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setNear(true); io.disconnect(); } }, { rootMargin: '700px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!near) return undefined;
+    const id = setInterval(() => setCount((c) => (c >= PACKS.length ? c : c + 1)), 70);
+    return () => clearInterval(id);
+  }, [near]);
+  return (
+    <div ref={ref} className="flex flex-col gap-3">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="font-arena italic font-black uppercase text-white text-[26px] tracking-wide">Season packs</h2>
+          <p className="text-[13.5px] text-white/75">{opened.size} of {PACKS.length} opened</p>
+        </div>
+        <div className="sp-packs" style={count < PACKS.length ? { minHeight: 250 } : undefined}>
+          {PACKS.slice(0, count).map((k) => {
+            const ready = available.includes(k.level);
+            const done = opened.has(k.level);
+            return (
+              <button
+                key={k.key}
+                type="button"
+                onClick={() => {
+                  if (ready) return onOpenPack(k.level);
+                  if (done) return onViewPack(k.level);
+                  // A pack you haven't reached: show what's inside it.
+                  window.dispatchEvent(new CustomEvent('shinypass:guide', { detail: k.key }));
+                  return document.getElementById('pack-guide')?.scrollIntoView({ behavior: smooth(), block: 'start' });
+                }}
+                className="sp-pack"
+                aria-label={`${k.name} pack, level ${k.level}${ready ? ', ready to open' : done ? ', opened' : ''}`}
+              >
+                <Pack3D pack={PACK_BY_KEY[k.key]} still={!ready} ready={ready} locked={!ready && !done} season={season.number} size="md" />
+                <span className={`sp-pack-tag ${ready ? 'ready' : done ? 'done' : ''}`}>
+                  {ready ? 'Open' : done ? 'Opened' : `Level ${k.level}`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+    </div>
+  );
+}
+
 // (Tile is memoized so choosing a level re-renders two tiles, not 99.)
 export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = false, bodyHidden = false, handleForm = null }) {
   const p = state.progress;
@@ -134,24 +192,6 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
   const [page, setPage] = useState(pageOf(selected));
   const scroller = useRef(null);
   const [now] = useState(() => Date.now());
-  // The ten 3D packs are the heaviest part (about 200 SVG nodes each) and sit
-  // below the fold: they start mounting when the strip nears the screen, one
-  // pack every 70ms, so no single render blocks a tap or a scroll.
-  const packsRef = useRef(null);
-  const [packCount, setPackCount] = useState(0);
-  const [packsNear, setPacksNear] = useState(false);
-  useEffect(() => {
-    const el = packsRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') { setTimeout(() => setPacksNear(true), 300); return undefined; }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setPacksNear(true); io.disconnect(); } }, { rootMargin: '700px' });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [showBody]);
-  useEffect(() => {
-    if (!packsNear) return undefined;
-    const id = setInterval(() => setPackCount((c) => (c >= PACKS.length ? c : c + 1)), 70);
-    return () => clearInterval(id);
-  }, [packsNear]);
 
   // Start on the page holding the next reward.
   useEffect(() => {
@@ -274,38 +314,7 @@ export default function ArenaTrack({ me, state, onOpenPack, onViewPack, demo = f
       </div>}
 
       {/* The season's packs */}
-      {showBody && <div ref={packsRef} className="flex flex-col gap-3">
-        <div className="flex items-end justify-between gap-3">
-          <h2 className="font-arena italic font-black uppercase text-white text-[26px] tracking-wide">Season packs</h2>
-          <p className="text-[13.5px] text-white/75">{opened.size} of {PACKS.length} opened</p>
-        </div>
-        <div className="sp-packs" style={packCount < PACKS.length ? { minHeight: 250 } : undefined}>
-          {PACKS.slice(0, packCount).map((k) => {
-            const ready = state.packs.available.includes(k.level);
-            const done = opened.has(k.level);
-            return (
-              <button
-                key={k.key}
-                type="button"
-                onClick={() => {
-                  if (ready) return onOpenPack(k.level);
-                  if (done) return onViewPack(k.level);
-                  // A pack you haven't reached: show what's inside it.
-                  window.dispatchEvent(new CustomEvent('shinypass:guide', { detail: k.key }));
-                  return document.getElementById('pack-guide')?.scrollIntoView({ behavior: smooth(), block: 'start' });
-                }}
-                className="sp-pack"
-                aria-label={`${k.name} pack, level ${k.level}${ready ? ', ready to open' : done ? ', opened' : ''}`}
-              >
-                <Pack3D pack={PACK_BY_KEY[k.key]} still={!ready} ready={ready} locked={!ready && !done} season={season.number} size="md" />
-                <span className={`sp-pack-tag ${ready ? 'ready' : done ? 'done' : ''}`}>
-                  {ready ? 'Open' : done ? 'Opened' : `Level ${k.level}`}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>}
+      {showBody && <SeasonPacks opened={opened} available={state.packs.available} season={season} onOpenPack={onOpenPack} onViewPack={onViewPack} />}
 
       {sheetReward && !desktop && (
         <RewardSheet onClose={() => setSheet(null)}>
