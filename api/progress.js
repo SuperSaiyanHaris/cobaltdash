@@ -83,11 +83,12 @@ const addFreezes = (supabase, userId, n) => supabase.rpc('add_streak_freezes', {
  * a 0-XP marker per season and level). Packs are opened by hand and card
  * tiers follow the level, so only the other levels are granted here.
  */
-async function grantLevelDrops(supabase, userId, level, season, gained) {
+async function grantLevelDrops(supabase, userId, level, season, gained, markers) {
   const due = DROP_LEVELS.filter((l) => l <= level);
   if (due.length) {
-    // One read of this season's markers, so a normal sync costs one query.
-    const { data: done } = await supabase.from('xp_events').select('ref').eq('user_id', userId).eq('action', 'drop').like('ref', `${season}:%`);
+    // This season's markers: passed in when the caller already read them with
+    // the rest of the state, otherwise one read.
+    const done = markers || (await supabase.from('xp_events').select('ref').eq('user_id', userId).eq('action', 'drop').like('ref', `${season}:%`)).data;
     const have = new Set((done || []).map((d) => d.ref));
     const todo = due.filter((l) => !have.has(`${season}:${l}`)).map((l) => {
       const r = trackReward(l);
@@ -109,43 +110,36 @@ async function grantLevelDrops(supabase, userId, level, season, gained) {
   if (level >= MAX_LEVEL) await award(supabase, userId, seasonMaxBadge(season));
 }
 
-/**
- * Pay whatever is due right now: upvotes received since the last check and
- * the track drops of every level reached. Both steps are idempotent, so this
- * runs on every load and after every XP action; rewards never wait for the
- * next daily sync.
- */
-async function settle(supabase, user, gained = []) {
-  const season = await ensureSeason(supabase, user.id);
-  const { data: ups } = await supabase.rpc('credit_upvotes', { p_user: user.id, p_day: todayNY() });
-  if (ups > 0) gained.push({ kind: 'xp', action: 'upvote', xp: ups * 3 });
-  const { data: p } = await supabase.from('user_progress').select('xp').eq('user_id', user.id).maybeSingle();
-  if (p) await grantLevelDrops(supabase, user.id, levelFromXp(p.xp, season).level, season, gained);
-  return gained;
-}
-
-async function state(supabase, user) {
+/** Everything the page shows, read in one parallel batch (plus the showcase creators). */
+async function readState(supabase, user, season) {
   const today = todayNY();
-  const season = await ensureSeason(supabase, user.id);
-  const [prog, badges, items, packs, vouchers, events, profile, past] = await Promise.all([
-    supabase.from('user_progress').select('*').eq('user_id', user.id).single(),
-    supabase.from('user_badges').select('badge, earned_at').eq('user_id', user.id).order('earned_at'),
-    supabase.from('user_items').select('id, kind, item_key, source_level, obtained_at').eq('user_id', user.id).order('obtained_at'),
-    supabase.from('pack_openings').select('pack_level, items, opened_at').eq('user_id', user.id).eq('season', season),
-    supabase.from('listing_vouchers').select('id, source_level, status, expires_at, creator_id, listing_id, created_at, redeemed_at, creators(platform, username, display_name)').eq('user_id', user.id).order('created_at'),
-    supabase.from('xp_events').select('action, xp').eq('user_id', user.id).eq('day', today).is('revoked_at', null),
-    supabase.from('commenter_profiles').select('handle, avatar_url').eq('user_id', user.id).maybeSingle(),
-    supabase.from('season_results').select('season, xp').eq('user_id', user.id).order('season'),
+  const q = (t, cols) => supabase.from(t).select(cols).eq('user_id', user.id);
+  const [prog, badges, items, packs, vouchers, events, profile, past, markers] = await Promise.all([
+    q('user_progress', '*').single(),
+    q('user_badges', 'badge, earned_at').order('earned_at'),
+    q('user_items', 'id, kind, item_key, source_level, obtained_at').order('obtained_at'),
+    q('pack_openings', 'pack_level, items, opened_at').eq('season', season),
+    q('listing_vouchers', 'id, source_level, status, expires_at, creator_id, listing_id, created_at, redeemed_at, creators(platform, username, display_name)').order('created_at'),
+    q('xp_events', 'action, xp').eq('day', today).is('revoked_at', null),
+    q('commenter_profiles', 'handle, avatar_url').maybeSingle(),
+    q('season_results', 'season, xp').order('season'),
+    q('xp_events', 'ref').eq('action', 'drop').like('ref', `${season}:%`),
   ]);
-  const p = prog.data || { xp: 0 };
-  const lv = levelFromXp(p.xp, season);
   // Showcase creators come back whole, so the locker never has to guess them
   // from follows (a showcased creator doesn't have to be followed).
-  const showIds = Array.isArray(p.showcase) ? p.showcase : [];
+  const showIds = Array.isArray(prog.data?.showcase) ? prog.data.showcase : [];
   const { data: showRows } = showIds.length
     ? await supabase.from('creators').select('id, platform, username, display_name, profile_image').in('id', showIds)
     : { data: [] };
-  const showById = Object.fromEntries((showRows || []).map((c) => [c.id, c]));
+  return { prog, badges, items, packs, vouchers, events, profile, past, markers: markers.data || [], showIds, showRows: showRows || [] };
+}
+
+function buildState(raw, season) {
+  const { prog, badges, items, packs, vouchers, events, profile, past, showIds, showRows } = raw;
+  const today = todayNY();
+  const p = prog.data || { xp: 0 };
+  const lv = levelFromXp(p.xp, season);
+  const showById = Object.fromEntries(showRows.map((c) => [c.id, c]));
   const opened = new Set((packs.data || []).map((r) => r.pack_level));
   const byAction = {};
   for (const e of events.data || []) byAction[e.action] = (byAction[e.action] || 0) + e.xp;
@@ -156,17 +150,47 @@ async function state(supabase, user) {
     badges: badges.data || [],
     items: items.data || [],
     packs: {
-      opened: [...opened].sort((a, b) => a - b),
+      opened: [...opened].sort((x, y) => x - y),
       available: PACKS.filter((k) => k.level <= lv.level && !opened.has(k.level)).map((k) => k.level),
       history: packs.data || [],
     },
     vouchers: vouchers.data || [],
-    today: { xp: Object.values(byAction).reduce((s, v) => s + v, 0), byAction, date: today },
+    today: { xp: Object.values(byAction).reduce((sum, v) => sum + v, 0), byAction, date: today },
     handle: profile.data?.handle || null,
     avatar: profile.data?.avatar_url || null,
     showcaseSlots: BASE_SHOWCASE + (items.data || []).filter((i) => i.kind === 'showcase').length,
     showcaseCreators: showIds.map((id) => showById[id]).filter((c) => c && PLATFORM_IDS.includes(c.platform)),
   };
+}
+
+async function state(supabase, user) {
+  const season = await ensureSeason(supabase, user.id);
+  return buildState(await readState(supabase, user, season), season);
+}
+
+/**
+ * Pay whatever is due right now (upvotes received since the last check and
+ * the track drops of every level reached; both idempotent, so this runs on
+ * every load and after every XP action) and return the state with what was
+ * gained. The reads and the upvote credit run together; the state is read a
+ * second time only when something was actually paid, which is rare.
+ */
+async function settledState(supabase, user) {
+  const season = await ensureSeason(supabase, user.id);
+  const [{ data: ups }, first] = await Promise.all([
+    supabase.rpc('credit_upvotes', { p_user: user.id, p_day: todayNY() }),
+    readState(supabase, user, season),
+  ]);
+  const gained = [];
+  if (ups > 0) gained.push({ kind: 'xp', action: 'upvote', xp: ups * 3 });
+  let raw = first;
+  if (ups > 0) raw = await readState(supabase, user, season);
+  if (raw.prog.data) {
+    const before = gained.length;
+    await grantLevelDrops(supabase, user.id, levelFromXp(raw.prog.data.xp, season).level, season, gained, raw.markers);
+    if (gained.length > before) raw = await readState(supabase, user, season);
+  }
+  return { state: buildState(raw, season), gained };
 }
 
 async function sync(supabase, user) {
@@ -459,8 +483,8 @@ export default async function handler(req, res) {
       return res.status(200).json(await adminOverview(supabase));
     }
     if (req.method === 'GET') {
-      const gained = await settle(supabase, user);
-      return res.status(200).json({ ...(await state(supabase, user)), ...(gained.length ? { gained } : {}) });
+      const { state: st, gained } = await settledState(supabase, user);
+      return res.status(200).json({ ...st, ...(gained.length ? { gained } : {}) });
     }
     const body = req.body || {};
     switch (body.action) {
@@ -472,14 +496,14 @@ export default async function handler(req, res) {
         const r = await event(supabase, user, body);
         if (r === null) return res.status(200).json({ granted: false });
         // The XP may cross a level: pay its drops in the same request.
-        const gained = await settle(supabase, user);
-        return res.status(200).json({ granted: true, xp: r, gained, ...(await state(supabase, user)) });
+        const { state: st, gained } = await settledState(supabase, user);
+        return res.status(200).json({ granted: true, xp: r, gained, ...st });
       }
       case 'open': {
         const r = await openPack(supabase, user, body);
         if (r.error) return fail(res, r.status, r.error);
-        const gained = r.already ? [] : await settle(supabase, user);
-        return res.status(200).json({ ...(await state(supabase, user)), pulled: r.items, already: !!r.already, gained });
+        const { state: st, gained } = r.already ? { state: await state(supabase, user), gained: [] } : await settledState(supabase, user);
+        return res.status(200).json({ ...st, pulled: r.items, already: !!r.already, gained });
       }
       case 'equip': {
         const err = await equip(supabase, user, body);
