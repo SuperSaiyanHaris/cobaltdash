@@ -28,15 +28,24 @@ const markUri = (platform) => {
   return markUris[platform];
 };
 
+// Resolves true when the card can be shown. The edge answers "not tracked yet"
+// with a placeholder picture and a 404, and browsers load that picture without
+// an error, so the status is what tells the two apart (an image onerror never
+// fires for it). A slow or failed request is treated as fine: the <img> then
+// does its own loading.
 function preload(src) {
   return new Promise((resolve) => {
-    const img = new Image();
     let done = false;
     const finish = (ok) => { if (!done) { done = true; resolve(ok); } };
-    img.onload = () => finish(true);
-    img.onerror = () => finish(false);
     setTimeout(() => finish(true), 2500);
-    img.src = src;
+    fetch(src).then((res) => {
+      if (!res.ok) { finish(false); return; }
+      // Same URL, so the browser cache serves the <img> straight away.
+      const img = new Image();
+      img.onload = () => finish(true);
+      img.onerror = () => finish(false);
+      img.src = src;
+    }).catch(() => finish(true));
   });
 }
 
