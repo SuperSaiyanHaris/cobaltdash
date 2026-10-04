@@ -225,7 +225,14 @@ async function getHubContent(hub) {
 
   let html = `<div style="max-width:720px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.65">`;
   html += `<h1 style="font-size:1.5rem;font-weight:600">Best ${esc(hub.title)} ${esc(nounTitle)}</h1>`;
-  html += `<p>The biggest ${esc(hub.title)} ${esc(hub.noun)}, ranked by ${metric} and updated daily.</p>`;
+  // One quotable answer with the date the numbers were read.
+  const hubAsOf = top.recorded_at ? String(top.recorded_at).slice(0, 10) : null;
+  const hubName = (r) => r.display_name || r.username;
+  const hubAnswer = `${hubAsOf ? `As of ${formatDate(hubAsOf)}, ` : ''}${hubName(top)} leads the best ${hub.title} ${hub.noun} with ${formatNumber(top.subscribers)} ${metric}` +
+    (rows[1] ? `, followed by ${hubName(rows[1])} (${formatNumber(rows[1].subscribers)})` : '') +
+    (rows[2] ? ` and ${hubName(rows[2])} (${formatNumber(rows[2].subscribers)})` : '') + '.';
+  html += `<p>${esc(hubAnswer)}</p>`;
+  html += `<p>The biggest ${esc(hub.title)} ${esc(hub.noun)}, ranked by ${metric}${hubAsOf ? `. Updated <time datetime="${hubAsOf}">${esc(formatDate(hubAsOf))}</time>` : ' and updated daily'}.</p>`;
   if (HUB_INTROS[hub.slug]) html += `<p>${esc(HUB_INTROS[hub.slug])}</p>`;
   html += `<ol>`;
   for (const r of rows) {
@@ -249,16 +256,25 @@ async function getHubContent(hub) {
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'ItemList',
+    '@type': 'CollectionPage',
     name: `Best ${hub.title} ${nounTitle}`,
     description: `The best ${hub.title} ${hub.noun} ranked by ${metric}, updated daily.`,
-    numberOfItems: rows.length,
-    itemListElement: rows.slice(0, 25).map((r, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: r.display_name || r.username,
-      url: `${SITE_URL}/${hub.platform}/${encodeURIComponent(r.username)}`,
-    })),
+    url: `${SITE_URL}/best/${hub.slug}`,
+    ...(hubAsOf ? { dateModified: hubAsOf } : {}),
+    isPartOf: { '@type': 'WebSite', name: 'ShinyPull', url: SITE_URL },
+    publisher: { '@type': 'Organization', name: 'ShinyPull', url: SITE_URL },
+    mainEntity: {
+      '@type': 'ItemList',
+      name: `Best ${hub.title} ${nounTitle} by ${metric}`,
+      numberOfItems: rows.length,
+      itemListOrder: 'https://schema.org/ItemListOrderDescending',
+      itemListElement: rows.slice(0, 50).map((r, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: r.display_name || r.username,
+        url: `${SITE_URL}/${hub.platform}/${encodeURIComponent(r.username)}`,
+      })),
+    },
   };
 
   return { status: 'ok', title, description, html, jsonLd };
@@ -488,6 +504,23 @@ async function getProfileContent(platform, username) {
   html += `</div>`;
 
   // --- JSON-LD ----------------------------------------------------------------
+  // The platform's own page for this account, so search engines and AI tools can
+  // tie this profile to the right entity (same person, not a namesake).
+  const sameAsUrl = (() => {
+    const u = String(c.username || '');
+    if (!/^[\w.@-]{1,80}$/.test(u)) return null;
+    switch (platform) {
+      case 'youtube': return /^UC[\w-]{22}$/.test(c.platform_id || '') ? `https://www.youtube.com/channel/${c.platform_id}` : null;
+      case 'twitch': return `https://www.twitch.tv/${u}`;
+      case 'kick': return `https://kick.com/${u}`;
+      case 'tiktok': return `https://www.tiktok.com/@${u}`;
+      case 'bluesky': return `https://bsky.app/profile/${u}`;
+      case 'mastodon': { const [user, inst] = u.split('@'); return user && inst ? `https://${inst}/@${user}` : null; }
+      case 'substack': return `https://${u}.substack.com`;
+      default: return null;
+    }
+  })();
+
   const profileLd = {
     '@type': 'ProfilePage',
     ...(latest ? { dateModified: toISODateTime(latest.recorded_at) } : {}),
@@ -498,6 +531,7 @@ async function getProfileContent(platform, username) {
       ...(c.description ? { description: String(c.description).slice(0, 300) } : {}),
       ...(c.profile_image ? { image: c.profile_image } : {}),
       url: `${SITE_URL}${canonicalPath}`,
+      ...(sameAsUrl ? { sameAs: [sameAsUrl] } : {}),
       ...(count !== null ? {
         interactionStatistic: [{
           '@type': 'InteractionCounter',
@@ -854,6 +888,24 @@ function markdownToHtml(md) {
   return out.join('\n');
 }
 
+/**
+ * The {{creators:platform/username:Name,...}} line at the end of a post.
+ * Returns [{ platform, username, name }] for tracked platforms only.
+ */
+function parseCreatorsTag(content) {
+  const m = String(content || '').match(/\{\{creators:([^}]*)\}\}/);
+  if (!m) return [];
+  const out = [];
+  for (const part of m[1].split(',')) {
+    const [key, ...nameParts] = part.split(':');
+    const [platform, ...u] = (key || '').trim().split('/');
+    const username = u.join('/').trim();
+    if (!PLATFORM_NAMES[platform] || !/^[\w.@-]{1,80}$/.test(username)) continue;
+    out.push({ platform, username, name: nameParts.join(':').trim() || username });
+  }
+  return out.slice(0, 12);
+}
+
 async function getBlogContent(slug) {
   const rows = await supabaseGet(
     `blog_posts?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true` +
@@ -869,15 +921,30 @@ async function getBlogContent(slug) {
   let html = `<div style="max-width:680px;margin:0 auto;padding:48px 24px;font-family:ui-sans-serif,system-ui,sans-serif;color:#171717;line-height:1.7">`;
   html += `<article><h1 style="font-size:1.5rem;font-weight:600">${esc(p.title)}</h1>`;
   if (p.published_at) html += `<p>${formatDate(p.published_at)}${p.author ? ` · ${esc(p.author)}` : ''}</p>`;
-  html += markdownToHtml(p.content || '');
+  // The creators line is a machine tag, not prose: render it as links to the
+  // profiles it names (internal links a crawler can follow) instead of raw braces.
+  const storyCreators = parseCreatorsTag(p.content);
+  html += markdownToHtml((p.content || '').replace(/\{\{creators:[^}]*\}\}/g, ''));
+  if (storyCreators.length) {
+    html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">Creators in this story</h2><ul>`;
+    for (const cr of storyCreators) {
+      html += `<li><a href="/${cr.platform}/${encodeURIComponent(cr.username)}" style="color:#171717">${esc(cr.name)}</a> on ${PLATFORM_NAMES[cr.platform]}</li>`;
+    }
+    html += `</ul>`;
+  }
   html += `</article>`;
   html += `<p style="margin-top:1.5rem"><a href="/blog" style="color:#171717">More from the ShinyPull blog</a></p>`;
   html += `</div>`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline: p.title,
+    ...(p.category ? { articleSection: p.category } : {}),
+    ...(storyCreators.length ? {
+      // Ties the story to the profile pages it is about (entity links for search and AI).
+      about: storyCreators.map((cr) => ({ '@type': 'Thing', name: cr.name, url: `${SITE_URL}/${cr.platform}/${encodeURIComponent(cr.username)}` })),
+    } : {}),
     ...(p.description ? { description: p.description } : {}),
     ...(p.published_at ? { datePublished: toISODateTime(p.published_at) } : {}),
     ...(p.updated_at ? { dateModified: toISODateTime(p.updated_at) } : {}),

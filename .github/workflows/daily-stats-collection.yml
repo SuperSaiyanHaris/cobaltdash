@@ -86,3 +86,14 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/checkDataHealth.js --strict --only=coverage,hours
+      # Tells Bing and the other IndexNow engines what changed today (rankings,
+      # hubs, new stories) so ChatGPT search and Copilot see it without waiting
+      # for a re-crawl. Never fails the run.
+      - name: Tell search engines what changed
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/indexNow.mjs --daily
