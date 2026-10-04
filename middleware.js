@@ -459,6 +459,28 @@ async function getProfileContent(platform, username) {
     for (const [q, a] of faq) html += `<h3 style="font-size:1rem;font-weight:600;margin-top:1rem">${esc(q)}</h3><p>${esc(a)}</p>`;
   }
 
+  // Stories that name this creator (the profile's News tab, server-rendered so
+  // the links are in the page a crawler or assistant reads). Only for pages
+  // that are indexable anyway, one short query with its own tight timeout, and
+  // never an error: no stories or a slow lookup just means no section. A post
+  // is about a creator when its {{creators:...}} line holds "platform/username:".
+  if (!thin) {
+    const likeKey = `${platform}/${c.username}`.toLowerCase().replace(/[\\%_]/g, (ch) => `\\${ch}`);
+    const stories = await supabaseGet(
+      `blog_posts?is_published=eq.true&content=ilike.${encodeURIComponent(`*{{creators:*${likeKey}:*`)}` +
+      `&select=slug,title,published_at&order=published_at.desc&limit=5`,
+      1000
+    );
+    if (stories && stories.length) {
+      html += `<h2 style="font-size:1.125rem;font-weight:600;margin-top:1.5rem">${esc(name)} in the news</h2>` +
+        `<p>ShinyPull stories that feature ${esc(name)}:</p><ul>`;
+      for (const st of stories) {
+        html += `<li><a href="/blog/${encodeURIComponent(st.slug)}" style="color:#171717">${esc(st.title)}</a>${st.published_at ? ` (${formatDate(st.published_at)})` : ''}</li>`;
+      }
+      html += `</ul>`;
+    }
+  }
+
   html += `<p style="margin-top:1.5rem">` +
     `<a href="/rankings/${platform}" style="color:#171717">Top ${platformName} creators</a> · ` +
     `<a href="/compare" style="color:#171717">Compare creators</a> · ` +
