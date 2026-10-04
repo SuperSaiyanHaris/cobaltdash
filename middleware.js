@@ -935,7 +935,8 @@ async function handleBadge(platform, username) {
     // so crawlers/embedders know it's not a real resource.
     return new Response(
       badgeSvg({ name: 'ShinyPull', count: null, metric: '', platform: '' }),
-      { status: 404, headers: { 'content-type': 'image/svg+xml', 'cache-control': 'public, s-maxage=300' } }
+      // Short: a creator added a moment ago must not stay "not found" for minutes.
+      { status: 404, headers: { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=0, s-maxage=15' } }
     );
   }
 
@@ -973,13 +974,19 @@ async function handleCard(platform, username, { showMark = true, animated = true
     );
   }
   const svg = renderCard({ ...data, showMark, animated });
+  // A card with no follower count yet (the creator was just added) is only
+  // kept briefly, so the number shows up as soon as the first reading lands
+  // instead of being stuck behind a 6 hour cache.
+  const complete = data.count !== null && data.count !== undefined;
 
   return new Response(svg, {
     headers: {
       'content-type': 'image/svg+xml',
       // max-age: browsers otherwise keep an image with no explicit lifetime
       // for an unpredictable time, showing an old design after a change.
-      'cache-control': 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400',
+      'cache-control': complete
+        ? 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400'
+        : 'public, max-age=0, s-maxage=30',
       'access-control-allow-origin': '*',
     },
   });

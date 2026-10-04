@@ -5,7 +5,10 @@
 // fetchVerifiedProfile (api/_verifiedProfile.js). A forged request can at most
 // make us refresh a real creator with that creator's real data.
 //   - profile_image is additionally restricted to known platform avatar CDNs
-//   - stats are NOT writable here (only server collection writes creator_stats)
+//   - stats are never taken from the request. The one thing written to
+//     creator_stats is a creator's FIRST reading, and only when it has none:
+//     the count comes from the platform lookup above (not the client), so it
+//     can't be forged, and the daily collection overwrites it from then on
 //   - an existing row is refreshed at most once per REFRESH_INTERVAL_MS, which
 //     also caps the upstream API cost of repeat profile views
 
@@ -13,6 +16,25 @@ import { checkRateLimit, getClientIdentifier } from './_ratelimit.js';
 import { fetchVerifiedProfile, VERIFIABLE_PLATFORMS } from './_verifiedProfile.js';
 
 const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
+// Stats are stored under the Eastern date (same as the daily collection).
+const easternDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+
+// First reading for a creator that has none, so its card and page have a
+// number right away. ignoreDuplicates: if the collection already wrote
+// today's row, that one stays.
+async function writeFirstReading(supabase, creatorId, stats) {
+  if (!stats) return;
+  const { error } = await supabase.from('creator_stats').upsert({
+    creator_id: creatorId,
+    recorded_at: easternDate(),
+    subscribers: stats.subscribers,
+    followers: stats.subscribers,
+    total_views: stats.totalViews,
+    total_posts: stats.totalPosts,
+  }, { onConflict: 'creator_id,recorded_at', ignoreDuplicates: true });
+  if (error) console.warn('update-creator: first reading not saved:', error.message);
+}
 
 // Known platform avatar CDNs. An image URL from anywhere else is dropped (stored
 // as null) rather than trusted, so this endpoint can't be used to point creator
@@ -99,15 +121,20 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY // Server-side only
     );
 
-    const { data: existing } = await supabase
+    // One stats row is enough to know the creator has a reading.
+    const { data: found } = await supabase
       .from('creators')
-      .select('*')
+      .select('*, creator_stats(id)')
       .eq('platform', platform)
       .eq('platform_id', platformId)
+      .limit(1, { referencedTable: 'creator_stats' })
       .maybeSingle();
+    const { creator_stats: statRows, ...existing } = found || {};
+    const hasExisting = !!found;
+    const hasReading = (statRows || []).length > 0;
 
-    // Fresh enough: no upstream call, no write.
-    if (existing && Date.now() - new Date(existing.updated_at || 0).getTime() < REFRESH_INTERVAL_MS) {
+    // Fresh enough and already has a reading: no upstream call, no write.
+    if (hasExisting && hasReading && Date.now() - new Date(existing.updated_at || 0).getTime() < REFRESH_INTERVAL_MS) {
       return res.status(200).json({ success: true, creator: existing });
     }
 
@@ -116,18 +143,18 @@ export default async function handler(req, res) {
       profile = await fetchVerifiedProfile(platform, ids);
     } catch (err) {
       console.warn(`update-creator: ${platform} lookup failed:`, err.message);
-      if (existing) return res.status(200).json({ success: true, creator: existing });
+      if (hasExisting) return res.status(200).json({ success: true, creator: existing });
       return res.status(502).json({ error: 'Platform lookup failed' });
     }
 
     if (!profile) {
       // The platform doesn't know this id. Never create a row for it, and never
       // blank an existing row over a single miss.
-      if (existing) return res.status(200).json({ success: true, creator: existing });
+      if (hasExisting) return res.status(200).json({ success: true, creator: existing });
       return res.status(404).json({ error: 'Creator not found on platform' });
     }
 
-    if (existing) {
+    if (hasExisting) {
       // Only overwrite with real values: categories/countries set by our own
       // classifiers must survive a platform that doesn't report one. username
       // stays put, it's the profile URL (renames are handled by collection).
@@ -149,6 +176,7 @@ export default async function handler(req, res) {
         console.error('Creator update error:', updateError);
         return res.status(200).json({ success: true, creator: existing });
       }
+      if (!hasReading) await writeFirstReading(supabase, existing.id, profile.stats);
       return res.status(200).json({ success: true, creator: updated });
     }
 
@@ -173,10 +201,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to save creator' });
     }
 
-    // NOTE: creator_stats are intentionally NOT writable from this endpoint.
-    // Stats are written exclusively by the server-side daily collection, which
-    // pulls real numbers from the platforms. A creator added here gets its
-    // first data point on the next collection run.
+    // First reading from the platform lookup (see writeFirstReading), so the
+    // card and page show a count immediately. Everything after this comes
+    // from the daily collection.
+    await writeFirstReading(supabase, created.id, profile.stats);
     return res.status(200).json({ success: true, creator: created });
 
   } catch (error) {

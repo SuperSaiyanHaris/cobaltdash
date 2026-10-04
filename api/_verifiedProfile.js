@@ -8,7 +8,11 @@
 //
 // Every fetcher returns the normalized shape below, or null when the platform
 // says the account doesn't exist / doesn't match the requested id.
-//   { platformId, username, displayName, profileImage, description, country, category }
+//   { platformId, username, displayName, profileImage, description, country, category, stats? }
+// `stats` is the platform's own current count ({ subscribers, totalViews?, totalPosts? }),
+// so a creator added from a profile page can get its first reading straight
+// away instead of waiting for the next collection run. It is read here from the
+// platform, never taken from the request.
 
 import { getChannel as getYouTubeChannel } from './youtube.js';
 import { getAccessToken as getTwitchToken } from './twitch.js';
@@ -46,7 +50,7 @@ async function youtube({ platformId }) {
   if (!/^UC[\w-]{22}$/.test(platformId || '')) return null;
   try {
     const c = await getYouTubeChannel(platformId);
-    return { platformId: c.platformId, username: c.username, displayName: c.displayName, profileImage: c.profileImage, description: c.description, country: c.country || null, category: null };
+    return { platformId: c.platformId, username: c.username, displayName: c.displayName, profileImage: c.profileImage, description: c.description, country: c.country || null, category: null, stats: { subscribers: c.subscribers, totalViews: c.totalViews, totalPosts: c.totalPosts } };
   } catch (err) {
     if (/not found/i.test(err.message)) return null;
     throw err;
@@ -65,21 +69,28 @@ async function twitch({ platformId }) {
     const ch = await fetchJson(`https://api.twitch.tv/helix/channels?broadcaster_id=${platformId}`, { headers });
     category = ch?.data?.[0]?.game_name || null;
   } catch { /* category is optional */ }
-  return { platformId: u.id, username: u.login, displayName: u.display_name, profileImage: u.profile_image_url, description: u.description, country: null, category };
+  // Follower count: optional here (the profile is still valid without it).
+  let stats;
+  try {
+    const f = await fetchJson(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${platformId}&first=1`, { headers });
+    if (typeof f?.total === 'number') stats = { subscribers: f.total, totalPosts: 0 };
+  } catch { /* the daily collection will fill it in */ }
+  return { platformId: u.id, username: u.login, displayName: u.display_name, profileImage: u.profile_image_url, description: u.description, country: null, category, stats };
 }
 
 async function kick({ platformId, username }) {
   if (!username || !/^[\w-]{1,64}$/.test(username)) return null;
   const c = await getKickChannel(username);
   if (!c || String(c.platformId) !== String(platformId)) return null;
-  return { platformId: c.platformId, username: c.username, displayName: c.displayName, profileImage: c.profileImage, description: c.description, country: null, category: c.category };
+  // Kick's count is paid subscribers; 0 is a real value there.
+  return { platformId: c.platformId, username: c.username, displayName: c.displayName, profileImage: c.profileImage, description: c.description, country: null, category: c.category, stats: { subscribers: c.subscribers, totalViews: 0, totalPosts: 0 } };
 }
 
 async function bluesky({ platformId }) {
   if (!/^did:[a-z]+:[\w.:%-]{1,200}$/.test(platformId || '')) return null;
   const a = await fetchJson(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(platformId)}`);
   if (!a?.did || a.did !== platformId) return null;
-  return { platformId: a.did, username: a.handle, displayName: a.displayName || a.handle, profileImage: a.avatar || null, description: a.description || null, country: null, category: null };
+  return { platformId: a.did, username: a.handle, displayName: a.displayName || a.handle, profileImage: a.avatar || null, description: a.description || null, country: null, category: null, stats: { subscribers: a.followersCount, totalPosts: a.postsCount } };
 }
 
 function stripHtml(html) {
@@ -94,7 +105,7 @@ async function mastodon({ platformId }) {
   const [, instance, id] = m;
   const a = await fetchJson(`https://${instance}/api/v1/accounts/${id}`, { headers: { Accept: 'application/json' }, redirect: 'error' });
   if (!a?.id || String(a.id) !== id) return null;
-  return { platformId: `${instance}:${a.id}`, username: `${a.username}@${instance}`, displayName: a.display_name || a.username, profileImage: a.avatar || a.avatar_static || null, description: stripHtml(a.note), country: null, category: null };
+  return { platformId: `${instance}:${a.id}`, username: `${a.username}@${instance}`, displayName: a.display_name || a.username, profileImage: a.avatar || a.avatar_static || null, description: stripHtml(a.note), country: null, category: null, stats: { subscribers: a.followers_count, totalPosts: a.statuses_count } };
 }
 
 function slugifyArtist(name) {
@@ -121,7 +132,7 @@ async function music({ platformId, username, displayName }) {
   if (isMbid ? a.mbid !== platformId : slug !== platformId) return null;
   const tags = a.tags?.tag || [];
   const tagNames = (Array.isArray(tags) ? tags : [tags]).slice(0, 3).map((t) => t.name).filter(Boolean);
-  return { platformId, username: slug, displayName: a.name, profileImage: bestLastfmImage(a.image), description: tagNames.join(', ') || null, country: null, category: tagNames[0] || null };
+  return { platformId, username: slug, displayName: a.name, profileImage: bestLastfmImage(a.image), description: tagNames.join(', ') || null, country: null, category: tagNames[0] || null, stats: { subscribers: Number(a.stats?.listeners), totalViews: Number(a.stats?.playcount) } };
 }
 
 async function substack({ platformId, username }) {
@@ -146,8 +157,20 @@ export async function fetchVerifiedProfile(platform, ids) {
   if (!fetcher) return null;
   const p = await fetcher(ids);
   if (!p) return null;
+  // Keep a reading only when it is a real number. A 0 or missing count is
+  // never stored as a stand-in for a failed fetch (Kick's paid subs are the
+  // one place 0 is a genuine value).
+  const n = Number(p.stats?.subscribers);
+  const stats = Number.isFinite(n) && (n > 0 || (platform === 'kick' && n === 0))
+    ? {
+        subscribers: Math.round(n),
+        totalViews: Number.isFinite(Number(p.stats.totalViews)) && p.stats.totalViews !== null ? Math.round(Number(p.stats.totalViews)) : null,
+        totalPosts: Number.isFinite(Number(p.stats.totalPosts)) && p.stats.totalPosts !== null ? Math.round(Number(p.stats.totalPosts)) : null,
+      }
+    : null;
   return {
     ...p,
+    stats,
     platformId: String(p.platformId),
     username: clip(p.username, 200),
     displayName: clip(p.displayName, 200),

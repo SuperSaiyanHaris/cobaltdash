@@ -14,7 +14,10 @@ import CreatorAvatar from './CreatorAvatar';
 // the flip has fully stopped (transitionend), never while it turns.
 //
 // If the card image can't be rendered (a creator we don't track yet), the
-// front falls back to a plain dark card with their avatar and name.
+// front falls back to a plain dark card with their avatar and name. A profile
+// page adds a creator to the database a moment after it opens, so it passes
+// `refreshKey` (the creator's id once saved): when that changes on a card that
+// failed, the card is requested again and turns over to the real one.
 
 const FLIP_MS = 450;
 const markUris = {};
@@ -37,15 +40,34 @@ function preload(src) {
   });
 }
 
-export default function FlipCard({ creator, className = 'w-[200px] h-[280px] sm:w-[240px] sm:h-[336px]', delay = 0 }) {
+export default function FlipCard({ creator, className = 'w-[200px] h-[280px] sm:w-[240px] sm:h-[336px]', delay = 0, refreshKey = null }) {
   const reduceMotion = useReducedMotion();
   const [shown, setShown] = useState(null);
   const [failed, setFailed] = useState(false);
   const [faceUp, setFaceUp] = useState(false);
   const [settled, setSettled] = useState(false);
+  const [retry, setRetry] = useState(0);
   const shownKey = useRef(null);
+  const triedFor = useRef(null);
 
   const key = creator ? `${creator.platform}/${creator.username}` : null;
+
+  // The creator was just saved and the card had failed: ask for it again, once
+  // per saved creator. Depends on both, so it works whichever happens first
+  // (the save finishing before or after the first request comes back).
+  useEffect(() => {
+    if (!refreshKey || !failed || !creator || triedFor.current === refreshKey) return;
+    triedFor.current = refreshKey;
+    let cancelled = false;
+    const next = retry + 1;
+    preload(cardImageUrl(creator.platform, creator.username, { mark: false, retry: next })).then((ok) => {
+      if (cancelled || !ok) return;
+      setRetry(next);
+      setFailed(false);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey, failed]);
 
   useEffect(() => {
     if (key === shownKey.current) return;
@@ -92,7 +114,7 @@ export default function FlipCard({ creator, className = 'w-[200px] h-[280px] sm:
         <span className="hero-face hero-face-front">
           {shown && !failed && (
             <img
-              src={cardImageUrl(shown.platform, shown.username, { mark: false })}
+              src={cardImageUrl(shown.platform, shown.username, { mark: false, retry })}
               alt={`${shown.name || shown.username} ${label} creator card`}
               width="250"
               height="350"

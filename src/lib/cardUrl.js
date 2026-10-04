@@ -9,8 +9,10 @@ export const CARD_DESIGN_VERSION = 5;
 // (components/CardShine.jsx): the card's built-in SVG motion repaints the whole
 // image every frame, which stutters on phones. Pass animated: true for the
 // self-animating version.
-export function cardImageUrl(platform, username, { mark = true, absolute = false, animated = false } = {}) {
+export function cardImageUrl(platform, username, { mark = true, absolute = false, animated = false, retry = 0 } = {}) {
   const params = new URLSearchParams({ v: String(CARD_DESIGN_VERSION) });
+  // A retry skips any copy of an earlier "not found" the CDN or browser kept.
+  if (retry) params.set('r', String(retry));
   if (!mark) params.set('mark', '0');
   if (!animated) params.set('anim', '0');
   return `${absolute ? 'https://shinypull.com' : ''}/card/${platform}/${encodeURIComponent(username)}?${params}`;

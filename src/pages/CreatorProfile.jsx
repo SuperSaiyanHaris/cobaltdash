@@ -1000,6 +1000,7 @@ export default function CreatorProfile() {
             <div className="flex justify-center">
               <FlipCard
                 creator={{ platform, username: creator.username || username, name: creator.displayName, avatar: creator.profileImage }}
+                refreshKey={dbCreatorId}
                 className="w-[190px] h-[266px] sm:w-[250px] sm:h-[350px]"
               />
             </div>
