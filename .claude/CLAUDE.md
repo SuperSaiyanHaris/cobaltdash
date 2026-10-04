@@ -145,6 +145,25 @@ sessions never see it. Anything a cloud session must know goes here.
   pg_cron `award-scout-badges` (daily, `award_scout_badges()`).
 - Copy on X/blog about this feature follows the same copy rules.
 
+# Discoverability (search and AI), 2026-10-04
+
+- `middleware.js` server-renders everything a crawler or assistant needs:
+  profiles carry the stats, analysis, FAQ, an "in the news" list of stories
+  (indexable profiles only) and `sameAs` (the platform's own page); rankings
+  and hubs open with a dated answer sentence, a table or list, and
+  CollectionPage data with `dateModified`; blog posts render their
+  `{{creators:...}}` line as links to the profiles and declare them as
+  `about` in BlogPosting data. Keep these when editing the middleware; the
+  creators line must stay a visible link list in the server HTML.
+- `/llms.txt` and `/llms-full.txt` (top 50 of every ranking with dates,
+  served by `api/llms-full.js`) are the plain-text entry points for AI tools.
+- IndexNow (`src/lib/indexNow.js`, key file in `public/`, ping with
+  `scripts/indexNow.mjs`): the daily workflow pings rankings, hubs and recent
+  stories after each collection. The key file name must match `INDEXNOW_KEY`
+  (a unit test checks it).
+- Monthly AI visibility check: `docs/ai-visibility.md` (scheduled task
+  `ai-visibility-check`).
+
 # Supported platforms
 
 - `PLATFORM_IDS` in `src/lib/constants.js` is the only list of supported
