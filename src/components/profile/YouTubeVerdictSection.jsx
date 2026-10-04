@@ -4,6 +4,7 @@ import { ExternalLink, Eye, MessageCircle, Play, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { buildDailyReadings, buildYouTubeSeries, computeViewsMomentum, markMissingViews, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
 import { formatNumber, formatRank, formatRelativeTime } from '../../lib/utils';
+import CreatorNews from './CreatorNews';
 import { useMemo, useState } from 'react';
 
 // ============================================================================
@@ -60,7 +61,7 @@ function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
   );
 }
 
-export default function YouTubeVerdictSection({ creator, statsHistory, statsReady, metrics, peakStats, rankContext, dbCreatorId, recentVideos }) {
+export default function YouTubeVerdictSection({ creator, statsHistory, statsReady, metrics, peakStats, rankContext, dbCreatorId, recentVideos, news = [] }) {
   const [activeTab, setActiveTab] = useState('daily'); // daily first, per standing instruction
   const [chartMetric, setChartMetric] = useState('views');
   const [chartRange, setChartRange] = useState(30);
@@ -128,6 +129,7 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
   const tabs = [
     { key: 'daily', label: 'Daily readings', count: dailyReadingsRows.length },
     { key: 'videos', label: 'Recent videos', count: recentVideos.length },
+    ...(news.length ? [{ key: 'news', label: 'News', count: news.length }] : []),
     { key: 'about', label: 'About', count: null },
   ];
 
@@ -461,6 +463,8 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
           )}
         </div>
       )}
+
+      {activeTab === 'news' && news.length > 0 && <CreatorNews posts={news} name={creator.displayName || creator.username} />}
 
       {activeTab === 'about' && (
         <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-6 sm:p-7 mt-4 max-w-3xl">

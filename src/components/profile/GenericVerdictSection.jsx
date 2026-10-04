@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 import { buildYouTubeSeries, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, formatHoursWatched, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
 import { formatNumber, formatRank, formatRelativeTime } from '../../lib/utils';
+import CreatorNews from './CreatorNews';
 import { useMemo, useState } from 'react';
 import { KICK_SUB_PRICE, KICK_CREATOR_SHARE } from '../../lib/earnings';
 
@@ -147,7 +148,7 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   );
 }
 
-export default function GenericVerdictSection({ platform, creator, statsHistory, statsReady, metrics, peakStats, rankContext, musicTracks, musicAlbums }) {
+export default function GenericVerdictSection({ platform, creator, statsHistory, statsReady, metrics, peakStats, rankContext, musicTracks, musicAlbums, news = [] }) {
   const config = GENERIC_PLATFORM_CONFIG[platform];
   const [activeTab, setActiveTab] = useState('daily');
   const [chartMetric, setChartMetric] = useState(config.chartMetrics[0].value);
@@ -189,6 +190,7 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
   const tabs = [
     { key: 'daily', label: 'Daily readings', count: dailyReadingsRows.length },
     ...(hasThirdTabContent ? [{ key: 'third', label: config.thirdTab === 'topTracks' ? 'Top tracks' : 'Latest post', count: null }] : []),
+    ...(news.length ? [{ key: 'news', label: 'News', count: news.length }] : []),
     { key: 'about', label: 'About', count: null },
   ];
 
@@ -509,6 +511,8 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
           ))}
         </div>
       )}
+
+      {activeTab === 'news' && news.length > 0 && <CreatorNews posts={news} name={creator.displayName || creator.username} />}
 
       {activeTab === 'about' && (
         <div className="bg-white border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl p-6 sm:p-7 mt-4 max-w-3xl">

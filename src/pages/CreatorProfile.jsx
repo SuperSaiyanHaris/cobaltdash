@@ -38,6 +38,7 @@ import GenericVerdictSection, { GENERIC_PLATFORM_CONFIG } from '../components/pr
 import SimilarCreators from '../components/profile/SimilarCreators';
 import CreatorComments from '../components/profile/CreatorComments';
 import YouTubeVerdictSection from '../components/profile/YouTubeVerdictSection';
+import { getPostsForCreator } from '../services/blogService';
 
 // How far back getCreatorStats reaches for the chart/daily-readings history.
 // Was hardcoded to 90 at both call sites below, which silently capped the
@@ -172,6 +173,16 @@ export default function CreatorProfile() {
   const [isLive, setIsLive] = useState(false);
   const [liveStreamInfo, setLiveStreamInfo] = useState(null);
   const [recentVideos, setRecentVideos] = useState([]);
+  // Stories that name this creator (the News tab). Keyed by profile so a
+  // previous creator's stories never show on the next one.
+  const [newsFor, setNewsFor] = useState({ key: '', posts: [] });
+  useEffect(() => {
+    let off = false;
+    const key = `${platform}/${username}`;
+    getPostsForCreator(platform, username).then((posts) => { if (!off) setNewsFor({ key, posts: posts || [] }); }).catch(() => {});
+    return () => { off = true; };
+  }, [platform, username]);
+  const newsPosts = newsFor.key === `${platform}/${username}` ? newsFor.posts : [];
   const [musicTracks, setMusicTracks] = useState([]);
   const [musicAlbums, setMusicAlbums] = useState([]);
   const [showSharePanel, setShowSharePanel] = useState(false);
@@ -1197,6 +1208,7 @@ export default function CreatorProfile() {
                 rankContext={rankContext}
                 dbCreatorId={dbCreatorId}
                 recentVideos={recentVideos}
+                news={newsPosts}
               />
             )}
 
@@ -1211,6 +1223,7 @@ export default function CreatorProfile() {
                 rankContext={rankContext}
                 musicTracks={musicTracks}
                 musicAlbums={musicAlbums}
+                news={newsPosts}
               />
             )}
 

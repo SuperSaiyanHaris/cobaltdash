@@ -20,6 +20,38 @@ export const getAllPosts = withErrorHandling(
 );
 
 /**
+ * Published stories that name a creator. Posts list their creators in a
+ * {{creators:platform/username:Name,...}} line, so a post is about a creator
+ * when that line holds "platform/username:". Content itself is not returned.
+ */
+const newsCache = new Map();
+const NEWS_TTL = 5 * 60 * 1000;
+
+export const getPostsForCreator = withErrorHandling(
+  async (platform, username) => {
+    if (!platform || !username) return [];
+    const key = `${platform}/${String(username).toLowerCase()}`;
+    const hit = newsCache.get(key);
+    if (hit && Date.now() - hit.at < NEWS_TTL) return hit.posts;
+    // ilike wildcards in a username (_ and %) must match literally
+    const safe = key.replace(/[\\%_]/g, (c) => `\\${c}`);
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('slug, title, description, category, image, read_time, published_at')
+      .eq('is_published', true)
+      .ilike('content', `%{{creators:%${safe}:%`)
+      .order('published_at', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(24);
+    if (error) throw error;
+    const posts = data || [];
+    newsCache.set(key, { at: Date.now(), posts });
+    return posts;
+  },
+  'blogService.getPostsForCreator'
+);
+
+/**
  * Get a single post by its slug (includes full content).
  * Pass { includeDrafts: true } for the ?preview=1 review flow — drafts render
  * before publishing. Blog rows are world-readable by design (public content).
