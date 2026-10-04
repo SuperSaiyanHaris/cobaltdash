@@ -30,7 +30,7 @@ function Body({ reward }) {
     case 'sticker': {
       const s = STICKERS[key];
       if (!s) return null;
-      return <div style={{ padding: '6px 12px', borderRadius: 11, border: '3px solid #fff', background: s.a, color: s.t, font: "italic 900 17px/1 'Barlow Condensed','Arial Narrow',sans-serif", letterSpacing: '.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', transform: 'rotate(-7deg)', boxShadow: '0 4px 10px rgba(20,18,30,.18),0 0 0 1px rgba(20,18,30,.08)' }}>{s.name}</div>;
+      return <div style={{ padding: '6px 12px', borderRadius: 11, border: '3px solid #fff', background: s.a, color: s.t, font: "italic 900 " + (s.name.length > 8 ? 13 : 17) + "px/1 'Barlow Condensed','Arial Narrow',sans-serif", letterSpacing: '.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', transform: 'rotate(-7deg)', boxShadow: '0 4px 10px rgba(20,18,30,.18),0 0 0 1px rgba(20,18,30,.08)' }}>{s.name}</div>;
     }
     case 'title':
       return (
@@ -80,7 +80,7 @@ function Body({ reward }) {
     case 'tier': {
       const c = TIER_HEX[key] || '#1F6FEB';
       return (
-        <div style={{ width: 52, height: 72, borderRadius: 8, border: `3.5px solid ${c}`, background: 'linear-gradient(160deg,#fff,#F1EEE8)', boxShadow: '0 5px 14px rgba(20,18,30,.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, transform: 'rotate(-5deg)' }}>
+        <div style={{ width: 52, height: 72, borderRadius: 8, border: `3.5px solid ${c}`, background: 'linear-gradient(160deg,#fff,#EEEEF2)', boxShadow: '0 5px 14px rgba(20,18,30,.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, transform: 'rotate(-5deg)' }}>
           <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#6D4AFF', boxShadow: `0 0 0 2px ${c}` }} />
           <div style={{ padding: '1px 4px', borderRadius: 3, background: c, color: '#fff', font: "italic 900 8.5px/1.2 'Barlow Condensed',sans-serif", letterSpacing: '.06em' }}>{key}</div>
         </div>

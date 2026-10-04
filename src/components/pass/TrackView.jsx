@@ -45,7 +45,7 @@ function Hero({ me, state, desktop, handleForm }) {
     <div className="spx-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} aria-label="XP to next level"><i style={{ width: `${pct}%` }} /></div>
   );
   const nextChip = next && (
-    <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-[#F7F5F1] font-extrabold text-[var(--ink)] min-w-0 max-w-full">
+    <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-[#F6F6F8] font-extrabold text-[var(--ink)] min-w-0 max-w-full">
       <span className="w-5 h-5 rounded-full grid place-items-center bg-white flex-none" style={{ boxShadow: `inset 0 0 0 2px ${RARITY_HEX[next.rarity]}` }}><span className="w-2 h-2 rounded-full" style={{ background: RARITY_HEX[next.rarity] }} /></span>
       <span className="truncate">{shortName(next)}</span>
     </span>
@@ -53,7 +53,7 @@ function Hero({ me, state, desktop, handleForm }) {
   const tiles = [
     { v: `${p.streak || 0} ${(p.streak || 0) === 1 ? 'day' : 'days'}`, s: p.streak > 1 ? `Streak · +${streakBonus(p.streak)} XP/day` : 'Daily streak', bg: '#FFF4EC', c: '#C2410C' },
     { v: `${p.streak_freezes || 0} freeze${(p.streak_freezes || 0) === 1 ? '' : 's'}`, s: 'Saves a missed day', bg: '#EEF8FF', c: '#0369A1' },
-    { v: `+${fmt(state.today.xp)} XP`, s: boosted ? 'Earned today · +25% boost' : 'Earned today', bg: '#F7F5F1', c: '#8a8790' },
+    { v: `+${fmt(state.today.xp)} XP`, s: boosted ? 'Earned today · +25% boost' : 'Earned today', bg: '#F6F6F8', c: '#8a8790' },
     { v: `${Math.min(MAX_LEVEL, p.level)} / ${MAX_LEVEL}`, s: 'Rewards unlocked', bg: '#F3EFFF', c: '#6D4AFF' },
   ];
 
@@ -160,7 +160,7 @@ function Chapters({ level, chapter, onPick, desktop }) {
 }
 
 // ── Road ─────────────────────────────────────────────────────────────────
-const railFill = (l, level) => (l <= level ? '#16151A' : l === level + 1 ? 'linear-gradient(90deg,#16151A 50%,#E6E1D8 50%)' : '#E6E1D8');
+const railFill = (l, level) => (l <= level ? '#16151A' : l === level + 1 ? 'linear-gradient(90deg,#16151A 50%,#E4E4EA 50%)' : '#E4E4EA');
 
 const RoadCard = memo(function RoadCard({ r, status, selected, onPick }) {
   const isPack = r.kind === 'pack';
@@ -207,7 +207,7 @@ function RoadDesktop({ chapter, level, opened, selected, onPick }) {
             <div className="rail" style={{ background: railFill(r.level, level) }} />
             <div
               className={`dot ${isNext ? 'spx-dotnext' : ''}`}
-              style={{ background: isNext ? '#6D4AFF' : done ? '#16151A' : '#fff', color: isNext || done ? '#fff' : '#8a8790', boxShadow: isNext || done ? 'none' : 'inset 0 0 0 2px #E6E1D8' }}
+              style={{ background: isNext ? '#6D4AFF' : done ? '#16151A' : '#fff', color: isNext || done ? '#fff' : '#8a8790', boxShadow: isNext || done ? 'none' : 'inset 0 0 0 2px #E4E4EA' }}
             >{r.level}</div>
           </div>
         );
@@ -230,12 +230,12 @@ function RoadMobile({ chapter, level, opened, onPick }) {
         const done = r.level <= level;
         const isNext = r.level === level + 1;
         const last = idx === rows.length - 1;
-        const vline = last ? 'transparent' : r.level + 1 <= level ? '#16151A' : r.level === level ? 'linear-gradient(#16151A 40%,#E6E1D8 40%)' : '#E6E1D8';
+        const vline = last ? 'transparent' : r.level + 1 <= level ? '#16151A' : r.level === level ? 'linear-gradient(#16151A 40%,#E4E4EA 40%)' : '#E4E4EA';
         return (
           <div key={r.level} className={`spx-vrow spx-r-${r.rarity} ${status}`} onClick={() => onPick(r.level)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(r.level); } }} aria-label={`Level ${r.level}: ${itemName(r)}`}>
             <div className="spx-vrail">
               <div className="line" style={{ background: vline }} />
-              <div className={`dot ${isNext ? 'spx-dotnext' : ''}`} style={{ background: isNext ? '#6D4AFF' : done ? '#16151A' : '#fff', color: isNext || done ? '#fff' : '#8a8790', boxShadow: isNext || done ? 'none' : 'inset 0 0 0 2px #E6E1D8' }}>{r.level}</div>
+              <div className={`dot ${isNext ? 'spx-dotnext' : ''}`} style={{ background: isNext ? '#6D4AFF' : done ? '#16151A' : '#fff', color: isNext || done ? '#fff' : '#8a8790', boxShadow: isNext || done ? 'none' : 'inset 0 0 0 2px #E4E4EA' }}>{r.level}</div>
             </div>
             <div className="spx-vcard">
               <div className="art flex-none">
@@ -284,7 +284,7 @@ function TryOn({ me, reward, eq }) {
             <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 2px,rgba(255,255,255,0) 2px 12px)' }} />
           </div>
           <div className="px-5 pb-[18px] -mt-[34px] relative">
-            <div className="w-[72px] h-[72px] rounded-full p-[5px] box-border" style={{ background: o.ring ? ringBg(o.ring) : '#E6E1D8', outline: dash(hl.ring), outlineOffset: 3, boxShadow: '0 0 0 4px #fff' }}>
+            <div className="w-[72px] h-[72px] rounded-full p-[5px] box-border" style={{ background: o.ring ? ringBg(o.ring) : '#E4E4EA', outline: dash(hl.ring), outlineOffset: 3, boxShadow: '0 0 0 4px #fff' }}>
               {me.avatar
                 ? <img src={me.avatar} alt="" referrerPolicy="no-referrer" className="w-full h-full rounded-full object-cover border-[2.5px] border-white box-border" />
                 : <div className="w-full h-full rounded-full border-[2.5px] border-white box-border bg-[#6D4AFF] text-white grid place-items-center font-extrabold text-lg">{handle.slice(0, 1).toUpperCase()}</div>}
@@ -297,7 +297,7 @@ function TryOn({ me, reward, eq }) {
             </div>
             {o.title && <div className="mt-2 inline-block text-[10.5px] font-extrabold tracking-[.12em] uppercase text-[var(--mute)] rounded-[3px]" style={{ outline: dash(hl.title), outlineOffset: 3 }}>{TITLE_NAME[o.title]}</div>}
             <div className="mt-4 p-3.5 rounded-[14px] bg-[var(--cream)] flex gap-3">
-              <div className="w-[34px] h-[34px] flex-none rounded-full p-[3px] box-border" style={{ background: o.ring ? ringBg(o.ring) : '#E6E1D8' }}><div className="w-full h-full rounded-full border-[1.5px] border-white box-border bg-[#6D4AFF]" /></div>
+              <div className="w-[34px] h-[34px] flex-none rounded-full p-[3px] box-border" style={{ background: o.ring ? ringBg(o.ring) : '#E4E4EA' }}><div className="w-full h-full rounded-full border-[1.5px] border-white box-border bg-[#6D4AFF]" /></div>
               <div className="min-w-0 flex flex-col gap-[5px]">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="px-[7px] py-0.5 rounded-md bg-[var(--ink)]"><span className="font-arena italic font-black text-sm leading-none" style={{ backgroundImage: o.name ? nameBg(o.name) : 'linear-gradient(90deg,#fff,#fff)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>@{handle}</span></span>
@@ -339,7 +339,7 @@ function StickerBit({ k, outline, small = false }) {
 function Stage({ reward, scale, className = '' }) {
   const rc = RARITY_HEX[reward.rarity];
   return (
-    <div className={`spx-stage ${className}`} style={{ background: `radial-gradient(circle at 50% 50%, ${rc}30, #F7F5F1 72%)` }}>
+    <div className={`spx-stage ${className}`} style={{ background: `radial-gradient(circle at 50% 50%, ${rc}30, #F6F6F8 72%)` }}>
       {reward.kind === 'pack'
         ? <div style={{ width: scale > 2 ? 128 : 96 }}><PackArt packKey={reward.key} tilt idle /></div>
         : <RewardLight reward={reward} scale={scale} />}
@@ -397,7 +397,7 @@ function Sheet({ onClose, children }) {
   return createPortal(
     <div className="fixed inset-0 z-[150] bg-[rgba(20,18,30,.45)] flex items-end justify-center" onClick={onClose} role="dialog" aria-modal="true" aria-label="Reward">
       <div className="spx spx-sheet-in relative w-full max-w-xl max-h-[92dvh] overflow-y-auto overscroll-contain !bg-white rounded-t-[30px] px-[18px] pt-2.5 pb-[max(26px,env(safe-area-inset-bottom))] flex flex-col gap-3.5 shadow-[0_-10px_40px_rgba(20,18,30,.2)]" onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-[5px] rounded-[3px] bg-[#DDD8CF] self-center flex-none" />
+        <div className="w-10 h-[5px] rounded-[3px] bg-[#D9D9E0] self-center flex-none" />
         {children}
       </div>
     </div>,
@@ -410,7 +410,7 @@ function MiniTry({ me, reward, eq }) {
   const handle = me.publicHandle || (me.handle !== 'you' ? me.handle : 'yourname');
   return (
     <div className="p-3 rounded-2xl bg-[var(--cream)] flex gap-2.5 items-center">
-      <div className="w-10 h-10 flex-none rounded-full p-1 box-border" style={{ background: o.ring ? ringBg(o.ring) : '#E6E1D8', outline: dash(hl.ring), outlineOffset: 2 }}><div className="w-full h-full rounded-full border-[1.5px] border-white box-border bg-[#6D4AFF]" /></div>
+      <div className="w-10 h-10 flex-none rounded-full p-1 box-border" style={{ background: o.ring ? ringBg(o.ring) : '#E4E4EA', outline: dash(hl.ring), outlineOffset: 2 }}><div className="w-full h-full rounded-full border-[1.5px] border-white box-border bg-[#6D4AFF]" /></div>
       <div className="min-w-0 flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5 whitespace-nowrap">
           <span className="px-[7px] py-0.5 rounded-md bg-[var(--ink)]" style={{ outline: dash(hl.name), outlineOffset: 2 }}><span className="font-arena italic font-black text-[15px] leading-none" style={{ backgroundImage: o.name ? nameBg(o.name) : 'linear-gradient(90deg,#fff,#fff)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>@{handle}</span></span>
