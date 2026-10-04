@@ -4,7 +4,7 @@ import { Clock, ExternalLink, Eye, MessageCircle, ThumbsUp } from 'lucide-react'
 import { Link } from 'react-router-dom';
 import { PLATFORM_DISPLAY_NAMES } from '../../lib/constants';
 import { buildYouTubeSeries, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, formatHoursWatched, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
-import { formatNumber, formatRelativeTime } from '../../lib/utils';
+import { formatNumber, formatRank, formatRelativeTime } from '../../lib/utils';
 import { useMemo, useState } from 'react';
 import { KICK_SUB_PRICE, KICK_CREATOR_SHARE } from '../../lib/earnings';
 
@@ -124,7 +124,7 @@ function buildGenericVerdict({ platform, creator, metrics, rankContext, peakStat
   const roundingMayHideMovement = platform === 'tiktok' && primaryCount >= 100000;
 
   const rankClause = rank
-    ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatNumber(total)} tracked {platformName} creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatNumber(rank)}</span> of {formatNumber(total)} tracked {platformName} creators.</>)
+    ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatRank(total)} tracked {platformName} creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatRank(rank)}</span> of {formatRank(total)} tracked {platformName} creators.</>)
     : null;
 
   return (
@@ -352,8 +352,8 @@ export default function GenericVerdictSection({ platform, creator, statsHistory,
 
         <div className="p-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Platform rank</p>
-          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatNumber(rank)}` : '—'}</p>
-          <p className="text-xs text-neutral-700 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatRank(rank)}` : '—'}</p>
+          <p className="text-xs text-neutral-700 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatRank(total)} tracked` : ''}</p>
         </div>
       </div>
 

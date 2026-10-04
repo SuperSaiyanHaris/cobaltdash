@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import CardImage from '../CardImage';
-import { formatNumber } from '../../lib/utils';
+import { formatNumber, formatRank } from '../../lib/utils';
 
 // "Nearby in the rankings": the creators ranked just above and below this one
 // on the same platform, shown as their holographic cards. It's a scale signal
@@ -27,7 +27,7 @@ export default function SimilarCreators({ creators, platform, platformName, prim
             />
             <p className="mt-2.5 text-sm font-bold text-neutral-900 truncate">{c.display_name}</p>
             <p className="text-xs font-semibold text-neutral-700 tabular-nums">
-              #{formatNumber(c.rank_position)} · {formatNumber(c.subscribers)} {primaryLabel}
+              #{formatRank(c.rank_position)} · {formatNumber(c.subscribers)} {primaryLabel}
             </p>
           </Link>
         ))}

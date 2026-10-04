@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { X, ArrowUp } from 'lucide-react';
 import { cardTier, rarityBands, TIERS } from '../lib/badgeCard';
-import { formatNumber } from '../lib/utils';
+import { formatNumber, formatRank } from '../lib/utils';
 
 // A creator's card rarity as a tappable pill. Tapping opens a sheet that
 // explains what the rarity means, where this creator sits on the ladder for
@@ -53,8 +53,8 @@ function RaritySheet({ tier, rank, total, platformName, creatorName, onClose }) 
         <p className="mt-2 text-4xl font-black tracking-tight" style={{ color: tier.a }}>{LABEL[tier.name]}</p>
         <p className="mt-3 text-[15px] text-white/85 leading-relaxed">
           {creatorName ? <span className="font-bold text-white">{creatorName}</span> : 'This creator'} is{' '}
-          <span className="font-bold text-white tabular-nums">#{formatNumber(rank)}</span> of{' '}
-          <span className="tabular-nums">{formatNumber(total)}</span> {platformName} creators we track, ranked by size.
+          <span className="font-bold text-white tabular-nums">#{formatRank(rank)}</span> of{' '}
+          <span className="tabular-nums">{formatRank(total)}</span> {platformName} creators we track, ranked by size.
         </p>
 
         <div className="mt-6 space-y-2">
@@ -72,7 +72,7 @@ function RaritySheet({ tier, rank, total, platformName, creatorName, onClose }) 
                   <span className="block text-xs text-white/65">{RULE[t]}</span>
                 </span>
                 <span className="text-xs font-semibold text-white/80 tabular-nums whitespace-nowrap">
-                  #{formatNumber(lo)}{hi > lo ? `–${formatNumber(hi)}` : ''}
+                  #{formatRank(lo)}{hi > lo ? `–${formatRank(hi)}` : ''}
                 </span>
                 {current && (
                   <span className="ml-1 px-2 py-0.5 rounded-full bg-white text-neutral-950 text-[10px] font-black uppercase tracking-[0.1em]">This card</span>

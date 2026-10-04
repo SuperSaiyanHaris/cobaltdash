@@ -3,7 +3,7 @@ import { ChartSkeleton, TextBoneSkeleton } from '../../components/Skeleton';
 import { ExternalLink, Eye, MessageCircle, Play, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { buildDailyReadings, buildYouTubeSeries, computeViewsMomentum, markMissingViews, findNextMilestone, fmtMilestone, fmtSigned, formatEarningsSingle, getPercentileBand, renderNoHistoryMessage } from './verdictHelpers';
-import { formatNumber, formatRelativeTime } from '../../lib/utils';
+import { formatNumber, formatRank, formatRelativeTime } from '../../lib/utils';
 import { useMemo, useState } from 'react';
 
 // ============================================================================
@@ -43,7 +43,7 @@ function buildYouTubeVerdict({ creator, metrics, rankContext, peakStats }) {
     (metrics.last30Days?.subs || 0) !== 0;
 
   const rankClause = rank
-    ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatNumber(total)} tracked YouTube creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatNumber(rank)}</span> of {formatNumber(total)} tracked YouTube creators.</>)
+    ? (rank === 1 ? <><span className="font-semibold text-neutral-900">#1</span> of {formatRank(total)} tracked YouTube creators.</> : <>Ranked <span className="font-semibold text-neutral-900">#{formatRank(rank)}</span> of {formatRank(total)} tracked YouTube creators.</>)
     : null;
 
   return (
@@ -278,8 +278,8 @@ export default function YouTubeVerdictSection({ creator, statsHistory, statsRead
         </div>
         <div className="p-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-700">Platform rank</p>
-          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatNumber(rank)}` : '—'}</p>
-          <p className="text-xs text-neutral-700 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatNumber(total)} tracked` : ''}</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-900 mt-1.5">{rank ? `#${formatRank(rank)}` : '—'}</p>
+          <p className="text-xs text-neutral-700 mt-1">{band != null ? `top ${band}% of tracked` : total ? `of ${formatRank(total)} tracked` : ''}</p>
         </div>
       </div>
 

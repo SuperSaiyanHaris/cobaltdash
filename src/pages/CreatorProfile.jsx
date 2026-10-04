@@ -25,7 +25,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SEO from '../components/SEO';
 import StructuredData, { createBreadcrumbSchema } from '../components/StructuredData';
 import { analytics } from '../lib/analytics';
-import { formatNumber } from '../lib/utils';
+import { formatNumber, formatRank } from '../lib/utils';
 import { addRecentlyViewed } from '../lib/recentlyViewed';
 import { reportAction } from '../services/progressService';
 import logger from '../lib/logger';
@@ -932,10 +932,13 @@ export default function CreatorProfile() {
     // The real freshness signal is the latest creator_stats row (ascending order).
     const latestStat = statsHistory.length > 0 ? statsHistory[statsHistory.length - 1] : null;
     if (!latestStat?.recorded_at) return 'recently';
-    const diffHours = Math.floor((new Date() - new Date(latestStat.recorded_at)) / (1000 * 60 * 60));
-    if (diffHours < 1) return 'less than an hour ago';
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    const diffDays = Math.floor(diffHours / 24);
+    // recorded_at is a date (Eastern), not a moment, so compare dates.
+    const rec = String(latestStat.recorded_at).slice(0, 10);
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const dayNum = (d) => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10));
+    const diffDays = Math.round((dayNum(today) - dayNum(rec)) / 86400000);
+    if (Number.isNaN(diffDays)) return 'recently';
+    if (diffDays <= 0) return 'today';
     return diffDays === 1 ? 'yesterday' : `${diffDays} days ago`;
   })();
   const quickLinks = platform === 'youtube' && creator.platformId ? [
@@ -1039,12 +1042,12 @@ export default function CreatorProfile() {
               </p>
 
               {/* The number */}
-              <div className="mt-6 flex flex-wrap items-end justify-center md:justify-start gap-x-5 gap-y-2">
-                <div>
+              <div className="mt-6 flex flex-col items-center md:flex-row md:items-end md:justify-start gap-4 md:gap-x-6">
+                <div className="text-center md:text-left">
                   <p className="text-5xl sm:text-7xl font-black tabular-nums tracking-tight leading-none">{formatNumber(primaryCount)}</p>
                   <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70">{primaryLabel}</p>
                 </div>
-                <div className="flex flex-col items-center md:items-start gap-1.5 pb-1">
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 md:flex-col md:items-start md:gap-1.5 md:pb-1">
                   {metrics?.last30Days?.subs ? (
                     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-bold tabular-nums ${metrics.last30Days.subs > 0 ? 'bg-emerald-400/15 text-emerald-300' : 'bg-red-400/15 text-red-300'}`}>
                       {metrics.last30Days.subs > 0 ? '▲' : '▼'} {formatNumber(Math.abs(metrics.last30Days.subs))} in 30 days
@@ -1052,7 +1055,7 @@ export default function CreatorProfile() {
                   ) : null}
                   {rankContext?.rank && rankContext?.total ? (
                     <Link to={`/rankings/${platform}`} className="text-sm font-semibold text-white/85 hover:text-white transition-colors">
-                      #{formatNumber(rankContext.rank)} of {formatNumber(rankContext.total)} {platformName} creators
+                      #{formatRank(rankContext.rank)} of {formatRank(rankContext.total)} {platformName} creators
                     </Link>
                   ) : null}
                 </div>

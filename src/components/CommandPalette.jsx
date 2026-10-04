@@ -18,7 +18,7 @@ import { searchCreators, getCreatorRanks, getPlatformCreatorCount } from '../ser
 import { cardImageUrl } from '../lib/cardUrl';
 import { cardTier, TIERS } from '../lib/badgeCard';
 import { PLATFORM_IDS, PLATFORM_DISPLAY_NAMES, isActivePlatform } from '../lib/constants';
-import { formatNumber } from '../lib/utils';
+import { formatNumber, formatRank } from '../lib/utils';
 import { isMac } from '../lib/platform';
 
 // Global search (Cmd/Ctrl+K, "/", or the openCommandPalette event), redesigned
@@ -325,7 +325,7 @@ export default function CommandPalette({ startOpen = false }) {
                             </span>
                             <span className="flex items-center gap-3 mt-2">
                               {ranks[top.id]?.subscribers ? <span className="text-base font-black tabular-nums">{formatNumber(ranks[top.id].subscribers)}</span> : null}
-                              {ranks[top.id]?.rank ? <span className="text-xs font-semibold text-white/70 tabular-nums">#{formatNumber(ranks[top.id].rank)}</span> : null}
+                              {ranks[top.id]?.rank ? <span className="text-xs font-semibold text-white/70 tabular-nums">#{formatRank(ranks[top.id].rank)}</span> : null}
                               <RarityTag rank={ranks[top.id]?.rank} total={totals[top.platform]} />
                             </span>
                           </span>

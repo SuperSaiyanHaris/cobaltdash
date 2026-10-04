@@ -9,6 +9,15 @@ export function formatNumber(num) {
 }
 
 /**
+ * A rank or a "how many" count of creators, shown exactly: "#2,213 of 28,512".
+ * Ranks are positions, not sizes, so they are never abbreviated ("#2.2K").
+ */
+export function formatRank(num) {
+  if (num === null || num === undefined || Number.isNaN(Number(num))) return '-';
+  return Math.round(Number(num)).toLocaleString('en-US');
+}
+
+/**
  * Human-friendly relative time, e.g. "2 hours ago", "yesterday", "3 days ago".
  * Accepts an ISO timestamp string or Date. Returns "" if input is falsy.
  */
