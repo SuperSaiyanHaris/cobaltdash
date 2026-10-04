@@ -8,8 +8,17 @@
 
 import { pickCreatorRow } from './seoRules.js';
 
-const AVATAR_HOSTS = ['yt3.ggpht.com', 'yt3.googleusercontent.com', 'static-cdn.jtvnw.net', 'files.kick.com', 'cdn.bsky.app', 'lastfm.freetls.fastly.net', 'i.scdn.co', 'substackcdn.com'];
-const AVATAR_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com'];
+const AVATAR_HOSTS = ['yt3.ggpht.com', 'yt3.googleusercontent.com', 'static-cdn.jtvnw.net', 'files.kick.com', 'cdn.bsky.app', 'lastfm.freetls.fastly.net', 'i.scdn.co', 'substackcdn.com', 'kick.com'];
+const AVATAR_SUFFIXES = ['.tiktokcdn.com', '.tiktokcdn-us.com', '.googleusercontent.com', '.ggpht.com', '.ibytedtos.com'];
+
+// Mastodon avatars live on whichever host each instance uses (hundreds of
+// them), so no fixed list can cover them. For that platform any public https
+// hostname is fine; IP literals and internal names are not.
+export function isPublicHost(host) {
+  if (!host || !host.includes('.') || host.length > 253) return false;
+  if (/^[\d.]+$/.test(host) || host.includes(':') || host.startsWith('[')) return false;
+  return !/(^|\.)(localhost|local|internal|lan|home|corp|test|invalid|example)$/.test(host);
+}
 const AVATAR_MAX_BYTES = 150_000;
 
 /** Fetch JSON from Supabase PostgREST with the anon key. Null on any failure. */
@@ -37,12 +46,13 @@ export function smallAvatarUrl(src) {
     .replace('/img/avatar/', '/img/avatar_thumbnail/'); // Bluesky
 }
 
-export async function inlineAvatar(src) {
+export async function inlineAvatar(src, platform) {
   if (!src) return null;
   let u;
   try { u = new URL(smallAvatarUrl(src)); } catch { return null; }
   const host = u.hostname.toLowerCase();
-  if (u.protocol !== 'https:' || !(AVATAR_HOSTS.includes(host) || AVATAR_SUFFIXES.some((x) => host.endsWith(x)))) return null;
+  const listed = AVATAR_HOSTS.includes(host) || AVATAR_SUFFIXES.some((x) => host.endsWith(x));
+  if (u.protocol !== 'https:' || u.port || !(listed || (platform === 'mastodon' && isPublicHost(host)))) return null;
   try {
     const res = await fetch(u.toString(), { signal: AbortSignal.timeout(2500) });
     const type = (res.headers.get('content-type') || '').split(';')[0].trim();
@@ -112,6 +122,6 @@ export async function loadCardData(platform, username) {
     delta30: latest && oldest ? latest.subscribers - oldest.subscribers : null,
     rank,
     total,
-    avatar: await inlineAvatar(c.profile_image),
+    avatar: await inlineAvatar(c.profile_image, platform),
   };
 }
