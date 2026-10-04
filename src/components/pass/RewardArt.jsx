@@ -1,9 +1,8 @@
-// Artwork for ShinyPass rewards: small bold glyphs for the tier tiles, and
-// a large preview of what each reward actually looks like (the sticker, the
-// name effect, the card back, the pack, your card at its new rarity).
-import { PACK_BY_KEY, STICKERS, NAME_EFFECTS, CARD_BACKS, RINGS, TITLES } from '../../lib/shinyPass';
+// Artwork for ShinyPass rewards: small bold glyphs (the locker's set grid) and
+// the sticker, name effect and card back pieces. The road and the try-on use
+// RewardLight instead.
+import { STICKERS, NAME_EFFECTS, CARD_BACKS } from '../../lib/shinyPass';
 import { markBarsInner } from '../../lib/brandMark';
-import { Pack3D, UserCardSvg, BannerSvg } from './PassArt';
 
 export const RARITY_COLORS = {
   common:    { a: '#A1A1AA', b: '#52525B', text: '#E4E4E7' },
@@ -63,45 +62,4 @@ export function CardBackArt({ k, className = '' }) {
       <svg viewBox="0 0 100 100" className="w-[46%]" aria-hidden="true" dangerouslySetInnerHTML={{ __html: markBarsInner(`cb${k}`) }} />
     </div>
   );
-}
-
-/**
- * Large preview of a reward: the real thing where it can be shown (a pack,
- * your card at a new tier, a sticker, a name effect, a card back), a glyph
- * otherwise.
- */
-export function RewardVisual({ reward, me }) {
-  const rc = RARITY_COLORS[reward.rarity] || RARITY_COLORS.common;
-  switch (reward.kind) {
-    case 'pack': {
-      const p = PACK_BY_KEY[reward.key];
-      return p ? <div className="sp-fit-pack"><Pack3D pack={p} season={me?.seasonNumber} size="lg" /></div> : null;
-    }
-    case 'tier':
-      return me ? <UserCardSvg me={{ ...me, level: reward.level, into: 0, need: 1 }} className="sp-fit-card shadow-[0_22px_40px_-14px_rgba(0,0,0,0.9)]" /> : <RewardGlyph kind="tier" color={rc.a} className="w-1/2" />;
-    case 'sticker':
-      return <StickerArt k={reward.key} className="text-[clamp(26px,5vw,44px)]" />;
-    case 'name':
-      return <NameEffectText k={reward.key} className="font-arena italic font-black text-[clamp(38px,7vw,64px)] leading-none">@{me?.handle && me.handle !== 'you' ? me.handle : 'yourname'}</NameEffectText>;
-    case 'back':
-      return <CardBackArt k={reward.key} className="w-[42%] max-w-[150px]" />;
-    case 'ring': {
-      const r = RINGS[reward.key];
-      return (
-        <span className="block w-[44%] max-w-[170px] aspect-square rounded-full p-[7%]" style={{ background: `conic-gradient(from 20deg, ${r.a}, ${r.b}, ${r.a})` }}>
-          <span className="flex w-full h-full rounded-full bg-[#1a1a24] items-center justify-center font-arena italic font-black text-white text-[clamp(34px,6vw,60px)]">
-            {(me?.handle || 'S').slice(0, 1).toUpperCase()}
-          </span>
-        </span>
-      );
-    }
-    case 'title':
-      return <span className="font-arena italic font-black uppercase text-white text-[clamp(30px,6vw,56px)] leading-[.95] text-center px-4 text-balance">“{TITLES[reward.key]?.name}”</span>;
-    case 'banner': {
-      const p = PACK_BY_KEY[reward.key];
-      return <span className="block w-[82%] aspect-[3/1] rounded-xl border-2 overflow-hidden" style={{ borderColor: p.a }}><BannerSvg pack={p} className="w-full h-full" /></span>;
-    }
-    default:
-      return <RewardGlyph kind={reward.kind} color={rc.a} className="w-[46%] max-w-[180px]" />;
-  }
 }

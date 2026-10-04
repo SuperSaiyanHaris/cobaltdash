@@ -109,10 +109,25 @@ sessions never see it. Anything a cloud session must know goes here.
   guaranteed only at 99; lowered 2026-09-28 so free listings stay rare). Redeeming creates a `featured_listings` row with
   `source = 'reward'` and no Stripe subscription, so it lapses by itself.
   Vouchers and totals: /admin > ShinyPass.
-- Arena design (owner pick, 2026-09-27): `/pass` is `ArenaTrack.jsx` (HUD,
-  featured stage, scroll-snap pages of 10, season packs) with styles in
-  `components/pass/arena.css` (lazy) and the Barlow Condensed face loaded
-  only on pass pages (`useArenaFont`). Every level has a reward (`TRACK` in
+- ShinyPass redesign (owner pick, 2026-10-04, from a Claude Design export):
+  `/pass` is light: warm paper ground, white rounded cards, ink buttons, one
+  purple accent, full width on desktop (max 1600px). Four tabs, one mounted at
+  a time: Track (`TrackView.jsx`: card + level + XP + four stat tiles, ten
+  chapter chips named after the ten packs, the road of ten rewards for the
+  chapter, the chosen reward up close and a live "try it on" of your profile;
+  phones get a vertical road and a bottom sheet), Packs (`PacksView.jsx`:
+  stage with what's inside, the collection shelf, phone carousel, odds), Earn
+  XP and Locker. Styles: `components/pass/pass-light.css` (scoped under
+  `.spx`); `arena.css` only keeps the display face class and the pack
+  opening's thickness faces. Fonts loaded only on pass pages (`useArenaFont`):
+  Barlow Condensed (numbers, names), Bricolage Grotesque (headings), Manrope.
+  Pack art is CSS illustrations (`PackArt.jsx` + generated `packArtHtml.js`,
+  container query units, tilts toward the cursor); the opening animation uses
+  it too. Reward objects are drawn by `RewardLight.jsx` from the same
+  catalogs the locker uses. The desktop header's center pill carries
+  ShinyPass between Compare and Dashboard, with a Lv/XP chip on the right
+  (xl and up). The dark-mode toggle in the mockup was left out on purpose.
+  Every level has a reward (`TRACK` in
   shinyPass.js): packs, card tiers, and drops from a rotation over stickers,
   name effects, card backs, titles, rings, banners, freezes and XP boosts,
   granted atomically by SQL `grant_track_drops()` (migrations `i`, `j`).
@@ -130,10 +145,11 @@ sessions never see it. Anything a cloud session must know goes here.
   Comment flair (`FLAIRS`, kind `flair`) renders via `pass/Nameplate.jsx`.
   The locker on /pass has a live preview (card, back, comment) that also
   previews on hover (`data-peek="slot:key"`).
-- Mobile /pass (below 1024px) shows one section at a time via the sticky
-  Track / Locker / Packs / Earn switcher at the top (`ShinyPass.jsx`,
-  `max-lg:hidden` per section); desktop shows everything. The season packs
-  strip is desktop only; `PackGuide.jsx` covers packs on phones.
+- Every width shows one tab at a time (`ShinyPass.jsx` `PassApp`; hash
+  `#packs`, `#earn`, `#locker`). Phones pin a four-way switcher under the
+  64px header. "Equip in locker" on a reward jumps to the Locker tab at that
+  kind (`Locker` takes `initialTab`). Below 1280px the desktop road scrolls
+  sideways and keeps the chosen reward in view.
 - Promotion (2026-09-28): Home `HomePassPromo` (static
   `public/pass/promo-pass*.svg`, a picture of the /pass screen written by
   `scripts/passPromo.mjs` at build so the home page loads no pass code), header More menu, footer, signup

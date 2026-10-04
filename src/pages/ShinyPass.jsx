@@ -1,25 +1,25 @@
-// ShinyPass: the Arena track (HUD, featured reward, pages of levels, packs),
-// ways to earn XP, and the locker. Rules in src/lib/shinyPass.js, server in
-// api/progress.js.
+// ShinyPass: four tabs (Track, Packs, Earn XP, Locker) on a warm paper ground
+// with white cards. Only the open tab is mounted. Rules live in
+// src/lib/shinyPass.js, the server in api/progress.js.
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Loader2, Eye, EyeOff, Check, X, ChevronRight, Ticket } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, X, ChevronRight, Ticket, ArrowRight } from 'lucide-react';
 import { PASS_FAQ } from '../lib/passFaq';
+import '../components/pass/pass-light.css';
 import '../components/pass/arena.css';
 import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgress, loadProgress, openPack, setPrivate } from '../services/progressService';
 import { setHandle } from '../services/commentsService';
 import { ItemFace } from '../components/pass/PassArt';
-import ArenaTrack from '../components/pass/ArenaTrack';
+import TrackView from '../components/pass/TrackView';
+import PacksView from '../components/pass/PacksView';
 import PackOpening from '../components/pass/PackOpening';
 import Locker from '../components/pass/Locker';
-import PackGuide from '../components/pass/PackGuide';
 import { BadgePill } from '../components/pass/BadgeChip';
 import useArenaFont from '../components/pass/useArenaFont';
-import useDesktop from '../components/pass/useDesktop';
 import {
   XP_RULES, PACK_BY_LEVEL, TOTAL_XP, streakBonus,
   seasonForDate, seasonLastDay, seasonDaysLeft, levelFromXp,
@@ -27,6 +27,7 @@ import {
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 const todayNY = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+const WRAP = 'max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10';
 
 function HandleForm({ onDone }) {
   const [h, setH] = useState('');
@@ -41,13 +42,23 @@ function HandleForm({ onDone }) {
   return (
     <form onSubmit={save} className="flex flex-wrap items-center gap-2">
       <span className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 font-semibold">@</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft)] font-semibold">@</span>
         <input value={h} onChange={(e) => setH(e.target.value.toLowerCase())} maxLength={20} placeholder="pick a public name" aria-label="Public name"
-          className="h-10 w-56 pl-7 pr-3 rounded-xl text-base bg-white/[0.08] border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60" />
+          className="h-11 w-56 pl-7 pr-3 rounded-xl text-base bg-[var(--cream)] border border-[var(--line)] text-[var(--ink)] placeholder:text-[var(--soft)] focus:outline-none focus:border-[var(--ink)]" />
       </span>
-      <button disabled={busy || h.length < 3} className="h-10 px-4 rounded-xl bg-white text-neutral-950 text-sm font-bold disabled:opacity-50">{busy ? 'Saving' : 'Save'}</button>
-      {err && <span className="w-full text-sm font-semibold text-red-300">{err}</span>}
+      <button disabled={busy || h.length < 3} className="spx-btn disabled:opacity-50">{busy ? 'Saving' : 'Save'}</button>
+      {err && <span className="w-full text-sm font-semibold text-red-600">{err}</span>}
     </form>
+  );
+}
+
+function HandleCard() {
+  return (
+    <div className="spx-card !rounded-[22px] p-4 sm:p-5">
+      <p className="text-[15px] font-extrabold text-[var(--ink)]">Get your own public page</p>
+      <p className="mt-0.5 mb-3 text-[13.5px] font-medium text-[var(--mute)]">Pick a public name. Your card, level and unlocks show up at shinypull.com/u/yourname.</p>
+      <HandleForm />
+    </div>
   );
 }
 
@@ -65,57 +76,55 @@ function EarnList({ state }) {
     return { earned, cap, done, xp };
   };
   const Pill = ({ done, xp }) => (
-    <span className={`flex-shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-black tabular-nums ${done ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-100 text-neutral-800'}`}>
+    <span className={`flex-shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-black tabular-nums ${done ? 'bg-emerald-100 text-emerald-800' : 'bg-[var(--cream)] text-[var(--ink)]'}`}>
       {done && <Check className="w-3 h-3" />}+{xp}
     </span>
   );
+  const bar = (earned, cap) => (cap ? (
+    <div className="mt-2.5 h-1.5 rounded-full bg-[var(--trough)] overflow-hidden"><div className="h-full rounded-full bg-[var(--ink)]" style={{ width: `${Math.min(100, (earned / cap) * 100)}%` }} /></div>
+  ) : null);
   return (
     <>
       {/* Phones: one compact list, rows link to where you earn it */}
-      <div className="sm:hidden rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-100">
+      <div className="sm:hidden spx-card !rounded-[22px] divide-y divide-[var(--line)] overflow-hidden">
         {Object.entries(XP_RULES).map(([key, r]) => {
           const { earned, cap, done, xp } = row(key, r);
           const body = (
             <>
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold text-neutral-900 leading-tight">{r.label}</p>
-                  <p className="text-xs text-neutral-600">{r.note}</p>
+                  <p className="font-extrabold text-[var(--ink)] leading-tight">{r.label}</p>
+                  <p className="text-xs font-medium text-[var(--mute)]">{r.note}</p>
                 </div>
                 <Pill done={done} xp={xp} />
-                {EARN_LINK[key] && <ChevronRight className="w-4 h-4 text-neutral-500 flex-shrink-0" />}
+                {EARN_LINK[key] && <ChevronRight className="w-4 h-4 text-[var(--soft)] flex-shrink-0" />}
               </div>
-              {cap ? (
-                <div className="mt-2 h-1.5 rounded-full bg-neutral-200 overflow-hidden">
-                  <div className="h-full rounded-full bg-neutral-900" style={{ width: `${Math.min(100, (earned / cap) * 100)}%` }} />
-                </div>
-              ) : null}
+              {bar(earned, cap)}
             </>
           );
           return EARN_LINK[key]
-            ? <Link key={key} to={EARN_LINK[key]} className="sp-tap block px-4 py-3">{body}</Link>
-            : <div key={key} className="px-4 py-3">{body}</div>;
+            ? <Link key={key} to={EARN_LINK[key]} className="block px-4 py-3.5">{body}</Link>
+            : <div key={key} className="px-4 py-3.5">{body}</div>;
         })}
       </div>
       {/* Larger screens: cards */}
-      <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3.5">
         {Object.entries(XP_RULES).map(([key, r]) => {
           const { earned, cap, done, xp } = row(key, r);
-          return (
-            <div key={key} className="rounded-2xl border border-neutral-200 bg-white p-4">
+          const inner = (
+            <>
               <div className="flex items-start justify-between gap-3">
-                <p className="font-extrabold text-neutral-900">{r.label}</p>
+                <p className="font-bric font-extrabold text-[17px] text-[var(--ink)] leading-snug">{r.label}</p>
                 <Pill done={done} xp={xp} />
               </div>
-              <p className="mt-1 text-sm text-neutral-700">{r.note}</p>
-              {cap ? (
-                <div className="mt-3 h-1.5 rounded-full bg-neutral-200 overflow-hidden">
-                  <div className="h-full rounded-full bg-neutral-900" style={{ width: `${Math.min(100, (earned / cap) * 100)}%` }} />
-                </div>
-              ) : null}
-              {cap ? <p className="mt-1.5 text-xs font-semibold text-neutral-600 tabular-nums">{fmt(earned)} / {fmt(cap)} XP today</p> : null}
-            </div>
+              <p className="mt-1 text-sm font-medium text-[var(--mute)]">{r.note}</p>
+              {bar(earned, cap)}
+              {cap ? <p className="mt-1.5 text-xs font-bold text-[var(--soft)] tabular-nums">{fmt(earned)} / {fmt(cap)} XP today</p> : null}
+            </>
           );
+          return EARN_LINK[key]
+            ? <Link key={key} to={EARN_LINK[key]} className="spx-card !rounded-[22px] p-5 block hover:border-[rgba(20,18,30,.2)] transition-colors">{inner}</Link>
+            : <div key={key} className="spx-card !rounded-[22px] p-5">{inner}</div>;
         })}
       </div>
     </>
@@ -124,17 +133,17 @@ function EarnList({ state }) {
 
 function PassFaq() {
   return (
-    <section className="bg-[#fafaf9]">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-        <h2 className="font-arena italic font-black uppercase text-[30px] sm:text-[34px] leading-none text-neutral-950">ShinyPass questions</h2>
-        <div className="mt-5 rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-100">
+    <section>
+      <div className="max-w-3xl mx-auto pb-14">
+        <h2 className="font-bric font-extrabold text-[28px] sm:text-[32px] leading-none text-[var(--ink)]">ShinyPass questions</h2>
+        <div className="mt-5 spx-card !rounded-[22px] divide-y divide-[var(--line)]">
           {PASS_FAQ.map(([q, a]) => (
             <details key={q} className="group px-4 sm:px-5">
-              <summary className="sp-tap flex items-center justify-between gap-3 py-4 cursor-pointer list-none font-bold text-neutral-900 [&::-webkit-details-marker]:hidden">
+              <summary className="flex items-center justify-between gap-3 py-4 cursor-pointer list-none font-extrabold text-[var(--ink)] [&::-webkit-details-marker]:hidden">
                 {q}
-                <ChevronRight className="w-4 h-4 text-neutral-600 flex-shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
+                <ChevronRight className="w-4 h-4 text-[var(--soft)] flex-shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
               </summary>
-              <p className="pb-4 -mt-1 text-[15px] text-neutral-700 leading-relaxed">{a}</p>
+              <p className="pb-4 -mt-1 text-[15px] font-medium text-[var(--mute)] leading-relaxed">{a}</p>
             </details>
           ))}
         </div>
@@ -145,9 +154,9 @@ function PassFaq() {
 
 const SECTIONS = [
   { id: 'track', label: 'Track' },
-  { id: 'locker', label: 'Locker' },
   { id: 'packs', label: 'Packs' },
-  { id: 'earn', label: 'Earn' },
+  { id: 'earn', label: 'Earn XP', short: 'Earn' },
+  { id: 'locker', label: 'Locker' },
 ];
 
 function PackContents({ pack, items, me, onClose }) {
@@ -196,200 +205,165 @@ function demoState() {
   };
 }
 
+const openAuth = () => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to start your ShinyPass' } }));
+
 function SignedOut() {
-  const openAuth = () => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to start your ShinyPass' } }));
   const demo = useMemo(() => demoState(), []);
   const me = { handle: 'you', seasonNumber: demo.season.number, ...demo.progress };
   return (
-    <section className="relative isolate bg-[#0a0a0f] text-white overflow-hidden">
-      <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-12">
-        <h1 className="font-arena italic font-black uppercase">
-          <span className="block font-extrabold tracking-[0.14em] text-[15px] text-amber-300">ShinyPass · Season {demo.season.number} · Free</span>
-          <span className="mt-2 block text-[clamp(44px,8vw,88px)] leading-[.86] text-balance max-w-[16ch]">99 levels. A reward at every one.</span>
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-white/80 max-w-2xl text-pretty">
-          Earn XP just by using ShinyPull. Every level unlocks something, and every 10 levels you open a pack.
-          <span className="hidden sm:inline"> Your card levels up from Common to Legendary, a new season starts every January 1, and everything you unlock stays yours.</span>
-        </p>
-        <p className="mt-3 flex items-start gap-2 text-[15px] font-semibold text-white/90 max-w-2xl">
-          <Ticket className="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" aria-hidden="true" />
-          Every pack has a chance at a free month of a Featured Listing for any creator you pick.
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button onClick={openAuth} className="px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-[15px] font-bold transition-colors">Start your free ShinyPass</button>
-          <BadgePill badge="og2026" dark size="md" />
-          <span className="text-sm font-semibold text-white/75">Join in 2026 and keep the OG badge for good.</span>
-        </div>
-        <p className="mt-10 mb-3 font-arena italic font-extrabold uppercase tracking-[0.12em] text-[14px] text-white/60">Preview · a sample season</p>
-        <ArenaTrack me={me} state={demo} onOpenPack={openAuth} onViewPack={openAuth} demo />
+    <div className="spx">
+      <div className={`${WRAP} pt-6 sm:pt-8 pb-12`}>
+        <section className="spx-card p-6 sm:p-10">
+          <p className="text-[11px] font-bold tracking-[.14em] text-[var(--accent)] uppercase">ShinyPass · Season {demo.season.number} · Free</p>
+          <h1 className="mt-3 font-bric font-extrabold text-[clamp(38px,6.2vw,76px)] leading-[.95] tracking-[-.02em] text-[var(--ink)] text-balance max-w-[16ch]">99 levels. A reward at every one.</h1>
+          <p className="mt-4 text-base sm:text-lg font-medium text-[var(--mute)] max-w-2xl text-pretty">
+            Earn XP just by using ShinyPull. Every level unlocks something, and every 10 levels you open a pack.
+            <span className="hidden sm:inline"> Your card levels up from Common to Legendary, a new season starts every January 1, and everything you unlock stays yours.</span>
+          </p>
+          <p className="mt-3 flex items-start gap-2 text-[15px] font-bold text-[var(--ink)] max-w-2xl">
+            <Ticket className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            Every pack has a chance at a free month of a Featured Listing for any creator you pick.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button onClick={openAuth} className="px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-[15px] font-bold transition-colors">Start your free ShinyPass</button>
+            <BadgePill badge="og2026" size="md" />
+            <span className="text-sm font-semibold text-[var(--mute)]">Join in 2026 and keep the OG badge for good.</span>
+          </div>
+        </section>
+
+        <p className="mt-10 mb-3 text-[11px] font-extrabold tracking-[.14em] uppercase text-[var(--soft)]">Preview · a sample season</p>
+        <TrackView me={me} state={demo} onOpenPack={openAuth} onViewPack={openAuth} onEquip={openAuth} demo />
+
+        <section className="mt-14">
+          <h2 className="font-bric font-extrabold text-[28px] sm:text-[32px] leading-none text-[var(--ink)]">Ways to earn XP</h2>
+          <p className="mt-2 text-[15px] font-medium text-[var(--mute)]">Things you'd do on ShinyPull anyway, now worth XP.</p>
+          <div className="mt-5"><EarnList /></div>
+        </section>
+
+        <section className="mt-14">
+          <PacksView me={me} season={demo.season.number} />
+        </section>
+
+        <section className="mt-14"><PassFaq /></section>
       </div>
-    </section>
+      <section className="relative isolate bg-[#0a0a0f] text-white overflow-hidden">
+        <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
+        <div className={`relative ${WRAP} py-12 sm:py-16 flex flex-col sm:flex-row sm:items-center justify-between gap-6`}>
+          <div>
+            <p className="font-bric font-extrabold text-[34px] sm:text-[44px] leading-[.95]">Season {demo.season.number} is live.</p>
+            <p className="mt-2 text-white/80 max-w-xl">Start today and your first pack is about two days away. Free, with the OG 2026 badge for every account made this year.</p>
+          </div>
+          <button onClick={openAuth} className="self-start sm:self-auto px-6 py-3 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-[15px] font-bold transition-colors">Start your free ShinyPass</button>
+        </div>
+      </section>
+    </div>
   );
 }
 
-export default function ShinyPass() {
-  useArenaFont();
-  const { user, loading: authLoading } = useAuth();
-  const state = useProgress();
-  const desktop = useDesktop();
-  // Desktop paints the HUD and the track first, then adds the sections below
-  // one at a time (earn, locker, pack guide) so no single render blocks input.
-  const [stage, setStage] = useState(0);
-  useEffect(() => {
-    if (stage >= 3) return undefined;
-    const id = setTimeout(() => setStage((s) => s + 1), stage === 0 ? 60 : 150);
-    return () => clearTimeout(id);
-  }, [stage]);
-  const [loading, setLoading] = useState(true);
+const readHash = () => {
+  const h = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+  return SECTIONS.some((s) => s.id === h) ? h : 'track';
+};
+
+/** The signed-in ShinyPass: the four tabs, plus the pack opening and pull sheets. */
+export function PassApp({ state, user }) {
   const [opening, setOpening] = useState(null);
   const [viewing, setViewing] = useState(null);
-  // Phones show one section at a time (desktop shows them all).
-  const [section, setSection] = useState(() => {
-    const h = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
-    return SECTIONS.some((s) => s.id === h) ? h : 'track';
-  });
-  const switcher = useRef(null);
-  const goSection = useCallback((id, target) => {
-    setSection(id);
+  const [view, setView] = useState(readHash);
+  const [lockerTab, setLockerTab] = useState(null);
+
+  const goView = useCallback((id, detail) => {
+    setView(id);
+    if (detail) setLockerTab(detail);
     try { window.history.replaceState(null, '', id === 'track' ? window.location.pathname : `#${id}`); } catch { /* ignore */ }
-    requestAnimationFrame(() => {
-      const el = (target && document.getElementById(target)) || switcher.current;
-      if (!el) return;
-      const small = window.innerWidth < 1024;
-      const top = el.getBoundingClientRect().top + window.scrollY - (small && !target ? 64 : 120);
-      if (small ? window.scrollY > top || target : true) window.scrollTo({ top, behavior: 'auto' });
-    });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
   useEffect(() => {
-    const toLocker = () => goSection('locker', 'locker');
-    const toGuide = () => goSection('packs', 'pack-guide');
-    window.addEventListener('shinypass:locker', toLocker);
-    window.addEventListener('shinypass:guide', toGuide);
-    return () => { window.removeEventListener('shinypass:locker', toLocker); window.removeEventListener('shinypass:guide', toGuide); };
-  }, [goSection]);
+    const onHash = () => setView(readHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
-  useEffect(() => {
-    if (!user) { setLoading(false); return; }
-    loadProgress().catch(() => {}).finally(() => setLoading(false));
-  }, [user]);
-
-  const me = useMemo(() => state && {
+  const me = useMemo(() => ({
     handle: state.handle || 'you',
     publicHandle: state.handle || null,
     seasonNumber: state.season?.number,
     avatar: state.avatar || user?.user_metadata?.avatar_url || null,
     ...state.progress,
-  }, [state, user]);
-
-  if (authLoading || (user && loading && !state)) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <SEO title="ShinyPass" />
-        <Loader2 className="w-6 h-6 text-white/70 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user || !state) {
-    return (
-      <>
-        <SEO title="ShinyPass: Free Season Pass, 99 Levels and Packs" description="Level your own holographic card from 1 to 99 this season. A reward at every level, a pack every 10, and a chance at a free Featured Listing. Free to join." />
-        <SignedOut />
-        <section className="bg-[#fafaf9]">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-14">
-            <h2 className="font-arena italic font-black uppercase text-[30px] sm:text-[34px] leading-none text-neutral-950">Ways to earn XP</h2>
-            <p className="mt-2 text-[15px] text-neutral-700">Things you'd do on ShinyPull anyway, now worth XP.</p>
-            <div className="mt-5"><EarnList /></div>
-          </div>
-        </section>
-        <OddsAndRules />
-        <PassFaq />
-        <section className="relative isolate bg-[#0a0a0f] text-white overflow-hidden">
-          <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div>
-              <p className="font-arena italic font-black uppercase text-[34px] sm:text-[44px] leading-[.9]">Season 1 is live.</p>
-              <p className="mt-2 text-white/80 max-w-xl">Start today and your first pack is about two days away. Free, with the OG 2026 badge for every account made this year.</p>
-            </div>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('openAuthPanel', { detail: { message: 'Sign in to start your ShinyPass' } }))}
-              className="self-start sm:self-auto px-6 py-3 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-[15px] font-bold transition-colors"
-            >
-              Start your free ShinyPass
-            </button>
-          </div>
-        </section>
-      </>
-    );
-  }
+  }), [state, user]);
 
   const p = state.progress;
-  // Phones mount only the open tab; desktop mounts all once the hero has painted.
-  const on = (id) => (desktop ? stage >= { earn: 1, locker: 2, packs: 3 }[id] : section === id);
+  const season = state.season || { number: 1, daysLeft: 0 };
+  const packReady = state.packs.available.length > 0;
   function viewPack(level) {
     const h = state.packs.history.find((x) => x.pack_level === level);
     if (h) setViewing({ pack: PACK_BY_LEVEL[level], items: h.items });
   }
+  const openLevel = (l) => setOpening(PACK_BY_LEVEL[l]);
 
   return (
-    <>
+    <div className="spx min-h-screen">
       <SEO title="ShinyPass" description="Your ShinyPull card, level, streak and packs." />
 
-      {/* Phones: one section at a time */}
-      <div ref={switcher} className="lg:hidden sticky top-16 z-30 bg-[#0a0a0f] px-4 py-2 border-b border-white/10">
-        <div role="tablist" aria-label="ShinyPass sections" className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-white/[0.07]">
+      {/* Phones: one tab at a time, pinned under the header */}
+      <div className="lg:hidden sticky top-16 z-30 bg-[var(--paper)] px-4 pt-3 pb-2">
+        <div role="tablist" aria-label="ShinyPass sections" className="spx-seg">
           {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              role="tab"
-              aria-selected={section === s.id}
-              onClick={() => goSection(s.id)}
-              className={`sp-tap relative h-10 rounded-lg text-[13px] font-bold transition-colors ${section === s.id ? 'bg-white text-neutral-950' : 'text-white/80'}`}
-            >
-              {s.label}
-              {s.id === 'packs' && state.packs.available.length > 0 && <span aria-label="A pack is ready" className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-emerald-400" />}
+            <button key={s.id} role="tab" aria-selected={view === s.id} onClick={() => goView(s.id)}>
+              {s.short || s.label}
+              {s.id === 'packs' && packReady && <span className="dot" aria-label="A pack is ready" />}
             </button>
           ))}
         </div>
       </div>
 
-      <section className="relative isolate z-20 bg-[#0a0a0f] text-white overflow-hidden">
-        <div aria-hidden="true" className="absolute inset-0 hero-dot-grid" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-10 sm:pb-14">
-          <ArenaTrack
+      <div className={`${WRAP} pt-3 lg:pt-7 pb-14`}>
+        <div className="hidden lg:flex items-center justify-between gap-4 mb-4">
+          <div role="tablist" aria-label="ShinyPass sections" className="spx-tabs">
+            {SECTIONS.map((s) => (
+              <button key={s.id} role="tab" aria-selected={view === s.id} onClick={() => goView(s.id)} className="spx-tab">
+                {s.label}
+                {s.id === 'packs' && packReady && <span className="dot" aria-label="A pack is ready" />}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 text-xs font-bold text-[var(--soft)]">
+            {state.handle && <Link to={`/u/${state.handle}`} className="inline-flex items-center gap-1 text-[var(--ink)] hover:underline">My profile <ArrowRight className="w-3.5 h-3.5" /></Link>}
+            <span>Season {season.number} · {season.daysLeft} days left</span>
+          </div>
+        </div>
+        <p className="lg:hidden mb-3 mt-1 text-xs font-bold text-[var(--soft)] flex justify-between"><span>Season {season.number} · {season.daysLeft} days left</span>{state.handle && <Link to={`/u/${state.handle}`} className="text-[var(--ink)]">My profile</Link>}</p>
+
+        {view === 'track' && (
+          <TrackView
             me={me}
             state={state}
-            onOpenPack={(l) => setOpening(PACK_BY_LEVEL[l])}
+            onOpenPack={openLevel}
             onViewPack={viewPack}
-            bodyHidden={section !== 'track'}
-            handleForm={!state.handle && (
-              <div className="rounded-2xl border border-white/15 bg-white/[0.05] p-4">
-                <p className="text-[15px] font-bold text-white">Get your own public page</p>
-                <p className="mt-0.5 mb-3 text-[13.5px] text-white/75">Pick a public name. Your card, level and unlocks show up at shinypull.com/u/yourname.</p>
-                <HandleForm />
-              </div>
-            )}
+            onEquip={(tab) => goView('locker', tab)}
+            handleForm={!state.handle && <HandleCard />}
           />
-        </div>
-      </section>
+        )}
 
-      {(desktop || section !== 'track') && <div className="bg-[#fafaf9]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-14 max-lg:space-y-0">
-          {on('earn') && <section id="earn" className="scroll-mt-24">
+        {view === 'packs' && <PacksView me={me} season={season.number} state={state} onOpenPack={openLevel} onViewPack={viewPack} />}
+
+        {view === 'earn' && (
+          <section>
             <div className="flex items-end justify-between gap-3">
-              <h2 className="font-arena italic font-black uppercase text-[30px] sm:text-[34px] leading-none text-neutral-950">Ways to earn XP</h2>
-              <span className="text-sm font-bold text-neutral-800 tabular-nums">+{fmt(state.today.xp)} today</span>
+              <h2 className="font-bric font-extrabold text-[28px] sm:text-[32px] leading-none text-[var(--ink)]">Ways to earn XP</h2>
+              <span className="text-sm font-extrabold text-[var(--ink)] tabular-nums">+{fmt(state.today.xp)} today</span>
             </div>
             <div className="mt-5"><EarnList state={state} /></div>
-            <p className="mt-3 text-xs text-neutral-600">Daily caps reset at midnight Eastern. An XP Boost adds 25% to everything here.</p>
-          </section>}
+            <p className="mt-3 text-xs font-semibold text-[var(--soft)]">Daily caps reset at midnight Eastern. An XP Boost adds 25% to everything here.</p>
+          </section>
+        )}
 
-          {on('locker') && <section id="locker" className="scroll-mt-20">
+        {view === 'locker' && (
+          <section>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="font-arena italic font-black uppercase text-[30px] sm:text-[34px] leading-none text-neutral-950">Your locker</h2>
-                <p className="hidden sm:block mt-2 text-[15px] text-neutral-700">Everything you've unlocked. Equipped items show on your card, your comments and your page.</p>
+                <h2 className="font-bric font-extrabold text-[28px] sm:text-[32px] leading-none text-[var(--ink)]">Your locker</h2>
+                <p className="hidden sm:block mt-2 text-[15px] font-medium text-[var(--mute)]">Everything you've unlocked. Equipped items show on your card, your comments and your page.</p>
               </div>
               {state.handle && (
                 <button
@@ -400,14 +374,10 @@ export default function ShinyPass() {
                 </button>
               )}
             </div>
-            <div className="mt-6"><Locker state={state} me={me} /></div>
-          </section>}
-
-          {on('packs') && <div>
-            <OddsAndRules light me={me} state={state} onOpenPack={(l) => setOpening(PACK_BY_LEVEL[l])} />
-          </div>}
-        </div>
-      </div>}
+            <div className="mt-5 spx-card p-4 sm:p-7"><Locker state={state} me={me} initialTab={lockerTab} /></div>
+          </section>
+        )}
+      </div>
 
       <AnimatePresence>
         {opening && (
@@ -421,21 +391,38 @@ export default function ShinyPass() {
         )}
       </AnimatePresence>
       {viewing && <PackContents pack={viewing.pack} items={viewing.items} me={me} onClose={() => setViewing(null)} />}
-    </>
+    </div>
   );
 }
 
-function OddsAndRules({ light = false, me, state, onOpenPack }) {
-  const season = seasonForDate(todayNY());
-  return (
-    <section className={light ? '' : 'bg-[#fafaf9]'}>
-      <div className={light ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12'}>
-        <h2 className="font-arena italic font-black uppercase text-[34px] leading-none text-neutral-950">What's in a pack</h2>
-        <p className="mt-2 text-[15px] text-neutral-700 max-w-2xl">
-          Packs are earned, never sold, and nothing inside is on the level track. Pick a pack to see everything it can hold. Levels and packs reset every January 1; everything you collect stays yours.
-        </p>
-        <div id="pack-guide" className="mt-6 scroll-mt-20"><PackGuide me={me} season={season} state={state} onOpenPack={onOpenPack} /></div>
+export default function ShinyPass() {
+  useArenaFont();
+  const { user, loading: authLoading } = useAuth();
+  const state = useProgress();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    loadProgress().catch(() => {}).finally(() => setLoading(false));
+  }, [user]);
+
+  if (authLoading || (user && loading && !state)) {
+    return (
+      <div className="spx min-h-[70vh] flex items-center justify-center">
+        <SEO title="ShinyPass" />
+        <Loader2 className="w-6 h-6 text-[var(--soft)] animate-spin" />
       </div>
-    </section>
-  );
+    );
+  }
+
+  if (!user || !state) {
+    return (
+      <>
+        <SEO title="ShinyPass: Free Season Pass, 99 Levels and Packs" description="Level your own holographic card from 1 to 99 this season. A reward at every level, a pack every 10, and a chance at a free Featured Listing. Free to join." />
+        <SignedOut />
+      </>
+    );
+  }
+
+  return <PassApp state={state} user={user} />;
 }

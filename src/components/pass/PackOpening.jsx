@@ -9,7 +9,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion';
 import { X, Loader2, Share2, Check } from 'lucide-react';
-import { PackSvg, ItemFace, RARITY, CARD_RADIUS } from './PassArt';
+import { ItemFace, RARITY, CARD_RADIUS } from './PassArt';
+import PackArt from './PackArt';
 import { CardBackArt } from './RewardArt';
 import { tearClip, PACK_W, PACK_H } from '../../lib/packArt';
 import { RARITY_ORDER } from '../../lib/shinyPass';
@@ -321,7 +322,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
               <div className="absolute inset-0" style={{ transform: `translateZ(${depth / 2}px)` }}>
                 {/* Body, below the tear */}
                 <div style={{ clipPath: tearClip('body') }}>
-                  <PackSvg pack={pack} season={me?.seasonNumber} />
+                  <PackArt packKey={pack.key} season={me?.seasonNumber} shadow={false} />
                 </div>
                 {/* Strip, above the tear: drag it off */}
                 <motion.div
@@ -335,7 +336,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
                   onDragEnd={onDragEnd}
                   aria-hidden="true"
                 >
-                  <PackSvg pack={pack} still season={me?.seasonNumber} />
+                  <PackArt packKey={pack.key} season={me?.seasonNumber} shadow={false} />
                 </motion.div>
                 {/* A bright line runs along the seam as it rips */}
                 {stage === 'torn' && !reduce && (
@@ -349,7 +350,7 @@ export default function PackOpening({ pack, me, onOpen, onClose }) {
                   />
                 )}
                 {stage === 'intro' && !reduce && (
-                  <motion.div style={{ opacity: hintOpacity }} className="pointer-events-none absolute left-0 right-0 top-[4%] flex justify-center">
+                  <motion.div style={{ opacity: hintOpacity }} className="pointer-events-none absolute left-0 right-0 top-[16%] flex justify-center">
                     <motion.span
                       className="rounded-full bg-white text-neutral-950 text-[11px] font-black px-2.5 py-1 shadow-[0_8px_16px_-6px_rgba(0,0,0,0.8)]"
                       animate={{ x: [-44, 44, -44] }} transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}

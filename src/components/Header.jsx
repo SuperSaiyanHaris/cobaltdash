@@ -40,11 +40,13 @@ const moreLinks = [
   { path: '/support', label: 'Support', description: 'Help keep it running', icon: Heart, tint: 'text-rose-500' },
 ];
 
-// The 3 primary destinations, always visible as a floating center pill on
+// The primary destinations, always visible as a floating center pill on
 // desktop — same role as Ripit's Packs/Collection/Wallet center nav.
+// ShinyPass sits in the middle (owner pick, 2026-10-04).
 const CENTER_NAV = [
   { path: '/rankings',  label: 'Rankings',  icon: ChartNoAxesColumnIncreasing },
   { path: '/compare',   label: 'Compare',   icon: Scale },
+  { path: '/pass',      label: 'ShinyPass', icon: Gift },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
@@ -181,7 +183,7 @@ export default function Header() {
                   </span>
                 )}
                 <Icon className="w-4 h-4" />
-                <span>{label}</span>
+                <span className={isActive(path) ? '' : 'max-xl:hidden'}>{label}</span>
               </Link>
             ))}
           </nav>
@@ -221,7 +223,7 @@ export default function Header() {
                   <div className="absolute right-0 top-full mt-2 w-[400px] bg-white border border-neutral-200 rounded-2xl shadow-xl z-50 p-3">
                     <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest px-1 mb-2.5">Features</p>
                     <div className="grid grid-cols-2 gap-1.5">
-                      {moreLinks.map(link => {
+                      {moreLinks.filter(link => link.path !== '/pass').map(link => {
                         const Icon = link.icon;
                         const active = isActive(link.path);
                         return (
@@ -264,6 +266,13 @@ export default function Header() {
                     const name = user?.user_metadata?.display_name || user?.email?.split('@')[0] || '?';
                     const initials = name.slice(0, 2).toUpperCase();
                     return (
+                      <div className="flex items-center gap-2">
+                      {pass && (
+                        <Link to="/pass" aria-label={`ShinyPass level ${pass.progress.level}`} className="hidden xl:flex items-center gap-2 h-8 pl-1 pr-3 rounded-full bg-neutral-900 text-white text-xs font-bold tabular-nums hover:bg-neutral-700 transition-colors">
+                          <span className="px-2 py-0.5 rounded-full bg-brand">Lv {pass.progress.level}</span>
+                          {Math.round(pass.progress.xp || 0).toLocaleString('en-US')} XP
+                        </Link>
+                      )}
                       <button
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                         className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-neutral-200 transition-all"
@@ -274,6 +283,7 @@ export default function Header() {
                           {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-brand ring-2 ring-white" aria-label={`${unread} new replies`} />}
                         </div>
                       </button>
+                      </div>
                     );
                   })()}
 

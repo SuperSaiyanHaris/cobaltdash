@@ -160,8 +160,8 @@ export function CreatorPicker({ onPick, placeholder = 'Search any creator', excl
   );
 }
 
-export default function Locker({ state, me }) {
-  const [tab, setTab] = useState('frame');
+export default function Locker({ state, me, initialTab = null }) {
+  const [tab, setTab] = useState(initialTab || 'frame');
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [pendingShowcase, setPendingShowcase] = useState(null);
