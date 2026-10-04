@@ -61,6 +61,21 @@ sessions never see it. Anything a cloud session must know goes here.
   `comment_user_ok()` in the vote/report RLS). Unban is in the Banned list. Comments aren't server-rendered or
   indexed.
 
+# Profile News tab (2026-10-04)
+
+- Creator profiles get a **News** tab (after Daily readings / Recent videos,
+  before About) listing the blog stories that name the creator, newest as a
+  wide card then a grid (`profile/CreatorNews.jsx`). It only appears when there
+  is at least one story.
+- The link is the `{{creators:platform/username:Name,...}}` line at the end of
+  each post; `blogService.getPostsForCreator` matches it (exact
+  platform/username, case-insensitive, no schema change). A new post shows up
+  on a profile as soon as it is published with that tag. Older untagged posts
+  were backfilled by appending the line where one creator is clearly the
+  subject; roundups and generic industry posts are deliberately unlinked.
+- Story card colors, dates and the "New" window live in `src/lib/blogUi.js`,
+  shared with the Blog page.
+
 # ShinyPass (user levels, 2026-09-27)
 
 - Free yearly 1-99 track for signed-in users: `/pass`, public pages
