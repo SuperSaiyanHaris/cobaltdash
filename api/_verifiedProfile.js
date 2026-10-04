@@ -148,6 +148,18 @@ const FETCHERS = { youtube, twitch, kick, bluesky, mastodon, music, substack };
 export const VERIFIABLE_PLATFORMS = Object.keys(FETCHERS);
 
 /**
+ * Keep a reading only when it is a real number. A 0 or missing count is never
+ * stored as a stand-in for a failed fetch (Kick's paid subscribers are the one
+ * place 0 is a genuine value).
+ */
+export function cleanReading(platform, stats) {
+  const count = (v) => (v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Math.round(Number(v)));
+  const n = count(stats?.subscribers);
+  if (n === null || n < 0 || (n === 0 && platform !== 'kick')) return null;
+  return { subscribers: n, totalViews: count(stats.totalViews), totalPosts: count(stats.totalPosts) };
+}
+
+/**
  * Fetch the real profile for a creator from its platform.
  * Returns null when the account doesn't exist or doesn't match the id.
  * Throws on upstream/network errors (caller decides how to degrade).
@@ -157,20 +169,9 @@ export async function fetchVerifiedProfile(platform, ids) {
   if (!fetcher) return null;
   const p = await fetcher(ids);
   if (!p) return null;
-  // Keep a reading only when it is a real number. A 0 or missing count is
-  // never stored as a stand-in for a failed fetch (Kick's paid subs are the
-  // one place 0 is a genuine value).
-  const n = Number(p.stats?.subscribers);
-  const stats = Number.isFinite(n) && (n > 0 || (platform === 'kick' && n === 0))
-    ? {
-        subscribers: Math.round(n),
-        totalViews: Number.isFinite(Number(p.stats.totalViews)) && p.stats.totalViews !== null ? Math.round(Number(p.stats.totalViews)) : null,
-        totalPosts: Number.isFinite(Number(p.stats.totalPosts)) && p.stats.totalPosts !== null ? Math.round(Number(p.stats.totalPosts)) : null,
-      }
-    : null;
   return {
     ...p,
-    stats,
+    stats: cleanReading(platform, p.stats),
     platformId: String(p.platformId),
     username: clip(p.username, 200),
     displayName: clip(p.displayName, 200),

@@ -9,10 +9,14 @@ vi.mock('@supabase/supabase-js', () => ({
         _op: 'select',
         select() { return q; },
         eq() { return q; },
+        limit() { return q; },
         maybeSingle: async () => ({ data: db.existing }),
+        upsert(p, o) { q._op = 'upsert'; db.writes.push({ op: 'upsert', p, o }); return q; },
         single: async () => ({ data: { id: 'row', ...q._payload }, error: null }),
         update(p) { q._op = 'update'; q._payload = p; db.writes.push({ op: 'update', p }); return q; },
         insert(p) { q._op = 'insert'; q._payload = p; db.writes.push({ op: 'insert', p }); return q; },
+        // upsert is awaited directly (no .single()), so make the builder thenable
+        then(resolve, reject) { return Promise.resolve({ data: null, error: null }).then(resolve, reject); },
       };
       return q;
     },
@@ -54,7 +58,7 @@ describe('POST /api/update-creator', () => {
   });
 
   it('writes the platform\'s data, never the client\'s', async () => {
-    db.existing = { id: 'c1', updated_at: '2020-01-01T00:00:00Z' };
+    db.existing = { id: 'c1', updated_at: '2020-01-01T00:00:00Z', creator_stats: [{ id: 's1' }] };
     verified.mockResolvedValue({ platformId: 'UCX6OQ3DkcsbYNE6H8uQQuVA', username: 'mrbeast', displayName: 'MrBeast', profileImage: 'https://yt3.ggpht.com/a.jpg', description: 'real bio', country: 'US', category: null });
     await call({ creatorData: { platform: 'youtube', platformId: 'UCX6OQ3DkcsbYNE6H8uQQuVA', displayName: 'HACKED', description: 'SPAM', profileImage: 'https://evil.example/x.png' } });
     const w = db.writes[0].p;
@@ -65,17 +69,51 @@ describe('POST /api/update-creator', () => {
   });
 
   it('drops avatars from hosts outside the CDN allowlist', async () => {
-    db.existing = { id: 'c1', updated_at: '2020-01-01T00:00:00Z' };
+    db.existing = { id: 'c1', updated_at: '2020-01-01T00:00:00Z', creator_stats: [{ id: 's1' }] };
     verified.mockResolvedValue({ platformId: '1', username: 'u', displayName: 'U', profileImage: 'https://tracker.example/p.png', description: null });
     await call({ creatorData: { platform: 'twitch', platformId: '1', username: 'u' } });
     expect(db.writes[0].p).not.toHaveProperty('profile_image');
   });
 
   it('skips the platform call entirely for a recently refreshed row', async () => {
-    db.existing = { id: 'c1', updated_at: new Date().toISOString() };
+    db.existing = { id: 'c1', updated_at: new Date().toISOString(), creator_stats: [{ id: 's1' }] };
     const r = await call({ creatorData: { platform: 'youtube', platformId: 'UCX6OQ3DkcsbYNE6H8uQQuVA' } });
     expect(r.status).toBe(200);
     expect(verified).not.toHaveBeenCalled();
     expect(db.writes).toEqual([]);
+  });
+
+  // First reading: the count comes from the platform lookup, only for a creator
+  // that has none, and a missing or 0 count is never stored.
+  const PROFILE = { platformId: '1', username: 'u', displayName: 'U', profileImage: null, description: null, country: null, category: null };
+
+  it('saves the platform count as the first reading of a new creator', async () => {
+    verified.mockResolvedValue({ ...PROFILE, stats: { subscribers: 524000, totalViews: null, totalPosts: 0 } });
+    await call({ creatorData: { platform: 'twitch', platformId: '1', username: 'u' } });
+    const up = db.writes.find((w) => w.op === 'upsert');
+    expect(up.p).toMatchObject({ creator_id: 'row', subscribers: 524000, followers: 524000, total_posts: 0 });
+    expect(up.p.recorded_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(up.o).toMatchObject({ onConflict: 'creator_id,recorded_at', ignoreDuplicates: true });
+  });
+
+  it('gives an existing creator with no reading its first one', async () => {
+    db.existing = { id: 'c1', updated_at: new Date().toISOString() };
+    verified.mockResolvedValue({ ...PROFILE, stats: { subscribers: 1200, totalViews: null, totalPosts: null } });
+    await call({ creatorData: { platform: 'twitch', platformId: '1', username: 'u' } });
+    expect(verified).toHaveBeenCalled();
+    expect(db.writes.find((w) => w.op === 'upsert').p).toMatchObject({ creator_id: 'c1', subscribers: 1200 });
+  });
+
+  it('does not write a reading when the creator already has one', async () => {
+    db.existing = { id: 'c1', updated_at: '2020-01-01T00:00:00Z', creator_stats: [{ id: 's1' }] };
+    verified.mockResolvedValue({ ...PROFILE, stats: { subscribers: 1200, totalViews: null, totalPosts: null } });
+    await call({ creatorData: { platform: 'twitch', platformId: '1', username: 'u' } });
+    expect(db.writes.some((w) => w.op === 'upsert')).toBe(false);
+  });
+
+  it('never stores a missing or zero count as a reading', async () => {
+    verified.mockResolvedValue({ ...PROFILE, stats: null });
+    await call({ creatorData: { platform: 'twitch', platformId: '1', username: 'u' } });
+    expect(db.writes.some((w) => w.op === 'upsert')).toBe(false);
   });
 });
