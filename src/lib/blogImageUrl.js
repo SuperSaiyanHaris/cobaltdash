@@ -36,6 +36,12 @@ export function resizedBlogImageUrl(src, width, height) {
   if (height) {
     params.set('height', String(height));
     params.set('resize', 'cover');
+  } else {
+    // Width only: `contain` scales the cover down to that width and keeps its
+    // shape. Supabase's default (cover) with no height crops to width x the
+    // original height, which cut covers off (checked 2026-10-04: a 1600x900
+    // cover at width=800 came back 800x900; with contain, 800x450).
+    params.set('resize', 'contain');
   }
   params.set('quality', '75');
   return `${rendered}?${params.toString()}`;

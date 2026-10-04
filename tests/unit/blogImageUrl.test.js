@@ -6,12 +6,13 @@ import { resizedBlogImageUrl } from '../../src/lib/blogImageUrl.js';
 const SRC = 'https://abc.supabase.co/storage/v1/object/public/blog-images/cover-x.jpg';
 
 describe('resizedBlogImageUrl', () => {
-  it('width only: no server-side crop', () => {
+  it('width only: keeps the shape, no server-side crop', () => {
     const u = new URL(resizedBlogImageUrl(SRC, 800));
     expect(u.pathname).toContain('/storage/v1/render/image/public/blog-images/cover-x.jpg');
     expect(u.searchParams.get('width')).toBe('800');
     expect(u.searchParams.get('height')).toBeNull();
-    expect(u.searchParams.get('resize')).toBeNull();
+    // contain keeps the cover's shape; the default would crop to width x original height
+    expect(u.searchParams.get('resize')).toBe('contain');
     expect(u.searchParams.get('quality')).toBe('75');
   });
 
