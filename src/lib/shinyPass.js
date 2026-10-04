@@ -350,7 +350,9 @@ export function rollPack(packLevel, rnd, owned = new Set()) {
   let first = true;
   while (items.length < pack.items) {
     const better = items.length === pack.items - 1;
-    const pool = better ? SLOT_WEIGHTS.filter((e) => e.kind !== 'xp') : SLOT_WEIGHTS;
+    // The last slot is never plain XP, and neither is any slot of the level 99
+    // pack: you are already at the top, so XP would add nothing.
+    const pool = better || packLevel >= MAX_LEVEL ? SLOT_WEIGHTS.filter((e) => e.kind !== 'xp') : SLOT_WEIGHTS;
     const isFirst = first;
     const kind = first ? 'set' : weighted(pool, rnd).kind;
     first = false;

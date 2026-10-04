@@ -431,6 +431,14 @@ export default function TrackView({ me, state, demo = false, onOpenPack, onViewP
   const nextReward = firstReady ? TRACK[firstReady] : TRACK[Math.min(MAX_LEVEL, p.level + 1)];
   const [chapter, setChapter] = useState(chapterOf(nextReward.level));
   const [selected, setSelected] = useState(nextReward.level);
+  // The first paint can come from the last saved state; when the real state
+  // lands, or you level up or open a pack, jump to what is next.
+  const [seenNext, setSeenNext] = useState(nextReward.level);
+  if (seenNext !== nextReward.level) {
+    setSeenNext(nextReward.level);
+    setChapter(chapterOf(nextReward.level));
+    setSelected(nextReward.level);
+  }
   const [sheet, setSheet] = useState(null);
   const eq = p.equipped || {};
 

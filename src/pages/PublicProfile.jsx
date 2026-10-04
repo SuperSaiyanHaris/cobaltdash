@@ -6,6 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Loader2, Lock, Flame, MessageCircle, Share2, Check, ArrowUp } from 'lucide-react';
 import SEO from '../components/SEO';
 import { getPublicProfile } from '../services/progressService';
+import { useAuth } from '../contexts/AuthContext';
 import { CARD_RADIUS, BannerSvg } from '../components/pass/PassArt';
 import FlipCard from '../components/pass/FlipCard';
 import { BadgePill } from '../components/pass/BadgeChip';
@@ -47,6 +48,7 @@ export default function PublicProfile() {
   const { handle } = useParams();
   const [data, setData] = useState(undefined);
   const [copied, setCopied] = useState(false);
+  const { isAuthenticated } = useAuth();
   useArenaFont();
 
   useEffect(() => {
@@ -129,7 +131,7 @@ export default function PublicProfile() {
               <button onClick={share} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 text-sm font-bold transition-colors">
                 {copied ? <><Check className="w-4 h-4" /> Link copied</> : <><Share2 className="w-4 h-4" /> Share</>}
               </button>
-              <Link to="/pass" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/25 hover:border-white/60 text-white text-sm font-bold transition-colors">Start your free ShinyPass</Link>
+              <Link to="/pass" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/25 hover:border-white/60 text-white text-sm font-bold transition-colors">{isAuthenticated ? 'Open your ShinyPass' : 'Start your free ShinyPass'}</Link>
             </div>
           </div>
         </div>
