@@ -4,7 +4,7 @@
 // looks the same here as it does on /blog.
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
-import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../../lib/blogImageUrl';
+import BlogThumb from '../BlogThumb';
 import { getCatColors, isNewPost, formatPostDate } from '../../lib/blogUi';
 
 function Pill({ category }) {
@@ -47,14 +47,7 @@ export default function CreatorNews({ posts, name }) {
         <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
           <div className="md:flex">
             {lead.image && (
-              <div className="md:w-[46%] aspect-[16/9] md:aspect-auto md:min-h-[240px] overflow-hidden bg-neutral-100 flex-shrink-0">
-                <img
-                  src={resizedBlogImageUrl(lead.image, 1200, 675)}
-                  alt={lead.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <BlogThumb src={lead.image} alt={lead.title} width={1200} className="md:w-[46%] aspect-[16/9] md:aspect-auto md:min-h-[240px] flex-shrink-0" />
             )}
             <div className="p-5 sm:p-7 flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2 mb-3">
@@ -80,13 +73,8 @@ export default function CreatorNews({ posts, name }) {
             <Link key={post.slug} to={`/blog/${post.slug}`} className="group">
               <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200 h-full flex flex-col">
                 {post.image && (
-                  <div className="relative aspect-[16/9] bg-neutral-100 overflow-hidden">
-                    <img
-                      src={resizedBlogImageUrl(post.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
-                      alt={post.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative">
+                    <BlogThumb src={post.image} alt={post.title} width={800} className="aspect-[16/9]" />
                     {isNewPost(post.published_at) && (
                       <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white shadow">New</span>
                     )}

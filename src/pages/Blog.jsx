@@ -4,7 +4,7 @@ import { Calendar, Clock, Loader2, BookOpen, Filter, X, Search } from 'lucide-re
 import SEO from '../components/SEO';
 import NewsletterSignup from '../components/NewsletterSignup';
 import { getAllPosts, getAllCategories } from '../services/blogService';
-import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
+import BlogThumb from '../components/BlogThumb';
 import PageHero from '../components/PageHero';
 import { getCatColors, isNewPost, formatPostDate as formatDate } from '../lib/blogUi';
 
@@ -235,13 +235,7 @@ export default function Blog() {
                   <Link to={`/blog/${featuredPost.slug}`} className="block mb-8 group">
                     <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
                       <div className="md:flex md:items-center">
-                        <div className="md:w-1/2 aspect-[16/9] overflow-hidden bg-neutral-100 flex-shrink-0">
-                          <img
-                            src={resizedBlogImageUrl(featuredPost.image, 1200, 675)}
-                            alt={featuredPost.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                        <BlogThumb src={featuredPost.image} alt={featuredPost.title} width={1200} priority className="md:w-1/2 aspect-[16/9] flex-shrink-0" />
                         <div className="md:w-1/2 p-8 flex flex-col justify-center">
                           <div className="flex items-center gap-2 mb-3">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getCatColors(featuredPost.category).pill}`}>
@@ -283,12 +277,7 @@ export default function Blog() {
                       <Link key={post.slug} to={`/blog/${post.slug}`} className="group">
                         <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200 h-full flex flex-col">
                           <div className="relative">
-                            <img
-                              src={resizedBlogImageUrl(post.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
-                              alt={post.title}
-                              loading="lazy"
-                              className="w-full h-48 object-cover"
-                            />
+                            <BlogThumb src={post.image} alt={post.title} width={800} className="aspect-[16/9]" />
                             {isNewPost(post.published_at) && (
                               <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white shadow">
                                 New

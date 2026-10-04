@@ -19,19 +19,24 @@ const SUPABASE_STORAGE_RENDER = '/storage/v1/render/image/public/';
 /**
  * @param {string} src     original Supabase Storage public object URL
  * @param {number} width   desired rendered width in device pixels
- * @param {number} height  desired rendered height in device pixels
+ * @param {number} [height] desired rendered height in device pixels. Omit it to
+ *                         keep the cover's own shape (width only); passing it
+ *                         crops to that box on the server, which cut off covers
+ *                         that are not 16:9. BlogThumb uses width only.
  * @returns {string}       a resized-on-the-fly URL, or `src` unchanged
  */
 export function resizedBlogImageUrl(src, width, height) {
-  if (!src || typeof src !== 'string' || !width || !height) return src;
+  if (!src || typeof src !== 'string' || !width) return src;
   if (!src.includes(SUPABASE_STORAGE_OBJECT)) return src;
 
   const [base, query] = src.split('?');
   const rendered = base.replace(SUPABASE_STORAGE_OBJECT, SUPABASE_STORAGE_RENDER);
   const params = new URLSearchParams(query || '');
   params.set('width', String(width));
-  params.set('height', String(height));
-  params.set('resize', 'cover');
+  if (height) {
+    params.set('height', String(height));
+    params.set('resize', 'cover');
+  }
   params.set('quality', '75');
   return `${rendered}?${params.toString()}`;
 }

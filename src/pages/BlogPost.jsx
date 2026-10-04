@@ -8,7 +8,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import ShareButtons from '../components/ShareButtons';
 import BlogContent from '../components/BlogContent';
 import { getPostBySlug, getRelatedPosts } from '../services/blogService';
-import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
+import BlogThumb from '../components/BlogThumb';
 
 // middleware.js embeds a <script id="__BLOG_DATA__"> alongside the visible
 // server-rendered article so this component's very first render already has
@@ -163,11 +163,7 @@ export default function BlogPost() {
 
         <div className="max-w-4xl mx-auto px-4 pt-8 relative z-10">
           {post.image && (
-            <img
-              src={post.image}
-              alt={post.title}
-              className="w-full aspect-[16/9] object-cover rounded-2xl border border-neutral-200 mb-6"
-            />
+            <BlogThumb src={post.image} alt={post.title} width={1400} priority className="aspect-[16/9] rounded-2xl border border-neutral-200 mb-6" />
           )}
           <article className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
             <div className="p-5 sm:p-8 md:p-12">
@@ -217,12 +213,7 @@ export default function BlogPost() {
                     className="group"
                   >
                     <article className="bg-white rounded-xl border border-neutral-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden hover:border-neutral-300 transition-colors duration-200">
-                      <img
-                        src={resizedBlogImageUrl(related.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
-                        alt={related.title}
-                        loading="lazy"
-                        className="w-full h-40 object-cover"
-                      />
+                      <BlogThumb src={related.image} alt={related.title} width={800} className="aspect-[16/9]" />
                       <div className="p-6">
                         <h3 className="font-bold text-neutral-900 group-hover:text-indigo-600 transition-colors mb-2">
                           {related.title}

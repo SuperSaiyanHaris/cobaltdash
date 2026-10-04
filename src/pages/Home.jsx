@@ -26,7 +26,7 @@ import HomeProductBento from '../components/HomeProductBento';
 import { CARD_PLATFORMS } from '../lib/badgeCard';
 import { PLATFORM_COUNT, PLATFORM_ACCENTS, isActivePlatform } from '../lib/constants';
 import { isMac as IS_MAC } from '../lib/platform';
-import { resizedBlogImageUrl, BLOG_CARD_TARGET } from '../lib/blogImageUrl';
+import BlogThumb from '../components/BlogThumb';
 
 const PLATFORMS = [
   { id: 'youtube',  name: 'YouTube',  Icon: YouTubeIcon,  accent: PLATFORM_ACCENTS.youtube },
@@ -379,18 +379,20 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
         <div className="grid lg:grid-cols-[1.35fr,1fr] gap-5">
           <Link
             to={`/blog/${lead.slug}`}
-            className="group relative block overflow-hidden rounded-3xl bg-neutral-900 aspect-[4/5] sm:aspect-[16/10] lg:aspect-auto lg:min-h-[440px]"
+            className="group relative block overflow-hidden rounded-3xl bg-neutral-900 sm:aspect-[16/10] lg:aspect-auto lg:min-h-[440px]"
           >
-            {lead.image && (
-              <img
-                src={resizedBlogImageUrl(lead.image, 1200, 675)}
-                alt=""
-                loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/0" />
-            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+            {/* Phones: the cover sits whole on top and the text below it (a tall
+                frame used to crop a 16:9 cover to a strip). From sm up: the cover
+                fills the card with the text over it. */}
+            <BlogThumb
+              src={lead.image}
+              alt=""
+              width={1200}
+              className="aspect-[16/9] sm:absolute sm:inset-0 sm:aspect-auto bg-neutral-900"
+              imgClassName="group-hover:scale-[1.04] transition-transform duration-700"
+            />
+            <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/0" />
+            <div className="relative p-5 sm:p-8 sm:absolute sm:inset-x-0 sm:bottom-0">
               {lead.category && (
                 <span className="inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white bg-white/15 backdrop-blur border border-white/20 rounded-full mb-3">
                   {lead.category}
@@ -410,14 +412,13 @@ const BlogTeaser = memo(function BlogTeaser({ posts }) {
                 className="group flex items-center gap-4 p-3 sm:p-4 bg-white border border-neutral-200/80 rounded-2xl hover:border-neutral-300 hover:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.18)] transition-[border-color,box-shadow]"
               >
                 {post.image && (
-                  <div className="w-32 sm:w-40 flex-shrink-0 aspect-[16/10] rounded-xl overflow-hidden bg-neutral-100">
-                    <img
-                      src={resizedBlogImageUrl(post.image, BLOG_CARD_TARGET.width, BLOG_CARD_TARGET.height)}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
+                  <BlogThumb
+                    src={post.image}
+                    alt=""
+                    width={800}
+                    className="w-32 sm:w-40 flex-shrink-0 aspect-[16/9] rounded-xl"
+                    imgClassName="group-hover:scale-105 transition-transform duration-500"
+                  />
                 )}
                 <div className="min-w-0">
                   {post.category && <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">{post.category}</p>}
