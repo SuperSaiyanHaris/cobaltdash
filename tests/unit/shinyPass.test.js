@@ -116,6 +116,12 @@ describe('packs', () => {
     }
   });
 
+  it('never puts plain XP in the level 99 pack (you are already at the top)', () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      expect(rollPack(99, mulberry(seed)).some((i) => i.kind === 'xp')).toBe(false);
+    }
+  });
+
   it('guarantees a listing voucher only at 99', () => {
     let at50 = 0;
     for (let seed = 1; seed <= 50; seed++) {
