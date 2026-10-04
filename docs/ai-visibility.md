@@ -30,6 +30,11 @@ Tools and intent (where a site recommendation is the answer):
 11. Is there a site where I can compare two creators' stats side by side?
 12. How much do Kick streamers make from subscriptions?
 
+## Also read once a month (direct measurements)
+
+- Bing Webmaster Tools, "AI Performance" (https://www.bing.com/webmasters/aiperformance?siteUrl=https%3A%2F%2Fshinypull.com%2F): total citations and cited pages from Microsoft Copilot and partners, 7 D / 30 D / 3 M. Verified 2026-10-04 (meta tag in index.html); baseline 0 citations. Needs the owner's Bing sign-in in the browser; skip it if signed out.
+- Same site, "Search Performance" for Bing impressions and clicks, and Google Search Console Performance for the same.
+
 ## Scoring
 - cited = a shinypull.com link appears in the answer or its sources.
 - mentioned = the name appears with no link.
