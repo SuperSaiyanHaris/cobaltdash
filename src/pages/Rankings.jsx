@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Eye, Clock, Trophy, ChartNoAxesColumnIncreasing, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Megaphone, ArrowRight, Search, List, LayoutGrid } from 'lucide-react';
@@ -17,6 +17,7 @@ import Sparkline from '../components/Sparkline';
 import { getRankedCreators, getFeaturedListings, getSparklineData, getPlatformCreatorCount } from '../services/creatorService';
 import { getHubsByPlatform } from '../lib/hubs';
 import SEO from '../components/SEO';
+import PortalMenu from '../components/PortalMenu';
 import StructuredData from '../components/StructuredData';
 import { analytics } from '../lib/analytics';
 import { formatNumber } from '../lib/utils';
@@ -108,6 +109,8 @@ function NavIcon({ Icon, id, dark, className }) {
 
 function PlatformNav({ current, onSelect, dark = false }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const closeMenu = useCallback(() => setOpen(false), []);
   const activeId = current === 'all' ? null : current;
   const active = platforms.find((p) => p.id === activeId);
   const ActiveIcon = active?.icon;
@@ -123,6 +126,7 @@ function PlatformNav({ current, onSelect, dark = false }) {
       {/* Mobile: dropdown */}
       <div className="relative lg:hidden">
         <button
+          ref={btnRef}
           type="button"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
@@ -135,10 +139,9 @@ function PlatformNav({ current, onSelect, dark = false }) {
           </span>
           <ChevronDown className={`w-4 h-4 flex-shrink-0 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-            <div role="menu" className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-neutral-200 rounded-lg shadow-xl z-40 overflow-hidden max-h-[60vh] overflow-y-auto">
+        {/* In <body>, not here: the dark band around this button clips anything
+            that hangs below it (raised 2026-10-04: the list was invisible). */}
+        <PortalMenu anchorRef={btnRef} open={open} onClose={closeMenu} className="bg-white border border-neutral-200 rounded-lg shadow-xl">
               {items.map((item) => {
                 const Icon = item.icon;
                 const isActive = (item.id === 'all' && !activeId) || item.id === activeId;
@@ -172,9 +175,7 @@ function PlatformNav({ current, onSelect, dark = false }) {
                   </Link>
                 );
               })}
-            </div>
-          </>
-        )}
+        </PortalMenu>
       </div>
 
       {/* Desktop: pill rail */}
