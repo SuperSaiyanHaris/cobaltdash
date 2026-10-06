@@ -177,8 +177,21 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 
 // The whole job: the leaderboard sweep (about 3 minutes at a polite pace) and
 // then the writes. Returns a summary (it also goes to the function logs).
-async function run(): Promise<Record<string, unknown>> {
+async function run(force = false): Promise<Record<string, unknown>> {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
+  // A second scheduled attempt exists in case the first one produced nothing
+  // (2026-10-06: the 08:00 UTC runs on Oct 5 and 6 wrote no rows, a manual run
+  // minutes later wrote 2,220). If today already has most readings, stop here.
+  if (!force) {
+    const day = todayNY();
+    const [{ count: have }, { count: total }] = await Promise.all([
+      supabase.from("creators").select("id, creator_stats!inner(recorded_at)", { count: "exact", head: true })
+        .eq("platform", "substack").eq("creator_stats.recorded_at", day),
+      supabase.from("creators").select("id", { count: "exact", head: true }).eq("platform", "substack"),
+    ]);
+    if (have && total && have / total >= 0.8) return { ok: true, skipped: "today already collected", have, total };
+  }
 
   const { byPlatformId, bySubdomain, stats: sweep, seconds: sweepSeconds } = await buildRanking();
   if (byPlatformId.size === 0) {
@@ -294,7 +307,8 @@ Deno.serve((req) => {
   // (allowed up to the 400s wall clock) and this replies at once; the summary
   // goes to the function logs. ?wait=1 runs it inline instead, for a manual
   // check with the response in hand (only useful if it finishes inside 150s).
-  const task = run().then((r) => { console.log("collect-substack finished", JSON.stringify(r)); return r; });
+  const force = new URL(req.url).searchParams.get("force") === "1";
+  const task = run(force).then((r) => { console.log("collect-substack finished", JSON.stringify(r)); return r; });
   if (new URL(req.url).searchParams.get("wait") === "1") {
     return task.then((r) => new Response(JSON.stringify(r), { headers: JSON_HEADERS }));
   }
