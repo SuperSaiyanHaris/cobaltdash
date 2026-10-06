@@ -117,7 +117,12 @@ async function fetchPage(catId: number, page: number, stats: SweepStats): Promis
   return null;
 }
 
-async function buildRanking() {
+// Called after every finished category with the pubs seen so far, so readings
+// are saved as the sweep goes. The function has a CPU budget (the logs end
+// with "CPU Time exceeded" about 3 minutes in) and the sweep sits right at it:
+// on 2026-10-05 and 06 it was cut off before anything was written.
+type Seen = Map<string, { pub: any; bestPosition: number }>;
+async function buildRanking(onCategory?: (seen: Seen) => Promise<void>) {
   const stats: SweepStats = { requests: 0, retries: 0, complete: [], incomplete: [] };
   const started = Date.now();
   const byId = new Map<string, { pub: any; bestPosition: number }>();
@@ -145,6 +150,7 @@ async function buildRanking() {
     }
     // Complete = read as deep as we aim to, or the list ended first.
     (reachedEnd || pagesRead >= PAGES_PER_CATEGORY ? stats.complete : stats.incomplete).push(cat.slug);
+    if (onCategory) await onCategory(byId);
   }
   const ranked = [...byId.values()].map((e) => ({ ...e, subs: subsFor(e.pub) }))
     .sort((a, b) => (b.subs - a.subs) || (a.bestPosition - b.bestPosition));
@@ -193,7 +199,28 @@ async function run(force = false): Promise<Record<string, unknown>> {
     if (have && total && have / total >= 0.8) return { ok: true, skipped: "today already collected", have, total };
   }
 
-  const { byPlatformId, bySubdomain, stats: sweep, seconds: sweepSeconds } = await buildRanking();
+  const tracked = await fetchAllSubstackCreators(supabase);
+  const creatorIdByPlatformId = new Map(tracked.map((c) => [String(c.platform_id), c.id]));
+  const today = todayNY();
+  const savedIds = new Set<string>();
+  let written = 0;
+  const saveSeen = async (seen: Seen) => {
+    const batch: any[] = [];
+    for (const [pid, e] of seen) {
+      const cid = creatorIdByPlatformId.get(pid);
+      const subs = subsFor(e.pub);
+      if (!cid || savedIds.has(pid) || subs <= 0) continue;
+      savedIds.add(pid);
+      batch.push({ creator_id: cid, recorded_at: today, subscribers: subs, followers: subs, total_views: null, total_posts: null });
+    }
+    for (let i = 0; i < batch.length; i += 500) {
+      const chunk = batch.slice(i, i + 500);
+      const { error } = await supabase.from("creator_stats").upsert(chunk, { onConflict: "creator_id,recorded_at" });
+      if (!error) written += chunk.length;
+    }
+  };
+
+  const { byPlatformId, bySubdomain, stats: sweep, seconds: sweepSeconds } = await buildRanking(saveSeen);
   if (byPlatformId.size === 0) {
     return { ok: false, error: "leaderboard returned 0", sweep };
   }
@@ -202,31 +229,18 @@ async function run(force = false): Promise<Record<string, unknown>> {
   // as "not on Substack".
   const sweepComplete = sweep.incomplete.length === 0;
   if (!sweepComplete) console.error(`incomplete sweep, categories not finished: ${sweep.incomplete.join(", ")}`);
-  const today = todayNY();
 
-  // ---- 1. Stats + rank for already-tracked creators (existing behavior) ----
-  const tracked = await fetchAllSubstackCreators(supabase);
-  const trackedIds = new Set(tracked.map((c) => c.platform_id));
-  const stats: any[] = [];
+  // ---- 1. Leaderboard rank for already-tracked creators ----
+  // (Their readings were saved during the sweep.) One call for all of them;
+  // the old one-request-per-creator loop was the heaviest part of the run.
+  const trackedIds = new Set(tracked.map((c) => String(c.platform_id)));
   const rankUpdates: { id: string; leaderboard_rank: number }[] = [];
   for (const c of tracked) {
     const entry = byPlatformId.get(String(c.platform_id));
-    if (entry && entry.subs > 0) {
-      stats.push({ creator_id: c.id, recorded_at: today, subscribers: entry.subs, followers: entry.subs, total_views: null, total_posts: null });
-      rankUpdates.push({ id: c.id, leaderboard_rank: entry.globalRank });
-    }
+    if (entry && entry.subs > 0) rankUpdates.push({ id: c.id, leaderboard_rank: entry.globalRank });
   }
-  let written = 0;
-  for (let i = 0; i < stats.length; i += 500) {
-    const batch = stats.slice(i, i + 500);
-    const { error } = await supabase.from("creator_stats").upsert(batch, { onConflict: "creator_id,recorded_at" });
-    if (!error) written += batch.length;
-  }
-  for (let i = 0; i < rankUpdates.length; i += 200) {
-    await Promise.all(rankUpdates.slice(i, i + 200).map((u) =>
-      supabase.from("creators").update({ leaderboard_rank: u.leaderboard_rank }).eq("id", u.id)
-    ));
-  }
+  const { error: rankErr } = await supabase.rpc("set_substack_ranks", { p_ranks: rankUpdates });
+  if (rankErr) console.error(`set_substack_ranks failed: ${rankErr.message}`);
 
   // ---- 2. Discovery: add ranked pubs we don't track yet (capped per run) ----
   let discovered = 0;
