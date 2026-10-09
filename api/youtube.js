@@ -2,8 +2,16 @@
 // Keeps API key secure on server-side
 
 import { guardProxy, allowExpensive, cdnCache } from './_guard.js';
+import { spendBudget } from './_budget.js';
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+// Daily quota is 10,000 units and the collection job needs about 1,000 of it.
+// A search costs 100 units, so the whole site gets at most 40 a day; past that
+// callers get the same "unavailable" answer as a real quota error and fall
+// back to the database search.
+const SEARCH_UNITS = 100;
+const SEARCH_DAILY_CAP = 4000;
 
 // Thrown specifically for quota/rate-limit exhaustion so the handler can
 // respond with a clean, generic message instead of Google's raw error body
@@ -42,6 +50,10 @@ function toCleanYouTubeError(status, rawBody) {
 async function searchChannels(query, maxResults = 25) {
   if (!YOUTUBE_API_KEY) {
     throw new Error('Missing YouTube API key');
+  }
+
+  if (!(await spendBudget('youtube-search', SEARCH_UNITS, SEARCH_DAILY_CAP))) {
+    throw new YouTubeUnavailableError('YouTube search is temporarily unavailable.');
   }
 
   // Clamp maxResults between 1 and 50 (YouTube API limit)
@@ -308,7 +320,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Missing query parameter' });
         }
         // 100 quota units per call (the whole daily quota is 10,000).
-        if (!allowExpensive(req, res, 'youtube-search', 8)) return;
+        if (!allowExpensive(req, res, 'youtube-search', 3)) return;
         result = await searchChannels(String(query).slice(0, 100), Math.min(parseInt(maxResults, 10) || 25, 25));
         cdnCache(res, 3600);
         break;
@@ -327,7 +339,7 @@ export default async function handler(req, res) {
         }
         // A handle miss falls back to a 100-unit search, so this shares a
         // tighter budget than plain id lookups.
-        if (!allowExpensive(req, res, 'youtube-lookup', 20)) return;
+        if (!allowExpensive(req, res, 'youtube-lookup', 10)) return;
         result = await getChannelByUsername(String(username).slice(0, 100));
         cdnCache(res, 120);
         break;

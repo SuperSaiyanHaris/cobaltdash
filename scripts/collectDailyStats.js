@@ -528,9 +528,12 @@ async function collectDailyStats() {
   };
 
   // ========== YOUTUBE (batch by 50) ==========
+  let youtubeFailedBatches = 0;
+  let youtubeBatchCount = 0;
   if (youtubeCreators.length > 0 && YOUTUBE_API_KEY) {
     console.log('📺 Processing YouTube creators...');
     const youtubeBatches = chunk(youtubeCreators, YOUTUBE_BATCH_SIZE);
+    youtubeBatchCount = youtubeBatches.length;
     console.log(`   ${youtubeBatches.length} batch(es) of up to ${YOUTUBE_BATCH_SIZE} channels\n`);
 
     for (let i = 0; i < youtubeBatches.length; i++) {
@@ -572,6 +575,7 @@ async function collectDailyStats() {
           }
         }
       } catch (error) {
+        youtubeFailedBatches++;
         console.error(`   ❌ Batch ${i + 1} failed: ${error.message}`);
         errorCount += batch.length;
       }
@@ -584,6 +588,12 @@ async function collectDailyStats() {
   }
 
   await flush('YouTube');
+  // Per-batch failures used to leave the job green. When the whole sweep fails
+  // (daily API quota spent, bad key) nothing was collected, so say so loudly.
+  if (youtubeBatchCount > 0 && youtubeFailedBatches === youtubeBatchCount) {
+    console.error(`❌ Every YouTube batch failed (${youtubeBatchCount}/${youtubeBatchCount}): nothing was collected for YouTube`);
+    dbErrors++;
+  }
 
   // ========== TWITCH (batch user lookup, parallel followers) ==========
   if (twitchCreators.length > 0 && TWITCH_CLIENT_ID && TWITCH_CLIENT_SECRET) {

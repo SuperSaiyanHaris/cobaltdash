@@ -33,6 +33,15 @@ describe('/api/youtube proxy', () => {
   it('only allows GET', async () => {
     expect((await call(youtube, { method: 'POST', headers: { origin: 'https://shinypull.com' } })).status).toBe(405);
   });
+  it('refuses searches without calling Google when the site-wide daily budget is spent', async () => {
+    const headers = { 'sec-fetch-site': 'same-origin', 'x-forwarded-for': '10.8.8.8' };
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ items: [] })));
+    spy.mockClear();
+    const r = await call(youtube, { headers, query: { action: 'search', query: 'budgetcheck' } });
+    expect(r.status).toBe(503);
+    expect(r.body.quotaExceeded).toBe(true);
+    expect(spy.mock.calls.filter(([u]) => String(u).includes('googleapis.com')).length).toBe(0);
+  });
   it('caps searches per visitor (100 quota units each)', async () => {
     const headers = { 'sec-fetch-site': 'same-origin', 'x-forwarded-for': '10.9.9.9' };
     const statuses = [];
