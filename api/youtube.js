@@ -7,11 +7,15 @@ import { spendBudget } from './_budget.js';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // Daily quota is 10,000 units and the collection job needs about 1,000 of it.
-// A search costs 100 units, so the whole site gets at most 40 a day; past that
+// A search costs 100 units, so the whole site gets at most 60 a day (about 50 a day is normal use); past that
 // callers get the same "unavailable" answer as a real quota error and fall
 // back to the database search.
 const SEARCH_UNITS = 100;
-const SEARCH_DAILY_CAP = 4000;
+const SEARCH_DAILY_CAP = 6000;
+// Everything else (channel, handle and recent-video lookups) is 1-2 units a
+// call, but a crawler loading profile pages made ~16,000 of them on Oct 6-7
+// and used up the day's quota. About 1,000 a day is normal.
+const LOOKUP_DAILY_CAP = 4000;
 
 // Thrown specifically for quota/rate-limit exhaustion so the handler can
 // respond with a clean, generic message instead of Google's raw error body
@@ -313,6 +317,11 @@ export default async function handler(req, res) {
     }
 
     let result;
+
+    if (action !== 'search' && ['getChannel', 'getChannelByUsername', 'getRecentVideos'].includes(action)
+      && !(await spendBudget('youtube-lookup', 1, LOOKUP_DAILY_CAP))) {
+      return res.status(503).json({ error: 'YouTube lookups are temporarily unavailable.', quotaExceeded: true });
+    }
 
     switch (action) {
       case 'search':
