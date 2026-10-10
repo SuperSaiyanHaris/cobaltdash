@@ -235,9 +235,12 @@ Deno.serve(async (req) => {
     if (live) {
       samples.push({ session_id: s.id, viewer_count: live.viewerCount, game_name: live.gameName });
       if (live.viewerCount > (s.peak_viewers || 0)) peakBumps.push({ id: s.id, peak_viewers: live.viewerCount });
-    } else if (kickOk) {
-      toFinalize.push(s.id);
     }
+    // No finalize on a Kick miss. Kick's channels endpoint reports a channel as
+    // not live a minute after the sweep saw it live (probed 2026-10-10: 50 of
+    // 105 just-seen-live channels), so closing on one reading cut sessions
+    // short and the sweep kept reopening them. The kick-eventsub webhook, the
+    // sweep and the hourly abandoned-session job close Kick sessions instead.
   }
 
   let samplesRecorded = 0;
