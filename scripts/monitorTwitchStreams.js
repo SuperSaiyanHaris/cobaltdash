@@ -32,8 +32,13 @@ import { pathToFileURL } from 'url';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const TWITCH_CLIENT_ID = process.env.VITE_TWITCH_CLIENT_ID || process.env.TWITCH_CLIENT_ID;
-const TWITCH_CLIENT_SECRET = process.env.VITE_TWITCH_CLIENT_SECRET || process.env.TWITCH_CLIENT_SECRET;
+// Plain names first. On Vercel only the plain pair is a matching ID and secret
+// (the site's Twitch proxy uses it); the VITE_ ID there is from a different
+// app, so preferring it made every token request fail with 400 and stopped
+// all Twitch sessions outside the EventSub channels from 2026-09-25. GitHub
+// Actions only sets the VITE_ names, so they stay as the fallback.
+const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || process.env.VITE_TWITCH_CLIENT_ID;
+const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || process.env.VITE_TWITCH_CLIENT_SECRET;
 
 const BATCH_SIZE = 100;   // Twitch allows up to 100 user IDs per /streams request
 const CONCURRENCY = 12;   // parallel /streams requests, well inside the rate limit

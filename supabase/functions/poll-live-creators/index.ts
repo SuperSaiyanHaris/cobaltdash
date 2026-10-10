@@ -132,6 +132,28 @@ Deno.serve(async (req) => {
       if (data.length < PAGE) break;
     }
   }
+  // Only creators with an EventSub webhook belong here (see the header). The
+  // full-roster sweeps in scripts/monitor*Streams.js own every other creator's
+  // sessions. Polling those too, as this did from 2026-09-20, wrote ~3.3M
+  // one-minute samples a day, and on Kick it closed about half of the sessions
+  // the sweep had just opened every minute (they were live), so the sweep
+  // reopened ~300 of them on each run.
+  const subscribed = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb
+      .from("eventsub_subscriptions")
+      .select("creator_id")
+      .order("id")
+      .range(from, from + 999);
+    if (error) {
+      return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500 });
+    }
+    for (const r of data) subscribed.add(r.creator_id);
+    if (data.length < 1000) break;
+  }
+  const allOpen = openSessions.splice(0, openSessions.length);
+  for (const s of allOpen) if (subscribed.has(s.creator_id)) openSessions.push(s);
+
   if (!openSessions.length) {
     return new Response(JSON.stringify({ ok: true, open: 0, samples: 0, finalized: 0 }), {
       headers: { "Content-Type": "application/json" },
