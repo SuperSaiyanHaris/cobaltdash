@@ -574,8 +574,7 @@ function RankingsOverview() {
                   <motion.div
                     key={platform.id}
                     initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-60px' }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                     className={`${CARD} overflow-hidden hover:border-neutral-300 transition-colors`}
                   >
@@ -1291,14 +1290,16 @@ function PlatformRankings({ urlPlatform }) {
                 );
               }
 
+              // Rows animate in on mount, not when a scroll observer reports them in
+              // view. The observer version left rows stuck at opacity 0 (blank rows 1-4
+              // until a refresh) when the page was reached by a client-side navigation.
               return (
                 <MotionLink
                   key={creator.id}
                   to={`/${creator.platform}/${creator.username}`}
                   viewTransition
                   initial={{ opacity: 0, y: 8 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                   className="relative grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-neutral-100 hover:bg-neutral-50 transition-colors group"
                 >
