@@ -232,7 +232,7 @@ async function run(force = false, part = 0, parts = 1): Promise<Record<string, u
   // it may simply be in a category we didn't read, so don't treat "not seen"
   // as "not on Substack".
   const sweepComplete = !sliced && sweep.incomplete.length === 0;
-  if (!sweepComplete) console.error(`incomplete sweep, categories not finished: ${sweep.incomplete.join(", ")}`);
+  if (sweep.incomplete.length) console.error(`incomplete sweep, categories not finished: ${sweep.incomplete.join(", ")}`);
 
   // ---- 1. Leaderboard rank for already-tracked creators ----
   // (Their readings were saved during the sweep.) One call for all of them;
