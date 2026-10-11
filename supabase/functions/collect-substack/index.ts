@@ -122,15 +122,11 @@ async function fetchPage(catId: number, page: number, stats: SweepStats): Promis
 // with "CPU Time exceeded" about 3 minutes in) and the sweep sits right at it:
 // on 2026-10-05 and 06 it was cut off before anything was written.
 type Seen = Map<string, { pub: any; bestPosition: number }>;
-async function buildRanking(onCategory?: (seen: Seen) => Promise<void>) {
+async function buildRanking(categories: typeof CATEGORIES, onCategory?: (seen: Seen) => Promise<void>) {
   const stats: SweepStats = { requests: 0, retries: 0, complete: [], incomplete: [] };
   const started = Date.now();
   const byId = new Map<string, { pub: any; bestPosition: number }>();
-  // Start the sweep at a different category each day, so if the time budget
-  // ever runs out it is not always the same categories that get left out.
-  const offset = Math.floor(Date.now() / 86_400_000) % CATEGORIES.length;
-  const order = [...CATEGORIES.slice(offset), ...CATEGORIES.slice(0, offset)];
-  for (const cat of order) {
+  for (const cat of categories) {
     let pagesRead = 0;
     let reachedEnd = false;
     for (let page = 0; page < PAGES_PER_CATEGORY; page++) {
@@ -183,13 +179,21 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 
 // The whole job: the leaderboard sweep (about 3 minutes at a polite pace) and
 // then the writes. Returns a summary (it also goes to the function logs).
-async function run(force = false): Promise<Record<string, unknown>> {
+async function run(force = false, part = 0, parts = 1): Promise<Record<string, unknown>> {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+  // The whole sweep in one invocation outgrew the function's CPU budget (it was
+  // killed ~3 minutes in on 2026-10-09..11, so fewer pubs got a reading each
+  // day: 2,327, then 2,050, then 1,521 of ~2,560). The cron now calls it once
+  // per slice (?part=1..3 of ?parts=3): every category is read in one slice or
+  // another, each invocation does a third of the work, and the last slice also
+  // sets the global ranks from the day's readings.
+  const sliced = parts > 1 && part >= 1 && part <= parts;
+  const categories = sliced ? CATEGORIES.filter((_, i) => i % parts === part - 1) : CATEGORIES;
 
   // A second scheduled attempt exists in case the first one produced nothing
   // (2026-10-06: the 08:00 UTC runs on Oct 5 and 6 wrote no rows, a manual run
   // minutes later wrote 2,220). If today already has most readings, stop here.
-  if (!force) {
+  if (!force && !sliced) {
     const day = todayNY();
     const [{ count: have }, { count: total }] = await Promise.all([
       supabase.from("creators").select("id, creator_stats!inner(recorded_at)", { count: "exact", head: true })
@@ -220,14 +224,14 @@ async function run(force = false): Promise<Record<string, unknown>> {
     }
   };
 
-  const { byPlatformId, bySubdomain, stats: sweep, seconds: sweepSeconds } = await buildRanking(saveSeen);
+  const { byPlatformId, bySubdomain, stats: sweep, seconds: sweepSeconds } = await buildRanking(categories, saveSeen);
   if (byPlatformId.size === 0) {
     return { ok: false, error: "leaderboard returned 0", sweep };
   }
   // A sweep that couldn't finish every category has holes: a pub missing from
   // it may simply be in a category we didn't read, so don't treat "not seen"
   // as "not on Substack".
-  const sweepComplete = sweep.incomplete.length === 0;
+  const sweepComplete = !sliced && sweep.incomplete.length === 0;
   if (!sweepComplete) console.error(`incomplete sweep, categories not finished: ${sweep.incomplete.join(", ")}`);
 
   // ---- 1. Leaderboard rank for already-tracked creators ----
@@ -235,12 +239,26 @@ async function run(force = false): Promise<Record<string, unknown>> {
   // the old one-request-per-creator loop was the heaviest part of the run.
   const trackedIds = new Set(tracked.map((c) => String(c.platform_id)));
   const rankUpdates: { id: string; leaderboard_rank: number }[] = [];
-  for (const c of tracked) {
-    const entry = byPlatformId.get(String(c.platform_id));
-    if (entry && entry.subs > 0) rankUpdates.push({ id: c.id, leaderboard_rank: entry.globalRank });
+  if (!sliced) {
+    for (const c of tracked) {
+      const entry = byPlatformId.get(String(c.platform_id));
+      if (entry && entry.subs > 0) rankUpdates.push({ id: c.id, leaderboard_rank: entry.globalRank });
+    }
+  } else if (part === parts) {
+    // Last slice: rank everything read today by subscribers, biggest first.
+    for (let from = 0; ; from += 1000) {
+      const { data } = await supabase.from("creator_stats").select("creator_id, subscribers, creators!inner(platform)")
+        .eq("recorded_at", today).eq("creators.platform", "substack").gt("subscribers", 0)
+        .order("subscribers", { ascending: false }).order("creator_id").range(from, from + 999);
+      if (!data || data.length === 0) break;
+      data.forEach((r: any, i: number) => rankUpdates.push({ id: r.creator_id, leaderboard_rank: from + i + 1 }));
+      if (data.length < 1000) break;
+    }
   }
-  const { error: rankErr } = await supabase.rpc("set_substack_ranks", { p_ranks: rankUpdates });
-  if (rankErr) console.error(`set_substack_ranks failed: ${rankErr.message}`);
+  if (rankUpdates.length) {
+    const { error: rankErr } = await supabase.rpc("set_substack_ranks", { p_ranks: rankUpdates });
+    if (rankErr) console.error(`set_substack_ranks failed: ${rankErr.message}`);
+  }
 
   // ---- 2. Discovery: add ranked pubs we don't track yet (capped per run) ----
   let discovered = 0;
@@ -304,7 +322,7 @@ async function run(force = false): Promise<Record<string, unknown>> {
   }
 
   return {
-    ok: true, date: today, ranked: byPlatformId.size, tracked: tracked.length, written,
+    ok: true, date: today, part, parts, ranked: byPlatformId.size, tracked: tracked.length, written,
     discovered, requestsResolved, requestsFailed,
     sweep: { seconds: sweepSeconds, requests: sweep.requests, retries: sweep.retries, complete: sweep.complete.length, incomplete: sweep.incomplete },
   };
@@ -321,8 +339,11 @@ Deno.serve((req) => {
   // (allowed up to the 400s wall clock) and this replies at once; the summary
   // goes to the function logs. ?wait=1 runs it inline instead, for a manual
   // check with the response in hand (only useful if it finishes inside 150s).
-  const force = new URL(req.url).searchParams.get("force") === "1";
-  const task = run(force).then((r) => { console.log("collect-substack finished", JSON.stringify(r)); return r; });
+  const params = new URL(req.url).searchParams;
+  const force = params.get("force") === "1";
+  const part = parseInt(params.get("part") || "0", 10) || 0;
+  const parts = parseInt(params.get("parts") || "1", 10) || 1;
+  const task = run(force, part, parts).then((r) => { console.log("collect-substack finished", JSON.stringify(r)); return r; });
   if (new URL(req.url).searchParams.get("wait") === "1") {
     return task.then((r) => new Response(JSON.stringify(r), { headers: JSON_HEADERS }));
   }
