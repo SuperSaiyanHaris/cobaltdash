@@ -514,9 +514,20 @@ async function collectDailyStats() {
   const flush = async (label) => {
     const batch = statsToUpsert.splice(0);
     for (const group of chunk(batch, 1000)) {
-      const { error: upsertError } = await supabase
-        .from('creator_stats')
-        .upsert(group, { onConflict: 'creator_id,recorded_at' });
+      // The upsert is idempotent, so a transient network failure ("fetch
+      // failed", 502/503) is retried instead of losing the whole group of 1,000
+      // readings and failing the job (Twitch, 2026-10-13 06:41 UTC).
+      let upsertError = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        ({ error: upsertError } = await supabase
+          .from('creator_stats')
+          .upsert(group, { onConflict: 'creator_id,recorded_at' }));
+        if (!upsertError) break;
+        if (attempt < 3) {
+          console.warn(`   ⚠️  Database upsert retry ${attempt} (${label}): ${upsertError.message}`);
+          await new Promise((r) => setTimeout(r, 3000 * attempt));
+        }
+      }
       if (upsertError) {
         dbErrors++;
         console.error(`   ❌ Database upsert error (${label}):`, upsertError.message);
