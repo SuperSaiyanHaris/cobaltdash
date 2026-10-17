@@ -250,9 +250,14 @@ Deno.serve(async (req) => {
     else console.error("poll-live-creators: sample insert failed", error.message);
   }
 
-  await Promise.all(
-    peakBumps.map((b) => sb.from("stream_sessions").update({ peak_viewers: b.peak_viewers }).eq("id", b.id)),
-  );
+  if (peakBumps.length) {
+    // One request for all of them (was one UPDATE per stream, ~50 a minute).
+    const { error } = await sb.rpc("bump_session_peaks", {
+      p_ids: peakBumps.map((b) => b.id),
+      p_peaks: peakBumps.map((b) => b.peak_viewers),
+    });
+    if (error) console.error("poll-live-creators: bump peaks failed", error.message);
+  }
 
   let finalized = 0;
   if (toFinalize.length) {

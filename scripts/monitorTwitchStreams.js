@@ -281,13 +281,15 @@ export async function monitorStreams() {
   // Peak bumps are genuinely per-row, but there are only ever a handful: a
   // stream sets its peak early and rarely beats it, so a small pool is enough.
   let peaksUpdated = 0;
-  await pooled(peakBumps, 8, async (b) => {
-    const { error } = await supabase
-      .from('stream_sessions')
-      .update({ peak_viewers: b.peak_viewers })
-      .eq('id', b.id);
-    if (!error) peaksUpdated++;
-  });
+  // One request per 500 bumps (was one request per stream).
+  for (const group of chunk(peakBumps, 500)) {
+    const { data, error } = await supabase.rpc('bump_session_peaks', {
+      p_ids: group.map((b) => b.id),
+      p_peaks: group.map((b) => b.peak_viewers),
+    });
+    if (error) console.error(`   ❌ bump_session_peaks failed: ${error.message}`);
+    else peaksUpdated += data || 0;
+  }
 
   // The whole reason the old version took ~8 minutes. One call per 5000 now.
   let sessionsEnded = 0;

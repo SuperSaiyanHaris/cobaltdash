@@ -151,5 +151,11 @@
       "memory": 1024,
       "maxDuration": 15
     }
-  }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "claude/*": false
+    }
+  },
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)supabase' ':(exclude).github' ':(exclude)tests' ':(exclude)docs' ':(exclude)*.md'"
 }

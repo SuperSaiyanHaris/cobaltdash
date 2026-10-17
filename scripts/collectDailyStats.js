@@ -478,7 +478,7 @@ async function collectDailyStats() {
   const pick = (platform) => (wants(platform) ? creators.filter((c) => c.platform === platform) : []);
 
   const youtubeCreators = pick('youtube');
-  const twitchCreators = pick('twitch');
+  let twitchCreators = pick('twitch');
   const kickCreators = pick('kick');
   const blueskyCreators = pick('bluesky');
   const musicCreators = pick('music');
@@ -488,6 +488,58 @@ async function collectDailyStats() {
 
   if (inCI && !onlyList.length) {
     console.log('ℹ️  Running in CI — Substack is skipped here (its site blocks datacenter IPs); the collect-substack Edge Function collects it.');
+  }
+
+  // Twitch is the slow platform (one followers call per creator, ~40 minutes a
+  // run) and the table keeps ONE row per creator per day, so the 14:00 and 22:00
+  // UTC runs used to rewrite ~28,000 identical-or-near-identical rows. Now the
+  // first run of the day collects everyone, and later runs collect only the top
+  // TWITCH_ALWAYS_TOP channels (freshest numbers where they move) plus anyone who
+  // still has no reading for today (a failed or partial earlier run). Nothing is
+  // dropped: a missing reading is always retried. On any lookup trouble, collect
+  // everyone, as before.
+  const TWITCH_ALWAYS_TOP = 2000;
+  if (twitchCreators.length > 0) {
+    try {
+      const have = new Set();
+      for (let f = 0; ; f += 1000) {
+        const { data, error } = await supabase
+          .from('creator_stats')
+          .select('creator_id, creators!inner(platform)')
+          .eq('recorded_at', today)
+          .eq('creators.platform', 'twitch')
+          .order('creator_id')
+          .range(f, f + 999);
+        if (error) throw new Error(error.message);
+        data.forEach((r) => have.add(r.creator_id));
+        if (data.length < 1000) break;
+      }
+      const top = new Set();
+      for (let f = 0; ; f += 1000) {
+        const { data, error } = await supabase
+          .from('rankings_cache')
+          .select('creator_id')
+          .eq('platform', 'twitch')
+          .eq('rank_type', 'subscribers')
+          .lte('rank_position', TWITCH_ALWAYS_TOP)
+          .order('creator_id')
+          .range(f, f + 999);
+        if (error) throw new Error(error.message);
+        data.forEach((r) => top.add(r.creator_id));
+        if (data.length < 1000) break;
+      }
+      const before = twitchCreators.length;
+      const missing = twitchCreators.filter((c) => !have.has(c.id)).length;
+      const keep = twitchCreators.filter((c) => !have.has(c.id) || top.has(c.id));
+      // Only trim when today already has most of the roster; otherwise this is
+      // the first run (or a recovery) and everyone is collected.
+      if (have.size >= before * 0.5) {
+        twitchCreators = keep;
+        console.log(`ℹ️  Twitch catch-up mode: collecting ${keep.length} of ${before} creators (${missing} without a reading today, plus the top ${TWITCH_ALWAYS_TOP})`);
+      }
+    } catch (err) {
+      console.warn(`⚠️  Twitch catch-up lookup failed (${err.message}); collecting everyone`);
+    }
   }
 
   console.log(`Found ${creators.length} creators to update`);

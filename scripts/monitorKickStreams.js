@@ -259,13 +259,15 @@ export async function monitorStreams() {
   }
 
   let peaksUpdated = 0;
-  await pooled(peakBumps, 8, async (b) => {
-    const { error } = await supabase
-      .from('stream_sessions')
-      .update({ peak_viewers: b.peak_viewers })
-      .eq('id', b.id);
-    if (!error) peaksUpdated++;
-  });
+  // One request per 500 bumps (was one request per stream).
+  for (const group of chunk(peakBumps, 500)) {
+    const { data, error } = await supabase.rpc('bump_session_peaks', {
+      p_ids: group.map((b) => b.id),
+      p_peaks: group.map((b) => b.peak_viewers),
+    });
+    if (error) console.error(`   ❌ bump_session_peaks failed: ${error.message}`);
+    else peaksUpdated += data || 0;
+  }
 
   let sessionsEnded = 0;
   if (toFinalize.length) {
