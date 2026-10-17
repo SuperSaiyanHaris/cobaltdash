@@ -92,7 +92,7 @@
       ]
     },
     {
-      "source": "/og/:file([^/]+\\.jpg)",
+      "source": "/og/([^/]+\\.jpg)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -101,7 +101,7 @@
       ]
     },
     {
-      "source": "/pass/:file([^/]+\\.svg)",
+      "source": "/pass/([^/]+\\.svg)",
       "headers": [
         {
           "key": "Cache-Control",
