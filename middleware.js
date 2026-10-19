@@ -28,6 +28,7 @@
 import { getHub, HUBS } from './src/lib/hubs.js';
 import { HUB_INTROS } from './src/lib/hubIntros.js';
 import { isThinProfile, pickCreatorRow } from './src/lib/seoRules.js';
+import { isKnownRoute } from './src/lib/knownRoutes.js';
 import { renderCard } from './src/lib/badgeCard.js';
 import { loadCardData } from './src/lib/cardData.js';
 import { KICK_SUB_PRICE, YOUTUBE_CPM_LOW, YOUTUBE_CPM_HIGH, kickSubEarnings, youtubeAdEarnings, formatMoney } from './src/lib/earnings.js';
@@ -1147,6 +1148,7 @@ function getMeta(pathname, searchParams) {
         title: 'Page Not Found - ShinyPull',
         description: 'This page does not exist.',
         noindex: true,
+        notFound: true,
       };
     }
     const nounTitle = hub.noun.charAt(0).toUpperCase() + hub.noun.slice(1);
@@ -1344,7 +1346,12 @@ export default async function middleware(request) {
     return Response.redirect(new URL(`/card${url.search}`, url), 301);
   }
 
-  const meta = getMeta(url.pathname, url.searchParams);
+  // A path the app doesn't serve: answer with a real 404 (the page still shows
+  // the app's NotFound for visitors). It used to get 200 plus the home page,
+  // which Google reports as a soft 404 and as a duplicate of "/".
+  const meta = isKnownRoute(url.pathname)
+    ? getMeta(url.pathname, url.searchParams)
+    : { title: 'Page Not Found - ShinyPull', description: 'This page does not exist.', noindex: true, notFound: true };
 
   if (!meta) return; // No modification needed — fall through to normal serving
 
@@ -1487,7 +1494,14 @@ export default async function middleware(request) {
   // still meaningfully cuts Supabase read load while bounding the worst case.
   const isBlogPost = content?.status === 'ok' && content.canonicalPath?.startsWith('/blog/');
 
+  // 404 only when we are sure: an unknown route or hub slug, or a blog slug the
+  // database answered "no such post" for. Never for a failed lookup, and not for
+  // creator profiles: untracked profiles keep their 200 so shared links still get
+  // their preview card.
+  const gone = Boolean(meta.notFound) || (content?.status === 'notfound' && Boolean(blogMatch));
+
   return new Response(html, {
+    status: gone ? 404 : 200,
     headers: {
       'content-type': 'text/html;charset=UTF-8',
       // DB-backed pages cache longer at the edge (Vercel purges on deploy);
