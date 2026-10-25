@@ -46,7 +46,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/refreshRankingsCache.js
+        run: node scripts/refreshRankingsCache.js tiktok
 
       - name: Report completion
         if: success()

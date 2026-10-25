@@ -10,19 +10,31 @@ import { createClient } from '@supabase/supabase-js';
 // API path PostgREST uses has a hard ~60s statement_timeout that we cannot
 // raise (ALTER ROLE / SET LOCAL only affect direct + pg_cron connections, not
 // REST). Twitch's refresh has grown past 60s and times out here, failing the
-// whole GitHub Actions job. Those two are refreshed reliably INSIDE Postgres
-// by the `refresh-rankings-heavy-platforms` pg_cron job (every 3h, ~75s, where
-// the function's `SET LOCAL statement_timeout='180s'` actually applies). The
-// fast platforms below all finish in well under 60s. See CLAUDE.md.
+// whole GitHub Actions job. Those two are refreshed INSIDE Postgres: this
+// script queues them (request_rankings_refresh) and the
+// `refresh-rankings-queued` pg_cron job runs them within 10 minutes, where the
+// function's `SET LOCAL statement_timeout='180s'` actually applies. The fast
+// platforms below all finish in well under 60s. See CLAUDE.md.
+//
+// Usage: node scripts/refreshRankingsCache.js          (all fast platforms,
+//                                                        plus queue the heavy ones)
+//        node scripts/refreshRankingsCache.js tiktok   (only the named ones)
 
 const supabase = createClient(
   process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// YouTube and Twitch are refreshed only by the refresh-rankings-heavy-platforms
-// pg_cron job (they exceed the REST path's ~60s limit); see CLAUDE.md.
-const PLATFORMS = ['tiktok', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
+const FAST = ['tiktok', 'kick', 'bluesky', 'music', 'mastodon', 'substack'];
+const HEAVY = ['youtube', 'twitch'];
+const only = process.argv.slice(2).map((p) => p.toLowerCase());
+const unknown = only.filter((p) => !FAST.includes(p) && !HEAVY.includes(p));
+if (unknown.length) {
+  console.error(`Unknown platform(s): ${unknown.join(', ')}`);
+  process.exit(1);
+}
+const PLATFORMS = only.length ? FAST.filter((p) => only.includes(p)) : FAST;
+const QUEUE = only.length ? HEAVY.filter((p) => only.includes(p)) : HEAVY;
 
 console.log('🏆 Refreshing rankings cache (per-platform)...');
 const totalStart = Date.now();
@@ -41,6 +53,16 @@ for (const platform of PLATFORMS) {
   } else {
     console.log(`  ✅ ${platform.padEnd(8)} refreshed in ${elapsed}s`);
     okCount++;
+  }
+}
+
+if (QUEUE.length) {
+  const { error } = await supabase.rpc('request_rankings_refresh', { p_platforms: QUEUE });
+  if (error) {
+    console.warn(`  ⚠️  queueing ${QUEUE.join(', ')} failed — ${error.message}`);
+    failures.push({ platform: QUEUE.join('+'), error: error.message });
+  } else {
+    console.log(`  🕒 ${QUEUE.join(', ')} queued (refreshed inside Postgres within 10 min)`);
   }
 }
 

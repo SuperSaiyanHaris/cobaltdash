@@ -418,6 +418,14 @@ async function main() {
     console.log(`✓ Successful: ${successful}`);
     console.log(`✗ Failed: ${failed}`);
 
+    // New creators get a rank within 10 minutes instead of waiting for the
+    // 6-hourly safety-net refresh (the refresh-rankings-queued pg_cron job).
+    const added = [...new Set(pendingRequests.filter((_, k) => results[k]?.success).map(r => r.platform))];
+    if (added.length) {
+      const { error: queueError } = await supabase.rpc('request_rankings_refresh', { p_platforms: added });
+      if (queueError) console.warn(`⚠️  Could not queue rankings refresh: ${queueError.message}`);
+    }
+
     if (failed > 0) {
       console.log('\nFailed requests:');
       results.filter(r => !r.success).forEach(r => {

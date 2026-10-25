@@ -321,6 +321,13 @@ async function run(force = false, part = 0, parts = 1): Promise<Record<string, u
     requestsResolved++;
   }
 
+  // Rankings refresh when data lands: the refresh-rankings-queued pg_cron job
+  // picks this up within 10 minutes. Only once ranks are final (last slice).
+  if (!sliced || part === parts) {
+    const { error: queueErr } = await supabase.rpc("request_rankings_refresh", { p_platforms: ["substack"] });
+    if (queueErr) console.error(`request_rankings_refresh failed: ${queueErr.message}`);
+  }
+
   return {
     ok: true, date: today, part, parts, ranked: byPlatformId.size, tracked: tracked.length, written,
     discovered, requestsResolved, requestsFailed,
