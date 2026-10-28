@@ -131,8 +131,10 @@ export function loadProgress({ force = false } = {}) {
  * Fetch fresh state now (after an action that earned XP, or on the periodic
  * check), paying any level rewards that are due and announcing them.
  */
-export function refreshProgress() {
+export function refreshProgress({ maxAge = 0 } = {}) {
   if (!userId) return Promise.resolve(current);
+  // Callers that only want "recent enough" (tab refocus) skip a fresh copy.
+  if (maxAge && current && Date.now() - loadedAt < maxAge) return Promise.resolve(current);
   if (!inflight) inflight = doLoad(false, true).finally(() => { inflight = null; });
   return inflight;
 }

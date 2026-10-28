@@ -50,7 +50,8 @@ export default function PassSync() {
     if (!userId) { clearProgress(); return undefined; }
     hydrateProgress(userId);
     const t = setTimeout(() => { loadProgress().catch(() => {}); }, 400);
-    const check = () => { if (document.visibilityState === 'visible') refreshProgress().catch(() => {}); };
+    // Flipping back to the tab right after a check doesn't need another one.
+    const check = () => { if (document.visibilityState === 'visible') refreshProgress({ maxAge: 30000 }).catch(() => {}); };
     const every = setInterval(check, CHECK_EVERY);
     document.addEventListener('visibilitychange', check);
     return () => { clearTimeout(t); clearInterval(every); document.removeEventListener('visibilitychange', check); };
