@@ -84,3 +84,8 @@ SELECT cron.unschedule('refresh-rankings-heavy-platforms');
 SELECT cron.schedule('refresh-rankings-queued', '*/10 * * * *', $$ CALL public.refresh_rankings_cache_queued() $$);
 SELECT cron.schedule('refresh-rankings-safety-net', '37 */6 * * *',
   $$ SELECT public.request_rankings_refresh(ARRAY['youtube','tiktok','twitch','kick','bluesky','music','mastodon','substack']) $$);
+
+-- 5. (2026-10-28) Autovacuum never visits net._http_response (last run Aug 25),
+--    so it re-bloated 456 KB -> 6.5 MB in 3.5 days. A daily plain VACUUM lets
+--    pg_net reuse the space instead of growing the file. Keeps every row.
+SELECT cron.schedule('vacuum-http-response', '25 4 * * *', 'VACUUM net._http_response');
