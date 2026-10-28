@@ -981,16 +981,6 @@ function PlatformRankings({ urlPlatform }) {
     analytics.switchPlatform('rankings', platformId);
   };
 
-  // The one number each podium card shows: whatever the current tab ranks by.
-  const podiumStat = (c) => {
-    if (selectedRankType === 'watched') return { value: formatNumber(c.hoursWatchedMonth), label: 'Hours watched (30d)' };
-    if (selectedRankType === 'views') return { value: formatNumber(c.totalViews), label: 'Views' };
-    if (selectedRankType === 'growth') {
-      const unit = selectedPlatform === 'youtube' ? 'views' : selectedPlatform === 'twitch' ? 'hours' : selectedPlatform === 'kick' ? 'paid subs' : followerLabel.toLowerCase();
-      return { value: `${c.growth30d > 0 ? '+' : ''}${formatNumber(c.growth30d)}`, label: `${unit} in 30 days` };
-    }
-    return { value: formatNumber(c.subscribers), label: followerLabel };
-  };
   const followerLabel = selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' ? 'Followers' : selectedPlatform === 'music' ? 'Listeners' : selectedPlatform === 'kick' ? 'Paid Subs' : 'Subscribers';
   // Optional secondary stat column shown between the sparkline and Growth.
   // Each platform maps to the one extra public metric worth showing (or none).
@@ -1056,7 +1046,7 @@ function PlatformRankings({ urlPlatform }) {
             {loading && rankings.length === 0 ? (
               <div className="hidden sm:block mt-10 sm:h-[400px]" />
             ) : (
-              <RankingsPodium creators={rankings} stat={podiumStat} icon={currentPlatform?.icon} />
+              <RankingsPodium creators={rankings} />
             )}
           </div>
         </div>
