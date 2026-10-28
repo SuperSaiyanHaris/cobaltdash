@@ -14,7 +14,7 @@ import { TableSkeleton } from '../components/Skeleton';
 import FunErrorState from '../components/FunErrorState';
 import CreatorAvatar from '../components/CreatorAvatar';
 import Sparkline from '../components/Sparkline';
-import { getRankedCreators, getFeaturedListings, getSparklineData, getPlatformCreatorCount } from '../services/creatorService';
+import { getRankedCreators, getFeaturedListings, getSparklineData, getPlatformCreatorCount, primeRankings, peekRankings } from '../services/creatorService';
 import { getHubsByPlatform } from '../lib/hubs';
 import SEO from '../components/SEO';
 import PortalMenu from '../components/PortalMenu';
@@ -712,7 +712,24 @@ function RankingsOverview() {
   );
 }
 
+// middleware.js embeds the default view (Top 50 by subscribers) as
+// <script id="__RANKINGS_DATA__"> so the podium and table draw with the page.
+// Read once: it only describes the page the visitor landed on, and it needs
+// yesterday's positions (prev) or every row would show as "new".
+let embeddedRankingsRead = false;
+function primeEmbeddedRankings(platform) {
+  if (embeddedRankingsRead || typeof document === 'undefined') return;
+  embeddedRankingsRead = true;
+  const el = document.getElementById('__RANKINGS_DATA__');
+  if (!el) return;
+  try {
+    const data = JSON.parse(el.textContent);
+    if (data.platform === platform && data.prev && Array.isArray(data.rows) && data.rows.length) primeRankings(data);
+  } catch { /* fall back to fetching */ }
+}
+
 function PlatformRankings({ urlPlatform }) {
+  primeEmbeddedRankings(urlPlatform);
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedPlatform, setSelectedPlatform] = useState(urlPlatform || 'youtube');
@@ -720,7 +737,7 @@ function PlatformRankings({ urlPlatform }) {
   const [topCount, setTopCount] = useState(50);
   const [topCountOpen, setTopCountOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [rankings, setRankings] = useState([]);
+  const [rankings, setRankings] = useState(() => peekRankings(urlPlatform || 'youtube', 'subscribers', 50) || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortColumn, setSortColumn] = useState(null);
@@ -770,7 +787,11 @@ function PlatformRankings({ urlPlatform }) {
   }, [selectedPlatform]);
 
   const loadRankings = async () => {
-    setLoading(true);
+    // Already cached (embedded in the page, or seen earlier this visit):
+    // show it straight away instead of flashing the skeleton.
+    const cached = peekRankings(selectedPlatform, selectedRankType, topCount);
+    if (cached) setRankings(cached);
+    else setLoading(true);
     setError(null);
     setSparklines({});
     try {

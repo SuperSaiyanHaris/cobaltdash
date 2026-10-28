@@ -614,10 +614,14 @@ async function getProfileContent(platform, username) {
 // Rankings page content
 // ---------------------------------------------------------------------------
 
+const RANKINGS_COLUMNS = 'creator_id,platform,username,display_name,profile_image,platform_id,subscribers,total_views,total_posts,growth_30d,hours_watched_day,hours_watched_week,hours_watched_month,rank_position,computed_at';
+
 async function getRankingsContent(platform) {
   const rows = await supabaseGet(
     `rankings_cache?platform=eq.${platform}&rank_type=eq.subscribers` +
-    `&select=creator_id,rank_position,username,display_name,subscribers` +
+    // Same columns as creatorService's _fetchRankings: these rows also seed the
+    // page's first render (initialData below), so they must have its shape.
+    `&select=${RANKINGS_COLUMNS}` +
     `&order=rank_position.asc&limit=50`
   );
   if (!rows || !rows.length) return { status: 'error' };
@@ -625,9 +629,15 @@ async function getRankingsContent(platform) {
   // The date the numbers were collected (the top creator's newest reading), so
   // the page can say exactly how fresh it is. rankings_cache.computed_at is
   // restamped on every refresh even when the data is old, so it isn't used.
-  const latest = await supabaseGet(
-    `creator_stats?creator_id=eq.${rows[0].creator_id}&select=recorded_at&order=recorded_at.desc&limit=1`
-  );
+  // Yesterday's positions give the table its rank-movement arrows.
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const [latest, prevRows] = await Promise.all([
+    supabaseGet(`creator_stats?creator_id=eq.${rows[0].creator_id}&select=recorded_at&order=recorded_at.desc&limit=1`),
+    supabaseGet(
+      `rankings?platform=eq.${platform}&rank_type=eq.subscribers&recorded_at=eq.${yesterday}` +
+      `&creator_id=in.(${rows.map((r) => r.creator_id).join(',')})&select=creator_id,rank_position`
+    ),
+  ]);
   const asOf = latest && latest[0] ? String(latest[0].recorded_at).slice(0, 10) : null;
 
   const platformName = PLATFORM_NAMES[platform];
@@ -699,7 +709,20 @@ async function getRankingsContent(platform) {
     },
   };
 
-  return { status: 'ok', title, description, html, jsonLd };
+  // Rankings.jsx seeds its first render from this (Top 50 by subscribers, the
+  // default view), so the podium and table draw with the page instead of
+  // after three round trips. prev is null when the snapshot lookup failed;
+  // the client then fetches as usual rather than show every row as "new".
+  const initialData = {
+    platform,
+    rankType: 'subscribers',
+    limit: 50,
+    fetchedAt: Date.now(),
+    rows,
+    prev: Array.isArray(prevRows) ? Object.fromEntries(prevRows.map((r) => [r.creator_id, r.rank_position])) : null,
+  };
+
+  return { status: 'ok', title, description, html, jsonLd, initialData, dataId: '__RANKINGS_DATA__' };
 }
 
 // ---------------------------------------------------------------------------

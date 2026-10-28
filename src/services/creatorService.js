@@ -433,6 +433,10 @@ async function _fetchRankings(platform, rankType, limit) {
     prevRankByCreator = new Map((prevRows || []).map((r) => [r.creator_id, r.rank_position]));
   }
 
+  return mapRankingRows(rows, rankType, prevRankByCreator);
+}
+
+function mapRankingRows(rows, rankType, prevRankByCreator) {
   return rows.map((creator) => {
     const prevRank = prevRankByCreator.get(creator.creator_id);
     // Positive = moved up N spots, negative = moved down N spots, 'new' = no
@@ -464,6 +468,25 @@ async function _fetchRankings(platform, rankType, limit) {
         : creator.subscribers,
     };
   });
+}
+
+/**
+ * Seed the rankings cache from the rows middleware.js embeds in the page
+ * (<script id="__RANKINGS_DATA__">), so the first render needs no round trip.
+ * `fetchedAt` is the server's fetch time: an old CDN copy is served at once and
+ * refreshed in the background like any stale cache entry.
+ */
+export function primeRankings({ platform, rankType, limit, rows, prev, fetchedAt }) {
+  const prevRankByCreator = new Map(Object.entries(prev || {}));
+  _rankingsCache.set(`${platform}:${rankType}:${limit}`, {
+    data: mapRankingRows(rows, rankType, prevRankByCreator),
+    ts: Number(fetchedAt) || 0,
+  });
+}
+
+/** Cached rankings for a view, or null. Synchronous, for first-render state. */
+export function peekRankings(platform, rankType, limit) {
+  return _rankingsCache.get(`${platform}:${rankType}:${limit}`)?.data || null;
 }
 
 // Module-level listings cache — same SWR pattern as rankings.
