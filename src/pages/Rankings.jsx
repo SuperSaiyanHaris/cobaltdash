@@ -219,8 +219,24 @@ function PlatformNav({ current, onSelect, dark = false }) {
 
 // Rank is a plain tabular numeral — position alone is the hierarchy signal,
 // no medal-colored dots.
+// Gold, silver and bronze for the top three (the podium's foils), plain
+// numbers after that.
+const MEDAL = {
+  1: { background: 'linear-gradient(160deg,#fff3c4,#e2a72e 55%,#9a5b0c)', color: '#3b2604' },
+  2: { background: 'linear-gradient(160deg,#ffffff,#c4c4cc 55%,#6b6b73)', color: '#27272a' },
+  3: { background: 'linear-gradient(160deg,#ffd9bd,#cf7a3d 55%,#7c3510)', color: '#3a1a06' },
+};
+
 function RankBadge({ rank, size = 'md' }) {
   const text = size === 'sm' ? 'text-xs' : 'text-sm';
+  const medal = MEDAL[rank];
+  if (medal) {
+    return (
+      <span className={`inline-flex items-center flex-shrink-0 ${size === 'sm' ? 'w-8' : 'w-10'}`}>
+        <span className={`flex items-center justify-center rounded-full font-black tabular-nums ring-1 ring-black/10 ${size === 'sm' ? 'h-6 w-6 text-[11px]' : 'h-7 w-7 text-xs'}`} style={medal}>{rank}</span>
+      </span>
+    );
+  }
   return (
     <span className={`inline-flex items-center flex-shrink-0 ${size === 'sm' ? 'w-8' : 'w-10'}`}>
       <span className={`${text} font-semibold tabular-nums text-neutral-900`}>{rank}</span>
@@ -766,7 +782,7 @@ function PlatformRankings({ urlPlatform }) {
     // retired public view counts in 2022, so Twitch/Kick rank by hours watched.
     ...(selectedPlatform === 'youtube' ? [{ id: 'views', name: 'Most Views', icon: Eye }] : []),
     ...(selectedPlatform === 'twitch' || selectedPlatform === 'kick' ? [{ id: 'watched', name: 'Most Watched', icon: Clock }] : []),
-    { id: 'growth', name: 'Fastest Growing', icon: TrendingUp },
+    { id: 'growth', name: 'Rising Stars', icon: TrendingUp },
   ];
 
   useEffect(() => {
@@ -965,6 +981,16 @@ function PlatformRankings({ urlPlatform }) {
     analytics.switchPlatform('rankings', platformId);
   };
 
+  // The one number each podium card shows: whatever the current tab ranks by.
+  const podiumStat = (c) => {
+    if (selectedRankType === 'watched') return { value: formatNumber(c.hoursWatchedMonth), label: 'Hours watched (30d)' };
+    if (selectedRankType === 'views') return { value: formatNumber(c.totalViews), label: 'Views' };
+    if (selectedRankType === 'growth') {
+      const unit = selectedPlatform === 'youtube' ? 'views' : selectedPlatform === 'twitch' ? 'hours' : selectedPlatform === 'kick' ? 'paid subs' : followerLabel.toLowerCase();
+      return { value: `${c.growth30d > 0 ? '+' : ''}${formatNumber(c.growth30d)}`, label: `${unit} in 30 days` };
+    }
+    return { value: formatNumber(c.subscribers), label: followerLabel };
+  };
   const followerLabel = selectedPlatform === 'tiktok' || selectedPlatform === 'twitch' || selectedPlatform === 'bluesky' || selectedPlatform === 'mastodon' ? 'Followers' : selectedPlatform === 'music' ? 'Listeners' : selectedPlatform === 'kick' ? 'Paid Subs' : 'Subscribers';
   // Optional secondary stat column shown between the sparkline and Growth.
   // Each platform maps to the one extra public metric worth showing (or none).
@@ -1030,7 +1056,7 @@ function PlatformRankings({ urlPlatform }) {
             {loading && rankings.length === 0 ? (
               <div className="hidden sm:block mt-10 sm:h-[400px]" />
             ) : (
-              <RankingsPodium creators={rankings} />
+              <RankingsPodium creators={rankings} stat={podiumStat} icon={currentPlatform?.icon} />
             )}
           </div>
         </div>
