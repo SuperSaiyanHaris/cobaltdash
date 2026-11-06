@@ -53,7 +53,9 @@ jobs:
 
   browser:
     needs: smoke
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 (Nov 2026) and Playwright 1.55
+    # cannot install Chromium there. Unpin after upgrading Playwright.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
