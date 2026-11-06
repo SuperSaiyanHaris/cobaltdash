@@ -43,7 +43,8 @@ test('rankings: Twitch Most Watched tab ranks by hours watched', async ({ page }
 
 test('rankings: switching platform loads that platform', async ({ page }) => {
   await page.goto('/rankings/youtube');
-  await expect(page.locator('a[href^="/youtube/"]').first()).toBeVisible();
+  // :visible because the podium cards come first in the DOM and are hidden on phones.
+  await expect(page.locator('a[href^="/youtube/"]:visible').first()).toBeVisible();
   await page.goto('/rankings/kick');
   await expect(page.locator('a[href^="/kick/"]').nth(4)).toBeVisible();
 });
